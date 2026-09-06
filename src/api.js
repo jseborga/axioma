@@ -1,5 +1,5 @@
 /* ===========================================================
-   AXIOMA · API (Cloudflare Pages Functions + D1)
+   AXIOMA · API (Cloudflare Workers + D1)
    Rutas:
      GET  /api/config        → { googleClientId }  (vacío si no está configurado)
      GET  /api/me            → { user } o { user:null }
@@ -14,9 +14,8 @@ var COOKIE="ax_session";
 var SESSION_DAYS=30;
 var TOP=20;
 
-export async function onRequest(context){
-  var req=context.request, env=context.env;
-  var url=new URL(req.url), path=url.pathname.replace(/^\/api/,"");
+export async function handleApi(req,env,url){
+  var path=url.pathname.replace(/^\/api/,"");
   try{
     if(path==="/config"&&req.method==="GET")
       return json({googleClientId:env.GOOGLE_CLIENT_ID||""});

@@ -7,63 +7,61 @@ Puzle diario de deducción pura: no solo resuelves el tablero, descubres qué re
 - PWA: funciona sin conexión y se puede instalar en el móvil.
 - **Cuenta opcional con Google** para entrar en el ranking del reto diario. Sin configurarla, la app funciona igual y no muestra nada de cuentas.
 
-## Ejecutar
+## Ejecutar en local
 
-Es HTML estático. Sirve la carpeta con cualquier servidor, por ejemplo:
+Necesitas la herramienta de Cloudflare, porque la app incluye una pequeña API:
 
 ```
-python3 -m http.server 8080
+npm install -g wrangler
+wrangler dev --port 8788
 ```
 
-y abre `http://localhost:8080`.
+y abre `http://localhost:8788`. Para probar también el inicio de sesión y el
+ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 
 ## Archivos
 
-| Archivo | Qué es |
+| Ruta | Qué es |
 | --- | --- |
-| `index.html` | Estructura de la app |
-| `axioma.css` | Estilos (tema claro y oscuro) |
-| `app.js` | Generador, verificador y lógica de juego |
-| `sw.js` | Service worker para uso sin conexión |
-| `manifest.json`, `icon.svg` | Instalación como app |
-| `account.js` | Entrada con Google y ranking (solo se activa si el backend está configurado) |
-| `functions/api/[[path]].js` | API en Cloudflare Pages Functions: sesión, puntuaciones y ranking |
-| `schema.sql` | Tablas de la base D1 (usuarios y puntuaciones) |
-| `wrangler.toml` | Configuración de Pages y binding de D1 |
+| `public/index.html` | Estructura de la app |
+| `public/axioma.css` | Estilos (tema claro y oscuro) |
+| `public/app.js` | Generador, verificador y lógica de juego |
+| `public/account.js` | Entrada con Google y ranking (solo si el backend está configurado) |
+| `public/sw.js` | Service worker para uso sin conexión |
+| `public/manifest.json`, `public/icon.svg` | Instalación como app |
+| `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
+| `src/api.js` | API: sesión, puntuaciones y ranking |
+| `schema.sql` | Tablas de la base de datos D1 |
+| `wrangler.toml` | Configuración del Worker y enlace a D1 |
 
-## Publicar en Cloudflare Pages
+## Publicar en Cloudflare
 
-No hace falta compilar nada: Cloudflare sirve los archivos tal cual.
+Axioma se despliega como un **Worker**, que sirve los archivos de `public` y
+atiende la API de `src`.
 
-### Opción A · desde el panel (recomendada)
+### Desde el panel
 
-1. Entra en [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
-2. Autoriza GitHub y elige el repositorio `jseborga/axioma`.
-3. En la configuración del proyecto:
-   - **Production branch**: la rama que quieras publicar (por ejemplo `main`, o la rama de trabajo si aún no has hecho merge).
-   - **Framework preset**: `None`.
-   - **Build command**: déjalo vacío.
-   - **Build output directory**: `/` (la raíz del repositorio).
-4. Pulsa **Save and Deploy**. En un minuto tendrás la app en `https://<nombre-del-proyecto>.pages.dev`.
-5. Cada `git push` a la rama de producción vuelve a desplegar automáticamente. Los push a otras ramas crean vistas previas con su propia URL.
+En [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** →
+**Create** → **Import a repository**. Elige el repositorio y la rama `main`, y deja
+la configuración de compilación tal como viene: sin comando de compilación, con
+`npx wrangler deploy` como comando de despliegue y `/` como directorio raíz. Cada
+push a `main` vuelve a desplegar.
 
-Para usar tu propio dominio: en el proyecto → **Custom domains** → **Set up a custom domain**. Si el dominio ya está en Cloudflare, el DNS se configura solo.
-
-### Opción B · desde la terminal con Wrangler
+### Desde la terminal
 
 ```
 npm install -g wrangler
 wrangler login
-wrangler pages deploy . --project-name axioma
+wrangler deploy
 ```
-
-La primera vez te pedirá crear el proyecto. Los despliegues siguientes son el mismo comando.
 
 ### Notas
 
-- El archivo `_headers` indica a Cloudflare que no cachee `index.html` ni `sw.js`, para que cada despliegue llegue de inmediato a quien ya tenía la app abierta o instalada.
-- Cuando cambies archivos, sube el número de versión en `sw.js` (`var CACHE="axioma-v2"`) para que los usuarios sin conexión reciban la versión nueva.
-- La app usa HTTPS, algo que Cloudflare Pages da por defecto y que el service worker necesita para funcionar.
+- El archivo `public/_headers` evita que se cacheen `index.html` ni `sw.js`, para
+  que cada despliegue llegue de inmediato a quien ya tenía la app abierta.
+- Cuando cambies archivos, sube el número de versión en `public/sw.js`
+  (`var CACHE="axioma-v3"`) para que los usuarios sin conexión reciban la nueva.
+- La app usa HTTPS, que Cloudflare da por defecto y que el service worker necesita.
 
 ## Cuenta con Google y ranking (opcional)
 

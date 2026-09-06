@@ -1,11 +1,14 @@
 # Puesta en marcha de Axioma
 
-Guía completa para publicar la app, activar el inicio de sesión con Google,
-crear la base de datos y consultar las estadísticas.
+Guía completa para publicar la app en Cloudflare, activar el inicio de sesión con
+Google, crear la base de datos y consultar las estadísticas.
 
 El juego funciona sin nada de esto: si no configuras el inicio de sesión, la app
 se publica igual y sencillamente no muestra cuentas ni ranking. Puedes hacer solo
 la parte 1 y dejar el resto para más adelante.
+
+Axioma se despliega como un **Worker** de Cloudflare: un único proyecto que sirve
+los archivos del juego (la carpeta `public`) y atiende la API (la carpeta `src`).
 
 **Lo que necesitas antes de empezar**
 
@@ -15,34 +18,39 @@ la parte 1 y dejar el resto para más adelante.
 
 ---
 
-## Parte 1 · Publicar la app en Cloudflare Pages
+## Parte 1 · Publicar la app en Cloudflare
 
 1. Entra en [dash.cloudflare.com](https://dash.cloudflare.com).
-2. Ve a **Workers & Pages** y pulsa **Create**, luego la pestaña **Pages**, y
-   **Connect to Git**.
-3. Autoriza GitHub y elige el repositorio `jseborga/axioma`.
-4. Rellena la configuración del proyecto:
+2. Ve a **Workers & Pages**, pulsa **Create** y elige **Import a repository**
+   (según la versión del panel puede aparecer como *Connect to Git*).
+3. Autoriza GitHub y elige el repositorio `jseborga/axioma`, rama `main`.
+4. En **Build configuration**, deja los valores tal como vienen:
 
    | Campo | Valor |
    | --- | --- |
-   | Project name | `axioma` (define tu URL: `axioma.pages.dev`) |
-   | Production branch | `main` |
-   | Framework preset | `None` |
-   | Build command | *déjalo vacío* |
-   | Build output directory | `/` |
+   | Build command | *vacío* |
+   | Deploy command | `npx wrangler deploy` |
+   | Version command | `npx wrangler versions upload` |
+   | Root directory | `/` |
 
-5. Pulsa **Save and Deploy**. En un minuto la app estará en
-   `https://axioma.pages.dev`.
+   Son los correctos: el repositorio ya incluye `wrangler.toml`, y de ahí sale
+   todo lo demás.
+
+5. Pulsa **Create and deploy**. La app quedará en una dirección del tipo
+   `https://axioma.TU-SUBDOMINIO.workers.dev`.
 
 Anota esa URL: la necesitarás en la parte 3.
 
 > **Antes de este paso**, asegúrate de que la rama predeterminada del repositorio
 > en GitHub es `main` (Settings → General → Default branch).
 
+Este primer despliegue fallará o se desplegará sin base de datos hasta que
+completes la parte 2. Es normal.
+
 ### Dominio propio (opcional)
 
-En el proyecto → **Custom domains** → **Set up a custom domain**. Si el dominio ya
-está en Cloudflare, el DNS se configura solo. Si lo añades, tendrás que incluirlo
+En el Worker → **Settings** → **Domains & Routes** → **Add**. Si el dominio ya está
+en Cloudflare, el DNS se configura solo. Si lo añades, tendrás que incluirlo
 también en los orígenes autorizados de Google (parte 3).
 
 ---
@@ -125,7 +133,7 @@ las pistas usadas.
    desde la que se abrirá la app:
 
    ```
-   https://axioma.pages.dev
+   https://axioma.TU-SUBDOMINIO.workers.dev
    https://tudominio.com
    http://localhost:8788
    ```
@@ -135,8 +143,8 @@ las pistas usadas.
    - Solo esquema, dominio y puerto. **Sin barra final y sin ninguna ruta.**
    - `https` y `http` son orígenes distintos, igual que `midominio.com` y
      `www.midominio.com`. Añade los que vayas a usar.
-   - Las vistas previas de Pages tienen subdominios aleatorios, así que el inicio
-     de sesión no funcionará en ellas salvo que añadas cada una.
+   - Las vistas previas de cada versión tienen subdominios propios, así que el
+     inicio de sesión no funcionará en ellas salvo que añadas cada una.
 
 6. **No hace falta ninguna URI de redirección.** La app usa el botón de Google
    sobre la propia página, que no redirige.
@@ -155,32 +163,35 @@ las pistas usadas.
    openssl rand -base64 48
    ```
 
-2. En el panel de Cloudflare, entra en tu proyecto de Pages y ve a **Settings** →
-   **Variables and secrets**. Añade estas dos para el entorno **Production**:
+2. En el panel de Cloudflare, entra en tu Worker y ve a **Settings** →
+   **Variables and Secrets**. Añade estas dos:
 
    | Nombre | Tipo | Valor |
    | --- | --- | --- |
-   | `GOOGLE_CLIENT_ID` | Texto | El ID de cliente de la parte 3 |
-   | `SESSION_SECRET` | Secreto | La clave que acabas de generar |
+   | `GOOGLE_CLIENT_ID` | Secret | El ID de cliente de la parte 3 |
+   | `SESSION_SECRET` | Secret | La clave que acabas de generar |
 
-   Marca `SESSION_SECRET` como **Secret** para que quede cifrada y no se pueda
-   volver a leer desde el panel. Nunca la guardes en el repositorio.
+   **Añade las dos como Secret, no como texto plano.** Los secretos sobreviven a
+   todos los despliegues, mientras que las variables de texto pueden quedar
+   borradas al desplegar, porque el archivo de configuración manda sobre ellas.
+   El identificador de cliente no es información sensible, pero guardarlo como
+   secreto evita que se pierda en el siguiente despliegue.
 
 3. Comprueba el enlace con la base de datos en **Settings** → **Bindings**. Debe
-   aparecer una base D1 con el nombre de variable `DB`. Si incluiste el
-   `database_id` en `wrangler.toml`, se configura sola en cada despliegue.
+   aparecer una base D1 con el nombre de variable `DB`, y también los archivos
+   estáticos como `ASSETS`. Ambos salen de `wrangler.toml` en cada despliegue.
 
-4. **Vuelve a desplegar.** Las variables nuevas solo llegan a la app en el
-   siguiente despliegue. En **Deployments**, usa **Retry deployment** sobre el
-   último, o simplemente sube cualquier cambio al repositorio.
+4. **Vuelve a desplegar.** Los secretos nuevos llegan a la app en el siguiente
+   despliegue. En **Deployments**, usa **Retry** sobre el último, o simplemente
+   sube cualquier cambio al repositorio.
 
 ---
 
 ## Parte 5 · Comprobar que funciona
 
-1. Abre `https://axioma.pages.dev/api/config` en el navegador. Debe responder con
-   tu ID de cliente. Si devuelve un valor vacío, la variable no ha llegado: revisa
-   el paso 4 de la parte anterior.
+1. Abre la ruta `/api/config` de tu app en el navegador. Debe responder con tu ID
+   de cliente. Si devuelve un valor vacío, la variable no ha llegado: revisa el
+   paso 4 de la parte anterior.
 
 2. Abre la app. En la cabecera debe aparecer el botón **Entrar**.
 
@@ -199,10 +210,11 @@ las pistas usadas.
 | Qué | Dónde |
 | --- | --- |
 | Despliegues e historial | Cloudflare → Workers & Pages → `axioma` → **Deployments** |
-| Variables y secretos | El mismo proyecto → **Settings** → **Variables and secrets** |
-| Enlace a la base de datos | El mismo proyecto → **Settings** → **Bindings** |
-| Dominios | El mismo proyecto → **Custom domains** |
-| Registros en vivo | El mismo proyecto → **Deployments** → un despliegue → **Functions** |
+| Variables y secretos | El mismo Worker → **Settings** → **Variables and Secrets** |
+| Base de datos y archivos | El mismo Worker → **Settings** → **Bindings** |
+| Dominios | El mismo Worker → **Settings** → **Domains & Routes** |
+| Configuración de compilación | El mismo Worker → **Settings** → **Build** |
+| Registros en vivo y errores | El mismo Worker → **Observability** (o **Logs**) |
 | Cliente de Google | console.cloud.google.com → APIs y servicios → **Credenciales** |
 
 ### Las estadísticas
@@ -259,6 +271,10 @@ arrancar y, si no la recibe, oculta todo lo relacionado con cuentas. Abre
 `/api/config`: si viene vacío, falta `GOOGLE_CLIENT_ID` o no has vuelto a
 desplegar después de añadirla.
 
+**Funcionaba y de pronto dejó de aparecer el botón.** Es lo que pasa si guardaste
+las variables como texto plano en lugar de como secretos: un despliegue las
+borra. Vuelve a crearlas como **Secret**.
+
 **La ventana de Google se cierra sola o da error de origen.** La dirección desde
 la que abres la app no está en los orígenes autorizados. Revisa que coincida
 exactamente, sin barra final, y con el mismo esquema y subdominio.
@@ -272,6 +288,9 @@ Comprueba el enlace `DB` en Bindings y que `SESSION_SECRET` exista.
 **Errores de tabla inexistente.** No has ejecutado `schema.sql` contra la base
 remota. Repite el paso 5 de la parte 2 con `--remote`.
 
+**El despliegue falla diciendo que falta el `database_id`.** No has completado el
+paso 3 de la parte 2, o no lo has subido al repositorio.
+
 **Todo el mundo pierde la sesión de golpe.** Has cambiado `SESSION_SECRET`. Es el
 comportamiento esperado: las sesiones antiguas dejan de ser válidas. Úsalo si
 alguna vez necesitas expulsar a todos.
@@ -283,8 +302,18 @@ alguna vez necesitas expulsar a todos.
 ```
 cp .dev.vars.example .dev.vars     # y rellena las dos variables
 wrangler d1 execute axioma --local --file=schema.sql
-wrangler pages dev . --port 8788
+wrangler dev --port 8788
 ```
 
 Recuerda tener `http://localhost:8788` entre los orígenes autorizados de Google.
 El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
+
+## Estructura del proyecto
+
+| Ruta | Qué es |
+| --- | --- |
+| `public/` | El juego: HTML, estilos, JavaScript, iconos y service worker |
+| `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
+| `src/api.js` | La API: sesión, puntuaciones y ranking |
+| `wrangler.toml` | Nombre, archivos estáticos y enlace a la base de datos |
+| `schema.sql` | Tablas de la base D1 |

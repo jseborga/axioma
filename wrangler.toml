@@ -1,7 +1,12 @@
-# Configuración de Cloudflare Pages para Axioma
+# Configuración del Worker de Axioma
 name = "axioma"
-pages_build_output_dir = "."
+main = "src/index.js"
 compatibility_date = "2026-01-01"
+
+# Archivos estáticos del juego (HTML, CSS, JavaScript, iconos)
+[assets]
+directory = "./public"
+binding = "ASSETS"
 
 # Base de datos D1 para usuarios y ranking.
 # Crea la base con `wrangler d1 create axioma` y pega aquí el database_id que devuelve.
