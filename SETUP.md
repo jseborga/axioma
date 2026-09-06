@@ -44,8 +44,9 @@ Anota esa URL: la necesitarás en la parte 3.
 > **Antes de este paso**, asegúrate de que la rama predeterminada del repositorio
 > en GitHub es `main` (Settings → General → Default branch).
 
-Este primer despliegue fallará o se desplegará sin base de datos hasta que
-completes la parte 2. Es normal.
+Este primer despliegue ya deja el juego publicado y jugable. El inicio de sesión
+y el ranking son opcionales y se activan en las partes 2 a 4; hasta entonces la
+app sencillamente no muestra nada de cuentas.
 
 ### Dominio propio (opcional)
 
@@ -77,8 +78,9 @@ vive en tu propia cuenta.
 
    La salida incluye un bloque con un `database_id`. Cópialo.
 
-3. Abre `wrangler.toml` en el repositorio y sustituye el texto de ejemplo por ese
-   identificador:
+3. Abre `wrangler.toml` en el repositorio. Al final hay un bloque comentado:
+   quítale el `#` a las cuatro líneas y pega el identificador que acabas de
+   copiar, de forma que quede así:
 
    ```toml
    [[d1_databases]]
@@ -86,6 +88,9 @@ vive en tu propia cuenta.
    database_name = "axioma"
    database_id = "aquí-el-id-que-te-dio-wrangler"
    ```
+
+   Mientras ese bloque siga comentado, la app se despliega sin ranking. Ese es su
+   estado inicial, para que el primer despliegue no falle.
 
 4. Guarda el cambio, confírmalo y súbelo a `main`. Cloudflare lee este archivo en
    cada despliegue, así que de aquí saca el enlace a la base de datos.
@@ -266,10 +271,11 @@ wrangler d1 export axioma --remote --output copia.sql
 
 ## Problemas frecuentes
 
-**El botón "Entrar" no aparece.** La app pregunta por su configuración al
-arrancar y, si no la recibe, oculta todo lo relacionado con cuentas. Abre
-`/api/config`: si viene vacío, falta `GOOGLE_CLIENT_ID` o no has vuelto a
-desplegar después de añadirla.
+**El botón "Entrar" no aparece.** La app solo lo muestra cuando las tres piezas
+están listas: el identificador de Google, la clave de sesión y la base de datos.
+Abre `/api/config`: si viene vacío, falta alguna. Repasa que el bloque de la base
+de datos en `wrangler.toml` esté descomentado, que las dos variables existan como
+secretos, y que hayas vuelto a desplegar después de añadirlas.
 
 **Funcionaba y de pronto dejó de aparecer el botón.** Es lo que pasa si guardaste
 las variables como texto plano en lugar de como secretos: un despliegue las
@@ -288,8 +294,10 @@ Comprueba el enlace `DB` en Bindings y que `SESSION_SECRET` exista.
 **Errores de tabla inexistente.** No has ejecutado `schema.sql` contra la base
 remota. Repite el paso 5 de la parte 2 con `--remote`.
 
-**El despliegue falla diciendo que falta el `database_id`.** No has completado el
-paso 3 de la parte 2, o no lo has subido al repositorio.
+**El despliegue falla con `binding DB of type d1 must have a valid database_id`.**
+Has descomentado el bloque de la base de datos pero dejaste el texto de ejemplo
+en su sitio. Pega el identificador real del paso 2, o vuelve a comentar el bloque
+si aún no quieres el ranking.
 
 **Todo el mundo pierde la sesión de golpe.** Has cambiado `SESSION_SECRET`. Es el
 comportamiento esperado: las sesiones antiguas dejan de ser válidas. Úsalo si

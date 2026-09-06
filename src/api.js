@@ -18,22 +18,27 @@ export async function handleApi(req,env,url){
   var path=url.pathname.replace(/^\/api/,"");
   try{
     if(path==="/config"&&req.method==="GET")
-      return json({googleClientId:env.GOOGLE_CLIENT_ID||""});
+      /* solo se anuncia el inicio de sesión cuando las tres piezas están listas,
+         para que el botón nunca aparezca si luego iría a fallar */
+      return json({googleClientId:ready(env)?env.GOOGLE_CLIENT_ID:""});
     if(path==="/me"&&req.method==="GET")
       return json({user:await currentUser(req,env)});
     if(path==="/auth/google"&&req.method==="POST")
-      return loginWithGoogle(req,env);
+      return await loginWithGoogle(req,env);
     if(path==="/auth/logout"&&req.method==="POST")
       return json({ok:true},{"Set-Cookie":COOKIE+"=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax"});
     if(path==="/scores"&&req.method==="POST")
-      return submitScore(req,env);
+      return await submitScore(req,env);
     if(path==="/ranking"&&req.method==="GET")
-      return ranking(req,env,url);
+      return await ranking(req,env,url);
     return json({error:"not_found"},null,404);
   }catch(e){
-    return json({error:"server_error",detail:String(e&&e.message||e)},null,500);
+    console.error("axioma api",path,e&&e.stack||e);   /* visible en Observability */
+    return json({error:"server_error"},null,500);
   }
 }
+
+function ready(env){return !!(env.GOOGLE_CLIENT_ID&&env.SESSION_SECRET&&env.DB)}
 
 /* ---------- respuestas ---------- */
 function json(body,extraHeaders,status){
@@ -89,8 +94,7 @@ async function currentUser(req,env){
 
 /* ---------- entrada con Google ---------- */
 async function loginWithGoogle(req,env){
-  if(!env.GOOGLE_CLIENT_ID||!env.SESSION_SECRET||!env.DB)
-    return json({error:"not_configured"},null,503);
+  if(!ready(env))return json({error:"not_configured"},null,503);
   var body=await req.json().catch(function(){return {}});
   if(!body.credential)return json({error:"missing_credential"},null,400);
 
