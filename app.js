@@ -353,6 +353,8 @@ function check(){
   if(!same){say("Alguna celda no encaja con esas reglas.","bad");return;}
   if(scope!==B.scope||shape!==B.shape){say("El tablero es correcto, pero el par de reglas no.","bad");return;}
   solved=true;
+  /* al resolver, las casillas sin decidir quedan descartadas: el tablero se cierra del todo */
+  for(var r=0;r<B.n;r++)for(var c=0;c<B.n;c++){var kk=key(r,c);if(!B.clues[kk]&&!marks[kk])marks[kk]=2;}
   var opt=optimum(), perfect=moves===opt;
   var vd=$("verdict");
   vd.hidden=false;
