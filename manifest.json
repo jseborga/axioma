@@ -1,0 +1,15 @@
+{
+  "name": "Axioma — deduce el tablero y la regla",
+  "short_name": "Axioma",
+  "description": "Un puzle diario de deducción pura. No solo resuelves el tablero: descubres qué regla lo gobierna.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "es",
+  "background_color": "#F3F4FA",
+  "theme_color": "#4F5BEF",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

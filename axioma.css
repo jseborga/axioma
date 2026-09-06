@@ -1,0 +1,231 @@
+/* ===========================================================
+   AXIOMA · hoja de estilos
+   Una app de puzles: tablero protagonista, controles táctiles,
+   jerarquía clara y una sola familia de color acento.
+   =========================================================== */
+:root{
+  --bg:#F3F4FA;
+  --surface:#FFFFFF;
+  --surface-2:#EAECF6;
+  --ink:#141A2E;
+  --ink-2:#5F6784;
+  --line:#DCDFEB;
+  --accent:#4F5BEF;
+  --accent-2:#7B6CFF;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#E6E8FF;
+  --ok:#159A5A;
+  --ok-soft:#DCF5E7;
+  --bad:#E4474D;
+  --bad-soft:#FDE3E4;
+  --warn:#F0A020;
+  --warn-soft:#FFF0D3;
+  --radius:16px;
+  --radius-s:10px;
+  --shadow:0 1px 2px rgba(20,26,46,.05),0 10px 30px -14px rgba(20,26,46,.25);
+  --shadow-cell:inset 0 -2px 0 rgba(20,26,46,.08);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0E1017; --surface:#171A25;
+    --surface-2:#1F2333; --ink:#EEF0F8; --ink-2:#9AA2BE; --line:#2A3042;
+    --accent:#7C86FF; --accent-2:#A08CFF; --accent-ink:#0E1017; --accent-soft:#262B4F;
+    --ok:#3DD68C; --ok-soft:#123421; --bad:#FF6F74; --bad-soft:#3D1B1F;
+    --warn:#FFBB4D; --warn-soft:#3C2B10;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px -14px rgba(0,0,0,.7);
+    --shadow-cell:inset 0 -2px 0 rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);
+  background-image:
+    radial-gradient(60% 40% at 50% -10%,var(--accent-soft) 0%,transparent 70%);
+  background-repeat:no-repeat;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:15px; line-height:1.5;
+  padding:max(12px,env(safe-area-inset-top)) 16px max(28px,env(safe-area-inset-bottom));
+  max-width:460px; margin:0 auto;
+  min-height:100dvh;
+}
+button{
+  font:inherit;color:inherit;cursor:pointer;background:var(--surface);
+  border:1.5px solid var(--line);border-radius:var(--radius-s);padding:12px 14px;
+  font-weight:600;transition:transform .08s ease,background-color .15s,border-color .15s,box-shadow .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+button:hover{border-color:var(--ink-2)}
+button:active{transform:scale(.97)}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default;transform:none}
+[hidden]{display:none!important}
+
+/* --- cabecera --- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 14px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:44px;height:44px;flex:none;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 8px 20px -8px var(--accent);display:grid;place-items:center}
+.logo svg{width:28px;height:28px;display:block}
+h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.14em;line-height:1.1}
+.tag{margin:2px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.3}
+.meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.badge{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:5px 10px;color:var(--ink-2)}
+.streak{font-size:12px;font-weight:700;color:var(--warn);display:inline-flex;align-items:center;gap:4px}
+.streak svg{width:13px;height:13px}
+
+/* --- selector de modo: control segmentado --- */
+.seg{display:flex;gap:4px;padding:4px;background:var(--surface-2);border-radius:999px;margin:0 0 16px}
+.seg button{flex:1;border:0;background:transparent;border-radius:999px;padding:9px 6px;
+  font-size:13.5px;font-weight:600;color:var(--ink-2)}
+.seg button:hover{border:0;color:var(--ink)}
+.seg button[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+/* --- tarjetas --- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:14px;margin:0 0 14px}
+
+/* --- reglas: dos ejes, opciones tipo pastilla --- */
+.axis{margin-bottom:12px}
+.axis:last-child{margin-bottom:0}
+.axis h2{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:700;margin:0 0 8px;letter-spacing:.01em}
+.axis h2 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;
+  background:var(--accent-soft);color:var(--accent);font-size:11.5px;font-weight:800;align-self:center}
+.axis h2 small{font-weight:500;color:var(--ink-2);font-size:12px}
+.chips{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px}
+.chip{position:relative;min-width:0;text-align:left;padding:9px 30px 9px 11px;line-height:1.2;
+  border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--radius-s)}
+.chip b{display:block;font-size:14px;font-weight:700}
+.chip i{font-style:normal;font-size:11.5px;color:var(--ink-2);display:block;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
+  box-shadow:0 0 0 1.5px var(--accent) inset}
+.chip[aria-pressed=true] i{color:var(--accent);opacity:.85}
+.chip .q{position:absolute;top:50%;right:7px;transform:translateY(-50%);width:20px;height:20px;padding:0;
+  border:1.5px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink-2);
+  font-size:11.5px;font-weight:800;line-height:1;display:grid;place-items:center}
+.chip[aria-pressed=true] .q{border-color:var(--accent);color:var(--accent);background:transparent}
+
+.helpbox{display:none;gap:12px;align-items:flex-start;background:var(--accent-soft);
+  border-radius:var(--radius-s);padding:12px;margin:12px 0 0}
+.helpbox.on{display:flex}
+.helpbox svg{flex:none;border-radius:8px;background:var(--surface)}
+.helpbox b{font-size:14px;display:block;margin-bottom:2px}
+.helpbox p{margin:0 0 8px;font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.helpbox button{padding:7px 12px;font-size:12.5px;border-color:var(--accent);color:var(--accent);background:transparent}
+
+/* --- zona de juego --- */
+.brief{font-size:13.5px;color:var(--ink-2);margin:0 0 12px;text-align:center;line-height:1.45}
+.brief strong{color:var(--ink)}
+.boardwrap{display:flex;justify-content:center;margin:0 0 12px}
+.board{--n:5;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px;
+  width:min(100%,340px);padding:8px;background:var(--surface-2);border-radius:14px}
+.cell{position:relative;aspect-ratio:1;border-radius:9px;background:var(--surface);
+  box-shadow:var(--shadow-cell);display:grid;place-items:center;cursor:pointer;
+  font-size:clamp(17px,5.4vw,22px);font-weight:800;font-variant-numeric:tabular-nums;
+  color:var(--ink);user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+  outline:none}
+.cell:focus-visible{box-shadow:0 0 0 3px var(--accent)}
+.cell.open:hover{background:var(--accent-soft)}
+.cell.full{background:linear-gradient(160deg,var(--accent),var(--accent-2));box-shadow:0 4px 10px -4px var(--accent)}
+.cell.void{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line)}
+.cell.void::before,.cell.void::after{content:"";position:absolute;width:38%;height:2px;border-radius:2px;
+  background:var(--ink-2);opacity:.55;top:50%;left:50%}
+.cell.void::before{transform:translate(-50%,-50%) rotate(45deg)}
+.cell.void::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.cell.clue{background:var(--surface);box-shadow:inset 0 0 0 2px var(--line);cursor:zoom-in}
+.cell.clue.sat{color:var(--ok);background:var(--ok-soft);box-shadow:inset 0 0 0 2px var(--ok)}
+.cell.clue.broken{color:var(--bad);background:var(--bad-soft);box-shadow:inset 0 0 0 2px var(--bad)}
+.cell.clue .mark{position:absolute;top:-4px;right:-4px;width:15px;height:15px;border-radius:50%;
+  display:grid;place-items:center;font-size:9px;font-weight:900;color:#fff;line-height:1}
+.cell.clue.sat .mark{background:var(--ok)}
+.cell.clue.broken .mark{background:var(--bad)}
+.cell.beam{box-shadow:inset 0 0 0 2px var(--accent);background:var(--accent-soft)}
+.cell.beam.full{box-shadow:0 0 0 2px var(--accent)}
+.cell.clue.beam{background:var(--accent);color:var(--accent-ink);box-shadow:0 0 0 2px var(--accent)}
+.cell.wrong{background:var(--bad-soft);box-shadow:inset 0 0 0 2px var(--bad)}
+.cell.wrong::before,.cell.wrong::after{content:"";position:absolute;width:38%;height:2.5px;border-radius:2px;
+  background:var(--bad);top:50%;left:50%}
+.cell.wrong::before{transform:translate(-50%,-50%) rotate(45deg)}
+.cell.wrong::after{transform:translate(-50%,-50%) rotate(-45deg)}
+
+/* --- progreso de pistas --- */
+.tally{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:12px;color:var(--ink-2);font-weight:600}
+.tally .marks{display:flex;gap:3px;flex:1}
+.tally b{display:block;flex:1;height:8px;border-radius:4px;background:var(--surface-2);transition:background-color .2s}
+.tally b.on{background:var(--ok)}
+.tally b.no{background:var(--bad)}
+.tally .count{font-variant-numeric:tabular-nums;color:var(--ink)}
+
+.verdict{font-size:15px;font-weight:800;margin:0 0 12px;color:var(--accent);text-align:center}
+
+.readout{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}
+.readout div{background:var(--surface-2);border-radius:var(--radius-s);padding:8px 10px;text-align:center}
+.readout small{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+.readout strong{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
+.readout strong.ok{color:var(--ok)} .readout strong.bad{color:var(--bad)}
+
+.msg{min-height:22px;font-size:13.5px;margin:0 0 12px;line-height:1.45;text-align:center;color:var(--ink-2)}
+.msg.good{color:var(--ok);font-weight:600} .msg.bad{color:var(--bad);font-weight:600}
+
+.actions{display:flex;gap:8px;margin-bottom:8px}
+.actions button{flex:1}
+.actions:last-child{margin-bottom:0}
+.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;
+  padding:14px;font-size:16px;font-weight:700;box-shadow:0 8px 20px -8px var(--accent)}
+.primary:hover{border-color:transparent;filter:brightness(1.06)}
+.ghost{background:transparent;color:var(--ink-2);font-weight:600;font-size:13.5px;padding:10px 12px}
+.ghost:hover{color:var(--ink)}
+#b-hint{border-color:var(--warn);color:var(--warn);background:var(--warn-soft);font-size:14px}
+#b-hint:hover{border-color:var(--warn);filter:brightness(.98)}
+#b-hint small{font-weight:700;opacity:.8}
+
+/* --- resultado --- */
+.result{display:none;background:linear-gradient(160deg,var(--accent),var(--accent-2));
+  color:#fff;border-radius:var(--radius);padding:16px;margin:0 0 14px;box-shadow:var(--shadow)}
+.result.on{display:block}
+.result h3{margin:0 0 6px;font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+.result pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;margin:0 0 12px;
+  white-space:pre-wrap;line-height:1.6;background:rgba(255,255,255,.14);border-radius:var(--radius-s);padding:10px 12px}
+.result .primary{background:#fff;color:var(--accent);box-shadow:none}
+
+/* --- cómo se juega --- */
+.how{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:0 14px;margin:0 0 14px}
+.how summary{cursor:pointer;font-weight:700;font-size:14px;padding:12px 0;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.how summary::-webkit-details-marker{display:none}
+.how summary::after{content:"+";font-size:18px;color:var(--ink-2);font-weight:600}
+.how[open] summary::after{content:"–"}
+.how ol{margin:0 0 12px;padding-left:20px;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+.how li{margin-bottom:6px}
+.how li strong{color:var(--ink)}
+.how .legend{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 14px;font-size:12.5px;color:var(--ink-2)}
+.how .legend span{display:inline-flex;align-items:center;gap:6px}
+.how .sw{width:16px;height:16px;border-radius:5px;display:inline-block;box-shadow:inset 0 0 0 1.5px var(--line)}
+.how .sw.full{background:linear-gradient(160deg,var(--accent),var(--accent-2));box-shadow:none}
+.how .sw.clue{background:var(--surface);box-shadow:inset 0 0 0 2px var(--line)}
+.how .sw.void{position:relative}
+.how .sw.void::before{content:"×";position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:var(--ink-2);line-height:1}
+
+footer{margin-top:6px;font-size:11.5px;color:var(--ink-2);line-height:1.6;text-align:center}
+
+/* --- movimiento --- */
+@media (prefers-reduced-motion:no-preference){
+  .cell{transition:background-color .15s ease,box-shadow .15s ease,color .15s ease,transform .1s ease}
+  .cell:active{transform:scale(.93)}
+  .cell.stamp{animation:stamp .22s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes stamp{0%{transform:scale(.75)}100%{transform:scale(1)}}
+  .cell.wave{animation:wave .45s ease both;animation-delay:var(--d,0ms)}
+  @keyframes wave{0%{transform:scale(1)}40%{transform:scale(.9)}100%{transform:scale(1)}}
+  .verdict{animation:rise .4s ease both}
+  .result.on{animation:rise .45s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg.bad{animation:shake .3s ease}
+  @keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+}
