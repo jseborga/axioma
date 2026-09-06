@@ -1,0 +1,10 @@
+# Cabeceras para Cloudflare Pages: el HTML y el service worker se revalidan siempre,
+# el resto de archivos puede cachearse (el sw.js controla su propia versión).
+/index.html
+  Cache-Control: no-cache
+/
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/manifest.json
+  Cache-Control: no-cache
