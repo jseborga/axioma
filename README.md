@@ -67,49 +67,17 @@ La primera vez te pedirá crear el proyecto. Los despliegues siguientes son el m
 
 ## Cuenta con Google y ranking (opcional)
 
-El juego no exige cuenta. Si activas esta parte, aparece un botón **Entrar** en la cabecera y, al resolver el reto diario, el resultado entra en un ranking. Necesitas tres cosas: un cliente OAuth de Google, una base D1 y dos variables de entorno.
+El juego no exige cuenta. Si activas esta parte, aparece un botón **Entrar** en la
+cabecera y, al resolver el reto diario, el resultado entra en un ranking. Hacen
+falta tres cosas: un cliente OAuth de Google, una base de datos D1 y dos variables
+de entorno.
 
-### 1. Cliente OAuth en Google
-
-1. Ve a [console.cloud.google.com](https://console.cloud.google.com), crea un proyecto y entra en **APIs y servicios → Pantalla de consentimiento OAuth**. Tipo **Externo**, rellena nombre y correo, y guarda.
-2. En **Credenciales → Crear credenciales → ID de cliente de OAuth**, tipo **Aplicación web**.
-3. En **Orígenes de JavaScript autorizados** añade la URL de tu app, por ejemplo `https://axioma.pages.dev`, tu dominio propio si lo tienes, y `http://localhost:8788` para pruebas locales. No hace falta ninguna URI de redirección.
-4. Copia el **ID de cliente** (termina en `.apps.googleusercontent.com`).
-
-### 2. Base de datos D1
-
-```
-wrangler login
-wrangler d1 create axioma
-```
-
-Pega el `database_id` que devuelve en `wrangler.toml` y crea las tablas:
-
-```
-wrangler d1 execute axioma --remote --file=schema.sql
-```
-
-### 3. Variables de entorno en Cloudflare Pages
-
-En el proyecto de Pages: **Settings → Variables and Secrets**, añade para *Production* (y *Preview* si quieres):
-
-| Variable | Valor |
-| --- | --- |
-| `GOOGLE_CLIENT_ID` | el ID de cliente del paso 1 |
-| `SESSION_SECRET` | una cadena larga y aleatoria (por ejemplo `openssl rand -base64 48`) |
-
-Y en **Settings → Bindings** comprueba que la base D1 está enlazada con el nombre `DB` (si despliegas con `wrangler.toml` en el repositorio, el binding se crea solo).
-
-Con el siguiente despliegue el botón **Entrar** aparecerá en la cabecera. Si alguna de las tres piezas falta, la app sigue funcionando sin cuentas.
-
-### Pruebas en local
-
-```
-cp .dev.vars.example .dev.vars        # y rellena las variables
-wrangler d1 execute axioma --local --file=schema.sql
-wrangler pages dev . --port 8788
-```
+**El paso a paso completo, incluidas las consultas de estadísticas y los fallos
+más comunes, está en [SETUP.md](SETUP.md).**
 
 ### Qué se guarda
 
-Solo el identificador de Google, nombre, foto, correo y las puntuaciones del reto diario (movidas y pistas por día). La sesión es una cookie firmada de 30 días; no hay contraseñas. Se conserva el mejor resultado de cada día por jugador.
+Solo el identificador de Google, nombre, foto, correo y las puntuaciones del reto
+diario (movidas y pistas por día). La sesión es una cookie firmada de 30 días; no
+hay contraseñas. Se conserva el mejor resultado de cada día por jugador. La racha
+personal vive únicamente en el navegador de cada jugador.
