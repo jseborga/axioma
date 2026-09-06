@@ -1,0 +1,3 @@
+# Copia este archivo a .dev.vars para desarrollo local (wrangler pages dev)
+GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
+SESSION_SECRET=una-cadena-larga-y-aleatoria

@@ -1,0 +1,11 @@
+# Configuración de Cloudflare Pages para Axioma
+name = "axioma"
+pages_build_output_dir = "."
+compatibility_date = "2026-01-01"
+
+# Base de datos D1 para usuarios y ranking.
+# Crea la base con `wrangler d1 create axioma` y pega aquí el database_id que devuelve.
+[[d1_databases]]
+binding = "DB"
+database_name = "axioma"
+database_id = "PEGA-AQUI-EL-ID-DE-TU-BASE"

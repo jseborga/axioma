@@ -4,7 +4,7 @@
 /* ---------- reglas ---------- */
 var SCOPES=["ORTO","REY","RAYO"], SHAPES=["CADENA","AISLADO","PAREJAS"];
 var SNAME={ORTO:["Orto","4 lados"],REY:["Rey","8 vecinos"],RAYO:["Rayo","en línea"]};
-var HNAME={CADENA:["Cadena","todo unido"],AISLADO:["Aislado","sin tocarse"],PAREJAS:["Parejas","grupos de 2"]};
+var HNAME={CADENA:["Cadena","todo unido"],AISLADO:["Aislado","sin tocarse"],PAREJAS:["Parejas","en pares"]};
 var EXPL={
  ORTO:"Cuenta solo las cuatro casillas que la tocan por un lado. Las diagonales no cuentan.",
  REY:"Cuenta las ocho casillas que la rodean, diagonales incluidas.",
@@ -360,7 +360,8 @@ function check(){
   vd.hidden=false;
   vd.textContent="El axioma era "+SNAME[B.scope][0]+" con "+HNAME[B.shape][0]+".";
   say("Resuelto en "+moves+" movidas"+(perfect?". ¡Partida perfecta!":" (el mínimo es "+opt+")."),"good");
-  if(mode==="day"){recordStreak();renderStreak();}
+  if(mode==="day"){recordStreak();renderStreak();
+    if(window.AxAccount)AxAccount.onDailySolved({day:dayNumber(),moves:moves,hints:hintsUsed});}
   if(mode==="free")$("b-new").textContent="Siguiente nivel";
   buildShare(perfect);
   render();

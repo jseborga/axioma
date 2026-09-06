@@ -1,6 +1,6 @@
 /* Axioma · service worker: la app entera queda en caché y funciona sin conexión */
-var CACHE="axioma-v2";
-var FILES=["./","./index.html","./axioma.css","./app.js","./manifest.json","./icon.svg"];
+var CACHE="axioma-v3";
+var FILES=["./","./index.html","./axioma.css","./app.js","./account.js","./manifest.json","./icon.svg"];
 
 self.addEventListener("install",function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(FILES);}).then(function(){return self.skipWaiting();}));
@@ -12,6 +12,8 @@ self.addEventListener("activate",function(e){
 });
 self.addEventListener("fetch",function(e){
   if(e.request.method!=="GET")return;
+  var u=new URL(e.request.url);
+  if(u.origin!==location.origin||u.pathname.indexOf("/api/")===0)return;
   e.respondWith(caches.match(e.request).then(function(hit){
     return hit||fetch(e.request).then(function(res){
       var copy=res.clone();

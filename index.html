@@ -39,13 +39,18 @@
     </div>
   </div>
   <div class="meta">
-    <span class="badge" id="hdr">—</span>
+    <div class="meta-row">
+      <span id="acct" hidden><button class="acct" id="acct-btn" type="button"></button></span>
+      <span class="badge" id="hdr">—</span>
+    </div>
     <span class="streak" id="streak" hidden>
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 2s.5 3.5-2 6c-1.6 1.6-3 3-3 6a5.5 5.5 0 0 0 11 0c0-2.2-1-3.7-2-5 0 1.5-.8 2.5-1.8 2.8C16 9.5 15.5 4.5 13.5 2z"/></svg>
       <span id="streak-n">0</span> días
     </span>
   </div>
 </header>
+
+<section class="panel acct-panel" id="acct-panel" hidden aria-label="Cuenta"></section>
 
 <nav class="seg" role="tablist" aria-label="Modo de juego">
   <button role="tab" id="t-day" aria-selected="true">Diario</button>
@@ -99,7 +104,10 @@
   <div class="actions" style="margin:0">
     <button class="primary" id="b-share">Compartir resultado</button>
   </div>
+  <div class="rank-note" id="rank-note" hidden></div>
 </section>
+
+<section class="panel ranking" id="ranking" hidden aria-live="polite"></section>
 
 <details class="how">
   <summary>Cómo se juega</summary>
@@ -122,5 +130,6 @@
 </footer>
 
 <script src="app.js"></script>
+<script src="account.js"></script>
 </body>
 </html>
