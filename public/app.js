@@ -183,8 +183,35 @@ var MODES={
 };
 var mode="day", B=null, marks={}, scope=null, shape=null, beam=null,
     moves=0, solved=false, hintsUsed=0, freeLevel=1, wave=false, stamped=null;
+/* cronómetro: arranca con la primera jugada y se detiene al resolver */
+var ms=0, desde=0, corriendo=false, latido=null, restaurado=false;
 
 function $(id){return document.getElementById(id)}
+
+function transcurrido(){return ms+(corriendo?Date.now()-desde:0);}
+function reloj(t){
+  var seg=Math.floor(t/1000), h=Math.floor(seg/3600), m=Math.floor(seg%3600/60), s2=seg%60;
+  var dd=function(x){return x<10?"0"+x:""+x};
+  return h?(h+":"+dd(m)+":"+dd(s2)):(m+":"+dd(s2));
+}
+function pintaTiempo(){var e=$("r-time"); if(e)e.textContent=reloj(transcurrido());}
+function arranca(){
+  if(corriendo||solved)return;
+  corriendo=true; desde=Date.now();
+  latido=setInterval(pintaTiempo,1000);
+}
+function detiene(){
+  if(!corriendo)return;
+  ms+=Date.now()-desde; corriendo=false;
+  if(latido){clearInterval(latido);latido=null;}
+  pintaTiempo();
+}
+function ceroReloj(){detiene(); ms=0; pintaTiempo();}
+/* al ocultar la pestaña se pausa, para que no cuente el tiempo fuera del juego */
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden)detiene();
+  else if(!solved&&moves>0)arranca();
+});
 
 function dayNumber(){
   var epoch=Date.UTC(2026,0,1);
@@ -192,13 +219,22 @@ function dayNumber(){
 }
 function store(k,v){try{if(v===undefined)return localStorage.getItem("ax_"+k);localStorage.setItem("ax_"+k,v);}catch(e){return null}}
 
+/* registro del reto diario: permite recuperar la partida al volver a entrar */
+function registroDia(){
+  try{var r=JSON.parse(store("done")||"null"); return (r&&r.day===dayNumber())?r:null;}catch(e){return null}
+}
+function guardaRegistro(){
+  if(mode!=="day"||registroDia())return;          /* solo el primer resultado del día */
+  try{store("done",JSON.stringify({day:dayNumber(),moves:moves,hints:hintsUsed,ms:transcurrido()}));}catch(e){}
+}
+
 function optimum(){return B.k+(B.scopes.length>1?1:0)+(B.shapes.length>1?1:0);}
 
 function renderStreak(){
   var s=parseInt(store("streak")||"0",10), last=store("last"), today=dayNumber();
   var alive=s>0&&(last===String(today)||last===String(today-1));
   $("streak").hidden=!(mode==="day"&&alive);
-  $("streak-n").textContent=s;
+  $("streak-n").textContent=s+(s===1?" día":" días");
 }
 
 function newBoard(){
@@ -211,10 +247,12 @@ function newBoard(){
          scopes:freeLevel<2?["ORTO"]:(freeLevel<4?["ORTO","REY"]:SCOPES),
          shapes:freeLevel<3?["CADENA","AISLADO"]:SHAPES};
   } else {RNG=Math.random;}
+  try{var fl=parseInt(store("level")||"1",10); if(mode==="free"&&freeLevel<fl)freeLevel=fl;}catch(e){}
   var b=null,tries=0;
   while(!b&&tries<3){b=buildBoard(cfg);tries++;}
   if(!b)b=buildBoard(MODES.flash);
   B=b; marks={}; beam=null; moves=0; solved=false; hintsUsed=0; wave=false; stamped=null;
+  ceroReloj(); restaurado=false;
   $("verdict").hidden=true;
   scope=B.scopes.length===1?B.scopes[0]:null;
   shape=B.shapes.length===1?B.shapes[0]:null;
@@ -230,7 +268,20 @@ function newBoard(){
     ? ("Marca las <strong>"+B.k+" celdas llenas</strong> que cumplen todas las pistas.")
     : ("Marca <strong>"+B.k+" celdas llenas</strong> y descubre cuál de las <strong>"+combos+" combinaciones</strong> de reglas es la única posible.");
   $("b-new").textContent = mode==="free"&&solved ? "Siguiente nivel" : "Otro tablero";
-  renderStreak(); renderChips(); render();
+  /* si el reto de hoy ya se resolvió, se recupera tal como quedó */
+  var rec=(mode==="day")?registroDia():null;
+  if(rec){
+    scope=B.scope; shape=B.shape;
+    for(var rr=0;rr<B.n;rr++)for(var cc=0;cc<B.n;cc++){
+      var kk=key(rr,cc); if(!B.clues[kk])marks[kk]=B.sol[kk]?1:2;
+    }
+    moves=rec.moves; hintsUsed=rec.hints||0; ms=rec.ms||0; solved=true; restaurado=true;
+    var vd=$("verdict"); vd.hidden=false;
+    vd.textContent="El axioma era "+SNAME[B.scope][0]+" con "+HNAME[B.shape][0]+".";
+    say("Ya resolviste el reto de hoy. Vuelve mañana para el siguiente.","good");
+    buildShare(moves===optimum());
+  }
+  renderStreak(); renderChips(); render(); pintaTiempo();
 }
 
 function renderChips(){
@@ -244,7 +295,7 @@ function renderChips(){
       b.addEventListener("click",function(ev){
         if(ev.target.classList.contains("q")){showHelp(id);return;}
         if(solved||current===id)return;
-        set(id); moves++; wave=true; renderChips(); render();
+        set(id); moves++; arranca(); wave=true; renderChips(); render();
       });
       host.appendChild(b);
     });
@@ -318,7 +369,7 @@ function render(){
         for(q=0;q<lit.length;q++)if(key(lit[q][0],lit[q][1])===k)el.className+=" beam";
       }
       (function(kk){el.addEventListener("click",function(){
-        if(solved)return; marks[kk]=((marks[kk]||0)+1)%3; moves++; stamped=kk; render();});})(k);
+        if(solved)return; marks[kk]=((marks[kk]||0)+1)%3; moves++; arranca(); stamped=kk; render();});})(k);
     }
     host.appendChild(el);
   }
@@ -335,6 +386,7 @@ function render(){
   rf.textContent=fc+" / "+B.k;
   rf.className=fc>B.k?"bad":fc===B.k?"ok":"";
   $("r-moves").textContent=moves;
+  pintaTiempo();
   var out=$("r-shape"),F=filledSet();
   if(!shape||!fc){out.textContent="—";out.className="";}
   else if(shapeHolds(F,shape)){out.textContent="cumple";out.className="ok";}
@@ -347,21 +399,25 @@ function say(text,kind){
 }
 
 function check(){
+  if(solved){say("Ya está resuelto.","good");return;}
   if(!scope||!shape){say("Elige una regla de cada eje antes de comprobar.","bad");return;}
   if(filledCount()!==B.k){say("Necesitas exactamente "+B.k+" celdas llenas.","bad");return;}
   var F=filledSet(), same=Object.keys(B.sol).every(function(k){return F[k];});
   if(!same){say("Alguna celda no encaja con esas reglas.","bad");return;}
   if(scope!==B.scope||shape!==B.shape){say("El tablero es correcto, pero el par de reglas no.","bad");return;}
-  solved=true;
+  solved=true; detiene();
   /* al resolver, las casillas sin decidir quedan descartadas: el tablero se cierra del todo */
   for(var r=0;r<B.n;r++)for(var c=0;c<B.n;c++){var kk=key(r,c);if(!B.clues[kk]&&!marks[kk])marks[kk]=2;}
   var opt=optimum(), perfect=moves===opt;
   var vd=$("verdict");
   vd.hidden=false;
   vd.textContent="El axioma era "+SNAME[B.scope][0]+" con "+HNAME[B.shape][0]+".";
-  say("Resuelto en "+moves+" movidas"+(perfect?". ¡Partida perfecta!":" (el mínimo es "+opt+")."),"good");
+  say("Resuelto en "+moves+" movidas y "+reloj(transcurrido())+
+      (perfect?". ¡Partida perfecta!":" (el mínimo es "+opt+" movidas)."),"good");
+  guardaRegistro();
+  if(mode==="free"){try{store("level",String(freeLevel));}catch(e){}}
   if(mode==="day"){recordStreak();renderStreak();
-    if(window.AxAccount)AxAccount.onDailySolved({day:dayNumber(),moves:moves,hints:hintsUsed});}
+    if(window.AxAccount)AxAccount.onDailySolved({day:dayNumber(),moves:moves,hints:hintsUsed,seconds:Math.round(transcurrido()/1000)});}
   if(mode==="free")$("b-new").textContent="Siguiente nivel";
   buildShare(perfect);
   render();
@@ -380,16 +436,16 @@ function buildShare(perfect){
   var bar=""; for(var i=0;i<Math.min(opt,10);i++)bar+="■";
   for(i=0;i<Math.min(Math.max(extra,0),6);i++)bar+="□";
   var head=mode==="day"?("Axioma nº "+dayNumber()):(mode==="flash"?"Axioma Flash":"Axioma libre · nivel "+freeLevel);
-  var txt=head+"\n"+bar+"\n"+moves+" movidas · mínimo "+opt+
+  var txt=head+"\n"+bar+"\n"+moves+" movidas · "+reloj(transcurrido())+" · mínimo "+opt+
           (perfect?" · perfecta":"")+(hintsUsed?" · "+hintsUsed+" pista"+(hintsUsed>1?"s":""):"")+
-          (streak?"\nRacha: "+streak+" días":"");
+          (streak?"\nRacha: "+streak+(streak===1?" día":" días"):"");
   $("share-text").textContent=txt;
   $("result").classList.add("on");
 }
 
 function hint(){
   if(solved)return;
-  hintsUsed++; moves+=3;
+  hintsUsed++; moves+=3; arranca();
   if(!scope||!shape){
     var dead=[],i,j;
     for(i=0;i<B.scopes.length;i++)for(j=0;j<B.shapes.length;j++)
@@ -428,7 +484,7 @@ $("t-free").onclick=function(){setMode("free");};
 $("b-check").onclick=check;
 $("b-hint").onclick=hint;
 $("b-reset").onclick=function(){
-  marks={};moves=0;solved=false;beam=null;
+  marks={};moves=0;solved=false;beam=null;ceroReloj();
   scope=B.scopes.length===1?B.scopes[0]:null;
   shape=B.shapes.length===1?B.shapes[0]:null;
   $("result").classList.remove("on");

@@ -204,6 +204,33 @@ que permita una deducción inmediata, y la resalta:
 
 Si ninguna cumple, avisa de que no hay deducción directa disponible.
 
+## Cronómetro
+
+Se mide el tiempo empleado, además de las movidas:
+
+- Arranca con la **primera jugada**, no al abrir el tablero, para que mirar el
+  tablero sin decidir nada no penalice.
+- Se **pausa al ocultar la pestaña** y se reanuda al volver, de modo que el tiempo
+  fuera del juego no cuenta.
+- Se detiene al resolver.
+- Se muestra como `m:ss`, y como `h:mm:ss` si se pasa de la hora.
+
+El tiempo no afecta a la validez de la solución ni al mínimo teórico; es solo un
+dato de la partida.
+
+## Registro del reto diario
+
+Al resolver el reto diario se guarda en el dispositivo el día, las movidas, las
+pistas usadas y el tiempo. Al volver a abrir el juego ese mismo día, el tablero se
+recupera resuelto: se muestra la solución, el par de reglas correcto, las movidas y
+el tiempo empleados, y el resultado compartible.
+
+Solo se guarda el **primer** resultado del día. Se puede reiniciar el tablero y
+volver a jugarlo, pero el registro no cambia, porque rejugarlo con la solución ya
+conocida no es comparable.
+
+El modo Libre guarda además el nivel alcanzado.
+
 ## Racha y resultado compartible
 
 La racha cuenta días consecutivos resolviendo el reto diario, guardada en el
@@ -214,7 +241,7 @@ Formato del texto para compartir:
 ```
 Axioma nº 250
 ■■■■■■■■□□
-9 movidas · mínimo 8 · 1 pista
+9 movidas · 3:12 · mínimo 8 · 1 pista
 Racha: 4 días
 ```
 

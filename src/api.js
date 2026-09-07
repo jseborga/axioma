@@ -125,16 +125,26 @@ async function submitScore(req,env){
   if(!user)return json({error:"unauthorized"},null,401);
   var body=await req.json().catch(function(){return {}});
   var day=parseInt(body.day,10), moves=parseInt(body.moves,10), hints=parseInt(body.hints,10)||0;
+  var seconds=parseInt(body.seconds,10); if(!(seconds>=0)||seconds>86400)seconds=0;
   var today=dayNumber();
   if(!(day>=1)||day>today||day<today-1)return json({error:"bad_day"},null,400);   /* hoy o ayer (husos horarios) */
   if(!(moves>=1)||moves>999||hints<0||hints>99)return json({error:"bad_score"},null,400);
   var now=Math.floor(Date.now()/1000);
   /* Se conserva el mejor resultado del día: menos movidas, y a igualdad menos pistas */
-  await env.DB.prepare(
-    "INSERT INTO scores(user_id,day,moves,hints,created_at) VALUES(?,?,?,?,?) "+
-    "ON CONFLICT(user_id,day) DO UPDATE SET moves=excluded.moves,hints=excluded.hints,created_at=excluded.created_at "+
-    "WHERE excluded.moves<scores.moves OR (excluded.moves=scores.moves AND excluded.hints<scores.hints)"
-  ).bind(user.id,day,moves,hints,now).run();
+  try{
+    await env.DB.prepare(
+      "INSERT INTO scores(user_id,day,moves,hints,seconds,created_at) VALUES(?,?,?,?,?,?) "+
+      "ON CONFLICT(user_id,day) DO UPDATE SET moves=excluded.moves,hints=excluded.hints,seconds=excluded.seconds,created_at=excluded.created_at "+
+      "WHERE excluded.moves<scores.moves OR (excluded.moves=scores.moves AND excluded.hints<scores.hints)"
+    ).bind(user.id,day,moves,hints,seconds,now).run();
+  }catch(e){
+    /* base creada antes de existir la columna de tiempo: se guarda sin ella */
+    await env.DB.prepare(
+      "INSERT INTO scores(user_id,day,moves,hints,created_at) VALUES(?,?,?,?,?) "+
+      "ON CONFLICT(user_id,day) DO UPDATE SET moves=excluded.moves,hints=excluded.hints,created_at=excluded.created_at "+
+      "WHERE excluded.moves<scores.moves OR (excluded.moves=scores.moves AND excluded.hints<scores.hints)"
+    ).bind(user.id,day,moves,hints,now).run();
+  }
   var me=await myRank(env,user.id,day);
   return json({ok:true,day:day,me:me});
 }

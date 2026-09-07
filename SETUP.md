@@ -238,6 +238,10 @@ SELECT COUNT(*) AS usuarios FROM users;
 SELECT date(created_at,'unixepoch') AS dia, COUNT(*) AS altas
 FROM users GROUP BY dia ORDER BY dia DESC LIMIT 14;
 
+-- Tiempo medio de quienes lo resolvieron (requiere la columna seconds)
+SELECT day AS reto, COUNT(*) AS jugadores, ROUND(AVG(seconds)/60.0,1) AS minutos_medios
+FROM scores WHERE seconds>0 GROUP BY day ORDER BY day DESC LIMIT 14;
+
 -- Participación y mejor marca de cada reto
 SELECT day AS reto, COUNT(*) AS jugadores,
        MIN(moves) AS mejor, ROUND(AVG(moves),1) AS media,
@@ -260,6 +264,19 @@ FROM scores a JOIN scores b ON b.user_id=a.user_id AND b.day=a.day+1;
 ```
 
 El número de reto empieza en 1 el 1 de enero de 2026 y sube uno cada día.
+
+### Guardar también el tiempo empleado
+
+Las bases creadas antes de esta función no tienen la columna del tiempo. El juego
+funciona igual, sencillamente no lo guarda. Para activarlo, ejecuta una vez en la
+consola de D1:
+
+```sql
+ALTER TABLE scores ADD COLUMN seconds INTEGER NOT NULL DEFAULT 0;
+```
+
+La API detecta sola si la columna existe, así que puedes hacerlo cuando quieras
+y sin riesgo de romper el ranking.
 
 ### Copia de seguridad
 

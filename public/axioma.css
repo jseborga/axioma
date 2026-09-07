@@ -82,7 +82,8 @@ h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.0
 .seg button[aria-selected=true]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.04)}
 
 /* --- disposición: una columna en el móvil, dos en pantallas anchas --- */
-.layout{display:grid;gap:0;grid-template-areas:"seg" "side" "main"}
+.layout{display:grid;gap:0;grid-template-areas:"seg" "side" "main" "extra"}
+.extra{grid-area:extra;min-width:0}
 .side{grid-area:side;min-width:0}
 .main{grid-area:main;min-width:0}
 .seg{grid-area:seg}
@@ -160,10 +161,11 @@ h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.0
 
 .verdict{font-size:15px;font-weight:600;margin:0 0 12px;color:var(--accent);text-align:center;letter-spacing:-.01em}
 
-.readout{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}
-.readout div{background:var(--inset);border-radius:var(--r-el);padding:10px 8px;text-align:center}
-.readout small{display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
-.readout strong{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.25;letter-spacing:-.02em}
+.readout{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 12px}
+@media (max-width:400px){.readout{grid-template-columns:repeat(2,1fr);gap:8px}}
+.readout div{background:var(--inset);border-radius:var(--r-el);padding:10px 6px;text-align:center;min-width:0}
+.readout small{display:block;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.readout strong{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.25;letter-spacing:-.02em}
 .readout strong.ok{color:var(--ok)} .readout strong.bad{color:var(--bad)}
 
 .msg{min-height:22px;font-size:14px;margin:0 0 12px;line-height:1.4;text-align:center;color:var(--ink-2)}
@@ -325,7 +327,8 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
   .logo svg{width:31px;height:31px}
 
   .layout{grid-template-columns:300px minmax(0,1fr);column-gap:24px;
-    grid-template-areas:"side seg" "side main";grid-template-rows:auto 1fr;align-items:start}
+    grid-template-areas:"side seg" "side main" "extra main";
+    grid-template-rows:auto auto 1fr;align-items:start}
 
   /* la barra lateral se queda a la vista al desplazar */
   .side{position:sticky;top:20px}
@@ -348,6 +351,7 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
   .board{width:min(100%,420px);gap:7px;padding:10px}
   .cell{font-size:24px;border-radius:13px}
   .brief{font-size:15.5px}
+  .readout{grid-template-columns:repeat(4,1fr);gap:8px}
   .readout strong{font-size:21px}
 
   .how-btn{padding:14px 16px;font-size:15px}
