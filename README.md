@@ -27,6 +27,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `public/axioma.css` | Estilos (tema claro y oscuro) |
 | `public/app.js` | Generador, verificador y lógica de juego |
 | `public/account.js` | Entrada con Google y ranking (solo si el backend está configurado) |
+| `public/tutorial.js` | Tutorial guiado con ejemplos, se abre en la primera visita |
 | `public/sw.js` | Service worker para uso sin conexión |
 | `public/manifest.json`, `public/icon.svg` | Instalación como app |
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |

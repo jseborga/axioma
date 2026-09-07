@@ -109,20 +109,7 @@
 
 <section class="panel ranking" id="ranking" hidden aria-live="polite"></section>
 
-<details class="how">
-  <summary>Cómo se juega</summary>
-  <ol>
-    <li><strong>Toca una casilla</strong> para marcarla llena; tócala otra vez para descartarla y una tercera para dejarla libre.</li>
-    <li><strong>Los números son pistas:</strong> dicen cuántas llenas hay en su alcance. Tócalos para ver qué casillas cubren.</li>
-    <li><strong>Elige una regla de cada eje.</strong> Solo una combinación tiene una única solución: esa es el axioma.</li>
-    <li><strong>Comprueba</strong> cuando tengas todas las llenas. Cada pista cuesta 3 movidas.</li>
-  </ol>
-  <div class="legend">
-    <span><i class="sw full"></i> Llena</span>
-    <span><i class="sw void"></i> Descartada</span>
-    <span><i class="sw clue"></i> Pista</span>
-  </div>
-</details>
+<button class="how-btn" id="b-how">Cómo se juega<span aria-hidden="true"></span></button>
 
 <section class="install" id="install" hidden aria-label="Instalar la aplicación"></section>
 
@@ -131,7 +118,10 @@
   Funciona sin conexión y no pide ninguna cuenta.
 </footer>
 
+<div class="tut" id="tut" aria-hidden="true"></div>
+
 <script src="app.js"></script>
+<script src="tutorial.js"></script>
 <script src="account.js"></script>
 </body>
 </html>
