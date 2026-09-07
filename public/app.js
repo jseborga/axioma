@@ -260,8 +260,8 @@ function sampleSvg(id){
   else SAMPLE[id].forEach(function(p){hi[key(p[0],p[1])]=1;});
   out.push('<svg width="94" height="94" viewBox="0 0 '+(n*s+2)+' '+(n*s+2)+'" aria-hidden="true">');
   for(r=0;r<n;r++)for(c=0;c<n;c++){
-    var x=1+c*s,y=1+r*s,k=key(r,c),fill="var(--surface-2)",stroke="none";
-    if(isScope&&clues[k]){fill="var(--surface)";stroke="var(--ink-2)";}
+    var x=1+c*s,y=1+r*s,k=key(r,c),fill="var(--inset-2)",stroke="none";
+    if(isScope&&clues[k]){fill="var(--card)";stroke="var(--ink-2)";}
     else if(hi[k]){fill="var(--accent)";stroke="none";}
     out.push('<rect x="'+(x+1.5)+'" y="'+(y+1.5)+'" width="'+(s-3)+'" height="'+(s-3)+'" rx="3" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5"/>');
     if(isScope&&k===key(2,2))out.push('<text x="'+(x+s/2)+'" y="'+(y+s/2+3.5)+'" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ink)">3</text>');

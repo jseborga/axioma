@@ -1,5 +1,5 @@
 /* Axioma · service worker: la app entera queda en caché y funciona sin conexión */
-var CACHE="axioma-v3";
+var CACHE="axioma-v4";
 var FILES=["./","./index.html","./axioma.css","./app.js","./account.js","./manifest.json","./icon.svg"];
 
 self.addEventListener("install",function(e){

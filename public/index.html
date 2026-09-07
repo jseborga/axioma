@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Axioma — deduce el tablero y la regla</title>
 <meta name="description" content="Un puzle diario de deducción pura. No solo resuelves el tablero: descubres qué regla lo gobierna. Sin azar, sin adivinar, sin cuenta.">
-<meta name="theme-color" content="#F3F4FA" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0E1017" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
@@ -22,19 +22,19 @@
   <div class="brand">
     <div class="logo" aria-hidden="true">
       <svg viewBox="0 0 28 28" fill="none">
-        <rect x="3" y="3" width="6.5" height="6.5" rx="1.6" fill="#fff"/>
-        <rect x="10.75" y="3" width="6.5" height="6.5" rx="1.6" fill="#fff" opacity=".35"/>
-        <rect x="18.5" y="3" width="6.5" height="6.5" rx="1.6" fill="#fff"/>
-        <rect x="3" y="10.75" width="6.5" height="6.5" rx="1.6" fill="#fff" opacity=".35"/>
-        <rect x="10.75" y="10.75" width="6.5" height="6.5" rx="1.6" fill="#fff"/>
-        <rect x="18.5" y="10.75" width="6.5" height="6.5" rx="1.6" fill="#fff" opacity=".35"/>
-        <rect x="3" y="18.5" width="6.5" height="6.5" rx="1.6" fill="#fff"/>
-        <rect x="10.75" y="18.5" width="6.5" height="6.5" rx="1.6" fill="#fff" opacity=".35"/>
-        <rect x="18.5" y="18.5" width="6.5" height="6.5" rx="1.6" fill="#fff"/>
+        <rect x="3" y="3" width="6.5" height="6.5" rx="1.6"/>
+        <rect x="10.75" y="3" width="6.5" height="6.5" rx="1.6" opacity=".3"/>
+        <rect x="18.5" y="3" width="6.5" height="6.5" rx="1.6"/>
+        <rect x="3" y="10.75" width="6.5" height="6.5" rx="1.6" opacity=".3"/>
+        <rect x="10.75" y="10.75" width="6.5" height="6.5" rx="1.6"/>
+        <rect x="18.5" y="10.75" width="6.5" height="6.5" rx="1.6" opacity=".3"/>
+        <rect x="3" y="18.5" width="6.5" height="6.5" rx="1.6"/>
+        <rect x="10.75" y="18.5" width="6.5" height="6.5" rx="1.6" opacity=".3"/>
+        <rect x="18.5" y="18.5" width="6.5" height="6.5" rx="1.6"/>
       </svg>
     </div>
     <div>
-      <h1>AXIOMA</h1>
+      <h1>Axioma</h1>
       <p class="tag">Deduce el tablero. Descubre la regla.</p>
     </div>
   </div>
@@ -99,7 +99,7 @@
 </section>
 
 <section class="result" id="result" aria-live="polite">
-  <h3>🏆 Tablero resuelto</h3>
+  <h3>Resuelto</h3>
   <pre id="share-text"></pre>
   <div class="actions" style="margin:0">
     <button class="primary" id="b-share">Compartir resultado</button>

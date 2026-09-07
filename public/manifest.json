@@ -7,8 +7,8 @@
   "display": "standalone",
   "orientation": "portrait",
   "lang": "es",
-  "background_color": "#F3F4FA",
-  "theme_color": "#4F5BEF",
+  "background_color": "#F2F2F7",
+  "theme_color": "#007AFF",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
