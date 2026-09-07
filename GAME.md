@@ -67,8 +67,16 @@ Un conjunto vacío **no cumple ninguna forma**.
 | Flash | 4 | 4 | 5 | Orto, Rey | Cadena |
 | Libre | según nivel | según nivel | según nivel | según nivel | según nivel |
 
-El modo **Libre** progresa con el nivel `L`, que empieza en 1 y sube en uno cada
-vez que se resuelve un tablero y se pide otro:
+En el modo **Libre** el jugador elige la dificultad, que fija el nivel `L`:
+
+| Dificultad | Nivel | Tablero | Llenas | Combinaciones de reglas |
+| --- | --- | --- | --- | --- |
+| Fácil | 1 | 4×4 | 5 | 2 |
+| Medio | 3 | 5×5 | 6 | 6 |
+| Difícil | 5 | 5×5 | 8 | 9 |
+
+La elección se guarda en el dispositivo. Los parámetros salen de estas fórmulas
+generales sobre el nivel `L`:
 
 | Parámetro | Fórmula |
 | --- | --- |
@@ -229,7 +237,7 @@ Solo se guarda el **primer** resultado del día. Se puede reiniciar el tablero y
 volver a jugarlo, pero el registro no cambia, porque rejugarlo con la solución ya
 conocida no es comparable.
 
-El modo Libre guarda además el nivel alcanzado.
+El modo Libre guarda además la dificultad elegida.
 
 ## Racha y resultado compartible
 

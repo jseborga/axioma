@@ -38,18 +38,22 @@
       <p class="tag">Deduce el tablero. Descubre la regla.</p>
     </div>
   </div>
+
   <div class="meta">
-    <div class="meta-row">
-      <button class="iconbtn" data-how type="button" aria-label="Cómo se juega" title="Cómo se juega">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.1 9a3 3 0 1 1 4.2 2.7c-.8.4-1.3 1.1-1.3 2V14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="currentColor"/></svg>
+    <div class="modewrap">
+      <button class="modebtn" id="mode-btn" type="button" aria-haspopup="true" aria-expanded="false">
+        <span id="mode-label">Diario</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <span id="acct" hidden><button class="acct" id="acct-btn" type="button"></button></span>
-      <span class="badge" id="hdr">—</span>
+      <div class="modemenu" id="mode-menu" role="menu" hidden>
+        <button role="menuitemradio" id="t-day"   aria-checked="true"  type="button"><b>Diario</b><small>El reto de hoy, igual para todos</small></button>
+        <button role="menuitemradio" id="t-flash" aria-checked="false" type="button"><b>Flash</b><small>Partida corta en un tablero de 4×4</small></button>
+        <button role="menuitemradio" id="t-free"  aria-checked="false" type="button"><b>Libre</b><small>Los que quieras, tú eliges la dificultad</small></button>
+      </div>
     </div>
-    <span class="streak" id="streak" hidden>
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 2s.5 3.5-2 6c-1.6 1.6-3 3-3 6a5.5 5.5 0 0 0 11 0c0-2.2-1-3.7-2-5 0 1.5-.8 2.5-1.8 2.8C16 9.5 15.5 4.5 13.5 2z"/></svg>
-      <span id="streak-n">0 días</span>
-    </span>
+    <button class="iconbtn" data-how type="button" aria-label="Cómo se juega" title="Cómo se juega">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.1 9a3 3 0 1 1 4.2 2.7c-.8.4-1.3 1.1-1.3 2V14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="currentColor"/></svg>
+    </button>
   </div>
 </header>
 
@@ -57,76 +61,93 @@
 
 <div class="layout">
 
-<nav class="seg" role="tablist" aria-label="Modo de juego">
-  <button role="tab" id="t-day" aria-selected="true">Diario</button>
-  <button role="tab" id="t-flash" aria-selected="false">Flash</button>
-  <button role="tab" id="t-free" aria-selected="false">Libre</button>
-</nav>
+<aside class="col-left">
 
-<aside class="side">
+  <section class="panel diff" id="diff" hidden aria-label="Dificultad">
+    <h2>Dificultad</h2>
+    <div class="seg" id="diff-seg" role="radiogroup" aria-label="Dificultad">
+      <button role="radio" data-level="1" aria-checked="true"  type="button">Fácil</button>
+      <button role="radio" data-level="3" aria-checked="false" type="button">Medio</button>
+      <button role="radio" data-level="5" aria-checked="false" type="button">Difícil</button>
+    </div>
+  </section>
 
-<section class="panel" id="rules" aria-label="Reglas del tablero">
-  <div class="axis" id="ax-scope">
-    <h2><span class="n">1</span>Alcance <small>· qué cuenta cada pista</small></h2>
-    <div class="chips" id="chips-scope"></div>
-  </div>
-  <div class="axis" id="ax-shape">
-    <h2><span class="n">2</span>Forma <small>· cómo se agrupan las llenas</small></h2>
-    <div class="chips" id="chips-shape"></div>
-  </div>
-  <div class="helpbox" id="help"></div>
-</section>
+  <section class="panel" id="rules" aria-label="Reglas del tablero">
+    <div class="axis" id="ax-scope">
+      <h2><span class="n">1</span>Alcance <small>· qué cuenta cada pista</small></h2>
+      <div class="chips" id="chips-scope"></div>
+    </div>
+    <div class="axis" id="ax-shape">
+      <h2><span class="n">2</span>Forma <small>· cómo se agrupan las llenas</small></h2>
+      <div class="chips" id="chips-shape"></div>
+    </div>
+    <div class="helpbox" id="help"></div>
+  </section>
+
+  <button class="how-btn" data-how>Cómo se juega<span aria-hidden="true"></span></button>
+
+  <section class="panel status" aria-label="Estado">
+    <div class="status-row">
+      <div class="status-id">
+        <small id="status-cap">Reto diario</small>
+        <span class="badge" id="hdr">—</span>
+      </div>
+      <span class="streak" id="streak" hidden>
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 2s.5 3.5-2 6c-1.6 1.6-3 3-3 6a5.5 5.5 0 0 0 11 0c0-2.2-1-3.7-2-5 0 1.5-.8 2.5-1.8 2.8C16 9.5 15.5 4.5 13.5 2z"/></svg>
+        <span id="streak-n">0 días</span>
+      </span>
+    </div>
+    <span id="acct" hidden><button class="acct" id="acct-btn" type="button"></button></span>
+  </section>
+
+  <section class="install" id="install" hidden aria-label="Instalar la aplicación"></section>
 
 </aside>
 
-<div class="extra">
-<button class="how-btn" data-how>Cómo se juega<span aria-hidden="true"></span></button>
-<section class="install" id="install" hidden aria-label="Instalar la aplicación"></section>
-</div>
+<main class="col-center">
 
-<main class="main">
+  <section class="panel board-panel" aria-label="Tablero">
+    <p class="brief" id="brief">Deduce qué celdas están llenas y, a la vez, qué regla gobierna el tablero.</p>
+    <div class="boardwrap"><div class="board" id="board"></div></div>
+    <div class="tally">
+      <span>Pistas cerradas</span>
+      <span class="marks" id="tally"></span>
+      <span class="count" id="tally-n">0/0</span>
+    </div>
+    <p class="verdict" id="verdict" hidden></p>
 
-<section class="panel" aria-label="Tablero">
-  <p class="brief" id="brief">Deduce qué celdas están llenas y, a la vez, qué regla gobierna el tablero.</p>
-  <div class="boardwrap"><div class="board" id="board"></div></div>
-  <div class="tally">
-    <span>Pistas cerradas</span>
-    <span class="marks" id="tally"></span>
-    <span class="count" id="tally-n">0/0</span>
-  </div>
-  <p class="verdict" id="verdict" hidden></p>
+    <div class="readout">
+      <div><small>Llenas</small><strong id="r-fill">0 / 0</strong></div>
+      <div><small>Forma</small><strong id="r-shape">—</strong></div>
+      <div><small>Movidas</small><strong id="r-moves">0</strong></div>
+      <div><small>Tiempo</small><strong id="r-time">0:00</strong></div>
+    </div>
 
-  <div class="readout">
-    <div><small>Llenas</small><strong id="r-fill">0 / 0</strong></div>
-    <div><small>Forma</small><strong id="r-shape">—</strong></div>
-    <div><small>Movidas</small><strong id="r-moves">0</strong></div>
-    <div><small>Tiempo</small><strong id="r-time">0:00</strong></div>
-  </div>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </section>
 
-  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  <section class="result" id="result" aria-live="polite">
+    <h3>Resuelto</h3>
+    <pre id="share-text"></pre>
+    <div class="actions" style="margin:0">
+      <button class="primary" id="b-share">Compartir resultado</button>
+    </div>
+    <div class="rank-note" id="rank-note" hidden></div>
+  </section>
 
-  <div class="actions">
-    <button class="primary" id="b-check">Comprobar</button>
-    <button id="b-hint">Pista <small>+3</small></button>
-  </div>
-  <div class="actions">
-    <button class="ghost" id="b-reset">Reiniciar</button>
-    <button class="ghost" id="b-new">Otro tablero</button>
-  </div>
-</section>
-
-<section class="result" id="result" aria-live="polite">
-  <h3>Resuelto</h3>
-  <pre id="share-text"></pre>
-  <div class="actions" style="margin:0">
-    <button class="primary" id="b-share">Compartir resultado</button>
-  </div>
-  <div class="rank-note" id="rank-note" hidden></div>
-</section>
-
-<section class="panel ranking" id="ranking" hidden aria-live="polite"></section>
+  <section class="panel ranking" id="ranking" hidden aria-live="polite"></section>
 
 </main>
+
+<aside class="col-right">
+  <section class="panel acts" aria-label="Acciones">
+    <button class="primary" id="b-check">Comprobar</button>
+    <button id="b-hint">Pista <small>+3</small></button>
+    <div class="acts-sep"></div>
+    <button class="ghost" id="b-reset">Reiniciar</button>
+    <button class="ghost" id="b-new">Otro tablero</button>
+  </section>
+</aside>
 
 </div>
 

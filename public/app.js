@@ -181,6 +181,7 @@ var MODES={
   flash:{n:4,k:4,clues:5,scopes:["ORTO","REY"],shapes:["CADENA"]},
   free :{n:5,k:6,clues:7,scopes:["ORTO","REY"],shapes:["CADENA","AISLADO"]}
 };
+var DIFF={1:"Fácil",3:"Medio",5:"Difícil"};
 var mode="day", B=null, marks={}, scope=null, shape=null, beam=null,
     moves=0, solved=false, hintsUsed=0, freeLevel=1, wave=false, stamped=null;
 /* cronómetro: arranca con la primera jugada y se detiene al resolver */
@@ -247,7 +248,6 @@ function newBoard(){
          scopes:freeLevel<2?["ORTO"]:(freeLevel<4?["ORTO","REY"]:SCOPES),
          shapes:freeLevel<3?["CADENA","AISLADO"]:SHAPES};
   } else {RNG=Math.random;}
-  try{var fl=parseInt(store("level")||"1",10); if(mode==="free"&&freeLevel<fl)freeLevel=fl;}catch(e){}
   var b=null,tries=0;
   while(!b&&tries<3){b=buildBoard(cfg);tries++;}
   if(!b)b=buildBoard(MODES.flash);
@@ -263,11 +263,12 @@ function newBoard(){
   $("rules").hidden=B.scopes.length<=1&&B.shapes.length<=1;
   $("help").classList.remove("on");
   var combos=B.scopes.length*B.shapes.length;
-  $("hdr").textContent = mode==="day"?("Nº "+dayNumber()) : mode==="flash"?"Flash" : ("Nivel "+freeLevel);
+  $("hdr").textContent = mode==="day"?("Nº "+dayNumber()) : mode==="flash"?(B.n+"×"+B.n) : (DIFF[freeLevel]||"Libre");
+  $("status-cap").textContent = mode==="day"?"Reto diario" : mode==="flash"?"Partida rápida" : "Modo libre";
   $("brief").innerHTML = combos===1
     ? ("Marca las <strong>"+B.k+" celdas llenas</strong> que cumplen todas las pistas.")
     : ("Marca <strong>"+B.k+" celdas llenas</strong> y descubre cuál de las <strong>"+combos+" combinaciones</strong> de reglas es la única posible.");
-  $("b-new").textContent = mode==="free"&&solved ? "Siguiente nivel" : "Otro tablero";
+  $("b-new").textContent = "Otro tablero";
   /* si el reto de hoy ya se resolvió, se recupera tal como quedó */
   var rec=(mode==="day")?registroDia():null;
   if(rec){
@@ -281,6 +282,7 @@ function newBoard(){
     say("Ya resolviste el reto de hoy. Vuelve mañana para el siguiente.","good");
     buildShare(moves===optimum());
   }
+  $("diff").hidden = mode!=="free";
   renderStreak(); renderChips(); render(); pintaTiempo();
 }
 
@@ -415,7 +417,6 @@ function check(){
   say("Resuelto en "+moves+" movidas y "+reloj(transcurrido())+
       (perfect?". ¡Partida perfecta!":" (el mínimo es "+opt+" movidas)."),"good");
   guardaRegistro();
-  if(mode==="free"){try{store("level",String(freeLevel));}catch(e){}}
   if(mode==="day"){recordStreak();renderStreak();
     if(window.AxAccount)AxAccount.onDailySolved({day:dayNumber(),moves:moves,hints:hintsUsed,seconds:Math.round(transcurrido()/1000)});}
   if(mode==="free")$("b-new").textContent="Siguiente nivel";
@@ -474,13 +475,44 @@ function hint(){
 function setMode(m){
   mode=m;
   ["day","flash","free"].forEach(function(x){
-    $("t-"+x).setAttribute("aria-selected",x===m?"true":"false");
+    $("t-"+x).setAttribute("aria-checked",x===m?"true":"false");
   });
+  $("mode-label").textContent=MODOS[m];
   newBoard();
 }
-$("t-day").onclick=function(){setMode("day");};
-$("t-flash").onclick=function(){setMode("flash");};
-$("t-free").onclick=function(){setMode("free");};
+var MODOS={day:"Diario",flash:"Flash",free:"Libre"};
+var menu=$("mode-menu"), mbtn=$("mode-btn");
+function abreMenu(v){
+  menu.hidden=!v; mbtn.setAttribute("aria-expanded",v?"true":"false");
+}
+mbtn.onclick=function(e){e.stopPropagation();abreMenu(menu.hidden);};
+document.addEventListener("click",function(e){
+  if(!menu.hidden && !menu.contains(e.target) && e.target!==mbtn) abreMenu(false);
+});
+document.addEventListener("keydown",function(e){ if(e.key==="Escape")abreMenu(false); });
+["day","flash","free"].forEach(function(m){
+  $("t-"+m).onclick=function(){abreMenu(false);setMode(m);};
+});
+
+/* dificultad del modo libre */
+try{var fl=parseInt(store("level")||"1",10); if(DIFF[fl])freeLevel=fl;}catch(e){}
+function pintaDificultad(){
+  var bs=$("diff-seg").querySelectorAll("[data-level]"),i;
+  for(i=0;i<bs.length;i++)
+    bs[i].setAttribute("aria-checked", (+bs[i].getAttribute("data-level")===freeLevel)?"true":"false");
+}
+(function(){
+  var bs=$("diff-seg").querySelectorAll("[data-level]"),i;
+  for(i=0;i<bs.length;i++)(function(b){
+    b.onclick=function(){
+      var lvl=+b.getAttribute("data-level");
+      if(lvl===freeLevel&&mode==="free")return;
+      freeLevel=lvl; try{store("level",String(lvl));}catch(e){}
+      pintaDificultad(); setMode("free");
+    };
+  })(bs[i]);
+})();
+pintaDificultad();
 $("b-check").onclick=check;
 $("b-hint").onclick=hint;
 $("b-reset").onclick=function(){
@@ -492,7 +524,6 @@ $("b-reset").onclick=function(){
   say("");renderChips();render();};
 $("b-new").onclick=function(){
   if(mode==="day"){say("El tablero diario es el mismo para todo el mundo. Prueba Libre o Flash.");return;}
-  if(mode==="free"&&solved)freeLevel++;
   newBoard();};
 $("b-share").onclick=function(){
   var txt=$("share-text").textContent+"\n"+location.href;

@@ -65,30 +65,77 @@ button:disabled{opacity:.4;cursor:default;transform:none}
 .logo svg rect{fill:var(--fill-ink)}
 h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
 .tag{margin:3px 0 0;font-size:14px;color:var(--ink-2);line-height:1.3}
-.meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none;padding-top:4px}
-.meta-row{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px}
-.iconbtn{width:32px;height:32px;padding:0;border-radius:50%;background:var(--inset-2);color:var(--ink-2);
+.meta{display:flex;align-items:center;gap:8px;flex:none}
+.iconbtn{width:34px;height:34px;padding:0;border-radius:50%;background:var(--inset-2);color:var(--ink-2);
   display:grid;place-items:center;flex:none}
 .iconbtn svg{width:19px;height:19px;display:block}
 .iconbtn:hover{background:var(--accent-tint);color:var(--accent)}
-.badge{font-size:13px;font-weight:600;color:var(--ink-2);background:var(--inset-2);border-radius:999px;padding:5px 11px;letter-spacing:0}
-.streak{font-size:13px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:4px}
-.streak svg{width:13px;height:13px;color:#FF9F0A}
 
-/* --- control segmentado nativo --- */
-.seg{display:flex;gap:2px;padding:2px;background:var(--inset-2);border-radius:10px;margin:0 0 16px}
+.badge{font-size:13px;font-weight:600;color:var(--ink-2);background:var(--inset-2);
+  border-radius:999px;padding:5px 11px;letter-spacing:0}
+.streak{font-size:13px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px;flex:none}
+.streak svg{width:14px;height:14px;color:#FF9F0A;flex:none;display:block}
+
+/* --- desplegable de modo --- */
+.modewrap{position:relative}
+.modebtn{display:inline-flex;align-items:center;gap:5px;padding:8px 9px 8px 14px;border-radius:999px;
+  background:var(--inset-2);color:var(--ink);font-size:14.5px;font-weight:600}
+.modebtn svg{width:16px;height:16px;display:block;transition:transform .2s}
+.modebtn[aria-expanded=true] svg{transform:rotate(180deg)}
+.modebtn:hover{background:var(--accent-tint);color:var(--accent)}
+.modemenu{position:absolute;top:calc(100% + 8px);right:0;z-index:40;width:min(84vw,270px);
+  background:var(--card);border-radius:18px;padding:6px;
+  box-shadow:0 10px 34px rgba(0,0,0,.18),0 0 0 .5px var(--hair)}
+.modemenu button{display:block;width:100%;text-align:left;background:transparent;border-radius:12px;
+  padding:10px 12px;color:var(--ink)}
+.modemenu button b{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.modemenu button small{display:block;font-size:12.5px;color:var(--ink-2);margin-top:2px;font-weight:400;line-height:1.3}
+.modemenu button:hover{background:var(--inset)}
+.modemenu button[aria-checked=true]{background:var(--accent-tint);color:var(--accent)}
+.modemenu button[aria-checked=true] small{color:var(--accent);opacity:.85}
+@media (prefers-reduced-motion:no-preference){
+  .modemenu{animation:pop .16s cubic-bezier(.2,.9,.3,1) both}
+  @keyframes pop{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+}
+
+/* --- control segmentado nativo --- *//* --- control segmentado nativo --- */
+.seg{display:flex;gap:2px;padding:2px;background:var(--inset-2);border-radius:10px;margin:0}
 .seg button{flex:1;background:transparent;border-radius:8px;padding:8px 6px;font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
 .seg button:active{transform:none;opacity:.7}
-.seg button[aria-selected=true]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.04)}
+.seg button[aria-selected=true],.seg button[aria-checked=true]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.04)}
 
-/* --- disposición: una columna en el móvil, dos en pantallas anchas --- */
-.layout{display:grid;gap:0;grid-template-areas:"seg" "side" "main" "extra"}
-.extra{grid-area:extra;min-width:0}
-.side{grid-area:side;min-width:0}
-.main{grid-area:main;min-width:0}
-.seg{grid-area:seg}
+/* --- disposición: una sola columna en el móvil, tres en pantallas anchas.
+       En móvil las columnas desaparecen (display:contents) y cada tarjeta
+       se coloca por su propio orden. --- */
+.layout{display:flex;flex-direction:column}
+.col-left,.col-center,.col-right{display:contents}
+.status{order:0}
+.diff{order:1}
+#rules{order:2}
+.board-panel{order:3}
+.acts{order:4}
+.result{order:5}
+.ranking{order:6}
+.how-btn{order:7}
+.install{order:8}
 
-/* --- tarjetas --- */
+/* --- tarjeta de estado: reto, racha y cuenta --- */
+.status{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
+.status-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;flex:1}
+.status-id{display:flex;flex-direction:column;gap:2px;min-width:0}
+.status-id small{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.status .badge{background:transparent;padding:0;font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.status .acct{flex:none}
+
+/* --- dificultad --- */
+.diff h2{margin:0 0 8px;padding:0 2px;font-size:12px;font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-2)}
+
+/* --- acciones --- */
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px}
+.acts-sep{display:none}
+
+/* --- tarjetas --- *//* --- tarjetas --- */
 .panel{background:var(--card);border-radius:var(--r-card);padding:16px;margin:0 0 14px}
 
 /* --- reglas: cabecera pequeña en mayúsculas y opciones tipo lista --- */
@@ -318,7 +365,7 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
    tablero queda centrado en el espacio que queda libre.
    =========================================================== */
 @media (min-width:900px){
-  body{max-width:1040px;padding-left:28px;padding-right:28px}
+  body{max-width:1180px;padding-left:28px;padding-right:28px}
 
   .top{margin:14px 0 20px;align-items:center}
   h1{font-size:34px}
@@ -326,13 +373,22 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
   .logo{width:52px;height:52px;border-radius:14px}
   .logo svg{width:31px;height:31px}
 
-  .layout{grid-template-columns:300px minmax(0,1fr);column-gap:24px;
-    grid-template-areas:"side seg" "side main" "extra main";
-    grid-template-rows:auto auto 1fr;align-items:start}
+  .layout{display:grid;grid-template-columns:288px minmax(0,1fr) 224px;column-gap:20px;align-items:start}
+  .col-left,.col-center,.col-right{display:block}
 
-  /* la barra lateral se queda a la vista al desplazar */
-  .side{position:sticky;top:20px}
-  .side .panel{margin-bottom:12px}
+  /* las columnas laterales acompañan al desplazamiento */
+  .col-left,.col-right{position:sticky;top:20px}
+  .col-left>*,.col-right>*{margin-bottom:12px}
+
+  /* la tarjeta de estado se despliega en dos líneas, con más aire */
+  .status{flex-direction:column;align-items:stretch;gap:12px;padding:16px}
+  .status-row{justify-content:space-between}
+  .status .acct{width:100%;justify-content:center;padding:9px 12px}
+
+  /* las acciones se apilan en la columna derecha */
+  .acts{grid-template-columns:1fr;gap:8px;padding:16px}
+  .acts-sep{display:block;height:1px;background:var(--hair);margin:4px 0}
+  .acts .primary{padding:14px}
 
   /* las opciones de regla se apilan y ganan aire */
   .chips{grid-auto-flow:row;gap:6px}
@@ -345,16 +401,15 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
   .helpbox{flex-direction:column;align-items:center;text-align:center}
   .helpbox svg{align-self:center}
 
-  /* columna principal: todo centrado y con una anchura cómoda de lectura */
-  .seg{width:100%;max-width:520px;justify-self:center}
-  .main>*{max-width:520px;margin-left:auto;margin-right:auto}
+  /* columna central: el tablero centrado y con una anchura cómoda */
+  .col-center>*{max-width:540px;margin-left:auto;margin-right:auto}
   .board{width:min(100%,420px);gap:7px;padding:10px}
   .cell{font-size:24px;border-radius:13px}
   .brief{font-size:15.5px}
   .readout{grid-template-columns:repeat(4,1fr);gap:8px}
   .readout strong{font-size:21px}
 
-  .how-btn{padding:14px 16px;font-size:15px}
+  .how-btn{padding:14px 16px;font-size:15px;width:100%}
   .install{flex-direction:column;align-items:flex-start;gap:10px}
   .install .primary{width:100%}
 
