@@ -30,6 +30,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `public/tutorial.js` | Tutorial guiado con ejemplos, se abre en la primera visita |
 | `public/sw.js` | Service worker para uso sin conexión |
 | `public/manifest.json`, `public/icon.svg` | Instalación como app |
+| `public/como-jugar.svg` | Guía visual del procedimiento, paso a paso |
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
 | `src/api.js` | API: sesión, puntuaciones y ranking |
 | `schema.sql` | Tablas de la base de datos D1 |
@@ -40,6 +41,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | Documento | Contenido |
 | --- | --- |
 | [SETUP.md](SETUP.md) | Puesta en marcha: Cloudflare, base de datos, inicio de sesión y estadísticas |
+| [COMO-JUGAR.md](COMO-JUGAR.md) | Qué es el juego, cómo empezar y una guía visual paso a paso |
 | [GAME.md](GAME.md) | Especificación exacta de las reglas, los modos y la generación de tableros |
 | [ANDROID.md](ANDROID.md) | Publicar en Android, empaquetando la web o como app nativa |
 
