@@ -120,37 +120,38 @@ h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.0
 .install{order:8}
 
 /* --- tarjeta de estado: reto, racha y cuenta --- */
-.status{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
+.status{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px;margin:0 0 10px}
 .status-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;flex:1}
-.status-id{display:flex;flex-direction:column;gap:2px;min-width:0}
+.status-id{display:flex;align-items:baseline;gap:8px;min-width:0}
 .status-id small{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
-.status .badge{background:transparent;padding:0;font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.status .badge{background:transparent;padding:0;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
 .status .acct{flex:none}
 
 /* --- dificultad --- */
-.diff h2{margin:0 0 8px;padding:0 2px;font-size:12px;font-weight:600;letter-spacing:.04em;
+.diff{margin:0 0 10px}
+.diff h2{margin:0 0 6px;padding:0 4px;font-size:11px;font-weight:600;letter-spacing:.05em;
   text-transform:uppercase;color:var(--ink-2)}
 
 /* --- acciones --- */
-.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;margin:0 0 10px}
 .acts-sep{display:none}
 
 /* --- tarjetas --- *//* --- tarjetas --- */
-.panel{background:var(--card);border-radius:var(--r-card);padding:16px;margin:0 0 14px}
+.panel{background:var(--card);border-radius:var(--r-card);padding:14px;margin:0 0 10px}
 
 /* --- reglas: cabecera pequeña en mayúsculas y opciones tipo lista --- */
-.axis{margin-bottom:14px}
+.axis{margin-bottom:11px}
 .axis:last-child,#ax-shape{margin-bottom:0}
-.axis h2{display:flex;align-items:baseline;gap:6px;margin:0 0 8px;padding:0 2px;
-  font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2)}
+.axis h2{display:flex;align-items:baseline;gap:6px;margin:0 0 6px;padding:0 2px;
+  font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2)}
 .axis h2 .n{display:none}
 .axis h2 small{font-weight:500;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink-3)}
 .chips{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px}
-.chip{position:relative;min-width:0;text-align:left;padding:10px 12px;line-height:1.2;
+.chip{position:relative;min-width:0;text-align:left;padding:8px 10px;line-height:1.2;
   background:var(--inset);color:var(--ink);border-radius:var(--r-el);box-shadow:inset 0 0 0 1.5px transparent;
   transition:background-color .15s,box-shadow .15s,transform .12s}
-.chip b{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
-.chip i{font-style:normal;font-size:12px;color:var(--ink-2);display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip b{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em}
+.chip i{font-style:normal;font-size:11.5px;color:var(--ink-2);display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip[aria-pressed=true]{background:var(--accent-tint);box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--accent)}
 .chip[aria-pressed=true] i{color:var(--accent);opacity:.8}
 .chip .q{position:absolute;top:-6px;right:-6px;width:18px;height:18px;padding:0;border-radius:50%;
@@ -167,9 +168,9 @@ h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.0
 .helpbox button{padding:7px 12px;font-size:13.5px;background:var(--card)}
 
 /* --- zona de juego --- */
-.brief{font-size:15px;color:var(--ink-2);margin:0 0 14px;text-align:center;line-height:1.4}
+.brief{font-size:14px;color:var(--ink-2);margin:0 0 10px;text-align:center;line-height:1.4}
 .brief strong{color:var(--ink);font-weight:600}
-.boardwrap{display:flex;justify-content:center;margin:0 0 14px}
+.boardwrap{display:flex;justify-content:center;margin:0 0 10px}
 .board{--n:5;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px;
   width:min(100%,340px);padding:8px;background:var(--inset);border-radius:18px}
 .cell{position:relative;aspect-ratio:1;border-radius:var(--r-cell);background:var(--card);
@@ -199,7 +200,7 @@ h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.0
 .cell.wrong::after{transform:translate(-50%,-50%) rotate(-45deg)}
 
 /* --- progreso --- */
-.tally{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:13px;color:var(--ink-2);font-weight:500}
+.tally{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:13px;color:var(--ink-2);font-weight:500}
 .tally .marks{display:flex;gap:3px;flex:1}
 .tally b{display:block;flex:1;height:6px;border-radius:3px;background:var(--inset-2);transition:background-color .2s}
 .tally b.on{background:var(--ok)}
@@ -208,14 +209,13 @@ h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.0
 
 .verdict{font-size:15px;font-weight:600;margin:0 0 12px;color:var(--accent);text-align:center;letter-spacing:-.01em}
 
-.readout{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 12px}
-@media (max-width:400px){.readout{grid-template-columns:repeat(2,1fr);gap:8px}}
-.readout div{background:var(--inset);border-radius:var(--r-el);padding:10px 6px;text-align:center;min-width:0}
+.readout{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:0 0 10px}
+.readout div{background:var(--inset);border-radius:var(--r-el);padding:8px 4px;text-align:center;min-width:0}
 .readout small{display:block;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
-.readout strong{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.25;letter-spacing:-.02em}
+.readout strong{font-size:17.5px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.25;letter-spacing:-.02em}
 .readout strong.ok{color:var(--ok)} .readout strong.bad{color:var(--bad)}
 
-.msg{min-height:22px;font-size:14px;margin:0 0 12px;line-height:1.4;text-align:center;color:var(--ink-2)}
+.msg{min-height:20px;font-size:14px;margin:0 0 2px;line-height:1.4;text-align:center;color:var(--ink-2)}
 .msg.good{color:var(--ok);font-weight:600} .msg.bad{color:var(--bad);font-weight:600}
 
 .actions{display:flex;gap:8px;margin-bottom:8px}
@@ -380,10 +380,20 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
   .col-left,.col-right{position:sticky;top:20px}
   .col-left>*,.col-right>*{margin-bottom:12px}
 
-  /* la tarjeta de estado se despliega en dos líneas, con más aire */
-  .status{flex-direction:column;align-items:stretch;gap:12px;padding:16px}
+  /* estado y dificultad vuelven a ser tarjetas, con más aire */
+  .status,.diff{background:var(--card);border-radius:var(--r-card);padding:16px}
+  .status{flex-direction:column;align-items:stretch;gap:12px}
+  .status-id{flex-direction:column;align-items:flex-start;gap:2px}
+  .status-id small{font-size:10.5px}
+  .status .badge{font-size:17px}
   .status-row{justify-content:space-between}
   .status .acct{width:100%;justify-content:center;padding:9px 12px}
+  .diff h2{padding:0 2px;margin-bottom:8px;font-size:12px}
+  .readout{gap:8px}
+  .readout div{padding:10px 8px}
+  .readout small{font-size:10.5px;letter-spacing:.06em}
+  .brief{font-size:15px;margin-bottom:14px}
+  .msg{margin-bottom:2px}
 
   /* las acciones se apilan en la columna derecha */
   .acts{grid-template-columns:1fr;gap:8px;padding:16px}
@@ -428,4 +438,22 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
   .how-btn:hover{background:var(--inset)}
   .cell.clue:hover{background:var(--inset)}
   .seg button:hover{color:var(--ink)}
+}
+
+/* --- móviles: cabecera al mínimo para que el tablero y los indicadores
+       quepan juntos en pantalla sin desplazar --- */
+@media (max-width:899px){
+  /* las acciones no necesitan tarjeta propia: se apoyan en el fondo */
+  .acts{background:transparent;padding:0;margin:2px 0 12px;gap:8px}
+}
+
+@media (max-width:560px){
+  body{padding-top:max(8px,env(safe-area-inset-top))}
+  .top{margin:2px 0 12px;align-items:center}
+  .tag{display:none}
+  h1{font-size:26px}
+  .logo{width:40px;height:40px;border-radius:11px}
+  .logo svg{width:24px;height:24px}
+  .modebtn{padding:7px 8px 7px 12px;font-size:14px}
+  .iconbtn{width:32px;height:32px}
 }
