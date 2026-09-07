@@ -35,6 +35,14 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `schema.sql` | Tablas de la base de datos D1 |
 | `wrangler.toml` | Configuración del Worker y enlace a D1 |
 
+## Documentación
+
+| Documento | Contenido |
+| --- | --- |
+| [SETUP.md](SETUP.md) | Puesta en marcha: Cloudflare, base de datos, inicio de sesión y estadísticas |
+| [GAME.md](GAME.md) | Especificación exacta de las reglas, los modos y la generación de tableros |
+| [ANDROID.md](ANDROID.md) | Publicar en Android, empaquetando la web o como app nativa |
+
 ## Publicar en Cloudflare
 
 Axioma se despliega como un **Worker**, que sirve los archivos de `public` y
