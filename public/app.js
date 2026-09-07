@@ -450,3 +450,39 @@ if("serviceWorker" in navigator)
 
 setMode("day");
 })();
+
+/* ===========================================================
+   AXIOMA · instalación en el dispositivo
+   En Android y escritorio se ofrece el botón nativo del navegador.
+   En iOS no existe esa API, así que se explica el gesto manual.
+   =========================================================== */
+(function(){
+"use strict";
+var box=document.getElementById("install"); if(!box)return;
+var instalada = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+             || window.navigator.standalone===true;
+if(instalada)return;
+
+function pinta(html){box.innerHTML=html; box.hidden=false;}
+var espera=null;
+
+window.addEventListener("beforeinstallprompt",function(ev){
+  ev.preventDefault(); espera=ev;
+  pinta('<div class="install-txt"><b>Instalar Axioma</b>'+
+        '<small>Se abre desde la pantalla de inicio, a pantalla completa y sin conexión.</small></div>'+
+        '<button class="primary" id="i-go">Instalar</button>');
+  document.getElementById("i-go").onclick=function(){
+    if(!espera)return;
+    espera.prompt();
+    espera.userChoice.then(function(){espera=null; box.hidden=true;});
+  };
+});
+
+window.addEventListener("appinstalled",function(){box.hidden=true; espera=null;});
+
+var esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+if(esIOS)
+  pinta('<div class="install-txt"><b>Añadir a la pantalla de inicio</b>'+
+        '<small>Toca el botón Compartir del navegador y elige «Añadir a pantalla de inicio».</small></div>');
+})();
