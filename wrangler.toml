@@ -8,18 +8,9 @@ compatibility_date = "2026-01-01"
 directory = "./public"
 binding = "ASSETS"
 
-# ---------------------------------------------------------------------------
-# Base de datos para el inicio de sesión y el ranking. Es OPCIONAL: mientras
-# estas líneas sigan comentadas, el juego se despliega y funciona con
-# normalidad, sencillamente sin cuentas ni ranking.
-#
-# Para activarlo:
-#   1. Ejecuta:  wrangler d1 create axioma
-#   2. Copia el database_id que devuelve y pégalo abajo.
-#   3. Quita el # del principio de las tres líneas siguientes.
-#   4. Confirma y sube el cambio.
-# ---------------------------------------------------------------------------
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "axioma"
-# database_id = "PEGA-AQUI-EL-ID-DE-TU-BASE"
+# Base de datos para el inicio de sesión y el ranking.
+# Creada con `wrangler d1 create axioma`; las tablas están en schema.sql.
+[[d1_databases]]
+binding = "DB"
+database_name = "axioma"
+database_id = "ad3327ea-8049-4330-8b69-b8081a235045"
