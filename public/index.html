@@ -40,6 +40,9 @@
   </div>
   <div class="meta">
     <div class="meta-row">
+      <button class="iconbtn" data-how type="button" aria-label="Cómo se juega" title="Cómo se juega">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.1 9a3 3 0 1 1 4.2 2.7c-.8.4-1.3 1.1-1.3 2V14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="currentColor"/></svg>
+      </button>
       <span id="acct" hidden><button class="acct" id="acct-btn" type="button"></button></span>
       <span class="badge" id="hdr">—</span>
     </div>
@@ -52,11 +55,15 @@
 
 <section class="panel acct-panel" id="acct-panel" hidden aria-label="Cuenta"></section>
 
+<div class="layout">
+
 <nav class="seg" role="tablist" aria-label="Modo de juego">
   <button role="tab" id="t-day" aria-selected="true">Diario</button>
   <button role="tab" id="t-flash" aria-selected="false">Flash</button>
   <button role="tab" id="t-free" aria-selected="false">Libre</button>
 </nav>
+
+<aside class="side">
 
 <section class="panel" id="rules" aria-label="Reglas del tablero">
   <div class="axis" id="ax-scope">
@@ -69,6 +76,13 @@
   </div>
   <div class="helpbox" id="help"></div>
 </section>
+
+<button class="how-btn" data-how>Cómo se juega<span aria-hidden="true"></span></button>
+<section class="install" id="install" hidden aria-label="Instalar la aplicación"></section>
+
+</aside>
+
+<main class="main">
 
 <section class="panel" aria-label="Tablero">
   <p class="brief" id="brief">Deduce qué celdas están llenas y, a la vez, qué regla gobierna el tablero.</p>
@@ -109,16 +123,16 @@
 
 <section class="panel ranking" id="ranking" hidden aria-live="polite"></section>
 
-<button class="how-btn" id="b-how">Cómo se juega<span aria-hidden="true"></span></button>
+</main>
 
-<section class="install" id="install" hidden aria-label="Instalar la aplicación"></section>
+</div>
 
 <footer>
   Cada tablero se genera y se verifica en tu dispositivo: solo hay una solución y nunca hace falta adivinar.
   Funciona sin conexión y no pide ninguna cuenta.
 </footer>
 
-<div class="tut" id="tut" aria-hidden="true"></div>
+<div class="tut" id="tut"></div>
 
 <script src="app.js"></script>
 <script src="tutorial.js"></script>

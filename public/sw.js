@@ -1,5 +1,5 @@
 /* Axioma · service worker: la app entera queda en caché y funciona sin conexión */
-var CACHE="axioma-v6";
+var CACHE="axioma-v7";
 var FILES=["./","./index.html","./axioma.css","./app.js","./account.js","./tutorial.js","./manifest.json","./icon.svg","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./apple-touch-icon.png"];
 
 self.addEventListener("install",function(e){

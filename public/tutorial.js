@@ -150,6 +150,7 @@ function cerrar(){
 document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&host.classList.contains("on"))cerrar(); });
 host.addEventListener("click",function(e){ if(e.target===host)cerrar(); });
 
-var b=$("b-how"); if(b)b.onclick=abrir;
+var botones=document.querySelectorAll("[data-how]"),bi;
+for(bi=0;bi<botones.length;bi++)botones[bi].onclick=abrir;
 try{ if(!localStorage.getItem("ax_tut")) setTimeout(abrir,400); }catch(e){}
 })();
