@@ -19,6 +19,10 @@ No hay azar ni hace falta adivinar: cada tablero se genera comprobando que exist
 una única solución contando todas las combinaciones de reglas a la vez. Si otra
 combinación también encajara, el tablero se descarta antes de mostrártelo.
 
+> Esta misma explicación está dentro del juego: el tutorial se abre solo la primera
+> vez que alguien entra, y queda siempre a mano en el botón **Cómo se juega** y en
+> el icono de interrogación junto al título.
+
 ## Los pasos para empezar
 
 1. **Abre el juego y mira el tablero.** Solo verás números. Cada número es una

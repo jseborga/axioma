@@ -312,7 +312,7 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
 .tut-card{position:relative;width:100%;max-width:460px;background:var(--card);
   border-radius:26px 26px 0 0;padding:22px 20px max(20px,env(safe-area-inset-bottom));
   max-height:92dvh;display:flex;flex-direction:column}
-.tut-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:6px}
+.tut-body{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:6px}
 .tut-card h2{margin:16px 0 6px;font-size:21px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
 .tut-card p{margin:0;font-size:15px;color:var(--ink-2);line-height:1.5}
 .tut-art{display:flex;justify-content:center;background:var(--inset);border-radius:18px;padding:20px 12px}
@@ -323,6 +323,16 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
 .tut-trio figcaption{font-size:11.5px;color:var(--ink-2);text-align:center;line-height:1.3}
 .tut-trio figcaption b{display:block;font-size:13px;color:var(--ink);font-weight:600}
 .tut-note{margin:12px 0 0!important;font-size:13.5px;text-align:center}
+.tut-note a{color:var(--accent);font-weight:600;text-decoration:none}
+.tut-note a:hover{text-decoration:underline}
+.tut-check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.tut-check li{position:relative;background:var(--inset);border-radius:13px;padding:9px 12px 9px 40px}
+.tut-check b{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em}
+.tut-check small{display:block;font-size:12px;color:var(--ink-2);margin-top:1px}
+.tut-check .tick{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:20px;height:20px;
+  border-radius:50%;background:var(--ok)}
+.tut-check .tick::after{content:"";position:absolute;left:7px;top:4.5px;width:5px;height:9px;
+  border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg)}
 .tut-note.ok{color:var(--ok);font-weight:600}
 .tut-note.bad{color:var(--bad);font-weight:600}
 
@@ -337,15 +347,15 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
 .tb .tick{position:absolute;top:-5px;right:-5px;width:17px;height:17px;border-radius:50%;background:var(--ok);
   color:#fff;font-size:10px;display:grid;place-items:center;font-weight:800}
 
-.tut-dots{display:flex;justify-content:center;gap:6px;padding:16px 0 14px}
+.tut-dots{flex:none;display:flex;justify-content:center;gap:6px;padding:14px 0 12px}
 .tut-dots b{width:6px;height:6px;border-radius:50%;background:var(--inset-2)}
 .tut-dots b.on{background:var(--accent);width:18px;border-radius:3px}
-.tut-nav{display:flex;gap:8px}
+.tut-nav{flex:none;display:flex;gap:8px}
 .tut-nav button{flex:1}
 .tut-nav .primary{flex:2}
 
 @media (prefers-reduced-motion:no-preference){
-  .tut.on .tut-card{animation:sheet .3s cubic-bezier(.2,.9,.2,1) both}
+  .tut-card.entra{animation:sheet .3s cubic-bezier(.2,.9,.2,1) both}
   @keyframes sheet{from{transform:translateY(100%)}to{transform:none}}
   .tb{transition:background-color .15s,box-shadow .15s,transform .1s}
   .tb.hit:active{transform:scale(.93)}

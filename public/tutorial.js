@@ -46,9 +46,10 @@ function trio(items){
 /* ---------- pasos ---------- */
 var STEPS=[
 {
-  t:"El tablero esconde celdas llenas",
-  d:"Así se ve un tablero ya resuelto: los cuadros oscuros son las celdas llenas. Al empezar solo verás los números, que son las pistas, y tendrás que deducir dónde va cada llena.",
-  a:function(){return '<div class="tut-art">'+grid([".1..#","..#..","2...1","..#..","#..2."],34)+'</div>';}
+  t:"El objetivo del juego",
+  d:"Encuentra las celdas llenas que esconde el tablero y descubre, a la vez, qué par de reglas lo gobierna. De todas las combinaciones posibles solo una tiene solución, y esa es el axioma. Nunca hace falta adivinar: siempre hay una única respuesta.",
+  a:function(){return '<div class="tut-art">'+grid([".1..#","..#..","2...1","..#..","#..2."],34)+'</div>'+
+      '<p class="tut-note">Así se ve un tablero ya resuelto. Al empezar solo verás los números.</p>';}
 },
 {
   t:"Toca una casilla para marcarla",
@@ -85,6 +86,21 @@ var STEPS=[
   t:"Descubre cuál es el axioma",
   d:"Solo una combinación de alcance y forma tiene una única solución posible. Elígela arriba, marca las celdas y pulsa Comprobar. Si te atascas, el botón Pista te echa una mano.",
   a:function(){return '<div class="tut-art">'+grid(["2..#.",".#..1","..o..","1.#.o","..1.#"],34)+'</div>';}
+},
+{
+  t:"Para ganar la partida",
+  d:"Cuando estas cuatro cosas se cumplen a la vez, el tablero está resuelto. Si no te cuadra, prueba a cambiar de regla antes de borrar casillas: puede que las celdas ya estén bien.",
+  a:function(){
+    var items=[
+      ["Una regla elegida en cada eje","Alcance y forma, las dos"],
+      ["El número exacto de llenas","Ni una de más ni una de menos"],
+      ["Todas las pistas en verde","Con su alcance sin casillas por decidir"],
+      ["La forma cumplida","El indicador debe decir «cumple»"]];
+    return '<ul class="tut-check">'+items.map(function(it){
+      return '<li><span class="tick" aria-hidden="true"></span><b>'+it[0]+'</b><small>'+it[1]+'</small></li>';
+    }).join("")+'</ul>'+
+    '<p class="tut-note"><a href="como-jugar.svg" target="_blank" rel="noopener">Ver la guía completa paso a paso</a></p>';
+  }
 }];
 
 /* ---------- paso interactivo ---------- */
@@ -118,12 +134,12 @@ function playStep(){
 }
 
 /* ---------- navegación ---------- */
-var i=0;
+var i=0, primera=false;
 function render(){
   var s=STEPS[i], puntos="",j;
   for(j=0;j<STEPS.length;j++)puntos+='<b class="'+(j===i?"on":"")+'"></b>';
   host.innerHTML=
-    '<div class="tut-card" role="dialog" aria-modal="true" aria-label="Cómo se juega">'+
+    '<div class="tut-card'+(primera?' entra':'')+'" role="dialog" aria-modal="true" aria-label="Cómo se juega">'+
       '<button class="close" id="tut-x" aria-label="Cerrar">×</button>'+
       '<div class="tut-body">'+
         s.a()+
@@ -141,8 +157,9 @@ function render(){
   var pv=$("tut-prev"); if(pv)pv.onclick=function(){i--;render();};
   $("tut-next").onclick=function(){ if(i===STEPS.length-1)cerrar(); else {i++;render();} };
   host.querySelector(".tut-body").scrollTop=0;
+  primera=false;
 }
-function abrir(){ i=0; host.classList.add("on"); document.body.style.overflow="hidden"; render(); }
+function abrir(){ i=0; primera=true; host.classList.add("on"); document.body.style.overflow="hidden"; render(); }
 function cerrar(){
   host.classList.remove("on"); host.innerHTML=""; document.body.style.overflow="";
   try{localStorage.setItem("ax_tut","1");}catch(e){}
