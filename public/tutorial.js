@@ -43,8 +43,51 @@ function trio(items){
   }).join("")+'</div>';
 }
 
-/* ---------- pasos ---------- */
-var STEPS=[
+/* ---------- guía sencilla: para quien nunca ha jugado ---------- */
+var SIMPLE=[
+{
+  t:"De qué va el juego",
+  d:"El tablero esconde unas casillas llenas y tienes que encontrarlas todas. La vuelta de tuerca es que tampoco sabes con qué reglas se cuenta: eso también hay que averiguarlo.",
+  a:function(){return '<div class="tut-art">'+grid([".1..#","..#..","2...1","..#..","#..2."],34)+'</div>'+
+      '<p class="tut-note">Un tablero resuelto. Al empezar solo verás los números.</p>';}
+},
+{
+  t:"Qué significa cada número",
+  d:"Cada número es una pista y cuenta las casillas llenas que tiene a su alrededor. Un 2 avisa de que hay dos llenas cerca. Un 0 avisa de que no hay ninguna, así que todo su alrededor está vacío.",
+  a:function(){return trio([
+      [[".#.",".2#","..."],["Un 2","dos llenas cerca"],26],
+      [["...",".0.","..."],["Un 0","ninguna cerca"],26],
+      [[".x.","x0x",".x."],["Por eso","se descarta todo"],26]]);}
+},
+{
+  t:"Cómo se cruzan las reglas",
+  d:"«Alrededor» no significa lo mismo en todos los tableros. Hay tres maneras de mirar y tres maneras de agruparse, y se cruzan como una tabla. De las nueve casillas de esa tabla, solo una tiene solución: esa es la que buscas.",
+  a:function(){
+    var alc=["Orto","Rey","Rayo"], frm=["Cadena","Aislado","Parejas"], buena=[0,1];
+    var h='<div class="tut-matrix"><div></div>';
+    frm.forEach(function(f){h+='<div class="mx-hd">'+f+'</div>';});
+    alc.forEach(function(a,r){
+      h+='<div class="mx-rw">'+a+'</div>';
+      frm.forEach(function(f,c){
+        var ok=(r===buena[0]&&c===buena[1]);
+        h+='<div class="mx-c'+(ok?' si':'')+'">'+(ok?'✓':'✕')+'</div>';
+      });
+    });
+    return h+'</div><p class="tut-note">Ocho combinaciones no cuadran. Una sí.</p>';}
+},
+{
+  t:"Para empezar",
+  d:"Elige una regla de cada eje, toca las casillas y fíjate en los colores. Verde quiere decir que esa pista ya está cumplida; rojo, que con esas reglas es imposible. Si se te pone todo rojo, cambia de combinación antes de borrar nada.",
+  a:function(){return trio([
+      [["#"],["Un toque","llena"],40],
+      [["x"],["Dos toques","descartada"],40],
+      [["."],["Tres toques","en blanco"],40]])+
+      '<p class="tut-note">Cuando estén todas puestas, pulsa <b>Comprobar</b>. '+
+      '<a href="#" data-tut>¿Quieres el detalle?</a></p>';}
+}];
+
+/* ---------- guía detallada ---------- */
+var TECNICA=[
 {
   t:"El objetivo del juego",
   d:"Encuentra las celdas llenas que esconde el tablero y descubre, a la vez, qué par de reglas lo gobierna. De todas las combinaciones posibles solo una tiene solución, y esa es el axioma. Nunca hace falta adivinar: siempre hay una única respuesta.",
@@ -134,7 +177,7 @@ function playStep(){
 }
 
 /* ---------- navegación ---------- */
-var i=0, primera=false;
+var STEPS=SIMPLE, i=0, primera=false;
 function render(){
   var s=STEPS[i], puntos="",j;
   for(j=0;j<STEPS.length;j++)puntos+='<b class="'+(j===i?"on":"")+'"></b>';
@@ -159,7 +202,7 @@ function render(){
   host.querySelector(".tut-body").scrollTop=0;
   primera=false;
 }
-function abrir(){ i=0; primera=true; host.classList.add("on"); document.body.style.overflow="hidden"; render(); }
+function abrir(cual){ STEPS=cual||SIMPLE; i=0; primera=true; host.classList.add("on"); document.body.style.overflow="hidden"; render(); }
 function cerrar(){
   host.classList.remove("on"); host.innerHTML=""; document.body.style.overflow="";
   try{localStorage.setItem("ax_tut","1");}catch(e){}
@@ -167,7 +210,18 @@ function cerrar(){
 document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&host.classList.contains("on"))cerrar(); });
 host.addEventListener("click",function(e){ if(e.target===host)cerrar(); });
 
-var botones=document.querySelectorAll("[data-how]"),bi;
-for(bi=0;bi<botones.length;bi++)botones[bi].onclick=abrir;
-try{ if(!localStorage.getItem("ax_tut")) setTimeout(abrir,400); }catch(e){}
+/* "Cómo se juega" abre la guía sencilla; el interrogante, la detallada */
+function liga(sel,cual){
+  var bs=document.querySelectorAll(sel),j;
+  for(j=0;j<bs.length;j++)(function(b){
+    b.onclick=function(ev){ev.preventDefault();abrir(cual);};
+  })(bs[j]);
+}
+liga("[data-how]",SIMPLE);
+liga("[data-tut]",TECNICA);
+/* el enlace del último paso sencillo se crea al vuelo, así que se enlaza al pintar */
+var _render=render;
+render=function(){_render();liga(".tut-card [data-tut]",TECNICA);};
+
+try{ if(!localStorage.getItem("ax_tut")) setTimeout(function(){abrir(SIMPLE);},400); }catch(e){}
 })();

@@ -19,9 +19,12 @@ No hay azar ni hace falta adivinar: cada tablero se genera comprobando que exist
 una única solución contando todas las combinaciones de reglas a la vez. Si otra
 combinación también encajara, el tablero se descarta antes de mostrártelo.
 
-> Esta misma explicación está dentro del juego: el tutorial se abre solo la primera
-> vez que alguien entra, y queda siempre a mano en el botón **Cómo se juega** y en
-> el icono de interrogación junto al título.
+> Dentro del juego hay dos ayudas, una para cada momento. El botón **Cómo se juega**
+> abre una explicación breve en cuatro pantallas, pensada para quien nunca ha
+> jugado: de qué va, qué significa cada número, cómo se cruzan las reglas y cómo
+> empezar. Es la que se abre sola la primera vez. El icono de interrogación junto al
+> título abre la **guía detallada**, con las siete pantallas que recorren cada regla,
+> una práctica interactiva y las condiciones exactas para ganar.
 
 ## Los pasos para empezar
 
