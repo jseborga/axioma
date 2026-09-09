@@ -91,5 +91,40 @@ si sales de la pestaña.
 
 ---
 
+## El sudoku
+
+En el menú de arriba a la derecha, además de los tres modos de Axioma, hay un
+**Sudoku** clásico. Es un juego aparte, con sus propias reglas y su propio
+ranking.
+
+**El objetivo.** Rellenar las 81 casillas con cifras del 1 al 9 sin que ninguna
+se repita en la misma fila, en la misma columna ni dentro de la misma caja de
+3×3. Las tres condiciones tienen que cumplirse a la vez.
+
+**Cómo se juega.** Toca una casilla vacía y elige la cifra en el teclado de
+abajo. El teclado lleva la cuenta de cuántas quedan de cada cifra y desaparece la
+que ya está completa. Al seleccionar una casilla se resaltan su fila, su columna
+y su caja, y también todas las casillas que llevan la misma cifra. Las que entran
+en conflicto se marcan en rojo en cuanto las escribes.
+
+**Notas.** Si no estás seguro, activa *Notas* y las cifras que pulses se apuntan
+pequeñas, como a lápiz, para ir descartando. Al escribir la cifra definitiva, las
+notas de esa casilla se borran solas. *Deshacer* da marcha atrás jugada a jugada
+y *Pista* rellena una casilla correcta por ti.
+
+**Niveles.** Cuatro: Fácil (42 pistas), Medio (34), Difícil (28) y Experto (24).
+No es solo cuántas casillas vienen dadas: cada tablero se comprueba con las
+técnicas que hacen falta para resolverlo, así que un Experto exige de verdad más
+razonamiento que un Fácil. Ninguno necesita adivinar, todos tienen una sola
+solución.
+
+**El del día y el ranking.** Cada nivel tiene su sudoku del día, el mismo para
+todo el mundo. El cronómetro arranca con tu primera jugada y se para al terminar.
+Si entras con Google, tu tiempo aparece en el ranking de ese día y ese nivel;
+sin cuenta también puedes jugar, simplemente no se envía. *Otro tablero* genera
+uno de práctica, que no cuenta para el ranking.
+
+---
+
 La especificación completa de las reglas, con todos sus valores exactos, está en
 [GAME.md](GAME.md).

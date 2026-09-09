@@ -46,9 +46,12 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="modemenu" id="mode-menu" role="menu" hidden>
+        <p class="menu-cap">Axioma</p>
         <button role="menuitemradio" id="t-day"   aria-checked="true"  type="button"><b>Diario</b><small>El reto de hoy, igual para todos</small></button>
         <button role="menuitemradio" id="t-flash" aria-checked="false" type="button"><b>Flash</b><small>Partida corta en un tablero de 4×4</small></button>
         <button role="menuitemradio" id="t-free"  aria-checked="false" type="button"><b>Libre</b><small>Los que quieras, tú eliges la dificultad</small></button>
+        <p class="menu-cap">Sudoku</p>
+        <button role="menuitemradio" id="t-sud"   aria-checked="false" type="button"><b>Sudoku</b><small>Cuatro niveles y ranking por tiempo</small></button>
       </div>
     </div>
     <button class="iconbtn" data-tut type="button" aria-label="Guía detallada del juego" title="Guía detallada">
@@ -69,6 +72,16 @@
       <button role="radio" data-level="1" aria-checked="true"  type="button">Fácil</button>
       <button role="radio" data-level="3" aria-checked="false" type="button">Medio</button>
       <button role="radio" data-level="5" aria-checked="false" type="button">Difícil</button>
+    </div>
+  </section>
+
+  <section class="diff" id="sud-diff" hidden aria-label="Dificultad del sudoku">
+    <h2>Dificultad</h2>
+    <div class="seg seg-v" id="sud-seg" role="radiogroup" aria-label="Dificultad del sudoku">
+      <button role="radio" data-lvl="1" aria-checked="true"  type="button">Fácil</button>
+      <button role="radio" data-lvl="2" aria-checked="false" type="button">Medio</button>
+      <button role="radio" data-lvl="3" aria-checked="false" type="button">Difícil</button>
+      <button role="radio" data-lvl="4" aria-checked="false" type="button">Experto</button>
     </div>
   </section>
 
@@ -126,6 +139,30 @@
     <p class="msg" id="msg" role="status" aria-live="polite"></p>
   </section>
 
+  <section class="panel sud-panel" id="sud-panel" hidden aria-label="Sudoku">
+    <p class="brief" id="sud-brief">Completa la rejilla sin repetir cifras.</p>
+    <div class="boardwrap"><div class="sud-board" id="sud-board"></div></div>
+    <div class="pad" id="sud-pad"></div>
+    <div class="readout">
+      <div><small>Restantes</small><strong id="sud-left">0</strong></div>
+      <div><small>Errores</small><strong id="sud-err">0</strong></div>
+      <div><small>Pistas</small><strong id="sud-hints">0</strong></div>
+      <div><small>Tiempo</small><strong id="sud-time">0:00</strong></div>
+    </div>
+    <p class="msg" id="sud-msg" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="result" id="sud-result" aria-live="polite">
+    <h3>Resuelto</h3>
+    <pre id="sud-share"></pre>
+    <div class="actions" style="margin:0">
+      <button class="primary" id="sud-b-share">Compartir resultado</button>
+    </div>
+    <div class="rank-note" id="sud-rank-note" hidden></div>
+  </section>
+
+  <section class="panel ranking" id="sud-ranking" hidden aria-live="polite"></section>
+
   <section class="result" id="result" aria-live="polite">
     <h3>Resuelto</h3>
     <pre id="share-text"></pre>
@@ -140,7 +177,16 @@
 </main>
 
 <aside class="col-right">
-  <section class="panel acts" aria-label="Acciones">
+  <section class="panel acts" id="sud-acts" hidden aria-label="Acciones del sudoku">
+    <button id="sud-notes" type="button" aria-pressed="false">Notas <small>apagadas</small></button>
+    <button class="ghost" id="sud-erase" type="button">Borrar</button>
+    <div class="acts-sep"></div>
+    <button class="ghost" id="sud-undo" type="button">Deshacer</button>
+    <button class="ghost" id="sud-hint" type="button">Pista</button>
+    <button class="ghost" id="sud-new" type="button">Otro tablero</button>
+  </section>
+
+  <section class="panel acts" id="ax-acts" aria-label="Acciones">
     <button class="primary" id="b-check">Comprobar</button>
     <button id="b-hint">Pista <small>+3</small></button>
     <div class="acts-sep"></div>
@@ -158,6 +204,7 @@
 
 <div class="tut" id="tut"></div>
 
+<script src="sudoku.js"></script>
 <script src="app.js"></script>
 <script src="tutorial.js"></script>
 <script src="account.js"></script>

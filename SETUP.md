@@ -278,6 +278,47 @@ ALTER TABLE scores ADD COLUMN seconds INTEGER NOT NULL DEFAULT 0;
 La API detecta sola si la columna existe, así que puedes hacerlo cuando quieras
 y sin riesgo de romper el ranking.
 
+### Añadir la tabla del sudoku
+
+El sudoku tiene su propio ranking por tiempo y guarda los resultados en una tabla
+aparte. Las bases creadas antes de esta función no la tienen: el juego funciona
+igual, pero al terminar un sudoku no se envía nada y el ranking avisa de que
+falta la tabla. Para activarlo, ejecuta una vez en la consola de D1 (o vuelve a
+pasar `schema.sql`, que ya la incluye y no toca lo existente):
+
+```sql
+CREATE TABLE IF NOT EXISTS sudoku (
+  user_id    TEXT    NOT NULL REFERENCES users(id),
+  day        INTEGER NOT NULL,
+  level      INTEGER NOT NULL,
+  seconds    INTEGER NOT NULL,
+  errors     INTEGER NOT NULL DEFAULT 0,
+  hints      INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, day, level)
+);
+CREATE INDEX IF NOT EXISTS sudoku_day ON sudoku(day, level, seconds, created_at);
+```
+
+Se guarda un resultado por jugador, día y nivel, y solo se conserva el mejor
+tiempo: si repites y tardas más, no se sobrescribe.
+
+Consultas útiles:
+
+```sql
+-- los diez tiempos más rápidos de hoy en nivel Difícil (nivel 3)
+SELECT u.name, s.seconds, s.hints
+FROM sudoku s JOIN users u ON u.id=s.user_id
+WHERE s.day=(SELECT MAX(day) FROM sudoku) AND s.level=3
+ORDER BY s.seconds ASC, s.created_at ASC LIMIT 10;
+
+-- cuánta gente termina cada nivel y cuánto tarda de media
+SELECT level, COUNT(*) AS partidas, AVG(seconds) AS media, MIN(seconds) AS mejor
+FROM sudoku GROUP BY level ORDER BY level;
+```
+
+Los niveles son 1 Fácil, 2 Medio, 3 Difícil y 4 Experto.
+
 ### Copia de seguridad
 
 ```

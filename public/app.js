@@ -473,14 +473,26 @@ function hint(){
 
 /* ---------- controles ---------- */
 function setMode(m){
-  mode=m;
-  ["day","flash","free"].forEach(function(x){
+  ["day","flash","free","sud"].forEach(function(x){
     $("t-"+x).setAttribute("aria-checked",x===m?"true":"false");
   });
   $("mode-label").textContent=MODOS[m];
+  if(m==="sud"){
+    detiene();                                   /* se para el reloj de Axioma */
+    document.body.setAttribute("data-game","sudoku");
+    $("diff").hidden=true; $("sud-diff").hidden=false;
+    $("sud-panel").hidden=false; $("sud-acts").hidden=false;
+    $("status-cap").textContent="Sudoku";
+    if(window.AxSudoku){AxSudoku.abrir();$("hdr").textContent=AxSudoku.nombreNivel();}
+    return;
+  }
+  document.body.setAttribute("data-game","axioma");
+  if(window.AxSudoku)AxSudoku.pausa();
+  $("sud-diff").hidden=true; $("sud-panel").hidden=true; $("sud-acts").hidden=true;
+  mode=m;
   newBoard();
 }
-var MODOS={day:"Diario",flash:"Flash",free:"Libre"};
+var MODOS={day:"Diario",flash:"Flash",free:"Libre",sud:"Sudoku"};
 var menu=$("mode-menu"), mbtn=$("mode-btn");
 function abreMenu(v){
   menu.hidden=!v; mbtn.setAttribute("aria-expanded",v?"true":"false");
@@ -490,7 +502,7 @@ document.addEventListener("click",function(e){
   if(!menu.hidden && !menu.contains(e.target) && e.target!==mbtn) abreMenu(false);
 });
 document.addEventListener("keydown",function(e){ if(e.key==="Escape")abreMenu(false); });
-["day","flash","free"].forEach(function(m){
+["day","flash","free","sud"].forEach(function(m){
   $("t-"+m).onclick=function(){abreMenu(false);setMode(m);};
 });
 
@@ -535,6 +547,7 @@ $("b-share").onclick=function(){
 if("serviceWorker" in navigator)
   window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});
 
+document.body.setAttribute("data-game","axioma");
 setMode("day");
 })();
 

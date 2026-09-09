@@ -1,6 +1,6 @@
 /* Axioma · service worker: la app entera queda en caché y funciona sin conexión */
-var CACHE="axioma-v12";
-var FILES=["./","./index.html","./axioma.css","./app.js","./account.js","./tutorial.js","./manifest.json","./icon.svg","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./apple-touch-icon.png","./como-jugar.svg"];
+var CACHE="axioma-v13";
+var FILES=["./","./index.html","./axioma.css","./app.js","./account.js","./tutorial.js","./sudoku.js","./manifest.json","./icon.svg","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./apple-touch-icon.png","./como-jugar.svg"];
 
 self.addEventListener("install",function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(FILES);}).then(function(){return self.skipWaiting();}));

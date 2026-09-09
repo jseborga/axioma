@@ -86,6 +86,91 @@ var SIMPLE=[
       '<a href="#" data-tut>¿Quieres el detalle?</a></p>';}
 }];
 
+/* ---------- dibujo de sudokus de ejemplo ----------
+   81 caracteres; "." es casilla vacía.
+   marca resalta una fila, una columna o una caja de 3x3.   */
+function sgrid(vals,cell,marca){
+  cell=cell||14;
+  var w=cell*9, out=[], r,c;
+  out.push('<svg class="mini" viewBox="0 0 '+(w+2)+' '+(w+2)+'" width="'+(w+2)+'" height="'+(w+2)+'" '+
+           'preserveAspectRatio="xMidYMid meet" aria-hidden="true">');
+  out.push('<rect x="1" y="1" width="'+w+'" height="'+w+'" rx="4" fill="var(--card)"/>');
+  for(r=0;r<9;r++)for(c=0;c<9;c++){
+    var ch=vals.charAt(r*9+c), x=1+c*cell, y=1+r*cell;
+    var caja=((r/3)|0)*3+((c/3)|0);
+    if(marca&&(marca.fila===r||marca.col===c||marca.caja===caja))
+      out.push('<rect x="'+x+'" y="'+y+'" width="'+cell+'" height="'+cell+'" fill="var(--accent-tint)"/>');
+    if(ch>="1"&&ch<="9")
+      out.push('<text x="'+(x+cell/2)+'" y="'+(y+cell/2)+'" text-anchor="middle" dominant-baseline="central" '+
+               'font-size="'+(cell*0.62)+'" font-weight="700" fill="var(--ink)" '+
+               'font-family="-apple-system,system-ui,sans-serif">'+ch+'</text>');
+  }
+  for(r=1;r<9;r++){
+    var q=1+r*cell, gruesa=(r%3===0), sw=gruesa?1.4:0.6;
+    out.push('<line x1="'+q+'" y1="1" x2="'+q+'" y2="'+(w+1)+'" stroke="var(--hair)" stroke-width="'+sw+'"/>');
+    out.push('<line x1="1" y1="'+q+'" x2="'+(w+1)+'" y2="'+q+'" stroke="var(--hair)" stroke-width="'+sw+'"/>');
+  }
+  out.push('<rect x="1" y="1" width="'+w+'" height="'+w+'" rx="4" fill="none" stroke="var(--ink-3)" stroke-width="1.4"/>');
+  out.push('</svg>');
+  return out.join("");
+}
+/* una sola casilla con sus candidatos apuntados a lápiz */
+function celdaNotas(cands,cell){
+  cell=cell||40;
+  var out=['<svg class="mini" viewBox="0 0 '+cell+' '+cell+'" width="'+cell+'" height="'+cell+'" aria-hidden="true">'];
+  out.push('<rect x="0.5" y="0.5" width="'+(cell-1)+'" height="'+(cell-1)+'" rx="'+(cell*0.2)+
+           '" fill="var(--card)" stroke="var(--hair)" stroke-width="1.2"/>');
+  for(var j=0;j<9;j++){
+    if(cands.indexOf(String(j+1))<0)continue;
+    var x=(cell/6)*(2*(j%3)+1), y=(cell/6)*(2*((j/3)|0)+1);
+    out.push('<text x="'+x+'" y="'+y+'" text-anchor="middle" dominant-baseline="central" font-size="'+(cell*0.24)+
+             '" font-weight="600" fill="var(--ink-3)" font-family="-apple-system,system-ui,sans-serif">'+(j+1)+'</text>');
+  }
+  return out.join("")+'</svg>';
+}
+
+/* ---------- guía del sudoku ---------- */
+var LLENO=
+  "534678912"+"672195348"+"198342567"+
+  "859761423"+"426853791"+"713924856"+
+  "961537284"+"287419635"+"345286179";
+var SUDOKU=[
+{
+  t:"De qué va el sudoku",
+  d:"Rellena las 81 casillas con cifras del 1 al 9. La única condición es que ninguna cifra se repita en la misma fila, ni en la misma columna, ni dentro de la misma caja de 3x3.",
+  a:function(){return '<div class="tut-trio">'+
+      '<figure>'+sgrid(LLENO,14,{fila:3})+'<figcaption><b>Fila</b>del 1 al 9</figcaption></figure>'+
+      '<figure>'+sgrid(LLENO,14,{col:4})+'<figcaption><b>Columna</b>del 1 al 9</figcaption></figure>'+
+      '<figure>'+sgrid(LLENO,14,{caja:4})+'<figcaption><b>Caja de 3x3</b>del 1 al 9</figcaption></figure>'+
+      '</div><p class="tut-note">Un tablero terminado: las tres condiciones se cumplen a la vez.</p>';}
+},
+{
+  t:"Cómo se juega aquí",
+  d:"Toca una casilla vacía y elige la cifra en el teclado de abajo. El teclado lleva la cuenta de cuántas quedan de cada cifra, y al elegir una se te resaltan en el tablero todas las iguales. Si te equivocas, Deshacer da marcha atrás y Pista rellena una casilla por ti.",
+  a:function(){return trio([
+      [["5.3","o..","..7"],["Toca","una casilla vacía"],26],
+      [["5.3","4..","..7"],["Pulsa la cifra","y queda puesta"],26],
+      [["5.3","...","..7"],["Borrar","la deja vacía"],26]]);}
+},
+{
+  t:"Apuntar candidatos",
+  d:"Cuando no estés seguro, activa Notas y las cifras que pulses se apuntan pequeñas, como a lápiz. Sirven para ir descartando sin comprometerte. Al escribir la cifra definitiva, las notas de esa casilla desaparecen solas.",
+  a:function(){return '<div class="tut-trio">'+
+      '<figure>'+celdaNotas("249",46)+'<figcaption><b>Con notas</b>tres candidatos</figcaption></figure>'+
+      '<figure>'+grid(["4"],46)+'<figcaption><b>Decidido</b>una sola cifra</figcaption></figure>'+
+      '</div><p class="tut-note">Las casillas en conflicto se marcan en rojo mientras juegas.</p>';}
+},
+{
+  t:"Niveles y ranking por tiempo",
+  d:"Hay cuatro niveles y cada uno tiene su propio sudoku del día, igual para todo el mundo. El cronómetro corre desde tu primera jugada: al terminar puedes entrar con Google para que tu tiempo aparezca en el ranking de ese día y ese nivel. Otro tablero te da uno de práctica que no cuenta.",
+  a:function(){return '<div class="tut-niv">'+
+      '<div><b>Fácil</b><span>42 pistas</span></div>'+
+      '<div><b>Medio</b><span>34 pistas</span></div>'+
+      '<div><b>Difícil</b><span>28 pistas</span></div>'+
+      '<div><b>Experto</b><span>24 pistas</span></div>'+
+      '</div><p class="tut-note">Nunca hace falta adivinar: todos los tableros tienen una sola solución.</p>';}
+}];
+
 /* ---------- guía detallada ---------- */
 var TECNICA=[
 {
@@ -211,14 +296,16 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&host.class
 host.addEventListener("click",function(e){ if(e.target===host)cerrar(); });
 
 /* "Cómo se juega" abre la guía sencilla; el interrogante, la detallada */
+function enSudoku(){return document.body.getAttribute("data-game")==="sudoku";}
 function liga(sel,cual){
   var bs=document.querySelectorAll(sel),j;
   for(j=0;j<bs.length;j++)(function(b){
-    b.onclick=function(ev){ev.preventDefault();abrir(cual);};
+    b.onclick=function(ev){ev.preventDefault();abrir(typeof cual==="function"?cual():cual);};
   })(bs[j]);
 }
-liga("[data-how]",SIMPLE);
-liga("[data-tut]",TECNICA);
+/* con el sudoku abierto, las dos ayudas explican el sudoku */
+liga("[data-how]",function(){return enSudoku()?SUDOKU:SIMPLE;});
+liga("[data-tut]",function(){return enSudoku()?SUDOKU:TECNICA;});
 /* el enlace del último paso sencillo se crea al vuelo, así que se enlaza al pintar */
 var _render=render;
 render=function(){_render();liga(".tut-card [data-tut]",TECNICA);};

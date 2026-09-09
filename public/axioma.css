@@ -316,13 +316,20 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
 .tut-card h2{margin:16px 0 6px;font-size:21px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
 .tut-card p{margin:0;font-size:15px;color:var(--ink-2);line-height:1.5}
 .tut-art{display:flex;justify-content:center;background:var(--inset);border-radius:18px;padding:20px 12px}
-.mini{display:block;overflow:visible}
+.mini{display:block;overflow:visible;max-width:100%;height:auto}
 .tut-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .tut-trio figure{margin:0;background:var(--inset);border-radius:16px;padding:14px 6px 10px;display:flex;
   flex-direction:column;align-items:center;gap:8px}
 .tut-trio figcaption{font-size:11.5px;color:var(--ink-2);text-align:center;line-height:1.3}
 .tut-trio figcaption b{display:block;font-size:13px;color:var(--ink);font-weight:600}
 .tut-note{margin:12px 0 0!important;font-size:13.5px;text-align:center}
+/* con dos figuras en vez de tres, se centran */
+.tut-trio:has(figure:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr));max-width:340px;margin:0 auto}
+/* niveles del sudoku */
+.tut-niv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tut-niv div{background:var(--inset);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.tut-niv b{font-size:15px;letter-spacing:-.01em}
+.tut-niv span{font-size:12.5px;color:var(--ink-2)}
 .tut-note a{color:var(--accent);font-weight:600;text-decoration:none}
 .tut-note a:hover{text-decoration:underline}
 .tut-check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
@@ -474,4 +481,85 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
   .logo svg{width:24px;height:24px}
   .modebtn{padding:7px 8px 7px 12px;font-size:14px}
   .iconbtn{width:32px;height:32px}
+}
+
+/* ===========================================================
+   Sudoku
+   =========================================================== */
+.menu-cap{margin:8px 12px 4px;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3)}
+.modemenu .menu-cap:first-child{margin-top:4px}
+
+/* el segmentado en vertical, para los cuatro niveles */
+.seg-v{flex-direction:column;gap:2px}
+.seg-v button{padding:9px 10px}
+
+/* --- rejilla: nueve cajas, y el hueco entre ellas hace de línea gruesa --- */
+.sud-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;width:min(100%,420px);
+  background:var(--ink-3);border-radius:12px;padding:3px}
+.sbox{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--inset-2);min-width:0}
+.sc{position:relative;aspect-ratio:1;min-width:0;display:grid;place-items:center;padding:0;border-radius:0;
+  background:var(--card);color:var(--accent);font-weight:600;
+  font-size:clamp(15px,4.4vw,22px);font-variant-numeric:tabular-nums;
+  -webkit-tap-highlight-color:transparent;line-height:1}
+.sc.fija{color:var(--ink);font-weight:700}
+.sc.peer{background:var(--inset)}
+.sc.igual{background:var(--accent-tint)}
+.sc.sel{background:var(--accent);color:#fff}
+.sc.sel.fija{color:#fff}
+.sc.mal{color:var(--bad);background:var(--bad-tint)}
+.sc.sel.mal{background:var(--bad);color:#fff}
+.sc .nt{display:grid;grid-template-columns:repeat(3,1fr);width:100%;height:100%;
+  align-items:center;justify-items:center;color:var(--ink-2);font-weight:500}
+.sc .nt i{font-style:normal;font-size:8.5px;line-height:1}
+.sc.sel .nt{color:rgba(255,255,255,.85)}
+
+/* --- teclado numérico --- */
+.pad{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px;margin:0 auto 12px;width:min(100%,420px)}
+.pk{position:relative;padding:12px 0 15px;border-radius:12px;background:var(--inset);
+  color:var(--accent);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.pk small{position:absolute;left:0;right:0;bottom:4px;font-size:9.5px;font-weight:600;color:var(--ink-3)}
+.pk.hecho{opacity:.35}
+.pk:hover{background:var(--accent-tint)}
+
+/* las acciones del sudoku conservan tarjeta también en móvil: son cinco */
+#sud-acts{background:var(--card);border-radius:var(--r-card);padding:12px}
+#sud-notes,#sud-erase{background:var(--accent-tint);color:var(--accent);font-weight:600;font-size:15px}
+#sud-notes[aria-pressed=true]{background:var(--accent);color:#fff}
+#sud-notes small{font-weight:500;opacity:.75;font-size:11.5px}
+@media (min-width:900px){#sud-acts{padding:16px}}
+
+/* --- qué se ve según el juego elegido --- */
+body[data-game=sudoku] #rules,
+body[data-game=sudoku] .board-panel,
+body[data-game=sudoku] #ax-acts,
+body[data-game=sudoku] #result,
+body[data-game=sudoku] #ranking,
+body[data-game=sudoku] #diff{display:none!important}
+body[data-game=axioma] #sud-panel,
+body[data-game=axioma] #sud-acts,
+body[data-game=axioma] #sud-diff,
+body[data-game=axioma] #sud-result,
+body[data-game=axioma] #sud-ranking{display:none!important}
+#sud-result{display:none}
+#sud-result.on{display:block}
+.sud-panel{order:3}
+#sud-acts{order:4}
+#sud-result{order:5}
+#sud-ranking{order:6}
+#sud-diff{order:1}
+@media (max-width:899px){
+  #sud-seg{flex-direction:row}
+  #sud-seg button{padding:9px 4px;font-size:13.5px}
+}
+
+@media (min-width:900px){
+  .sud-board,.pad{width:100%;max-width:460px}
+  .pk{font-size:21px;padding:13px 0 16px}
+  .sc{font-size:23px}
+}
+@media (max-width:400px){
+  .pad{gap:3px}
+  .pk{font-size:17px;padding:10px 0 13px;border-radius:10px}
+  .pk small{font-size:9px;bottom:3px}
 }

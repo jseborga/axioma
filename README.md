@@ -4,6 +4,7 @@ Puzle diario de deducción pura: no solo resuelves el tablero, descubres qué re
 
 - Sin azar, sin adivinar, sin cuenta. Cada tablero se genera y verifica en el dispositivo con solución única.
 - Tres modos: **Diario** (el mismo tablero para todo el mundo), **Flash** (rápido, 4×4) y **Libre** (niveles progresivos).
+- **Sudoku** aparte, con cuatro niveles, tablero del día para cada uno y ranking por tiempo.
 - PWA: funciona sin conexión y se puede instalar en el móvil.
 - **Cuenta opcional con Google** para entrar en el ranking del reto diario. Sin configurarla, la app funciona igual y no muestra nada de cuentas.
 
@@ -27,12 +28,13 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `public/axioma.css` | Estilos (tema claro y oscuro) |
 | `public/app.js` | Generador, verificador y lógica de juego |
 | `public/account.js` | Entrada con Google y ranking (solo si el backend está configurado) |
+| `public/sudoku.js` | Generador, verificador y juego del sudoku |
 | `public/tutorial.js` | Tutorial guiado con ejemplos, se abre en la primera visita |
 | `public/sw.js` | Service worker para uso sin conexión |
 | `public/manifest.json`, `public/icon.svg` | Instalación como app |
 | `public/como-jugar.svg` | Guía visual del procedimiento, paso a paso |
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
-| `src/api.js` | API: sesión, puntuaciones y ranking |
+| `src/api.js` | API: sesión, puntuaciones y rankings (axioma y sudoku) |
 | `schema.sql` | Tablas de la base de datos D1 |
 | `wrangler.toml` | Configuración del Worker y enlace a D1 |
 
@@ -86,7 +88,11 @@ más comunes, está en [SETUP.md](SETUP.md).**
 
 ### Qué se guarda
 
-Solo el identificador de Google, nombre, foto, correo y las puntuaciones del reto
-diario (movidas y pistas por día). La sesión es una cookie firmada de 30 días; no
-hay contraseñas. Se conserva el mejor resultado de cada día por jugador. La racha
-personal vive únicamente en el navegador de cada jugador.
+Solo el identificador de Google, nombre, foto, correo y los resultados: del reto
+diario (movidas, pistas y tiempo por día) y del sudoku (tiempo, errores y pistas
+por día y nivel). La sesión es una cookie firmada de 30 días; no hay contraseñas.
+Se conserva el mejor resultado de cada día por jugador. La racha personal vive
+únicamente en el navegador de cada jugador.
+
+Si tu base de datos es anterior al sudoku, hay que crear su tabla una sola vez:
+lo explica el apartado «Añadir la tabla del sudoku» de [SETUP.md](SETUP.md).

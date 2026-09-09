@@ -256,3 +256,80 @@ Racha: 4 días
 Los cuadros llenos representan el mínimo teórico, con tope de diez; los huecos, las
 movidas de más, con tope de seis. La palabra `perfecta` sustituye a la cuenta de
 pistas cuando se alcanza el mínimo.
+
+---
+
+# Sudoku · especificación
+
+El sudoku es un juego independiente dentro de la misma app. Comparte el estilo,
+la cuenta opcional y el almacenamiento local, pero no comparte reglas ni tableros
+con Axioma.
+
+## Reglas
+
+Cuadrícula de 9×9 dividida en nueve cajas de 3×3. Hay que rellenar todas las
+casillas con cifras del 1 al 9 de modo que cada fila, cada columna y cada caja
+contengan las nueve cifras exactamente una vez.
+
+## Generación
+
+1. Se construye una solución completa con relleno aleatorio y vuelta atrás.
+2. Se quitan casillas en orden aleatorio, comprobando tras cada una que sigue
+   habiendo **una sola solución**. Una casilla que rompa la unicidad se devuelve.
+3. Cuando se alcanza el número de pistas del nivel, se mide la dificultad. Si el
+   tablero se ha quedado por debajo, se sigue cavando; si se ha pasado, se
+   devuelven casillas hasta bajar al grado pedido.
+4. El proceso se repite hasta veinte veces; si nunca cuadra exactamente, se
+   entrega el tablero cuyo grado quede más cerca del pedido.
+
+La búsqueda de soluciones y la propagación trabajan con máscaras de bits de nueve
+posiciones, una por cifra, de ahí que generar un tablero tarde milisegundos.
+
+## Niveles y dificultad
+
+| Nivel | Pistas objetivo | Técnicas necesarias |
+| --- | --- | --- |
+| 1 · Fácil | 42 | Solo desnudos |
+| 2 · Medio | 34 | + solos ocultos |
+| 3 · Difícil | 28 | + parejas desnudas y apuntadores |
+| 4 · Experto | 24 | Más que las anteriores |
+
+El grado se mide resolviendo el tablero únicamente con las técnicas de cada
+escalón: el nivel es el escalón más bajo que basta para terminarlo. Ningún
+tablero necesita adivinar, en ninguno de los cuatro niveles.
+
+## Tablero del día
+
+Cada nivel tiene su propio tablero diario, igual para todo el mundo. La semilla
+del generador es `(día × 9973 + nivel × 7919)`, con el mismo mulberry32 que usa
+Axioma, y el día se cuenta igual: 1 el 1 de enero de 2026. *Otro tablero* genera
+uno con semilla aleatoria, que no es diario y no entra en el ranking.
+
+## Interfaz
+
+- Al seleccionar una casilla se resaltan su fila, su columna y su caja, y todas
+  las casillas que contienen la misma cifra.
+- El teclado numérico muestra cuántas quedan de cada cifra y desactiva las que ya
+  están las nueve.
+- Las cifras en conflicto con otra de su fila, columna o caja se marcan en rojo.
+- El modo *Notas* apunta candidatos pequeños; escribir la cifra definitiva borra
+  las notas de esa casilla.
+- *Deshacer* recorre el historial de jugadas. *Pista* rellena una casilla con su
+  valor correcto y suma uno al contador de pistas.
+- El cronómetro arranca con la primera jugada y se pausa al salir de la pestaña,
+  igual que en Axioma.
+
+## Registro y ranking
+
+Al terminar se guarda en el dispositivo, por día y nivel, el tiempo, los errores
+y las pistas usadas; al volver, ese tablero aparece ya resuelto. Con la cuenta de
+Google activada, el resultado se envía a la tabla `sudoku` y entra en el ranking
+de ese día y ese nivel, ordenado por tiempo y, a igualdad, por quién llegó antes.
+Se conserva únicamente el mejor tiempo de cada jugador por día y nivel.
+
+Formato del texto para compartir:
+
+```
+Sudoku de Axioma · Difícil · nº 252
+7:41
+```

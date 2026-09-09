@@ -17,3 +17,16 @@ CREATE TABLE IF NOT EXISTS scores (
   PRIMARY KEY (user_id, day)
 );
 CREATE INDEX IF NOT EXISTS scores_day ON scores(day, moves, hints, created_at);
+
+-- Sudoku: mejor tiempo de cada jugador en el tablero del día de cada nivel
+CREATE TABLE IF NOT EXISTS sudoku (
+  user_id    TEXT NOT NULL REFERENCES users(id),
+  day        INTEGER NOT NULL,
+  level      INTEGER NOT NULL,          -- 1 fácil … 4 experto
+  seconds    INTEGER NOT NULL,
+  errors     INTEGER NOT NULL DEFAULT 0,
+  hints      INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, day, level)
+);
+CREATE INDEX IF NOT EXISTS sudoku_day ON sudoku(day, level, seconds, created_at);

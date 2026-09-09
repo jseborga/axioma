@@ -7,6 +7,8 @@
      POST /api/auth/logout   → borra la sesión
      POST /api/scores        → { day, moves, hints } → guarda la puntuación del día (requiere sesión)
      GET  /api/ranking?day=N → { day, top:[…], me:{rank,total}|null }
+     POST /api/sudoku        → { day, level, seconds, errors, hints }
+     GET  /api/sudoku/ranking?day=N&level=L → { top:[…], me }
    Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET. Binding D1: DB.
    =========================================================== */
 
@@ -31,6 +33,10 @@ export async function handleApi(req,env,url){
       return await submitScore(req,env);
     if(path==="/ranking"&&req.method==="GET")
       return await ranking(req,env,url);
+    if(path==="/sudoku"&&req.method==="POST")
+      return await sudokuGuarda(req,env);
+    if(path==="/sudoku/ranking"&&req.method==="GET")
+      return await sudokuRanking(req,env,url);
     return json({error:"not_found"},null,404);
   }catch(e){
     console.error("axioma api",path,e&&e.stack||e);   /* visible en Observability */
@@ -172,4 +178,73 @@ async function ranking(req,env,url){
   });
   var total=await env.DB.prepare("SELECT COUNT(*) AS n FROM scores WHERE day=?").bind(day).first();
   return json({day:day,total:total.n||0,top:top,me:user?await myRank(env,user.id,day):null});
+}
+
+/* ---------- sudoku ----------
+   La tabla puede no existir todavía en bases creadas antes de esta
+   función; en ese caso se responde que no está configurado, sin
+   afectar al resto de la API. */
+async function sudokuGuarda(req,env){
+  if(!env.DB)return json({error:"not_configured"},null,503);
+  var user=await currentUser(req,env);
+  if(!user)return json({error:"unauthorized"},null,401);
+  var body=await req.json().catch(function(){return {}});
+  var day=parseInt(body.day,10), level=parseInt(body.level,10),
+      seconds=parseInt(body.seconds,10),
+      errors=parseInt(body.errors,10)||0, hints=parseInt(body.hints,10)||0;
+  var today=dayNumber();
+  if(!(day>=1)||day>today||day<today-1)return json({error:"bad_day"},null,400);
+  if(!(level>=1&&level<=4))return json({error:"bad_level"},null,400);
+  if(!(seconds>=1)||seconds>86400)return json({error:"bad_time"},null,400);
+  if(errors<0||errors>999)errors=0;
+  if(hints<0||hints>81)hints=0;
+  var now=Math.floor(Date.now()/1000);
+  try{
+    /* se conserva el mejor tiempo del día en ese nivel */
+    await env.DB.prepare(
+      "INSERT INTO sudoku(user_id,day,level,seconds,errors,hints,created_at) VALUES(?,?,?,?,?,?,?) "+
+      "ON CONFLICT(user_id,day,level) DO UPDATE SET seconds=excluded.seconds,errors=excluded.errors,"+
+      "hints=excluded.hints,created_at=excluded.created_at WHERE excluded.seconds<sudoku.seconds"
+    ).bind(user.id,day,level,seconds,errors,hints,now).run();
+  }catch(e){
+    console.error("axioma sudoku insert",e&&e.stack||e);
+    return json({error:"not_configured"},null,503);
+  }
+  return json({ok:true,day:day,level:level,me:await sudokuPuesto(env,user.id,day,level)});
+}
+
+async function sudokuPuesto(env,userId,day,level){
+  var mio=await env.DB.prepare("SELECT seconds,created_at FROM sudoku WHERE user_id=? AND day=? AND level=?")
+    .bind(userId,day,level).first();
+  if(!mio)return null;
+  var antes=await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM sudoku WHERE day=? AND level=? AND (seconds<? OR (seconds=? AND created_at<?))"
+  ).bind(day,level,mio.seconds,mio.seconds,mio.created_at).first();
+  var total=await env.DB.prepare("SELECT COUNT(*) AS n FROM sudoku WHERE day=? AND level=?")
+    .bind(day,level).first();
+  return {rank:(antes.n||0)+1,total:total.n||0,seconds:mio.seconds};
+}
+
+async function sudokuRanking(req,env,url){
+  if(!env.DB)return json({error:"not_configured"},null,503);
+  var day=parseInt(url.searchParams.get("day"),10)||dayNumber();
+  var level=parseInt(url.searchParams.get("level"),10)||1;
+  if(!(level>=1&&level<=4))level=1;
+  var user=await currentUser(req,env), rows, total;
+  try{
+    rows=await env.DB.prepare(
+      "SELECT u.id,u.name,u.picture,s.seconds,s.errors,s.hints FROM sudoku s JOIN users u ON u.id=s.user_id "+
+      "WHERE s.day=? AND s.level=? ORDER BY s.seconds ASC,s.created_at ASC LIMIT ?"
+    ).bind(day,level,TOP).all();
+    total=await env.DB.prepare("SELECT COUNT(*) AS n FROM sudoku WHERE day=? AND level=?").bind(day,level).first();
+  }catch(e){
+    console.error("axioma sudoku ranking",e&&e.stack||e);
+    return json({error:"not_configured"},null,503);
+  }
+  var top=(rows.results||[]).map(function(r,i){
+    return {rank:i+1,name:r.name,picture:r.picture,seconds:r.seconds,errors:r.errors,hints:r.hints,
+            me:!!(user&&user.id===r.id)};
+  });
+  return json({day:day,level:level,total:total.n||0,top:top,
+               me:user?await sudokuPuesto(env,user.id,day,level):null});
 }

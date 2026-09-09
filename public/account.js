@@ -31,8 +31,8 @@ function init(){
 
 function setUser(u){
   user=u; renderAccount(); renderPanel();
-  if(user)flushPending();
-  else renderResultNote();
+  if(user){flushPending();enviaSud();}
+  else {renderResultNote();notaSud();}
 }
 
 /* ---------- botón de cabecera ---------- */
@@ -110,7 +110,7 @@ function onDailySolved(s){
   pending={day:s.day,moves:s.moves,hints:s.hints};
   store("pending",JSON.stringify(pending));
   if(!cfg||!cfg.googleClientId){renderResultNote();return;}
-  if(user)flushPending(); else renderResultNote();
+  if(user){flushPending();enviaSud();} else renderResultNote();
 }
 function flushPending(){
   if(!pending){try{pending=JSON.parse(store("pending")||"null");}catch(e){pending=null}}
@@ -170,8 +170,73 @@ function showRanking(day){
   });
 }
 
+/* ---------- sudoku ---------- */
+var sudPend=null;
+function sudokuResuelto(s2){
+  sudPend=s2; store("sudpend",JSON.stringify(s2));
+  if(!cfg||!cfg.googleClientId){notaSud();return;}
+  if(user)enviaSud(); else notaSud();
+}
+function enviaSud(){
+  if(!sudPend){try{sudPend=JSON.parse(store("sudpend")||"null");}catch(e){sudPend=null}}
+  if(!sudPend||sudPend.day<dayNumber()-1){sudPend=null;store("sudpend",null);notaSud();return;}
+  var p=sudPend;
+  api("/api/sudoku",{method:"POST",body:JSON.stringify(p)}).then(function(r){
+    sudPend=null; store("sudpend",null); notaSud(r.me,p.day,p.level);
+  }).catch(function(){notaSud(null,p.day,p.level,true);});
+}
+function reloj(s2){var m=Math.floor(s2/60),g=s2%60;return m+":"+(g<10?"0":"")+g;}
+function notaSud(me,day,level,falló){
+  var n=$("sud-rank-note"); if(!n)return;
+  if(!cfg||!cfg.googleClientId){n.hidden=true;return;}
+  if(!sudPend&&!me){n.hidden=true;return;}
+  n.hidden=false;
+  if(me){
+    n.innerHTML='<span>Puesto <b>#'+me.rank+'</b> de '+me.total+' hoy</span>'+
+                '<button class="ghost" id="sud-ver">Ver ranking</button>';
+    $("sud-ver").onclick=function(){verSud(day||dayNumber(),level||1);};
+  }else if(user&&falló){
+    n.innerHTML='<span>No se pudo enviar tu tiempo.</span><button class="ghost" id="sud-otra">Reintentar</button>';
+    $("sud-otra").onclick=enviaSud;
+  }else if(!user){
+    n.innerHTML='<span>¿Quieres aparecer en el ranking por tiempo?</span>'+
+                '<button class="ghost" id="sud-entra">'+GICON+' Entrar</button>';
+    $("sud-entra").onclick=openPanel;
+  }else n.hidden=true;
+}
+function verSud(day,level){
+  var box=$("sud-ranking"); box.hidden=false;
+  box.innerHTML='<h3>Ranking por tiempo</h3><p class="fine">Cargando…</p>';
+  box.scrollIntoView({behavior:"smooth",block:"nearest"});
+  api("/api/sudoku/ranking?day="+day+"&level="+level).then(function(r){
+    var niv={1:"Fácil",2:"Medio",3:"Difícil",4:"Experto"}[r.level]||"";
+    var h='<h3>Ranking · sudoku '+esc(niv)+'</h3>';
+    if(!r.top.length)h+='<p class="fine">Nadie lo ha resuelto todavía hoy en este nivel.</p>';
+    else{
+      h+='<ol class="rank-list">';
+      r.top.forEach(function(e){
+        h+='<li'+(e.me?' class="me"':'')+'><span class="pos">'+e.rank+'</span>'+
+           (e.picture?'<img src="'+esc(e.picture)+'" alt="" referrerpolicy="no-referrer">':'<span class="noimg"></span>')+
+           '<span class="who">'+esc(e.name)+(e.me?' <em>(tú)</em>':'')+'</span>'+
+           '<span class="pts"><b>'+reloj(e.seconds)+'</b>'+(e.hints?' · '+e.hints+'p':'')+'</span></li>';
+      });
+      h+='</ol>';
+      if(r.me&&r.me.rank>r.top.length)h+='<p class="fine">Tu puesto: <b>#'+r.me.rank+'</b> de '+r.total+'.</p>';
+      else if(r.total>r.top.length)h+='<p class="fine">'+r.total+' jugadores hoy.</p>';
+    }
+    h+='<button class="close" id="sud-cerrar" aria-label="Cerrar">×</button>';
+    box.innerHTML=h;
+    $("sud-cerrar").onclick=function(){box.hidden=true;};
+  }).catch(function(){
+    box.innerHTML='<h3>Ranking por tiempo</h3><p class="fine">Todavía no está disponible: falta crear la tabla del sudoku en la base de datos.</p>'+
+                  '<button class="close" id="sud-cerrar" aria-label="Cerrar">×</button>';
+    $("sud-cerrar").onclick=function(){box.hidden=true;};
+  });
+}
+
 /* ---------- API pública para app.js ---------- */
-window.AxAccount={onDailySolved:onDailySolved,showRanking:showRanking,user:function(){return user}};
+window.AxAccount={onDailySolved:onDailySolved,showRanking:showRanking,
+  sudokuResuelto:sudokuResuelto,verRankingSudoku:verSud,user:function(){return user}};
 
 $("acct-btn").onclick=function(){ if($("acct-panel").hidden)openPanel(); else closePanel(); };
 init();
