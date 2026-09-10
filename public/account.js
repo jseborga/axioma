@@ -218,7 +218,10 @@ function verSud(day,level){
         h+='<li'+(e.me?' class="me"':'')+'><span class="pos">'+e.rank+'</span>'+
            (e.picture?'<img src="'+esc(e.picture)+'" alt="" referrerpolicy="no-referrer">':'<span class="noimg"></span>')+
            '<span class="who">'+esc(e.name)+(e.me?' <em>(tú)</em>':'')+'</span>'+
-           '<span class="pts"><b>'+reloj(e.seconds)+'</b>'+(e.hints?' · '+e.hints+'p':'')+'</span></li>';
+           '<span class="pts"><b>'+reloj(e.seconds)+'</b>'+
+             (e.hints||e.errors?'<small>'+(e.hints?e.hints+' pista'+(e.hints>1?'s':''):'')+
+               (e.hints&&e.errors?' · ':'')+(e.errors?e.errors+' error'+(e.errors>1?'es':''):'')+'</small>':'')+
+           '</span></li>';
       });
       h+='</ol>';
       if(r.me&&r.me.rank>r.top.length)h+='<p class="fine">Tu puesto: <b>#'+r.me.rank+'</b> de '+r.total+'.</p>';

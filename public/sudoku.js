@@ -213,7 +213,12 @@ if(!$("sud-board"))return;
 
 var nivel=1, P=null, val=null, notas=null, sel=-1, modoNotas=false,
     errores=0, pistas=0, hechas=[], listo=false, diario=true,
-    ms=0, desde=0, corriendo=false, latido=null;
+    ms=0, desde=0, corriendo=false, latido=null,
+    fallo={k:-1,n:0,t:null};
+
+/* Penalizaciones: van directas al cronómetro, así el tiempo que se
+   guarda y entra en el ranking ya las lleva dentro y no hay atajo. */
+var PEN_ERROR=30000, PEN_PISTA=60000, MAX_PISTAS=3;
 
 /* ---------- tiempo ---------- */
 function dia(){return Math.floor((Date.now()-Date.UTC(2026,0,1))/86400000)+1;}
@@ -221,6 +226,12 @@ function transcurrido(){return ms+(corriendo?Date.now()-desde:0);}
 function reloj(t){var s=Math.floor(t/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),g=s%60;
   var d=function(x){return x<10?"0"+x:""+x};return h?(h+":"+d(m)+":"+d(g)):(m+":"+d(g));}
 function pintaTiempo(){$("sud-time").textContent=reloj(transcurrido());}
+function penaliza(msPen,texto){
+  ms+=msPen; pintaTiempo();
+  var t=$("sud-pen"); if(!t)return;
+  t.textContent="+"+reloj(msPen); t.classList.remove("va");
+  void t.offsetWidth; t.classList.add("va");
+}
 function arranca(){if(corriendo||listo)return;corriendo=true;desde=Date.now();latido=setInterval(pintaTiempo,1000);}
 function detiene(){if(!corriendo)return;ms+=Date.now()-desde;corriendo=false;
   if(latido){clearInterval(latido);latido=null;}pintaTiempo();}
@@ -282,6 +293,7 @@ function pinta(){
       if(v&&selN&&v===selN)cls+=" igual";
       if(!fijo&&v&&choca(k,v))cls+=" mal";
       var dentro=v?String(v):(notas[k]?nota(k):"");
+      if(k===fallo.k){cls+=" mal fallo";dentro=String(fallo.n);}
       o.push('<button class="'+cls+'" data-k="'+k+'" type="button" aria-label="Fila '+
         (((k/9)|0)+1)+', columna '+(k%9+1)+(v?", "+v:", vacía")+'">'+dentro+'</button>');
     }
@@ -305,6 +317,9 @@ function pinta(){
   $("sud-left").textContent=quedan;
   $("sud-err").textContent=errores;
   $("sud-hints").textContent=pistas;
+  var quedanP=MAX_PISTAS-pistas, hb=$("sud-hint");
+  hb.innerHTML='Pista <small>'+(quedanP>0?(quedanP+" de "+MAX_PISTAS):"agotadas")+'</small>';
+  hb.disabled=listo||quedanP<=0;
   pintaTiempo();
 }
 function nota(k){
@@ -320,11 +335,23 @@ function pon(n){
   if(modoNotas){
     hechas.push({k:sel,v:val[sel],nt:notas[sel]});
     notas[sel]^= (1<<(n-1)); val[sel]=0;
+  }else if(val[sel]===n){                 /* volver a pulsar la misma cifra la quita */
+    hechas.push({k:sel,v:val[sel],nt:notas[sel]});
+    val[sel]=0;
+  }else if(n!==P.solucion[sel]){
+    /* la solución es única, así que cualquier otra cifra es un error
+       seguro: no se queda en el tablero y cuesta tiempo */
+    errores++; penaliza(PEN_ERROR);
+    fallo.k=sel; fallo.n=n;
+    if(fallo.t)clearTimeout(fallo.t);
+    fallo.t=setTimeout(function(){fallo.k=-1;fallo.t=null;pinta();},650);
+    di("El "+n+" no va en esa casilla: +30 s.","bad");
+    pinta(); return;
   }else{
     hechas.push({k:sel,v:val[sel],nt:notas[sel]});
-    val[sel] = (val[sel]===n) ? 0 : n;
-    notas[sel]=0;
-    if(val[sel]&&choca(sel,val[sel])){errores++;}
+    val[sel]=n; notas[sel]=0;
+    if(fallo.k===sel)fallo.k=-1;
+    di("");
   }
   pinta(); comprueba();
 }
@@ -338,7 +365,7 @@ function deshaz(){
   var h=hechas.pop(); val[h.k]=h.v; notas[h.k]=h.nt; sel=h.k; pinta();
 }
 function pista(){
-  if(listo)return;
+  if(listo||pistas>=MAX_PISTAS)return;
   var libres=[],k;
   for(k=0;k<81;k++)if(!P.puzzle[k]&&val[k]!==P.solucion[k])libres.push(k);
   if(!libres.length)return;
@@ -346,6 +373,8 @@ function pista(){
   arranca();
   hechas.push({k:k2,v:val[k2],nt:notas[k2]});
   val[k2]=P.solucion[k2]; notas[k2]=0; pistas++; sel=k2;
+  penaliza(PEN_PISTA);
+  di("Pista usada: +1:00."+(pistas>=MAX_PISTAS?" No quedan más.":""),"bad");
   pinta(); comprueba();
 }
 function comprueba(){
@@ -358,15 +387,17 @@ function comprueba(){
   di("¡Resuelto en "+reloj(transcurrido())+"!","good");
   comparte();
   if(diario&&window.AxAccount&&AxAccount.sudokuResuelto)
-    AxAccount.sudokuResuelto({day:dia(),level:nivel,seconds:Math.round(transcurrido()/1000),
+    AxAccount.sudokuResuelto({day:dia(),level:nivel,seconds:Math.floor(transcurrido()/1000),
                              errors:errores,hints:pistas});
   pinta();
 }
 function di(t,c){var m=$("sud-msg");m.textContent=t;m.className="msg"+(c?" "+c:"");}
 function comparte(){
+  var pen=errores*PEN_ERROR+pistas*PEN_PISTA;
   var txt="Sudoku de Axioma · "+M.NIVELES[nivel].nom+(diario?" · nº "+dia():"")+"\n"+
           reloj(transcurrido())+(errores?" · "+errores+" error"+(errores>1?"es":""):"")+
-          (pistas?" · "+pistas+" pista"+(pistas>1?"s":""):"");
+          (pistas?" · "+pistas+" pista"+(pistas>1?"s":""):"")+
+          (pen?"\n(incluye "+reloj(pen)+" de penalización)":"");
   $("sud-share").textContent=txt;
   $("sud-result").classList.add("on");
 }
@@ -378,6 +409,7 @@ function nuevo(esDiario){
   P=M.genera(nivel,rng);
   val=new Array(81).fill(0); notas=new Array(81).fill(0);
   sel=-1; errores=0; pistas=0; hechas=[]; listo=false; modoNotas=false;
+  if(fallo.t)clearTimeout(fallo.t); fallo.k=-1; fallo.t=null;
   cero(); di("");
   $("sud-result").classList.remove("on");
   $("sud-ranking").hidden=true;

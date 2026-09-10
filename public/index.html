@@ -147,8 +147,9 @@
       <div><small>Restantes</small><strong id="sud-left">0</strong></div>
       <div><small>Errores</small><strong id="sud-err">0</strong></div>
       <div><small>Pistas</small><strong id="sud-hints">0</strong></div>
-      <div><small>Tiempo</small><strong id="sud-time">0:00</strong></div>
+      <div><small>Tiempo</small><strong id="sud-time">0:00</strong><em class="pen" id="sud-pen" aria-hidden="true"></em></div>
     </div>
+    <p class="fine sud-rules">Solo entra la cifra correcta. Cada fallo suma <b>30 s</b> y cada pista <b>1 min</b> al tiempo; hay tres pistas como máximo.</p>
     <p class="msg" id="sud-msg" role="status" aria-live="polite"></p>
   </section>
 
@@ -182,7 +183,7 @@
     <button class="ghost" id="sud-erase" type="button">Borrar</button>
     <div class="acts-sep"></div>
     <button class="ghost" id="sud-undo" type="button">Deshacer</button>
-    <button class="ghost" id="sud-hint" type="button">Pista</button>
+    <button class="ghost" id="sud-hint" type="button">Pista <small>3 de 3</small></button>
     <button class="ghost" id="sud-new" type="button">Otro tablero</button>
   </section>
 

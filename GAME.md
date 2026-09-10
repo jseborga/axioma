@@ -311,13 +311,20 @@ uno con semilla aleatoria, que no es diario y no entra en el ranking.
   las casillas que contienen la misma cifra.
 - El teclado numérico muestra cuántas quedan de cada cifra y desactiva las que ya
   están las nueve.
-- Las cifras en conflicto con otra de su fila, columna o caja se marcan en rojo.
-- El modo *Notas* apunta candidatos pequeños; escribir la cifra definitiva borra
-  las notas de esa casilla.
-- *Deshacer* recorre el historial de jugadas. *Pista* rellena una casilla con su
-  valor correcto y suma uno al contador de pistas.
+- Cada cifra se comprueba contra la solución al escribirla. Como la solución es
+  única, una cifra distinta es un error seguro: no se coloca, se muestra en rojo
+  durante 650 ms, suma uno al contador de errores y **30 s** al cronómetro.
+  Volver a pulsar la cifra que ya está en la casilla la quita, sin penalización.
+- El modo *Notas* apunta candidatos pequeños sin comprobarlos ni penalizar;
+  escribir la cifra definitiva borra las notas de esa casilla.
+- *Deshacer* recorre el historial de jugadas. Los errores no entran en el
+  historial (nunca llegaron al tablero) y el tiempo penalizado no se devuelve.
+- *Pista* rellena la casilla seleccionada, o una al azar, con su valor correcto,
+  suma uno al contador de pistas y **60 s** al cronómetro. Hay **tres** por
+  tablero; agotadas, el botón se desactiva.
 - El cronómetro arranca con la primera jugada y se pausa al salir de la pestaña,
-  igual que en Axioma.
+  igual que en Axioma. Las penalizaciones se suman directamente al tiempo
+  acumulado, así que todo lo que se muestra, guarda y comparte ya las incluye.
 
 ## Registro y ranking
 
@@ -325,11 +332,19 @@ Al terminar se guarda en el dispositivo, por día y nivel, el tiempo, los errore
 y las pistas usadas; al volver, ese tablero aparece ya resuelto. Con la cuenta de
 Google activada, el resultado se envía a la tabla `sudoku` y entra en el ranking
 de ese día y ese nivel, ordenado por tiempo y, a igualdad, por quién llegó antes.
-Se conserva únicamente el mejor tiempo de cada jugador por día y nivel.
+Se conserva únicamente el mejor tiempo de cada jugador por día y nivel. Como el
+tiempo lleva las penalizaciones dentro, fallar o pedir pistas baja en el ranking
+por sí solo, sin necesidad de una puntuación aparte.
+
+La API rechaza envíos incoherentes: más de tres pistas, o un tiempo menor que la
+penalización que implican sus errores y pistas (30 s por error, 60 s por pista).
 
 Formato del texto para compartir:
 
 ```
 Sudoku de Axioma · Difícil · nº 252
-7:41
+7:41 · 1 error · 2 pistas
+(incluye 2:30 de penalización)
 ```
+
+La última línea solo aparece si hubo penalizaciones.

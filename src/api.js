@@ -7,7 +7,7 @@
      POST /api/auth/logout   → borra la sesión
      POST /api/scores        → { day, moves, hints } → guarda la puntuación del día (requiere sesión)
      GET  /api/ranking?day=N → { day, top:[…], me:{rank,total}|null }
-     POST /api/sudoku        → { day, level, seconds, errors, hints }
+     POST /api/sudoku        → { day, level, seconds, errors, hints } (seconds ya lleva las penalizaciones)
      GET  /api/sudoku/ranking?day=N&level=L → { top:[…], me }
    Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET. Binding D1: DB.
    =========================================================== */
@@ -197,7 +197,10 @@ async function sudokuGuarda(req,env){
   if(!(level>=1&&level<=4))return json({error:"bad_level"},null,400);
   if(!(seconds>=1)||seconds>86400)return json({error:"bad_time"},null,400);
   if(errors<0||errors>999)errors=0;
-  if(hints<0||hints>81)hints=0;
+  if(hints<0||hints>3)return json({error:"bad_hints"},null,400);
+  /* el tiempo enviado ya incluye las penalizaciones (30 s por fallo,
+     60 s por pista), así que nunca puede ser menor que ellas */
+  if(seconds<errors*30+hints*60)return json({error:"bad_time"},null,400);
   var now=Math.floor(Date.now()/1000);
   try{
     /* se conserva el mejor tiempo del día en ese nivel */

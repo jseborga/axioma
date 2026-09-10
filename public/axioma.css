@@ -282,6 +282,8 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
 .rank-list .who em{font-style:normal;font-weight:400;color:var(--ink-2)}
 .rank-list .pts{font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:13.5px;flex:none}
 .rank-list .pts b{color:var(--ink);font-size:15px;font-weight:600}
+.rank-list .pts{display:flex;flex-direction:column;align-items:flex-end;line-height:1.2}
+.rank-list .pts small{font-size:11.5px;color:var(--ink-3)}
 .rank-list li.me .pts,.rank-list li.me .pts b,.rank-list li.me .who em{color:var(--accent)}
 
 /* --- movimiento discreto --- */
@@ -509,6 +511,18 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
 .sc.sel.fija{color:#fff}
 .sc.mal{color:var(--bad);background:var(--bad-tint)}
 .sc.sel.mal{background:var(--bad);color:#fff}
+.sc.fallo{animation:sacude .4s ease}
+@keyframes sacude{0%,100%{transform:none}20%{transform:translateX(-3px)}40%{transform:translateX(3px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
+/* aviso de penalización: sube desde el cronómetro y se desvanece */
+.readout div{position:relative}
+.pen{position:absolute;left:0;right:0;top:-6px;font-style:normal;font-size:13px;font-weight:700;
+  color:var(--bad);opacity:0;pointer-events:none;font-variant-numeric:tabular-nums}
+.pen.va{animation:sube 1.4s ease-out forwards}
+@keyframes sube{0%{opacity:0;transform:translateY(6px)}15%{opacity:1}100%{opacity:0;transform:translateY(-22px)}}
+.sud-rules{margin:-2px 0 8px;text-align:center;font-size:12.5px;color:var(--ink-2)}
+.sud-rules b{color:var(--ink);font-weight:600}
+#sud-hint small{font-size:11.5px;font-weight:500;opacity:.75;margin-left:3px}
+@media (prefers-reduced-motion:reduce){.sc.fallo{animation:none}.pen.va{animation:none;opacity:1}}
 .sc .nt{display:grid;grid-template-columns:repeat(3,1fr);width:100%;height:100%;
   align-items:center;justify-items:center;color:var(--ink-2);font-weight:500}
 .sc .nt i{font-style:normal;font-size:8.5px;line-height:1}

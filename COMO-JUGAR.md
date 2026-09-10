@@ -104,13 +104,23 @@ se repita en la misma fila, en la misma columna ni dentro de la misma caja de
 **Cómo se juega.** Toca una casilla vacía y elige la cifra en el teclado de
 abajo. El teclado lleva la cuenta de cuántas quedan de cada cifra y desaparece la
 que ya está completa. Al seleccionar una casilla se resaltan su fila, su columna
-y su caja, y también todas las casillas que llevan la misma cifra. Las que entran
-en conflicto se marcan en rojo en cuanto las escribes.
+y su caja, y también todas las casillas que llevan la misma cifra.
+
+**Solo entra la cifra correcta.** Cada tablero se genera con una única solución,
+verificada antes de mostrarlo, así que cualquier cifra distinta de la que va en
+esa casilla es un fallo seguro. El juego no la acepta: parpadea en rojo, no se
+queda en el tablero, cuenta como error y **suma 30 segundos** al cronómetro.
+Probar a ojo no es un atajo, es más lento que pensar.
 
 **Notas.** Si no estás seguro, activa *Notas* y las cifras que pulses se apuntan
-pequeñas, como a lápiz, para ir descartando. Al escribir la cifra definitiva, las
-notas de esa casilla se borran solas. *Deshacer* da marcha atrás jugada a jugada
-y *Pista* rellena una casilla correcta por ti.
+pequeñas, como a lápiz, para ir descartando; las notas son libres y no penalizan.
+Al escribir la cifra definitiva, las notas de esa casilla se borran solas.
+*Deshacer* da marcha atrás jugada a jugada, pero no devuelve el tiempo de las
+penalizaciones.
+
+**Pistas.** *Pista* rellena una casilla correcta por ti, pero **cuesta un minuto**
+y hay **tres como máximo** por tablero. Sirven para desatascarte, no para que el
+juego se resuelva solo.
 
 **Niveles.** Cuatro: Fácil (42 pistas), Medio (34), Difícil (28) y Experto (24).
 No es solo cuántas casillas vienen dadas: cada tablero se comprueba con las
@@ -119,10 +129,12 @@ razonamiento que un Fácil. Ninguno necesita adivinar, todos tienen una sola
 solución.
 
 **El del día y el ranking.** Cada nivel tiene su sudoku del día, el mismo para
-todo el mundo. El cronómetro arranca con tu primera jugada y se para al terminar.
-Si entras con Google, tu tiempo aparece en el ranking de ese día y ese nivel;
-sin cuenta también puedes jugar, simplemente no se envía. *Otro tablero* genera
-uno de práctica, que no cuenta para el ranking.
+todo el mundo. El cronómetro arranca con tu primera jugada y se para al terminar;
+las penalizaciones por fallos y pistas ya van dentro de ese tiempo, así que el
+ranking compara a todos con la misma vara. Si entras con Google, tu tiempo
+aparece en el ranking de ese día y ese nivel, junto a cuántas pistas y errores
+llevó; sin cuenta también puedes jugar, simplemente no se envía. *Otro tablero*
+genera uno de práctica, que no cuenta para el ranking.
 
 ---
 

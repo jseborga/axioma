@@ -146,11 +146,11 @@ var SUDOKU=[
 },
 {
   t:"Cómo se juega aquí",
-  d:"Toca una casilla vacía y elige la cifra en el teclado de abajo. El teclado lleva la cuenta de cuántas quedan de cada cifra, y al elegir una se te resaltan en el tablero todas las iguales. Si te equivocas, Deshacer da marcha atrás y Pista rellena una casilla por ti.",
+  d:"Toca una casilla vacía y elige la cifra en el teclado de abajo. Solo entra la cifra correcta: como el tablero tiene una sola solución, cualquier otra es un fallo seguro, se rechaza en rojo y suma 30 segundos al cronómetro. El teclado lleva la cuenta de cuántas quedan de cada cifra.",
   a:function(){return trio([
       [["5.3","o..","..7"],["Toca","una casilla vacía"],26],
       [["5.3","4..","..7"],["Pulsa la cifra","y queda puesta"],26],
-      [["5.3","...","..7"],["Borrar","la deja vacía"],26]]);}
+      [["5.3","...","..7"],["Un fallo","no entra: +30 s"],26]]);}
 },
 {
   t:"Apuntar candidatos",
@@ -158,11 +158,11 @@ var SUDOKU=[
   a:function(){return '<div class="tut-trio">'+
       '<figure>'+celdaNotas("249",46)+'<figcaption><b>Con notas</b>tres candidatos</figcaption></figure>'+
       '<figure>'+grid(["4"],46)+'<figcaption><b>Decidido</b>una sola cifra</figcaption></figure>'+
-      '</div><p class="tut-note">Las casillas en conflicto se marcan en rojo mientras juegas.</p>';}
+      '</div><p class="tut-note">Pista rellena una casilla por ti, pero cuesta un minuto y solo hay tres por tablero.</p>';}
 },
 {
   t:"Niveles y ranking por tiempo",
-  d:"Hay cuatro niveles y cada uno tiene su propio sudoku del día, igual para todo el mundo. El cronómetro corre desde tu primera jugada: al terminar puedes entrar con Google para que tu tiempo aparezca en el ranking de ese día y ese nivel. Otro tablero te da uno de práctica que no cuenta.",
+  d:"Hay cuatro niveles y cada uno tiene su propio sudoku del día, igual para todo el mundo. El cronómetro corre desde tu primera jugada y las penalizaciones por fallos y pistas ya van dentro, así que el ranking por tiempo es justo. Al terminar puedes entrar con Google para aparecer en el de ese día y ese nivel. Otro tablero te da uno de práctica que no cuenta.",
   a:function(){return '<div class="tut-niv">'+
       '<div><b>Fácil</b><span>42 pistas</span></div>'+
       '<div><b>Medio</b><span>34 pistas</span></div>'+
