@@ -317,7 +317,7 @@ SELECT level, COUNT(*) AS partidas, AVG(seconds) AS media, MIN(seconds) AS mejor
 FROM sudoku GROUP BY level ORDER BY level;
 ```
 
-Los niveles son 1 Fácil, 2 Medio, 3 Difícil y 4 Experto.
+Los niveles son 1 Fácil, 2 Medio, 3 Difícil, 4 Experto y 5 Ultra (sin ayudas).
 
 ### Copia de seguridad
 

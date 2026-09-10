@@ -209,7 +209,7 @@ function verSud(day,level){
   box.innerHTML='<h3>Ranking por tiempo</h3><p class="fine">Cargando…</p>';
   box.scrollIntoView({behavior:"smooth",block:"nearest"});
   api("/api/sudoku/ranking?day="+day+"&level="+level).then(function(r){
-    var niv={1:"Fácil",2:"Medio",3:"Difícil",4:"Experto"}[r.level]||"";
+    var niv={1:"Fácil",2:"Medio",3:"Difícil",4:"Experto",5:"Ultra"}[r.level]||"";
     var h='<h3>Ranking · sudoku '+esc(niv)+'</h3>';
     if(!r.top.length)h+='<p class="fine">Nadie lo ha resuelto todavía hoy en este nivel.</p>';
     else{

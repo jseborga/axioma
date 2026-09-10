@@ -194,13 +194,15 @@ async function sudokuGuarda(req,env){
       errors=parseInt(body.errors,10)||0, hints=parseInt(body.hints,10)||0;
   var today=dayNumber();
   if(!(day>=1)||day>today||day<today-1)return json({error:"bad_day"},null,400);
-  if(!(level>=1&&level<=4))return json({error:"bad_level"},null,400);
+  if(!(level>=1&&level<=5))return json({error:"bad_level"},null,400);
   if(!(seconds>=1)||seconds>86400)return json({error:"bad_time"},null,400);
   if(errors<0||errors>999)errors=0;
   if(hints<0||hints>3)return json({error:"bad_hints"},null,400);
-  /* el tiempo enviado ya incluye las penalizaciones (30 s por fallo,
-     60 s por pista), así que nunca puede ser menor que ellas */
-  if(seconds<errors*30+hints*60)return json({error:"bad_time"},null,400);
+  /* en Ultra no hay ayudas ni recuento de fallos */
+  if(level===5&&(hints||errors))return json({error:"bad_hints"},null,400);
+  /* el tiempo enviado ya incluye las penalizaciones (30 s por fallo a
+     partir del tercero, 60 s por pista), así que nunca puede ser menor */
+  if(seconds<Math.max(0,errors-2)*30+hints*60)return json({error:"bad_time"},null,400);
   var now=Math.floor(Date.now()/1000);
   try{
     /* se conserva el mejor tiempo del día en ese nivel */
@@ -232,7 +234,7 @@ async function sudokuRanking(req,env,url){
   if(!env.DB)return json({error:"not_configured"},null,503);
   var day=parseInt(url.searchParams.get("day"),10)||dayNumber();
   var level=parseInt(url.searchParams.get("level"),10)||1;
-  if(!(level>=1&&level<=4))level=1;
+  if(!(level>=1&&level<=5))level=1;
   var user=await currentUser(req,env), rows, total;
   try{
     rows=await env.DB.prepare(

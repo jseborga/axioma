@@ -293,10 +293,12 @@ posiciones, una por cifra, de ahí que generar un tablero tarde milisegundos.
 | 2 · Medio | 34 | + solos ocultos |
 | 3 · Difícil | 28 | + parejas desnudas y apuntadores |
 | 4 · Experto | 24 | Más que las anteriores |
+| 5 · Ultra | 22 | Como Experto, pero sin ninguna ayuda en pantalla |
 
 El grado se mide resolviendo el tablero únicamente con las técnicas de cada
-escalón: el nivel es el escalón más bajo que basta para terminarlo. Ningún
-tablero necesita adivinar, en ninguno de los cuatro niveles.
+escalón: el nivel es el escalón más bajo que basta para terminarlo. El grado
+medible llega a 4; Ultra pide ese mismo grado con menos pistas. Ningún tablero
+necesita adivinar, en ninguno de los cinco niveles.
 
 ## Tablero del día
 
@@ -313,8 +315,13 @@ uno con semilla aleatoria, que no es diario y no entra en el ranking.
   están las nueve.
 - Cada cifra se comprueba contra la solución al escribirla. Como la solución es
   única, una cifra distinta es un error seguro: no se coloca, se muestra en rojo
-  durante 650 ms, suma uno al contador de errores y **30 s** al cronómetro.
+  durante 650 ms y suma uno al contador de errores. Los dos primeros errores
+  no penalizan; a partir del tercero, cada uno suma **30 s** al cronómetro.
   Volver a pulsar la cifra que ya está en la casilla la quita, sin penalización.
+- **Ultra** desactiva toda la asistencia: cualquier cifra se coloca, no se
+  marcan conflictos ni errores, los contadores de errores y pistas muestran «—»
+  y el botón de pista no aparece. La única comprobación es con la rejilla
+  completa: si no coincide con la solución, se avisa sin señalar la casilla.
 - El modo *Notas* apunta candidatos pequeños sin comprobarlos ni penalizar;
   escribir la cifra definitiva borra las notas de esa casilla.
 - *Deshacer* recorre el historial de jugadas. Los errores no entran en el
@@ -336,8 +343,9 @@ Se conserva únicamente el mejor tiempo de cada jugador por día y nivel. Como e
 tiempo lleva las penalizaciones dentro, fallar o pedir pistas baja en el ranking
 por sí solo, sin necesidad de una puntuación aparte.
 
-La API rechaza envíos incoherentes: más de tres pistas, o un tiempo menor que la
-penalización que implican sus errores y pistas (30 s por error, 60 s por pista).
+La API rechaza envíos incoherentes: más de tres pistas, un tiempo menor que la
+penalización que implican sus errores y pistas (30 s por error a partir del
+tercero, 60 s por pista), o un resultado de Ultra con pistas o errores.
 
 Formato del texto para compartir:
 

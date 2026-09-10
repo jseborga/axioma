@@ -160,7 +160,8 @@ function grado(p){
 }
 
 var NIVELES={1:{nom:"Fácil",pistas:42},2:{nom:"Medio",pistas:34},
-             3:{nom:"Difícil",pistas:28},4:{nom:"Experto",pistas:24}};
+             3:{nom:"Difícil",pistas:28},4:{nom:"Experto",pistas:24},
+             5:{nom:"Ultra",pistas:22}};   /* Ultra: grado máximo y sin ayudas */
 
 /* Generación en tres fases: se cava hasta el número de pistas del nivel;
    si el tablero se queda fácil se sigue cavando, y si se ha pasado de
@@ -168,6 +169,7 @@ var NIVELES={1:{nom:"Fácil",pistas:42},2:{nom:"Medio",pistas:34},
    nivel pedido se alcanza siempre, en vez de depender de la suerte. */
 function genera(nivel,rng){
   var obj=NIVELES[nivel].pistas, mejor=null, mejorDist=99;
+  var gradoObj=Math.min(nivel,4);   /* el grado medible llega a 4 */
   for(var intento=0;intento<20;intento++){
     var full=completo(rng), p=full.slice(), pistas=81, quitadas=[], i, k, g;
     var orden=barajar(Array.from({length:81},function(_,j){return j;}),rng);
@@ -178,16 +180,16 @@ function genera(nivel,rng){
       if(resolver(p,2)!==1){p[k]=g;continue;}
       quitadas.push(k); pistas--;
     }
-    for(;i<orden.length&&grado(p)<nivel;i++){         /* fase 2: si se queda corto */
+    for(;i<orden.length&&grado(p)<gradoObj;i++){      /* fase 2: si se queda corto */
       k=orden[i]; if(!p[k])continue;
       g=p[k]; p[k]=0;
       if(resolver(p,2)!==1){p[k]=g;continue;}
       quitadas.push(k); pistas--;
     }
-    while(quitadas.length&&grado(p)>nivel){           /* fase 3: si se ha pasado */
+    while(quitadas.length&&grado(p)>gradoObj){        /* fase 3: si se ha pasado */
       k=quitadas.pop(); p[k]=full[k]; pistas++;
     }
-    var gf=grado(p), dist=Math.abs(gf-nivel);
+    var gf=grado(p), dist=Math.abs(gf-gradoObj);
     if(!dist)return {puzzle:p,solucion:full,pistas:pistas,nivel:nivel};
     if(dist<mejorDist){mejorDist=dist;mejor={puzzle:p.slice(),solucion:full,pistas:pistas,nivel:gf};}
   }
@@ -218,7 +220,9 @@ var nivel=1, P=null, val=null, notas=null, sel=-1, modoNotas=false,
 
 /* Penalizaciones: van directas al cronómetro, así el tiempo que se
    guarda y entra en el ranking ya las lleva dentro y no hay atajo. */
-var PEN_ERROR=30000, PEN_PISTA=60000, MAX_PISTAS=3;
+var PEN_ERROR=30000, PEN_PISTA=60000, MAX_PISTAS=3, FALLOS_GRATIS=2, ULTRA=5;
+function sinAyuda(){return nivel===ULTRA;}
+function penError(e){return Math.max(0,e-FALLOS_GRATIS)*PEN_ERROR;}
 
 /* ---------- tiempo ---------- */
 function dia(){return Math.floor((Date.now()-Date.UTC(2026,0,1))/86400000)+1;}
@@ -291,7 +295,7 @@ function pinta(){
         if(f===((sel/9)|0)||c===sel%9||M.CAJA[k]===M.CAJA[sel])cls+=" peer";
       }
       if(v&&selN&&v===selN)cls+=" igual";
-      if(!fijo&&v&&choca(k,v))cls+=" mal";
+      if(!fijo&&v&&!sinAyuda()&&choca(k,v))cls+=" mal";
       var dentro=v?String(v):(notas[k]?nota(k):"");
       if(k===fallo.k){cls+=" mal fallo";dentro=String(fallo.n);}
       o.push('<button class="'+cls+'" data-k="'+k+'" type="button" aria-label="Fila '+
@@ -315,11 +319,15 @@ function pinta(){
 
   var quedan=0;for(k=0;k<81;k++)if(!P.puzzle[k]&&!val[k])quedan++;
   $("sud-left").textContent=quedan;
-  $("sud-err").textContent=errores;
-  $("sud-hints").textContent=pistas;
+  $("sud-err").textContent=sinAyuda()?"—":errores;
+  $("sud-hints").textContent=sinAyuda()?"—":pistas;
   var quedanP=MAX_PISTAS-pistas, hb=$("sud-hint");
   hb.innerHTML='Pista <small>'+(quedanP>0?(quedanP+" de "+MAX_PISTAS):"agotadas")+'</small>';
   hb.disabled=listo||quedanP<=0;
+  hb.hidden=sinAyuda();
+  $("sud-rules").innerHTML = sinAyuda()
+    ? 'Sin ayudas: entra cualquier cifra, nada se marca y no hay pistas. Solo se comprueba al completar la rejilla: borra y corrige hasta que cuadre.'
+    : 'Solo entra la cifra correcta. Los dos primeros fallos no cuestan; desde el tercero, cada uno suma <b>30 s</b>. Cada pista cuesta <b>1 min</b>; tres como máximo.';
   pintaTiempo();
 }
 function nota(k){
@@ -338,16 +346,20 @@ function pon(n){
   }else if(val[sel]===n){                 /* volver a pulsar la misma cifra la quita */
     hechas.push({k:sel,v:val[sel],nt:notas[sel]});
     val[sel]=0;
-  }else if(n!==P.solucion[sel]){
+  }else if(n!==P.solucion[sel]&&!sinAyuda()){
     /* la solución es única, así que cualquier otra cifra es un error
-       seguro: no se queda en el tablero y cuesta tiempo */
-    errores++; penaliza(PEN_ERROR);
+       seguro: no se queda en el tablero. Los dos primeros se perdonan;
+       a partir del tercero cuestan tiempo */
+    errores++;
+    var gratis=errores<=FALLOS_GRATIS;
+    if(!gratis)penaliza(PEN_ERROR);
     fallo.k=sel; fallo.n=n;
     if(fallo.t)clearTimeout(fallo.t);
     fallo.t=setTimeout(function(){fallo.k=-1;fallo.t=null;pinta();},650);
-    di("El "+n+" no va en esa casilla: +30 s.","bad");
+    di("El "+n+" no va en esa casilla"+(gratis?". Fallo "+errores+" de "+FALLOS_GRATIS+" sin coste.":": +30 s."),"bad");
     pinta(); return;
   }else{
+    /* en Ultra entra cualquier cifra y nada se comprueba hasta el final */
     hechas.push({k:sel,v:val[sel],nt:notas[sel]});
     val[sel]=n; notas[sel]=0;
     if(fallo.k===sel)fallo.k=-1;
@@ -365,7 +377,7 @@ function deshaz(){
   var h=hechas.pop(); val[h.k]=h.v; notas[h.k]=h.nt; sel=h.k; pinta();
 }
 function pista(){
-  if(listo||pistas>=MAX_PISTAS)return;
+  if(listo||pistas>=MAX_PISTAS||sinAyuda())return;
   var libres=[],k;
   for(k=0;k<81;k++)if(!P.puzzle[k]&&val[k]!==P.solucion[k])libres.push(k);
   if(!libres.length)return;
@@ -381,7 +393,7 @@ function comprueba(){
   var k;
   for(k=0;k<81;k++)if(!(P.puzzle[k]||val[k]))return;
   for(k=0;k<81;k++)if((P.puzzle[k]||val[k])!==P.solucion[k]){
-    di("La rejilla está completa pero hay alguna cifra equivocada.","bad");return;
+    di("La rejilla está completa pero hay alguna cifra equivocada. Borra y corrige.","bad");return;
   }
   listo=true; detiene(); anota();
   di("¡Resuelto en "+reloj(transcurrido())+"!","good");
@@ -393,7 +405,7 @@ function comprueba(){
 }
 function di(t,c){var m=$("sud-msg");m.textContent=t;m.className="msg"+(c?" "+c:"");}
 function comparte(){
-  var pen=errores*PEN_ERROR+pistas*PEN_PISTA;
+  var pen=penError(errores)+pistas*PEN_PISTA;
   var txt="Sudoku de Axioma · "+M.NIVELES[nivel].nom+(diario?" · nº "+dia():"")+"\n"+
           reloj(transcurrido())+(errores?" · "+errores+" error"+(errores>1?"es":""):"")+
           (pistas?" · "+pistas+" pista"+(pistas>1?"s":""):"")+

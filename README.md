@@ -4,7 +4,7 @@ Puzle diario de deducción pura: no solo resuelves el tablero, descubres qué re
 
 - Sin azar, sin adivinar, sin cuenta. Cada tablero se genera y verifica en el dispositivo con solución única.
 - Tres modos: **Diario** (el mismo tablero para todo el mundo), **Flash** (rápido, 4×4) y **Libre** (niveles progresivos).
-- **Sudoku** aparte, con cuatro niveles, tablero del día para cada uno y ranking por tiempo. Solo entra la cifra correcta: cada fallo cuesta 30 s y cada pista 1 min, con tres pistas como máximo.
+- **Sudoku** aparte, con cinco niveles, tablero del día para cada uno y ranking por tiempo. Solo entra la cifra correcta: dos fallos gratis y luego 30 s cada uno; cada pista 1 min, tres como máximo. En **Ultra** no hay ninguna ayuda: se comprueba solo al completar.
 - PWA: funciona sin conexión y se puede instalar en el móvil.
 - **Cuenta opcional con Google** para entrar en el ranking del reto diario. Sin configurarla, la app funciona igual y no muestra nada de cuentas.
 

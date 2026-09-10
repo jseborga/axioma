@@ -109,8 +109,9 @@ y su caja, y también todas las casillas que llevan la misma cifra.
 **Solo entra la cifra correcta.** Cada tablero se genera con una única solución,
 verificada antes de mostrarlo, así que cualquier cifra distinta de la que va en
 esa casilla es un fallo seguro. El juego no la acepta: parpadea en rojo, no se
-queda en el tablero, cuenta como error y **suma 30 segundos** al cronómetro.
-Probar a ojo no es un atajo, es más lento que pensar.
+queda en el tablero y cuenta como error. Los **dos primeros fallos no cuestan**
+nada; desde el tercero, cada uno **suma 30 segundos** al cronómetro. Probar a
+ojo no es un atajo, es más lento que pensar.
 
 **Notas.** Si no estás seguro, activa *Notas* y las cifras que pulses se apuntan
 pequeñas, como a lápiz, para ir descartando; las notas son libres y no penalizan.
@@ -122,11 +123,18 @@ penalizaciones.
 y hay **tres como máximo** por tablero. Sirven para desatascarte, no para que el
 juego se resuelva solo.
 
-**Niveles.** Cuatro: Fácil (42 pistas), Medio (34), Difícil (28) y Experto (24).
-No es solo cuántas casillas vienen dadas: cada tablero se comprueba con las
-técnicas que hacen falta para resolverlo, así que un Experto exige de verdad más
-razonamiento que un Fácil. Ninguno necesita adivinar, todos tienen una sola
-solución.
+**Niveles.** Cinco: Fácil (42 pistas), Medio (34), Difícil (28), Experto (24) y
+Ultra (22). No es solo cuántas casillas vienen dadas: cada tablero se comprueba
+con las técnicas que hacen falta para resolverlo, así que un Experto exige de
+verdad más razonamiento que un Fácil. Ninguno necesita adivinar, todos tienen
+una sola solución.
+
+**Ultra: sin ayudas.** En este nivel el juego no te dice nada mientras juegas:
+entra cualquier cifra, nada se marca en rojo, no hay contador de errores ni
+pistas. Solo al completar las 81 casillas comprueba si cuadra; si no, te avisa
+de que hay alguna cifra equivocada, sin decir cuál, y te toca borrar y corregir
+hasta que salga. Es el sudoku de papel, con la única garantía de que la solución
+existe y es una sola.
 
 **El del día y el ranking.** Cada nivel tiene su sudoku del día, el mismo para
 todo el mundo. El cronómetro arranca con tu primera jugada y se para al terminar;

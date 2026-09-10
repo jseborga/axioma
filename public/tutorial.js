@@ -146,11 +146,11 @@ var SUDOKU=[
 },
 {
   t:"Cómo se juega aquí",
-  d:"Toca una casilla vacía y elige la cifra en el teclado de abajo. Solo entra la cifra correcta: como el tablero tiene una sola solución, cualquier otra es un fallo seguro, se rechaza en rojo y suma 30 segundos al cronómetro. El teclado lleva la cuenta de cuántas quedan de cada cifra.",
+  d:"Toca una casilla vacía y elige la cifra en el teclado de abajo. Solo entra la cifra correcta: como el tablero tiene una sola solución, cualquier otra es un fallo seguro y se rechaza en rojo. Los dos primeros fallos no cuestan nada; desde el tercero, cada uno suma 30 segundos. El teclado lleva la cuenta de cuántas quedan de cada cifra.",
   a:function(){return trio([
       [["5.3","o..","..7"],["Toca","una casilla vacía"],26],
       [["5.3","4..","..7"],["Pulsa la cifra","y queda puesta"],26],
-      [["5.3","...","..7"],["Un fallo","no entra: +30 s"],26]]);}
+      [["5.3","...","..7"],["Un fallo","no entra"],26]]);}
 },
 {
   t:"Apuntar candidatos",
@@ -162,12 +162,13 @@ var SUDOKU=[
 },
 {
   t:"Niveles y ranking por tiempo",
-  d:"Hay cuatro niveles y cada uno tiene su propio sudoku del día, igual para todo el mundo. El cronómetro corre desde tu primera jugada y las penalizaciones por fallos y pistas ya van dentro, así que el ranking por tiempo es justo. Al terminar puedes entrar con Google para aparecer en el de ese día y ese nivel. Otro tablero te da uno de práctica que no cuenta.",
+  d:"Hay cinco niveles y cada uno tiene su propio sudoku del día, igual para todo el mundo. En Ultra no hay ayudas: entra cualquier cifra, nada se marca, no hay pistas y solo se comprueba al completar la rejilla. El cronómetro corre desde tu primera jugada y las penalizaciones por fallos y pistas ya van dentro, así que el ranking por tiempo es justo. Al terminar puedes entrar con Google para aparecer en el de ese día y ese nivel. Otro tablero te da uno de práctica que no cuenta.",
   a:function(){return '<div class="tut-niv">'+
       '<div><b>Fácil</b><span>42 pistas</span></div>'+
       '<div><b>Medio</b><span>34 pistas</span></div>'+
       '<div><b>Difícil</b><span>28 pistas</span></div>'+
       '<div><b>Experto</b><span>24 pistas</span></div>'+
+      '<div><b>Ultra</b><span>22 pistas · sin ayudas ni pistas, solo se comprueba al final</span></div>'+
       '</div><p class="tut-note">Nunca hace falta adivinar: todos los tableros tienen una sola solución.</p>';}
 }];
 
