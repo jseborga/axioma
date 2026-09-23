@@ -8,7 +8,7 @@
 var $=function(id){return document.getElementById(id)};
 var GICON='<svg class="g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8C43.8 38 46.5 31.8 46.5 24.5z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C1 16.4 0 20.1 0 24s1 7.6 2.6 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.6-2 15.4-5.6l-7.5-5.8c-2.1 1.4-4.8 2.2-7.9 2.2-6.3 0-11.7-4.1-13.6-9.8l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg>';
 
-var cfg=null, user=null, gsiLoaded=false, pending=null;
+var cfg=null, user=null, gsiLoaded=false, pending=null, cargado=false;
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function firstName(n){return String(n||"").split(" ")[0]}
@@ -23,16 +23,18 @@ function dayNumber(){return Math.floor((Date.now()-Date.UTC(2026,0,1))/86400000)
 function init(){
   api("/api/config").then(function(c){
     cfg=c;
-    if(!c.googleClientId)return;
+    if(!c.googleClientId){cargado=true;avisa();return;}
     $("acct").hidden=false;
-    return api("/api/me").then(function(m){setUser(m.user||null);});
-  }).catch(function(){ cfg=null; });
+    return api("/api/me").then(function(m){cargado=true;setUser(m.user||null);});
+  }).catch(function(){ cfg=null; cargado=true; avisa(); });
 }
+function avisa(){try{document.dispatchEvent(new CustomEvent("ax-user",{detail:user}));}catch(e){}}
 
 function setUser(u){
   user=u; renderAccount(); renderPanel();
   if(user){flushPending();enviaSud();}
   else {renderResultNote();notaSud();}
+  try{document.dispatchEvent(new CustomEvent("ax-user",{detail:user}));}catch(e){}
 }
 
 /* ---------- botón de cabecera ---------- */
@@ -239,7 +241,9 @@ function verSud(day,level){
 
 /* ---------- API pública para app.js ---------- */
 window.AxAccount={onDailySolved:onDailySolved,showRanking:showRanking,
-  sudokuResuelto:sudokuResuelto,verRankingSudoku:verSud,user:function(){return user}};
+  sudokuResuelto:sudokuResuelto,verRankingSudoku:verSud,user:function(){return user},
+  configurado:function(){return !!(cfg&&cfg.googleClientId)},listo:function(){return cfg!==null||cargado},
+  abrirCuenta:openPanel};
 
 $("acct-btn").onclick=function(){ if($("acct-panel").hidden)openPanel(); else closePanel(); };
 init();

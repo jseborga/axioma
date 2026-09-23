@@ -5,6 +5,8 @@ Puzle diario de deducción pura: no solo resuelves el tablero, descubres qué re
 - Sin azar, sin adivinar, sin cuenta. Cada tablero se genera y verifica en el dispositivo con solución única.
 - Tres modos: **Diario** (el mismo tablero para todo el mundo), **Flash** (rápido, 4×4) y **Libre** (niveles progresivos).
 - **Sudoku** aparte, con cinco niveles, tablero del día para cada uno y ranking por tiempo. Solo entra la cifra correcta: dos fallos gratis y luego 30 s cada uno; cada pista 1 min, tres como máximo. En **Ultra** no hay ninguna ayuda: se comprueba solo al completar.
+- **Retos**: concursos entre amigos con código y enlace, un tablero por día igual para todos, premio y clasificación individual, por equipos o por parejas. El servidor guarda los tableros y comprueba cada resultado.
+- **Sudoku en pareja**: dos personas resuelven el mismo tablero a la vez, cada una desde su móvil, con el tiempo cronometrado por el servidor.
 - PWA: funciona sin conexión y se puede instalar en el móvil.
 - **Cuenta opcional con Google** para entrar en el ranking del reto diario. Sin configurarla, la app funciona igual y no muestra nada de cuentas.
 
@@ -29,12 +31,14 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `public/app.js` | Generador, verificador y lógica de juego |
 | `public/account.js` | Entrada con Google y ranking (solo si el backend está configurado) |
 | `public/sudoku.js` | Generador, verificador y juego del sudoku |
+| `public/retos.js` | Retos entre amigos y sudoku en pareja |
 | `public/tutorial.js` | Tutorial guiado con ejemplos, se abre en la primera visita |
 | `public/sw.js` | Service worker para uso sin conexión |
 | `public/manifest.json`, `public/icon.svg` | Instalación como app |
 | `public/como-jugar.svg` | Guía visual del procedimiento, paso a paso |
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
 | `src/api.js` | API: sesión, puntuaciones y rankings (axioma y sudoku) |
+| `src/retos.js` | API de retos y salas en pareja |
 | `schema.sql` | Tablas de la base de datos D1 |
 | `wrangler.toml` | Configuración del Worker y enlace a D1 |
 
@@ -44,6 +48,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | --- | --- |
 | [SETUP.md](SETUP.md) | Puesta en marcha: Cloudflare, base de datos, inicio de sesión y estadísticas |
 | [COMO-JUGAR.md](COMO-JUGAR.md) | Qué es el juego, cómo empezar y una guía visual paso a paso |
+| [RETOS.md](RETOS.md) | Retos con premio entre amigos y sudoku en pareja: cómo se crean, se juegan y se puntúan |
 | [GAME.md](GAME.md) | Especificación exacta de las reglas, los modos y la generación de tableros |
 | [ANDROID.md](ANDROID.md) | Publicar en Android, empaquetando la web o como app nativa |
 
@@ -94,5 +99,6 @@ por día y nivel). La sesión es una cookie firmada de 30 días; no hay contrase
 Se conserva el mejor resultado de cada día por jugador. La racha personal vive
 únicamente en el navegador de cada jugador.
 
-Si tu base de datos es anterior al sudoku, hay que crear su tabla una sola vez:
-lo explica el apartado «Añadir la tabla del sudoku» de [SETUP.md](SETUP.md).
+Si tu base de datos es anterior al sudoku o a los retos, hay que crear sus tablas
+una sola vez: lo explican los apartados «Añadir la tabla del sudoku» y «Añadir
+las tablas de retos y pareja» de [SETUP.md](SETUP.md).

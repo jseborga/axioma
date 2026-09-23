@@ -170,6 +170,14 @@ var SUDOKU=[
       '<div><b>Experto</b><span>24 pistas</span></div>'+
       '<div><b>Ultra</b><span>22 pistas · sin ayudas ni pistas, solo se comprueba al final</span></div>'+
       '</div><p class="tut-note">Nunca hace falta adivinar: todos los tableros tienen una sola solución.</p>';}
+},
+{
+  t:"Con amigos: retos y pareja",
+  d:"En el menú hay dos modos más. Retos: un concurso con código y premio en el que todos reciben el mismo sudoku cada día, individual, por equipos o por parejas. En pareja: dos personas resuelven el mismo tablero a la vez desde sus móviles. Los dos piden entrar con Google.",
+  a:function(){return '<div class="tut-niv">'+
+      '<div><b>Retos</b><span>Código, clasificación y premio. Un tablero por día, igual para todos.</span></div>'+
+      '<div><b>En pareja</b><span>Un sudoku a cuatro manos; tus cifras en azul, las de tu pareja en morado.</span></div>'+
+      '</div><p class="tut-note">Para competir contra otras parejas, crea un reto por parejas.</p>';}
 }];
 
 /* ---------- guía detallada ---------- */

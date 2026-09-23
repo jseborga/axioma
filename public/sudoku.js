@@ -216,7 +216,9 @@ if(!$("sud-board"))return;
 var nivel=1, P=null, val=null, notas=null, sel=-1, modoNotas=false,
     errores=0, pistas=0, hechas=[], listo=false, diario=true,
     ms=0, desde=0, corriendo=false, latido=null,
-    fallo={k:-1,n:0,t:null};
+    fallo={k:-1,n:0,t:null},
+    /* modo: diario | practica | reto (tablero de un concurso) | pareja (a cuatro manos) */
+    modo="diario", ctx=null, autor=null;
 
 /* Penalizaciones: van directas al cronómetro, así el tiempo que se
    guarda y entra en el ranking ya las lleva dentro y no hay atajo. */
@@ -295,6 +297,7 @@ function pinta(){
         if(f===((sel/9)|0)||c===sel%9||M.CAJA[k]===M.CAJA[sel])cls+=" peer";
       }
       if(v&&selN&&v===selN)cls+=" igual";
+      if(!fijo&&v&&autor&&autor[k])cls+=(autor[k]==="yo"?" mio":" suyo");
       if(!fijo&&v&&!sinAyuda()&&choca(k,v))cls+=" mal";
       var dentro=v?String(v):(notas[k]?nota(k):"");
       if(k===fallo.k){cls+=" mal fallo";dentro=String(fallo.n);}
@@ -320,12 +323,16 @@ function pinta(){
   var quedan=0;for(k=0;k<81;k++)if(!P.puzzle[k]&&!val[k])quedan++;
   $("sud-left").textContent=quedan;
   $("sud-err").textContent=sinAyuda()?"—":errores;
-  $("sud-hints").textContent=sinAyuda()?"—":pistas;
-  var quedanP=MAX_PISTAS-pistas, hb=$("sud-hint");
+  $("sud-hints").textContent=(sinAyuda()||modo==="pareja")?"—":pistas;
+  var quedanP=MAX_PISTAS-pistas, hb=$("sud-hint"), pareja=(modo==="pareja");
   hb.innerHTML='Pista <small>'+(quedanP>0?(quedanP+" de "+MAX_PISTAS):"agotadas")+'</small>';
   hb.disabled=listo||quedanP<=0;
-  hb.hidden=sinAyuda();
-  $("sud-rules").innerHTML = sinAyuda()
+  hb.hidden=sinAyuda()||pareja;
+  $("sud-undo").hidden=pareja; $("sud-erase").hidden=pareja;
+  $("sud-new").hidden=(modo==="reto"||pareja);
+  $("sud-rules").innerHTML = pareja
+    ? 'A cuatro manos: los dos ponéis cifras en el mismo tablero y el tiempo es de la pareja. Solo entra la cifra correcta; dos fallos no cuestan, desde el tercero suman <b>30 s</b>. Sin pistas.'
+    : sinAyuda()
     ? 'Sin ayudas: entra cualquier cifra, nada se marca y no hay pistas. Solo se comprueba al completar la rejilla: borra y corrige hasta que cuadre.'
     : 'Solo entra la cifra correcta. Los dos primeros fallos no cuestan; desde el tercero, cada uno suma <b>30 s</b>. Cada pista cuesta <b>1 min</b>; tres como máximo.';
   pintaTiempo();
@@ -339,6 +346,7 @@ function nota(k){
 /* ---------- jugadas ---------- */
 function pon(n){
   if(listo||sel<0||P.puzzle[sel])return;
+  if(modo==="pareja"&&!modoNotas){ponPareja(n); return; }
   arranca();
   if(modoNotas){
     hechas.push({k:sel,v:val[sel],nt:notas[sel]});
@@ -366,6 +374,51 @@ function pon(n){
     di("");
   }
   pinta(); comprueba();
+}
+/* en pareja la cifra se manda al servidor, que la comprueba y la
+   cronometra; solo se dibuja cuando vuelve aceptada */
+var enviando=false;
+function ponPareja(n){
+  if(enviando||val[sel]||!ctx||!ctx.jugar)return;
+  var k=sel; enviando=true;
+  ctx.jugar(k,n).then(function(r){
+    enviando=false;
+    if(!r)return;
+    if(r.wrong){
+      errores=r.errors; if(errores>FALLOS_GRATIS)penaliza(PEN_ERROR);
+      fallo.k=k; fallo.n=n;
+      if(fallo.t)clearTimeout(fallo.t);
+      fallo.t=setTimeout(function(){fallo.k=-1;fallo.t=null;pinta();},650);
+      di("El "+n+" no va en esa casilla"+(errores<=FALLOS_GRATIS?". Fallo "+errores+" de "+FALLOS_GRATIS+" sin coste.":": +30 s."),"bad");
+      pinta(); return;
+    }
+    if(r.ok){ val[k]=n; notas[k]=0; autor[k]="yo"; di(""); if(!corriendo&&!listo)arranca(); pinta(); }
+    if(r.done)terminaPareja(r.seconds);
+  }).catch(function(){enviando=false;di("Sin conexión: inténtalo otra vez.","bad");});
+}
+/* jugadas y estado que llegan del servidor (las del otro y las mías) */
+function sincroniza(e){
+  if(modo!=="pareja"||!e)return;
+  var yo=e.members.filter(function(m){return m.me;})[0], cambia=false;
+  (e.moves||[]).forEach(function(m){
+    if(!val[m.k]){val[m.k]=m.v; notas[m.k]=0; autor[m.k]=(yo&&m.user_id===yo.id)?"yo":"otro"; cambia=true;}
+  });
+  if(e.errors!==errores){errores=e.errors;cambia=true;}
+  if(e.finished_at){ if(!listo)terminaPareja(e.seconds); }
+  else if(e.started_at){
+    /* el reloj es el del servidor: se re-sincroniza en cada sondeo */
+    ms=(e.now-e.started_at)*1000+penError(errores); desde=Date.now();
+    if(!corriendo){corriendo=true; if(!latido)latido=setInterval(pintaTiempo,1000);}
+  }
+  if(cambia)pinta(); else pintaTiempo();
+}
+function terminaPareja(seg){
+  if(listo)return;
+  listo=true; detiene(); ms=seg*1000; pintaTiempo();
+  di("¡Resuelto en pareja en "+reloj(ms)+"!","good");
+  comparte();
+  if(ctx&&ctx.alTerminar)ctx.alTerminar({seconds:seg,errors:errores});
+  pinta();
 }
 function borra(){
   if(listo||sel<0||P.puzzle[sel])return;
@@ -395,18 +448,24 @@ function comprueba(){
   for(k=0;k<81;k++)if((P.puzzle[k]||val[k])!==P.solucion[k]){
     di("La rejilla está completa pero hay alguna cifra equivocada. Borra y corrige.","bad");return;
   }
+  if(modo==="pareja")return;
   listo=true; detiene(); anota();
   di("¡Resuelto en "+reloj(transcurrido())+"!","good");
   comparte();
   if(diario&&window.AxAccount&&AxAccount.sudokuResuelto)
     AxAccount.sudokuResuelto({day:dia(),level:nivel,seconds:Math.floor(transcurrido()/1000),
                              errors:errores,hints:pistas});
+  if(modo==="reto"&&ctx&&ctx.alTerminar){
+    var grid="",k2; for(k2=0;k2<81;k2++)grid+=String(P.puzzle[k2]||val[k2]);
+    ctx.alTerminar({grid:grid,seconds:Math.floor(transcurrido()/1000),errors:errores,hints:pistas});
+  }
   pinta();
 }
 function di(t,c){var m=$("sud-msg");m.textContent=t;m.className="msg"+(c?" "+c:"");}
 function comparte(){
   var pen=penError(errores)+pistas*PEN_PISTA;
-  var txt="Sudoku de Axioma · "+M.NIVELES[nivel].nom+(diario?" · nº "+dia():"")+"\n"+
+  var cab=(ctx&&ctx.titulo)?ctx.titulo:("Sudoku de Axioma · "+M.NIVELES[nivel].nom+(diario?" · nº "+dia():""));
+  var txt=cab+"\n"+
           reloj(transcurrido())+(errores?" · "+errores+" error"+(errores>1?"es":""):"")+
           (pistas?" · "+pistas+" pista"+(pistas>1?"s":""):"")+
           (pen?"\n(incluye "+reloj(pen)+" de penalización)":"");
@@ -416,7 +475,7 @@ function comparte(){
 
 /* ---------- tablero nuevo ---------- */
 function nuevo(esDiario){
-  diario=(esDiario!==false);
+  diario=(esDiario!==false); modo=diario?"diario":"practica"; ctx=null; autor=null;
   var rng = diario ? M.semilla((dia()*9973+nivel*7919)>>>0) : Math.random;
   P=M.genera(nivel,rng);
   val=new Array(81).fill(0); notas=new Array(81).fill(0);
@@ -436,6 +495,31 @@ function nuevo(esDiario){
     ms=rec.ms; errores=rec.err; pistas=rec.pistas; listo=true;
     di("Ya resolviste el sudoku de hoy en este nivel.","good");
     comparte();
+  }
+  pinta();
+}
+
+/* Tablero que viene de fuera: una ronda de un reto o una sala en pareja.
+   cfg: {modo, nivel, puzzle, solucion?, brief, titulo, hecho?, jugar?, alTerminar?} */
+function cargar(cfg){
+  modo=cfg.modo; ctx=cfg; diario=false; nivel=cfg.nivel;
+  var pz=String(cfg.puzzle).split("").map(Number);
+  var sol=cfg.solucion?String(cfg.solucion).split("").map(Number):null;
+  P={puzzle:pz,solucion:sol,nivel:cfg.nivel};
+  val=new Array(81).fill(0); notas=new Array(81).fill(0); autor=new Array(81).fill(null);
+  sel=-1; errores=0; pistas=0; hechas=[]; listo=false; modoNotas=false; enviando=false;
+  if(fallo.t)clearTimeout(fallo.t); fallo.k=-1; fallo.t=null;
+  cero(); di("");
+  $("sud-result").classList.remove("on");
+  $("sud-ranking").hidden=true;
+  $("sud-notes").setAttribute("aria-pressed","false");
+  $("sud-notes").innerHTML='Notas <small>apagadas</small>';
+  $("sud-brief").innerHTML=cfg.brief||"";
+  pintaNivel();
+  if(cfg.hecho){                              /* ronda ya jugada: se enseña resuelta */
+    if(sol)for(var k=0;k<81;k++)if(!pz[k])val[k]=sol[k];
+    ms=cfg.hecho.seconds*1000; errores=cfg.hecho.errors||0; pistas=cfg.hecho.hints||0; listo=true;
+    di("Ya jugaste esta ronda.","good"); comparte();
   }
   pinta();
 }
@@ -485,7 +569,10 @@ document.addEventListener("keydown",function(e){
 try{var l=parseInt(guarda("nivel")||"1",10); if(M.NIVELES[l])nivel=l;}catch(e){}
 
 window.AxSudoku={
-  abrir:function(){ pintaNivel(); if(!P)nuevo(true); else pinta(); },
+  abrir:function(){ pintaNivel(); if(!P||modo==="reto"||modo==="pareja")nuevo(true); else pinta(); },
+  cargar:cargar,
+  sincroniza:sincroniza,
+  modo:function(){return modo;},
   nivel:function(){return nivel;},
   nombreNivel:function(){return M.NIVELES[nivel].nom;},
   dia:dia,

@@ -319,6 +319,34 @@ FROM sudoku GROUP BY level ORDER BY level;
 
 Los niveles son 1 Fácil, 2 Medio, 3 Difícil, 4 Experto y 5 Ultra (sin ayudas).
 
+### Añadir las tablas de retos y pareja
+
+Los retos entre amigos y el sudoku en pareja usan ocho tablas más (`events`,
+`event_rounds`, `event_members`, `event_starts`, `event_results`, `coop`,
+`coop_members` y `coop_moves`). Están al final de `schema.sql`; basta con volver
+a ejecutarlo, que no toca lo que ya existe:
+
+```
+wrangler d1 execute axioma --remote --file=schema.sql
+```
+
+o pegar ese bloque en la consola de D1. Hasta entonces, esas dos secciones de la
+app avisan de que faltan las tablas y todo lo demás sigue funcionando.
+
+Consultas útiles:
+
+```sql
+-- retos activos y cuánta gente hay en cada uno
+SELECT e.code, e.name, e.mode, e.prize, COUNT(m.user_id) AS jugadores
+FROM events e LEFT JOIN event_members m ON m.event_code=e.code
+GROUP BY e.code ORDER BY e.created_at DESC LIMIT 20;
+
+-- resultados de un reto, ronda a ronda
+SELECT r.round, u.name, r.team, r.seconds, r.errors, r.hints
+FROM event_results r JOIN users u ON u.id=r.user_id
+WHERE r.event_code='CÓDIGO' ORDER BY r.round, r.seconds;
+```
+
 ### Copia de seguridad
 
 ```
@@ -381,5 +409,6 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `public/` | El juego: HTML, estilos, JavaScript, iconos y service worker |
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
 | `src/api.js` | La API: sesión, puntuaciones y ranking |
+| `src/retos.js` | La API de retos y salas en pareja |
 | `wrangler.toml` | Nombre, archivos estáticos y enlace a la base de datos |
 | `schema.sql` | Tablas de la base D1 |

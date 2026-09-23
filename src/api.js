@@ -9,8 +9,11 @@
      GET  /api/ranking?day=N → { day, top:[…], me:{rank,total}|null }
      POST /api/sudoku        → { day, level, seconds, errors, hints } (seconds ya lleva las penalizaciones)
      GET  /api/sudoku/ranking?day=N&level=L → { top:[…], me }
+     /api/events/* y /api/coop/*  → retos y sudoku en pareja, en retos.js
    Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET. Binding D1: DB.
    =========================================================== */
+
+import { handleRetos } from "./retos.js";
 
 var COOKIE="ax_session";
 var SESSION_DAYS=30;
@@ -37,6 +40,8 @@ export async function handleApi(req,env,url){
       return await sudokuGuarda(req,env);
     if(path==="/sudoku/ranking"&&req.method==="GET")
       return await sudokuRanking(req,env,url);
+    if(path.indexOf("/events")===0||path.indexOf("/coop")===0)
+      return await handleRetos(req,env,url,path,{json:json,dayNumber:dayNumber,user:await currentUser(req,env)});
     return json({error:"not_found"},null,404);
   }catch(e){
     console.error("axioma api",path,e&&e.stack||e);   /* visible en Observability */

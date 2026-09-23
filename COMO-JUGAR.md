@@ -144,6 +144,21 @@ aparece en el ranking de ese día y ese nivel, junto a cuántas pistas y errores
 llevó; sin cuenta también puedes jugar, simplemente no se envía. *Otro tablero*
 genera uno de práctica, que no cuenta para el ranking.
 
+## Con amigos: retos y pareja
+
+En el menú hay dos entradas más, pensadas para jugar con otros. Las dos piden
+entrar con Google, porque hace falta saber quién es quién.
+
+**Retos.** Un concurso con código: quien organiza elige nivel, días y premio, y
+reparte el enlace. Cada día todos reciben el mismo sudoku; gana quien complete
+más rondas y, a igualdad, sume menos tiempo. Puede ser individual, por equipos
+o por parejas. Todo el detalle está en [RETOS.md](RETOS.md).
+
+**En pareja.** Dos personas resuelven el mismo tablero a la vez, cada una desde
+su móvil: lo que pone una lo ve la otra al instante, las cifras propias salen en
+azul y las de la pareja en morado, y el tiempo es de las dos. Se crea una sala,
+se pasa el código, y a jugar.
+
 ---
 
 La especificación completa de las reglas, con todos sus valores exactos, está en

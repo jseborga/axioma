@@ -51,7 +51,10 @@
         <button role="menuitemradio" id="t-flash" aria-checked="false" type="button"><b>Flash</b><small>Partida corta en un tablero de 4×4</small></button>
         <button role="menuitemradio" id="t-free"  aria-checked="false" type="button"><b>Libre</b><small>Los que quieras, tú eliges la dificultad</small></button>
         <p class="menu-cap">Sudoku</p>
-        <button role="menuitemradio" id="t-sud"   aria-checked="false" type="button"><b>Sudoku</b><small>Cuatro niveles y ranking por tiempo</small></button>
+        <button role="menuitemradio" id="t-sud"   aria-checked="false" type="button"><b>Sudoku</b><small>Cinco niveles y ranking por tiempo</small></button>
+        <p class="menu-cap">Con amigos</p>
+        <button role="menuitemradio" id="t-reto"  aria-checked="false" type="button"><b>Retos</b><small>Concursos con código, premio y clasificación</small></button>
+        <button role="menuitemradio" id="t-pareja" aria-checked="false" type="button"><b>En pareja</b><small>Un sudoku a cuatro manos, en tiempo real</small></button>
       </div>
     </div>
     <button class="iconbtn" data-tut type="button" aria-label="Guía detallada del juego" title="Guía detallada">
@@ -140,6 +143,8 @@
     <p class="msg" id="msg" role="status" aria-live="polite"></p>
   </section>
 
+  <section class="panel retos" id="retos-panel" hidden aria-live="polite" aria-label="Retos"></section>
+
   <section class="panel sud-panel" id="sud-panel" hidden aria-label="Sudoku">
     <p class="brief" id="sud-brief">Completa la rejilla sin repetir cifras.</p>
     <div class="boardwrap"><div class="sud-board" id="sud-board"></div></div>
@@ -210,5 +215,6 @@
 <script src="app.js"></script>
 <script src="tutorial.js"></script>
 <script src="account.js"></script>
+<script src="retos.js"></script>
 </body>
 </html>
