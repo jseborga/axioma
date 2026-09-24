@@ -173,11 +173,12 @@ var SUDOKU=[
 },
 {
   t:"Con amigos: retos y pareja",
-  d:"En el menú hay dos modos más. Retos: un concurso con código y premio en el que todos reciben el mismo sudoku cada día, individual, por equipos o por parejas. En pareja: dos personas resuelven el mismo tablero a la vez desde sus móviles. Los dos piden entrar con Google.",
+  d:"En el menú hay más modos. Juegos rápidos: trivia, memoria, cálculo, reflejos y del 1 al 25, de un minuto cada uno. Retos: un concurso con código, premio para el primero y penitencia para el último, con sudoku o con un juego rápido, individual, por equipos o por parejas. En pareja: dos personas resuelven el mismo sudoku a la vez desde sus móviles. Retos y pareja piden entrar con Google.",
   a:function(){return '<div class="tut-niv">'+
-      '<div><b>Retos</b><span>Código, clasificación y premio. Un tablero por día, igual para todos.</span></div>'+
+      '<div><b>Juegos rápidos</b><span>Cinco juegos de un minuto; practica y guarda tu mejor marca.</span></div>'+
+      '<div><b>Retos</b><span>Código, clasificación, premio y penitencia. Todos juegan lo mismo.</span></div>'+
       '<div><b>En pareja</b><span>Un sudoku a cuatro manos; tus cifras en azul, las de tu pareja en morado.</span></div>'+
-      '</div><p class="tut-note">Para competir contra otras parejas, crea un reto por parejas.</p>';}
+      '</div><p class="tut-note">Para una fiesta: trivia con cinco rondas seguidas y la ruleta de penitencias.</p>';}
 }];
 
 /* ---------- guía detallada ---------- */

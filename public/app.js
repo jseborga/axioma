@@ -473,11 +473,22 @@ function hint(){
 
 /* ---------- controles ---------- */
 function setMode(m){
-  ["day","flash","free","sud","reto","pareja"].forEach(function(x){
+  ["day","flash","free","sud","rapido","reto","pareja"].forEach(function(x){
     $("t-"+x).setAttribute("aria-checked",x===m?"true":"false");
   });
   $("mode-label").textContent=MODOS[m];
   if(window.AxRetos&&m!=="reto"&&m!=="pareja")AxRetos.cerrar();
+  if(window.AxRapidosUI&&m!=="rapido"&&m!=="reto")AxRapidosUI.cerrar();
+  if(m==="rapido"){
+    detiene();
+    document.body.setAttribute("data-game","rapido");
+    document.body.removeAttribute("data-sub");
+    $("diff").hidden=true; $("sud-diff").hidden=true;
+    $("sud-panel").hidden=true; $("sud-acts").hidden=true;
+    $("status-cap").textContent="Rápidos"; $("hdr").textContent="Práctica";
+    if(window.AxRapidosUI){$("rapido-panel").hidden=false;AxRapidosUI.practica();}
+    return;
+  }
   if(m==="reto"||m==="pareja"){
     detiene();
     document.body.setAttribute("data-game","sudoku");
@@ -504,7 +515,7 @@ function setMode(m){
   mode=m;
   newBoard();
 }
-var MODOS={day:"Diario",flash:"Flash",free:"Libre",sud:"Sudoku",reto:"Retos",pareja:"En pareja"};
+var MODOS={day:"Diario",flash:"Flash",free:"Libre",sud:"Sudoku",rapido:"Rápidos",reto:"Retos",pareja:"En pareja"};
 var menu=$("mode-menu"), mbtn=$("mode-btn");
 function abreMenu(v){
   menu.hidden=!v; mbtn.setAttribute("aria-expanded",v?"true":"false");
@@ -514,7 +525,7 @@ document.addEventListener("click",function(e){
   if(!menu.hidden && !menu.contains(e.target) && e.target!==mbtn) abreMenu(false);
 });
 document.addEventListener("keydown",function(e){ if(e.key==="Escape")abreMenu(false); });
-["day","flash","free","sud","reto","pareja"].forEach(function(m){
+["day","flash","free","sud","rapido","reto","pareja"].forEach(function(m){
   $("t-"+m).onclick=function(){abreMenu(false);setMode(m);};
 });
 window.AxApp={setMode:setMode};

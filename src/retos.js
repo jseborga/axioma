@@ -17,6 +17,9 @@
      POST /api/coop/:code/move            { k, n }
    =========================================================== */
 
+import "../public/rapidos-motor.js";
+var R=globalThis.AxRapidos;
+
 var PEN_ERROR=30, PEN_PISTA=60, FALLOS_GRATIS=2, MAX_PISTAS=3, ULTRA=5;
 var MAX_RONDAS=31, MAX_MIEMBROS=200;
 var ALFABETO="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";   /* sin 0/O ni 1/I */
@@ -70,38 +73,60 @@ function tableroCoherente(p,s){
   return true;
 }
 function penalizacion(errors,hints){return Math.max(0,errors-FALLOS_GRATIS)*PEN_ERROR+hints*PEN_PISTA;}
-function rondaHoy(ev,hoy){return hoy-ev.start_day+1;}   /* <1 aún no empieza; >rounds terminó */
 function limpia(s,max){return String(s==null?"":s).replace(/\s+/g," ").trim().slice(0,max);}
 
 /* ---------- retos ---------- */
+var JUEGOS=["sudoku","trivia","memoria","calculo","reflejos","numeros"];
+var TOL=1500;   /* ms de margen entre el reloj del servidor y el del jugador */
+
+function estadoReto(ev,hoy){
+  var fin=ev.start_day+ev.days-1;
+  return hoy<ev.start_day?"pronto":hoy>fin?"terminado":"activo";
+}
+/* Ronda que le toca a un jugador: con ritmo diario, la del día; con
+   ritmo seguido, la primera que no haya jugado. rounds+1 = ya acabó. */
+function rondaPara(ev,hoy,jugadas){
+  if(estadoReto(ev,hoy)!=="activo")return 0;
+  if(ev.pace==="diario")return hoy-ev.start_day+1;
+  for(var r=1;r<=ev.rounds;r++)if(jugadas.indexOf(r)<0)return r;
+  return ev.rounds+1;
+}
+function semillaRonda(ev,r){return R.semilla(ev.seed+":"+r);}
+
 async function creaReto(req,env,user,ctx){
   var b=await req.json().catch(function(){return {}});
-  var name=limpia(b.name,60), prize=limpia(b.prize,200);
-  var level=parseInt(b.level,10), rounds=parseInt(b.rounds,10), start=parseInt(b.start_day,10);
+  var name=limpia(b.name,60), prize=limpia(b.prize,200), forfeit=limpia(b.forfeit,200);
+  var game=JUEGOS.indexOf(b.game)>=0?b.game:"sudoku";
+  var level=game==="sudoku"?parseInt(b.level,10):0;
+  var rounds=parseInt(b.rounds,10), start=parseInt(b.start_day,10);
   var mode=(b.mode==="equipo"||b.mode==="pareja")?b.mode:"solo";
   var teamSize=mode==="solo"?1:mode==="pareja"?2:Math.min(10,Math.max(2,parseInt(b.team_size,10)||3));
+  var pace=(game==="sudoku"&&b.pace!=="seguido")?"diario":"seguido";
+  var days=pace==="diario"?rounds:Math.min(31,Math.max(1,parseInt(b.days,10)||1));
   var hoy=ctx.dayNumber();
   if(name.length<2)return ctx.json({error:"bad_name"},null,400);
-  if(!(level>=1&&level<=5))return ctx.json({error:"bad_level"},null,400);
-  if(mode==="pareja"&&level===ULTRA)return ctx.json({error:"bad_level"},null,400);
+  if(game==="sudoku"&&!(level>=1&&level<=5))return ctx.json({error:"bad_level"},null,400);
+  if(mode==="pareja"&&(game!=="sudoku"||level===ULTRA))return ctx.json({error:"bad_level"},null,400);
   if(!(rounds>=1&&rounds<=MAX_RONDAS))return ctx.json({error:"bad_rounds"},null,400);
   if(!(start>=hoy&&start<=hoy+60))return ctx.json({error:"bad_start"},null,400);
-  var boards=Array.isArray(b.boards)?b.boards:[];
-  if(boards.length!==rounds)return ctx.json({error:"bad_boards"},null,400);
-  for(var i=0;i<rounds;i++){
-    var t=boards[i]||{};
-    if(!rejillaValida(t.puzzle)||!solucionValida(t.solution)||!tableroCoherente(t.puzzle,t.solution))
-      return ctx.json({error:"bad_boards"},null,400);
+  var boards=Array.isArray(b.boards)?b.boards:[], i;
+  if(game==="sudoku"){
+    if(boards.length!==rounds)return ctx.json({error:"bad_boards"},null,400);
+    for(i=0;i<rounds;i++){
+      var t=boards[i]||{};
+      if(!rejillaValida(t.puzzle)||!solucionValida(t.solution)||!tableroCoherente(t.puzzle,t.solution))
+        return ctx.json({error:"bad_boards"},null,400);
+    }
   }
   var code, intentos=0;
   do{ code=codigo(); intentos++;
       var choque=await env.DB.prepare("SELECT 1 FROM events WHERE code=?").bind(code).first();
   }while(choque&&intentos<5);
-  var now=ahora();
+  var now=ahora(), seed=crypto.getRandomValues(new Uint32Array(1))[0];
   var ops=[env.DB.prepare(
-    "INSERT INTO events(code,name,owner_id,level,mode,team_size,start_day,rounds,prize,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)"
-  ).bind(code,name,user.id,level,mode,teamSize,start,rounds,prize,now)];
-  for(i=0;i<rounds;i++)ops.push(env.DB.prepare(
+    "INSERT INTO events(code,name,owner_id,game,level,mode,team_size,pace,start_day,rounds,days,prize,forfeit,seed,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+  ).bind(code,name,user.id,game,level,mode,teamSize,pace,start,rounds,days,prize,forfeit,seed,now)];
+  if(game==="sudoku")for(i=0;i<rounds;i++)ops.push(env.DB.prepare(
     "INSERT INTO event_rounds(event_code,round,puzzle,solution) VALUES(?,?,?,?)"
   ).bind(code,i+1,boards[i].puzzle,boards[i].solution));
   ops.push(env.DB.prepare(
@@ -111,20 +136,30 @@ async function creaReto(req,env,user,ctx){
   return ctx.json({ok:true,code:code});
 }
 
+function publico(ev,user){
+  return {code:ev.code,name:ev.name,game:ev.game,level:ev.level,mode:ev.mode,team_size:ev.team_size,pace:ev.pace,
+          start_day:ev.start_day,rounds:ev.rounds,days:ev.days,prize:ev.prize,forfeit:ev.forfeit,owner:ev.owner_id===user.id};
+}
+async function rondasJugadas(env,code,userId){
+  var r=await env.DB.prepare("SELECT round FROM event_results WHERE event_code=? AND user_id=?").bind(code,userId).all();
+  return (r.results||[]).map(function(x){return x.round;});
+}
+
 async function misRetos(env,user,ctx){
   var hoy=ctx.dayNumber();
   var rows=await env.DB.prepare(
-    "SELECT e.code,e.name,e.level,e.mode,e.team_size,e.start_day,e.rounds,e.prize,e.owner_id,m.team,"+
-    " (SELECT COUNT(*) FROM event_members x WHERE x.event_code=e.code) AS members,"+
-    " (SELECT COUNT(*) FROM event_results r WHERE r.event_code=e.code AND r.user_id=?) AS played "+
+    "SELECT e.*,m.team AS my_team,"+
+    " (SELECT COUNT(*) FROM event_members x WHERE x.event_code=e.code) AS members "+
     "FROM events e JOIN event_members m ON m.event_code=e.code AND m.user_id=? "+
     "ORDER BY e.start_day DESC, e.created_at DESC LIMIT 50"
-  ).bind(user.id,user.id).all();
+  ).bind(user.id).all();
+  var mias=await env.DB.prepare("SELECT event_code,round FROM event_results WHERE user_id=?").bind(user.id).all();
+  var jug={}; (mias.results||[]).forEach(function(x){(jug[x.event_code]=jug[x.event_code]||[]).push(x.round);});
   var lista=(rows.results||[]).map(function(e){
-    var r=rondaHoy(e,hoy);
-    return {code:e.code,name:e.name,level:e.level,mode:e.mode,team_size:e.team_size,start_day:e.start_day,
-            rounds:e.rounds,prize:e.prize,owner:e.owner_id===user.id,team:e.team,members:e.members,played:e.played,
-            state: r<1?"pronto": r>e.rounds?"terminado":"activo", today_round: r};
+    var o=publico(e,user), j=jug[e.code]||[];
+    o.team=e.my_team; o.members=e.members; o.played=j.length;
+    o.state=estadoReto(e,hoy); o.today_round=rondaPara(e,hoy,j);
+    return o;
   });
   return ctx.json({events:lista,day:hoy});
 }
@@ -139,63 +174,74 @@ async function miembro(env,code,userId){
 async function fichaReto(env,user,code,ctx){
   var ev=await cargaReto(env,code);
   if(!ev)return ctx.json({error:"not_found"},null,404);
-  var hoy=ctx.dayNumber(), r=rondaHoy(ev,hoy);
+  var hoy=ctx.dayNumber();
   var yo=await miembro(env,code,user.id);
   var mem=await env.DB.prepare(
     "SELECT u.id,u.name,u.picture,m.team FROM event_members m JOIN users u ON u.id=m.user_id WHERE m.event_code=? ORDER BY m.joined_at"
   ).bind(code).all();
   var res=await env.DB.prepare(
-    "SELECT user_id,round,team,seconds,errors,hints FROM event_results WHERE event_code=?"
+    "SELECT user_id,round,team,seconds,score,errors,hints FROM event_results WHERE event_code=?"
   ).bind(code).all();
   var dueño=await env.DB.prepare("SELECT name FROM users WHERE id=?").bind(ev.owner_id).first();
-  var clas=clasificacion(ev,mem.results||[],res.results||[],user.id);
-  var mio=(res.results||[]).filter(function(x){return x.user_id===user.id&&x.round===r;})[0]||null;
-  return ctx.json({
-    code:ev.code,name:ev.name,level:ev.level,mode:ev.mode,team_size:ev.team_size,start_day:ev.start_day,
-    rounds:ev.rounds,prize:ev.prize,owner:ev.owner_id===user.id,owner_name:dueño?dueño.name:"",
-    day:hoy,today_round:r,state:r<1?"pronto":r>ev.rounds?"terminado":"activo",
-    member:!!yo,team:yo?yo.team:null,members:mem.results||[],my_today:mio,
-    players:clas.players,teams:clas.teams
-  });
+  var todos=res.results||[];
+  var mias=todos.filter(function(x){return x.user_id===user.id;}).map(function(x){return x.round;});
+  var r=rondaPara(ev,hoy,mias);
+  var clas=clasificacion(ev,mem.results||[],todos,user.id);
+  var mio=todos.filter(function(x){return x.user_id===user.id&&x.round===r;})[0]||null;
+  var o=publico(ev,user);
+  o.owner_name=dueño?dueño.name:""; o.day=hoy; o.state=estadoReto(ev,hoy);
+  o.today_round=r; o.my_played=mias.length; o.my_today=mio;
+  o.member=!!yo; o.team=yo?yo.team:null; o.members=mem.results||[];
+  o.players=clas.players; o.teams=clas.teams;
+  return ctx.json(o);
 }
 
-/* Clasificación: primero quien lleva más rondas, y a igualdad, menos
-   tiempo total. Un equipo completa una ronda cuando la han terminado
-   todos sus miembros, y su tiempo en ella es la media. */
+/* Clasificación: primero quien lleva más rondas; a igualdad, según el
+   juego: más puntos, menos milisegundos o menos tiempo. Un equipo
+   completa una ronda cuando la han terminado todos sus miembros, y su
+   marca en ella es la media. */
 function clasificacion(ev,members,results,me){
-  var porUsuario={}, i;
-  members.forEach(function(m){porUsuario[m.id]={id:m.id,name:m.name,picture:m.picture,team:m.team,rounds:0,seconds:0,errors:0,hints:0,per:{}};});
+  var porUsuario={}, orden=(R.JUEGOS[ev.game]||{}).orden||"tiempo";
+  function cmp(a,b){
+    return b.rounds-a.rounds || (orden==="puntos"?b.score-a.score:orden==="menos"?a.score-b.score:0) ||
+           a.seconds-b.seconds || String(a.name||a.team).localeCompare(String(b.name||b.team));
+  }
+  members.forEach(function(m){porUsuario[m.id]={id:m.id,name:m.name,picture:m.picture,team:m.team,rounds:0,seconds:0,score:0,errors:0,hints:0,per:{}};});
   results.forEach(function(r){
     var u=porUsuario[r.user_id]; if(!u)return;
-    u.rounds++; u.seconds+=r.seconds; u.errors+=r.errors; u.hints+=r.hints; u.per[r.round]=r.seconds;
+    u.rounds++; u.seconds+=r.seconds; u.score+=r.score||0; u.errors+=r.errors; u.hints+=r.hints;
+    u.per[r.round]={seconds:r.seconds,score:r.score||0};
     if(r.team&&!u.team)u.team=r.team;
   });
   var players=Object.keys(porUsuario).map(function(k){return porUsuario[k];});
-  players.sort(function(a,b){return b.rounds-a.rounds||a.seconds-b.seconds||a.name.localeCompare(b.name);});
-  players.forEach(function(p,i){p.rank=i+1;p.me=(p.id===me);delete p.id;});
+  players.sort(cmp);
+  players.forEach(function(p,i){p.rank=i+1;p.me=(p.id===me);});
 
   var teams=null;
   if(ev.mode!=="solo"){
     var porEquipo={};
-    Object.keys(porUsuario).forEach(function(k){
-      var u=porUsuario[k]; if(!u.team)return;
-      var t=porEquipo[u.team]||(porEquipo[u.team]={team:u.team,members:[],rounds:0,seconds:0});
+    players.forEach(function(u){
+      if(!u.team)return;
+      var t=porEquipo[u.team]||(porEquipo[u.team]={team:u.team,members:[],rounds:0,seconds:0,score:0});
       t.members.push(u);
     });
     teams=Object.keys(porEquipo).map(function(k){
       var t=porEquipo[k];
       for(var r=1;r<=ev.rounds;r++){
-        var tiempos=t.members.map(function(u){return u.per[r];});
-        if(tiempos.every(function(x){return x!==undefined;})){
-          t.rounds++; t.seconds+=Math.round(tiempos.reduce(function(a,b){return a+b;},0)/tiempos.length);
+        var marcas=t.members.map(function(u){return u.per[r];});
+        if(marcas.every(function(x){return x!==undefined;})){
+          t.rounds++;
+          t.seconds+=Math.round(marcas.reduce(function(a,x){return a+x.seconds;},0)/marcas.length);
+          t.score+=Math.round(marcas.reduce(function(a,x){return a+x.score;},0)/marcas.length);
         }
       }
       return {team:t.team,size:t.members.length,names:t.members.map(function(u){return u.name;}),
-              rounds:t.rounds,seconds:t.seconds,me:t.members.some(function(u){return u.me;})};
+              rounds:t.rounds,seconds:t.seconds,score:t.score,me:t.members.some(function(u){return u.me;})};
     });
-    teams.sort(function(a,b){return b.rounds-a.rounds||a.seconds-b.seconds||a.team.localeCompare(b.team);});
+    teams.sort(cmp);
     teams.forEach(function(t,i){t.rank=i+1;});
   }
+  players.forEach(function(p){delete p.id;delete p.per;});
   return {players:players,teams:teams};
 }
 
@@ -205,7 +251,7 @@ async function unirse(req,env,user,code,ctx){
   var b=await req.json().catch(function(){return {}});
   var team=ev.mode==="equipo"?limpia(b.team,30):null;
   if(ev.mode==="equipo"&&team.length<2)return ctx.json({error:"bad_team"},null,400);
-  if(ctx.dayNumber()>ev.start_day+ev.rounds-1)return ctx.json({error:"finished"},null,400);
+  if(estadoReto(ev,ctx.dayNumber())==="terminado")return ctx.json({error:"finished"},null,400);
   var n=await env.DB.prepare("SELECT COUNT(*) AS n FROM event_members WHERE event_code=?").bind(code).first();
   var ya=await miembro(env,code,user.id);
   if(!ya&&n.n>=MAX_MIEMBROS)return ctx.json({error:"full"},null,400);
@@ -221,21 +267,30 @@ async function unirse(req,env,user,code,ctx){
   return ctx.json({ok:true});
 }
 
+/* Abre una ronda: devuelve el tablero o los datos del juego y anota la
+   hora (en milisegundos) la primera vez. El tiempo de la ronda lo mide
+   el servidor desde ese momento. */
 async function tableroRonda(env,user,code,r,ctx){
   var ev=await cargaReto(env,code);
   if(!ev)return ctx.json({error:"not_found"},null,404);
   if(!await miembro(env,code,user.id))return ctx.json({error:"not_member"},null,403);
-  var hoy=rondaHoy(ev,ctx.dayNumber());
-  if(r!==hoy)return ctx.json({error:"wrong_round",today_round:hoy},null,400);
-  var t=await env.DB.prepare("SELECT puzzle,solution FROM event_rounds WHERE event_code=? AND round=?").bind(code,r).first();
-  if(!t)return ctx.json({error:"not_found"},null,404);
-  /* se anota la primera vez que se abre; las siguientes conservan la hora */
-  await env.DB.prepare(
-    "INSERT INTO event_starts(event_code,round,user_id,started_at) VALUES(?,?,?,?) ON CONFLICT DO NOTHING"
-  ).bind(code,r,user.id,ahora()).run();
-  var hecho=await env.DB.prepare("SELECT seconds,errors,hints FROM event_results WHERE event_code=? AND round=? AND user_id=?")
+  var jug=await rondasJugadas(env,code,user.id);
+  var toca=rondaPara(ev,ctx.dayNumber(),jug);
+  var hecho=await env.DB.prepare("SELECT seconds,score,errors,hints FROM event_results WHERE event_code=? AND round=? AND user_id=?")
     .bind(code,r,user.id).first();
-  return ctx.json({round:r,level:ev.level,puzzle:t.puzzle,solution:t.solution,done:hecho||null});
+  if(r!==toca&&!hecho)return ctx.json({error:"wrong_round",today_round:toca},null,400);
+  var out={round:r,game:ev.game,level:ev.level,done:hecho||null};
+  if(ev.game==="sudoku"){
+    var t=await env.DB.prepare("SELECT puzzle,solution FROM event_rounds WHERE event_code=? AND round=?").bind(code,r).first();
+    if(!t)return ctx.json({error:"not_found"},null,404);
+    out.puzzle=t.puzzle; out.solution=t.solution;
+  }else{
+    out.datos=hecho?null:R.genera(ev.game,semillaRonda(ev,r));
+  }
+  if(!hecho)await env.DB.prepare(
+    "INSERT INTO event_starts(event_code,round,user_id,started_at) VALUES(?,?,?,?) ON CONFLICT DO NOTHING"
+  ).bind(code,r,user.id,Date.now()).run();
+  return ctx.json(out);
 }
 
 async function resultadoReto(req,env,user,code,ctx){
@@ -245,27 +300,40 @@ async function resultadoReto(req,env,user,code,ctx){
   var yo=await miembro(env,code,user.id);
   if(!yo)return ctx.json({error:"not_member"},null,403);
   var b=await req.json().catch(function(){return {}});
-  var r=parseInt(b.round,10), seconds=parseInt(b.seconds,10),
-      errors=parseInt(b.errors,10)||0, hints=parseInt(b.hints,10)||0;
-  if(r!==rondaHoy(ev,ctx.dayNumber()))return ctx.json({error:"wrong_round"},null,400);
-  if(!rejillaValida(b.grid))return ctx.json({error:"bad_grid"},null,400);
-  if(!(seconds>=1)||seconds>86400)return ctx.json({error:"bad_time"},null,400);
-  if(hints<0||hints>MAX_PISTAS||errors<0)return ctx.json({error:"bad_hints"},null,400);
-  if(ev.level===ULTRA&&(hints||errors))return ctx.json({error:"bad_hints"},null,400);
-  if(seconds<penalizacion(errors,hints))return ctx.json({error:"bad_time"},null,400);
-  var t=await env.DB.prepare("SELECT solution FROM event_rounds WHERE event_code=? AND round=?").bind(code,r).first();
-  if(!t||b.grid!==t.solution)return ctx.json({error:"wrong_solution"},null,400);
-  /* el tiempo no puede ser menor que el que ha pasado desde que abrió el tablero */
+  var r=parseInt(b.round,10);
+  var jug=await rondasJugadas(env,code,user.id);
+  if(jug.indexOf(r)>=0)return ctx.json({ok:true,already:true});
+  if(r!==rondaPara(ev,ctx.dayNumber(),jug))return ctx.json({error:"wrong_round"},null,400);
   var ini=await env.DB.prepare("SELECT started_at FROM event_starts WHERE event_code=? AND round=? AND user_id=?").bind(code,r,user.id).first();
   if(!ini)return ctx.json({error:"not_started"},null,400);
-  var real=ahora()-ini.started_at+5;
-  if(seconds-penalizacion(errors,hints)>real)return ctx.json({error:"bad_time"},null,400);
-  var ya=await env.DB.prepare("SELECT seconds FROM event_results WHERE event_code=? AND round=? AND user_id=?").bind(code,r,user.id).first();
-  if(ya)return ctx.json({ok:true,already:true,seconds:ya.seconds});
+  var realMs=Date.now()-ini.started_at, seconds, score=0, errors=0, hints=0;
+
+  if(ev.game==="sudoku"){
+    errors=parseInt(b.errors,10)||0; hints=parseInt(b.hints,10)||0;
+    if(!rejillaValida(b.grid))return ctx.json({error:"bad_grid"},null,400);
+    if(hints<0||hints>MAX_PISTAS||errors<0)return ctx.json({error:"bad_hints"},null,400);
+    if(ev.level===ULTRA&&(hints||errors))return ctx.json({error:"bad_hints"},null,400);
+    var t=await env.DB.prepare("SELECT solution FROM event_rounds WHERE event_code=? AND round=?").bind(code,r).first();
+    if(!t||b.grid!==t.solution)return ctx.json({error:"wrong_solution"},null,400);
+    /* el tiempo lo pone el servidor: desde que se abrió el tablero, más penalizaciones */
+    seconds=Math.max(1,Math.round(realMs/1000))+penalizacion(errors,hints);
+  }else{
+    var datos=R.genera(ev.game,semillaRonda(ev,r));
+    var res=R.evalua(ev.game,datos,b.envio);
+    if(!res)return ctx.json({error:"bad_result"},null,400);
+    /* lo que declara el jugador no puede ser más rápido que el reloj del servidor */
+    var declarado=res.seconds*1000, margen={trivia:15000,memoria:5000,calculo:0,reflejos:3000,numeros:0}[ev.game];
+    if(ev.game==="numeros"){
+      if(res.score-(parseInt(b.envio.f,10)||0)*1000 < realMs-TOL-margen)return ctx.json({error:"bad_time"},null,400);
+    }else if(ev.game==="calculo"){
+      if(realMs<45000-TOL)return ctx.json({error:"bad_time"},null,400);
+    }else if(declarado<realMs-TOL-margen)return ctx.json({error:"bad_time"},null,400);
+    seconds=res.seconds; score=res.score;
+  }
   await env.DB.prepare(
-    "INSERT INTO event_results(event_code,round,user_id,team,seconds,errors,hints,created_at) VALUES(?,?,?,?,?,?,?,?)"
-  ).bind(code,r,user.id,yo.team,seconds,errors,hints,ahora()).run();
-  return ctx.json({ok:true,seconds:seconds});
+    "INSERT INTO event_results(event_code,round,user_id,team,seconds,score,errors,hints,created_at) VALUES(?,?,?,?,?,?,?,?,?)"
+  ).bind(code,r,user.id,yo.team,seconds,score,errors,hints,ahora()).run();
+  return ctx.json({ok:true,seconds:seconds,score:score,formato:R.formato(ev.game,score,seconds)});
 }
 
 /* ---------- sudoku en pareja ---------- */
@@ -281,10 +349,10 @@ async function creaSala(req,env,user,ctx){
     var ev=await cargaReto(env,String(b.event_code));
     if(!ev||ev.mode!=="pareja")return ctx.json({error:"bad_event"},null,400);
     if(!await miembro(env,ev.code,user.id))return ctx.json({error:"not_member"},null,403);
-    round=rondaHoy(ev,ctx.dayNumber());
-    if(round<1||round>ev.rounds)return ctx.json({error:"wrong_round"},null,400);
-    var ya=await env.DB.prepare("SELECT 1 FROM event_results WHERE event_code=? AND round=? AND user_id=?").bind(ev.code,round,user.id).first();
-    if(ya)return ctx.json({error:"already_played"},null,400);
+    var jugadas=await rondasJugadas(env,ev.code,user.id);
+    round=rondaPara(ev,ctx.dayNumber(),jugadas);
+    if(round<1||round>ev.rounds)return ctx.json({error:round>ev.rounds?"already_played":"wrong_round"},null,400);
+    if(jugadas.indexOf(round)>=0)return ctx.json({error:"already_played"},null,400);
     /* en un reto el tablero es el de la ronda, no el que trae el cliente */
     var t=await env.DB.prepare("SELECT puzzle,solution FROM event_rounds WHERE event_code=? AND round=?").bind(ev.code,round).first();
     b.puzzle=t.puzzle; b.solution=t.solution; level=ev.level; eventCode=ev.code;
@@ -382,8 +450,8 @@ async function resultadoPareja(env,s,ctx){
   var seg=tiempoSala(s), now=ahora(), ops=[];
   ids.forEach(function(id){
     ops.push(env.DB.prepare(
-      "INSERT INTO event_results(event_code,round,user_id,team,seconds,errors,hints,created_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING"
-    ).bind(s.event_code,s.round,id,nombre,seg,s.errors,0,now));
+      "INSERT INTO event_results(event_code,round,user_id,team,seconds,score,errors,hints,created_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING"
+    ).bind(s.event_code,s.round,id,nombre,seg,0,s.errors,0,now));
     ops.push(env.DB.prepare("UPDATE event_members SET team=? WHERE event_code=? AND user_id=?").bind(nombre,s.event_code,id));
   });
   await env.DB.batch(ops);

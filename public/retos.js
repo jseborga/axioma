@@ -14,6 +14,9 @@ if(!panel||!M)return;
 
 var sub=null, vista=null, sondeo=null, salaCode=null, ultSeq=0, fichaCode=null;
 var NIVELES=M.NIVELES, MODOS={solo:"Individual",equipo:"Por equipos",pareja:"Por parejas"};
+var R=window.AxRapidos, RUI=window.AxRapidosUI;
+function nomJuego(f){return f.game==="sudoku"?("Sudoku "+NIVELES[f.level].nom):(R.JUEGOS[f.game].icono+" "+R.JUEGOS[f.game].nom);}
+function marca(f,x){return f.game==="sudoku"?reloj(x.seconds):R.formato(f.game,x.score,x.seconds);}
 
 /* ---------- utilidades ---------- */
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -35,7 +38,8 @@ function ERR(e){return {not_configured:"Faltan las tablas de retos en la base de
   bad_team:"Escribe el nombre de tu equipo.",wrong_round:"Esa ronda no es la de hoy.",not_member:"No estás en ese reto.",
   already_played:"Ya jugaste esta ronda.",wrong_solution:"La rejilla no coincide con el tablero.",
   bad_time:"El tiempo no cuadra con el reloj del servidor.",use_coop:"Este reto se juega en pareja.",
-  bad_level:"Nivel no válido.",bad_boards:"Los tableros no son válidos."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
+  bad_level:"Nivel no válido.",bad_boards:"Los tableros no son válidos.",bad_result:"El resultado no es válido.",
+  not_started:"Primero hay que abrir la ronda."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
 function avatar(u,cls){return u.picture?'<img class="'+(cls||"av")+'" src="'+esc(u.picture)+'" alt="" referrerpolicy="no-referrer">':'<span class="'+(cls||"av")+' noimg"></span>';}
 function copia(texto,boton){
   var ok=function(){var t=boton.textContent;boton.textContent="Copiado";setTimeout(function(){boton.textContent=t;},1400);};
@@ -53,7 +57,7 @@ function abrir(m){
   if(m==="reto")verLista(); else verInicioPareja();
 }
 function cerrar(){ sub=null; panel.hidden=true; vista=null; paraSondeo(); ocultaJuego(); }
-function ocultaJuego(){ $("sud-panel").hidden=true; $("sud-acts").hidden=true; $("sud-result").classList.remove("on"); }
+function ocultaJuego(){ $("sud-panel").hidden=true; $("sud-acts").hidden=true; $("sud-result").classList.remove("on"); if(RUI)RUI.cerrar(); }
 function muestraJuego(){ $("sud-panel").hidden=false; $("sud-acts").hidden=false; }
 function paraSondeo(){ if(sondeo){clearInterval(sondeo);sondeo=null;} salaCode=null; }
 function pinta(h){ panel.innerHTML=h; }
@@ -96,10 +100,10 @@ function verLista(){
     var h="";
     if(!r.events.length)h='<p class="fine">Todavía no estás en ningún reto. Crea uno o entra con el código que te hayan pasado.</p>';
     r.events.forEach(function(e){
-      var est=e.state==="activo"?("Ronda "+e.today_round+" de "+e.rounds):e.state==="pronto"?("Empieza el "+fecha(e.start_day)):"Terminado";
+      var est=e.state==="activo"?(e.today_round>e.rounds?"Has jugado todo":"Ronda "+e.today_round+" de "+e.rounds):e.state==="pronto"?("Empieza el "+fecha(e.start_day)):"Terminado";
       h+='<button type="button" class="rt-card" data-code="'+e.code+'">'+
         '<span class="rt-card-top"><b>'+esc(e.name)+'</b><span class="chip '+e.state+'">'+est+'</span></span>'+
-        '<small>'+NIVELES[e.level].nom+' · '+MODOS[e.mode]+(e.mode==="equipo"?" de "+e.team_size:"")+' · '+e.members+(e.members===1?" jugador":" jugadores")+
+        '<small>'+esc(nomJuego(e))+' · '+MODOS[e.mode]+(e.mode==="equipo"?" de "+e.team_size:"")+' · '+e.members+(e.members===1?" jugador":" jugadores")+
         (e.prize?' · Premio: '+esc(e.prize):'')+(e.owner?' · Organizas tú':'')+'</small></button>';
     });
     $("rt-lista").innerHTML=h;
@@ -110,36 +114,51 @@ function verLista(){
 
 function verCrear(){
   vista=verCrear; if(!puerta())return;
-  var hoy=dia(), niv="",l;
+  var hoy=dia(), niv="",l, jgs='<option value="sudoku">Sudoku</option>';
   for(l=1;l<=5;l++)niv+='<option value="'+l+'">'+NIVELES[l].nom+' · '+NIVELES[l].pistas+' pistas'+(l===5?" · sin ayudas":"")+'</option>';
+  Object.keys(R.JUEGOS).forEach(function(k){jgs+='<option value="'+k+'">'+R.JUEGOS[k].icono+' '+R.JUEGOS[k].nom+' · '+R.JUEGOS[k].dur+'</option>';});
   pinta('<button type="button" class="rt-back" id="rt-back">‹ Tus retos</button><h3>Crear un reto</h3>'+
     '<form class="rt-form" id="rt-form">'+
     '<label>Nombre<input id="f-name" maxlength="60" required placeholder="Copa de la fraternidad"></label>'+
-    '<label>Nivel del sudoku<select id="f-level">'+niv+'</select></label>'+
-    '<label>Modalidad<select id="f-mode"><option value="solo">Individual</option><option value="equipo">Por equipos</option><option value="pareja">Por parejas (a cuatro manos)</option></select></label>'+
+    '<label>Juego<select id="f-game">'+jgs+'</select></label>'+
+    '<p class="fine" id="f-jdesc">Un sudoku por día, el mismo para todos. Gana quien complete más rondas y, a igualdad, quien sume menos tiempo.</p>'+
+    '<label id="f-level-l">Nivel del sudoku<select id="f-level">'+niv+'</select></label>'+
+    '<label>Modalidad<select id="f-mode"><option value="solo">Individual</option><option value="equipo">Por equipos</option><option value="pareja" id="f-mode-pareja">Por parejas (a cuatro manos)</option></select></label>'+
     '<label id="f-size-l" hidden>Jugadores por equipo<input id="f-size" type="number" min="2" max="10" value="3"></label>'+
     '<div class="rt-2"><label>Empieza<select id="f-start"><option value="0">Hoy</option><option value="1">Mañana</option><option value="2">Pasado mañana</option><option value="7">Dentro de una semana</option></select></label>'+
-    '<label>Días (un tablero por día)<input id="f-rounds" type="number" min="1" max="31" value="1"></label></div>'+
-    '<label>Premio<input id="f-prize" maxlength="200" placeholder="Una pizza para quien gane"></label>'+
-    '<p class="fine" id="f-nota">Cada día del reto hay un tablero nuevo, el mismo para todo el mundo. Gana quien complete más rondas y, a igualdad, quien sume menos tiempo (con las penalizaciones dentro).</p>'+
+    '<label id="f-rounds-l">Días (un tablero por día)<input id="f-rounds" type="number" min="1" max="31" value="1"></label></div>'+
+    '<label id="f-days-l" hidden>Se puede jugar durante<select id="f-days"><option value="1">Ese día</option><option value="3">Tres días</option><option value="7">Una semana</option></select></label>'+
+    '<label>Premio para quien gane<input id="f-prize" maxlength="200" placeholder="Una pizza"></label>'+
+    '<label>Penitencia para quien quede último<input id="f-forfeit" maxlength="200" placeholder="Lava los platos (o gira la ruleta)"></label>'+
+    '<p class="fine" id="f-nota">Cada jugador compite por su cuenta.</p>'+
     '<div class="actions"><button class="primary" type="submit" id="f-go">Crear y obtener el código</button></div>'+
     '<p class="msg" id="f-msg"></p></form>');
   $("rt-back").onclick=verLista;
-  $("f-mode").onchange=function(){
-    var m=this.value; $("f-size-l").hidden=(m!=="equipo");
+  function ajusta(){
+    var g=$("f-game").value, m=$("f-mode").value, sud=(g==="sudoku");
+    $("f-level-l").hidden=!sud; $("f-days-l").hidden=sud;
+    $("f-rounds-l").firstChild.textContent=sud?"Días (un tablero por día)":"Rondas (partidas seguidas)";
+    $("f-rounds").max=sud?31:10; if(!sud&&+$("f-rounds").value>10)$("f-rounds").value=10;
+    $("f-mode-pareja").disabled=!sud; if(!sud&&m==="pareja"){$("f-mode").value="solo";m="solo";}
+    $("f-size-l").hidden=(m!=="equipo");
     var lv=$("f-level"); lv.querySelector('[value="5"]').disabled=(m==="pareja"); if(m==="pareja"&&lv.value==="5")lv.value="4";
-    $("f-nota").textContent = m==="equipo" ? "Cada jugador resuelve su tablero; el equipo completa una ronda cuando la han terminado todos, con la media de sus tiempos. Al unirse, cada uno escribe el nombre de su equipo."
+    $("f-jdesc").textContent = sud ? "Un sudoku por día, el mismo para todos. Gana quien complete más rondas y, a igualdad, quien sume menos tiempo."
+      : R.JUEGOS[g].desc+" Las rondas se juegan una tras otra, cada una con "+(R.JUEGOS[g].orden==="puntos"?"sus puntos":"su tiempo")+", y gana quien complete más rondas y, a igualdad, quien "+(R.JUEGOS[g].orden==="puntos"?"sume más puntos":"sume menos tiempo")+".";
+    $("f-nota").textContent = m==="equipo" ? "Cada jugador juega su ronda; el equipo completa una ronda cuando la han terminado todos, con la media de sus marcas. Al unirse, cada uno escribe el nombre de su equipo."
       : m==="pareja" ? "Cada ronda se juega a cuatro manos: una persona crea la sala desde el reto y su pareja entra con el código. El tiempo es de la pareja."
-      : "Cada día del reto hay un tablero nuevo, el mismo para todo el mundo. Gana quien complete más rondas y, a igualdad, quien sume menos tiempo (con las penalizaciones dentro).";
-  };
+      : "Cada jugador compite por su cuenta.";
+  }
+  $("f-game").onchange=ajusta; $("f-mode").onchange=ajusta; ajusta();
   $("rt-form").onsubmit=function(e){
     e.preventDefault();
-    var level=+$("f-level").value, rounds=Math.min(31,Math.max(1,+$("f-rounds").value||1)), mode=$("f-mode").value;
-    var msg=$("f-msg"), go=$("f-go"); go.disabled=true; msg.className="msg"; msg.textContent="Generando "+rounds+(rounds>1?" tableros…":" tablero…");
+    var g=$("f-game").value, sud=(g==="sudoku");
+    var level=+$("f-level").value, rounds=Math.min(sud?31:10,Math.max(1,+$("f-rounds").value||1)), mode=$("f-mode").value;
+    var msg=$("f-msg"), go=$("f-go"); go.disabled=true; msg.className="msg"; msg.textContent=sud?("Generando "+rounds+(rounds>1?" tableros…":" tablero…")):"Creando…";
     setTimeout(function(){
-      var boards=[],i; for(i=0;i<rounds;i++)boards.push(tablero(level));
-      api("/api/events",{name:$("f-name").value,level:level,mode:mode,team_size:+$("f-size").value,
-                         start_day:hoy+(+$("f-start").value),rounds:rounds,prize:$("f-prize").value,boards:boards})
+      var boards=[],i; if(sud)for(i=0;i<rounds;i++)boards.push(tablero(level));
+      api("/api/events",{name:$("f-name").value,game:g,level:level,mode:mode,team_size:+$("f-size").value,
+                         pace:sud?"diario":"seguido",days:+$("f-days").value,
+                         start_day:hoy+(+$("f-start").value),rounds:rounds,prize:$("f-prize").value,forfeit:$("f-forfeit").value,boards:boards})
         .then(function(r){verFicha(r.code,true);})
         .catch(function(e){go.disabled=false;msg.className="msg bad";msg.textContent=ERR(e);});
     },30);
@@ -152,13 +171,17 @@ function verFicha(code,recien){
   if(refresco){clearTimeout(refresco);refresco=null;}
   if(!puerta())return;
   api("/api/events/"+code).then(function(f){
-    var est=f.state==="activo"?("Ronda "+f.today_round+" de "+f.rounds):f.state==="pronto"?("Empieza el "+fecha(f.start_day)):"Terminado";
+    var todas=f.today_round>f.rounds, seguido=f.pace==="seguido";
+    var est=f.state==="activo"?(todas?"Has jugado todo":"Ronda "+f.today_round+" de "+f.rounds):f.state==="pronto"?("Empieza el "+fecha(f.start_day)):"Terminado";
     var h='<button type="button" class="rt-back" id="rt-back">‹ Tus retos</button>'+
       '<div class="rt-head"><h3>'+esc(f.name)+'</h3><span class="chip '+f.state+'">'+est+'</span></div>'+
-      '<p class="rt-meta">'+NIVELES[f.level].nom+' · '+MODOS[f.mode]+(f.mode==="equipo"?" de "+f.team_size:"")+' · '+
-        (f.rounds===1?"un día, el "+fecha(f.start_day):f.rounds+" días desde el "+fecha(f.start_day))+
+      '<p class="rt-meta">'+esc(nomJuego(f))+' · '+MODOS[f.mode]+(f.mode==="equipo"?" de "+f.team_size:"")+' · '+
+        (seguido ? (f.rounds+(f.rounds===1?" ronda":" rondas seguidas")+(f.days===1?", el "+fecha(f.start_day):", del "+fecha(f.start_day)+" al "+fecha(f.start_day+f.days-1)))
+                 : (f.rounds===1?"un día, el "+fecha(f.start_day):f.rounds+" días desde el "+fecha(f.start_day)))+
         ' · organiza '+esc(f.owner?"tú":f.owner_name)+'</p>'+
       (f.prize?'<p class="rt-prize">🏆 '+esc(f.prize)+'</p>':'')+
+      (f.forfeit?'<p class="rt-forfeit">😈 Penitencia para el último: '+esc(f.forfeit)+'</p>':'')+
+      final(f)+
       '<div class="rt-code"><span>Código</span><b>'+f.code+'</b><button type="button" class="ghost" id="rt-copy">Copiar enlace</button>'+
         (navigator.share?'<button type="button" class="ghost" id="rt-share">Invitar</button>':'')+'</div>'+
       (recien?'<p class="fine ok">Reto creado. Pasa el código o el enlace a quien quieras que participe.</p>':'');
@@ -175,15 +198,17 @@ function verFicha(code,recien){
           equipos(f.members).map(function(t){return '<option value="'+esc(t)+'">';}).join("")+'</datalist></label>'+
           '<div class="actions"><button class="primary" type="submit">Elegir equipo</button></div><p class="fine">Para jugar hace falta estar en un equipo. Si solo organizas, no elijas ninguno.</p><p class="msg" id="rt-msg"></p></form>';
     }else if(f.state==="activo"){
-      if(f.my_today){
-        h+='<p class="rt-hoy ok">Hoy ya jugaste: <b>'+reloj(f.my_today.seconds)+'</b>'+(f.my_today.errors?" · "+f.my_today.errors+" fallos":"")+(f.my_today.hints?" · "+f.my_today.hints+" pistas":"")+'. Mañana habrá otro tablero.</p>';
+      if(todas){
+        h+='<p class="rt-hoy ok">Has jugado las '+f.rounds+' rondas. Mira cómo queda la clasificación.</p>';
+      }else if(f.my_today){
+        h+='<p class="rt-hoy ok">Hoy ya jugaste: <b>'+esc(marca(f,f.my_today))+'</b>'+(f.my_today.errors?" · "+f.my_today.errors+" fallos":"")+(f.my_today.hints?" · "+f.my_today.hints+" pistas":"")+'. Mañana habrá otro tablero.</p>';
       }else if(f.mode==="pareja"){
         h+='<div class="actions"><button class="primary" id="rt-sala">Crear sala para la ronda de hoy</button></div>'+
            '<form class="rt-join" id="rt-join-sala"><input id="rt-sala-code" placeholder="Código de la sala de tu pareja" maxlength="6" autocapitalize="characters" autocomplete="off"><button type="submit" class="ghost">Entrar</button></form>'+
            '<p class="fine">Una persona crea la sala y le pasa el código a su pareja. Cuando estéis las dos, a jugar: el tiempo cuenta para el reto.</p><p class="msg" id="rt-msg"></p>';
       }else{
-        h+='<div class="actions"><button class="primary" id="rt-jugar">Jugar la ronda '+f.today_round+' de hoy</button></div>'+
-           '<p class="fine">El tiempo empieza a contar en cuanto abras el tablero y solo vale el primer intento.</p>';
+        h+='<div class="actions"><button class="primary" id="rt-jugar">Jugar la ronda '+f.today_round+(seguido?" de "+f.rounds:" de hoy")+'</button></div>'+
+           '<p class="fine">'+(f.game==="sudoku"?"El tiempo empieza a contar en cuanto abras el tablero y solo vale el primer intento.":"Solo vale el primer intento de cada ronda.")+'</p>';
       }
       if(f.team)h+='<p class="fine">Tu equipo: <b>'+esc(f.team)+'</b></p>';
     }else if(f.state==="pronto"){
@@ -195,7 +220,7 @@ function verFicha(code,recien){
       h+='<h4>Equipos</h4><ol class="rt-rank">';
       f.teams.forEach(function(t){
         h+='<li'+(t.me?' class="me"':'')+'><span class="pos">'+t.rank+'</span><span class="who"><b>'+esc(t.team)+'</b><small>'+esc(t.names.join(", "))+'</small></span>'+
-           '<span class="pts"><b>'+t.rounds+'/'+f.rounds+'</b><small>'+(t.rounds?reloj(t.seconds):"—")+'</small></span></li>';
+           '<span class="pts"><b>'+t.rounds+'/'+f.rounds+'</b><small>'+(t.rounds?esc(marca(f,t)):"—")+'</small></span></li>';
       });
       h+='</ol>';
     }
@@ -205,13 +230,16 @@ function verFicha(code,recien){
       h+='<ol class="rt-rank">';
       f.players.forEach(function(p){
         h+='<li'+(p.me?' class="me"':'')+'><span class="pos">'+p.rank+'</span>'+avatar(p)+'<span class="who">'+esc(p.name)+(p.me?' <em>(tú)</em>':'')+(p.team?'<small>'+esc(p.team)+'</small>':'')+'</span>'+
-           '<span class="pts"><b>'+p.rounds+'/'+f.rounds+'</b><small>'+(p.rounds?reloj(p.seconds):"—")+'</small></span></li>';
+           '<span class="pts"><b>'+p.rounds+'/'+f.rounds+'</b><small>'+(p.rounds?esc(marca(f,p)):"—")+'</small></span></li>';
       });
       h+='</ol>';
     }
-    h+='<p class="fine">Cuenta más rondas y, a igualdad, menos tiempo total (fallos y pistas ya penalizados). '+
-       (f.state==="terminado"?'El reto ha terminado.':'Se actualiza sola cada pocos segundos.')+'</p>';
+    var ord=f.game==="sudoku"?"tiempo":R.JUEGOS[f.game].orden;
+    h+='<p class="fine">Cuenta más rondas y, a igualdad, '+(ord==="puntos"?"más puntos en total":ord==="menos"?"menos tiempo en total":"menos tiempo total (fallos y pistas ya penalizados)")+'. '+
+       (f.state==="terminado"?'El reto ha terminado.':'Se actualiza sola cada pocos segundos.')+'</p>'+
+       '<div class="actions"><button type="button" class="ghost" id="rt-ruleta">🎲 Ruleta de penitencias</button></div><p class="rt-ruleta" id="rt-ruleta-txt" hidden></p>';
     pinta(h);
+    $("rt-ruleta").onclick=ruleta;
 
     $("rt-back").onclick=verLista;
     $("rt-copy").onclick=function(){copia(enlace("reto",f.code),this);};
@@ -241,7 +269,28 @@ function equipos(members){
   var v={},o=[]; members.forEach(function(m){if(m.team&&!v[m.team]){v[m.team]=1;o.push(m.team);}}); return o;
 }
 
+/* al terminar el reto: quién ganó y a quién le toca la penitencia */
+function final(f){
+  if(f.state!=="terminado")return "";
+  var lista=(f.teams&&f.teams.length)?f.teams:f.players, con=lista.filter(function(x){return x.rounds>0;});
+  if(!con.length)return '<div class="rt-final"><p>Nadie llegó a jugar. Otra vez será.</p></div>';
+  var nom=function(x){return x.team?x.team:x.name;};
+  var h='<div class="rt-final"><p>🏆 <b>'+esc(nom(con[0]))+'</b> gana'+(f.prize?': '+esc(f.prize):'')+'.</p>';
+  if(lista.length>1){var ult=lista[lista.length-1];h+='<p>😈 Penitencia para <b>'+esc(nom(ult))+'</b>'+(f.forfeit?': '+esc(f.forfeit):' (gira la ruleta)')+'.</p>';}
+  return h+'</div>';
+}
+function ruleta(){
+  var t=$("rt-ruleta-txt"), b=$("rt-ruleta"); if(!t)return;
+  t.hidden=false; b.disabled=true;
+  var n=0, L=R.PENITENCIAS, fin=L[Math.floor(Math.random()*L.length)];
+  var giro=setInterval(function(){
+    t.textContent=L[Math.floor(Math.random()*L.length)];
+    if(++n>=12){clearInterval(giro);t.textContent="😈 "+fin;b.disabled=false;}
+  },90);
+}
+
 function jugarRonda(f){
+  if(f.game!=="sudoku"){jugarRapida(f);return;}
   api("/api/events/"+f.code+"/round/"+f.today_round).then(function(t){
     AxSudoku.cargar({
       modo:"reto",nivel:t.level,puzzle:t.puzzle,solucion:t.solution,hecho:t.done,
@@ -249,12 +298,43 @@ function jugarRonda(f){
       titulo:"Reto «"+f.name+"» · ronda "+t.round+" · "+NIVELES[t.level].nom,
       alTerminar:function(res){
         api("/api/events/"+f.code+"/result",{round:t.round,grid:res.grid,seconds:res.seconds,errors:res.errors,hints:res.hints})
-          .then(function(){verFicha(f.code);muestraJuego();$("sud-msg").textContent="¡Tiempo registrado en el reto!";})
+          .then(function(r){verFicha(f.code);muestraJuego();$("sud-msg").textContent="¡Registrado en el reto: "+reloj(r.seconds)+" según el reloj del servidor!";})
           .catch(function(er){$("sud-msg").className="msg bad";$("sud-msg").textContent="No se pudo registrar: "+ERR(er);});
       }
     });
     muestraJuego(); $("sud-panel").scrollIntoView({behavior:"smooth",block:"start"});
   }).catch(function(e){alert(ERR(e));});
+}
+/* ronda de un juego rápido: los datos llegan al pulsar Empezar (ahí
+   arranca el reloj del servidor) y el resultado se envía al acabar */
+function jugarRapida(f){
+  if(!RUI)return;
+  var ronda=f.today_round;
+  panel.hidden=true;
+  RUI.jugar({
+    juego:f.game, sub:"Ronda "+ronda+" de "+f.rounds, titulo:"Reto «"+f.name+"»",
+    pedirDatos:function(){
+      return api("/api/events/"+f.code+"/round/"+ronda).then(function(t){
+        if(t.done){panel.hidden=false;RUI.cerrar();verFicha(f.code);return null;}
+        return t.datos;
+      });
+    },
+    error:ERR,
+    alTerminar:function(envio,res){
+      api("/api/events/"+f.code+"/result",{round:ronda,envio:envio}).then(function(r){
+        panel.hidden=false; RUI.cerrar(); verFicha(f.code);
+        $("hdr").textContent=r.formato||"";
+        setTimeout(function(){var m=panel.querySelector(".rt-hoy,.actions");
+          var p=document.createElement("p");p.className="rt-hoy ok";p.innerHTML="Ronda "+ronda+" registrada: <b>"+esc(r.formato||"")+"</b>";
+          panel.insertBefore(p,panel.querySelector(".rt-code").nextSibling);},600);
+      }).catch(function(er){
+        panel.hidden=false; RUI.cerrar(); verFicha(f.code);
+        setTimeout(function(){var p=document.createElement("p");p.className="rt-hoy";p.textContent="No se pudo registrar: "+ERR(er);
+          panel.insertBefore(p,panel.querySelector(".rt-code").nextSibling);},600);
+      });
+    }
+  });
+  $("rapido-panel").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 /* ===================== PAREJA ===================== */

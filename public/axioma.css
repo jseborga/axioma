@@ -605,6 +605,61 @@ footer{margin-top:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;text-
 .sc.sel.suyo,.sc.sel.mio{color:#fff}
 body[data-sub] #sud-diff{display:none!important}
 
+/* --- juegos rápidos --- */
+.rapido{order:2}
+.rp-desc{font-size:15.5px!important;color:var(--ink)!important;line-height:1.45}
+.rp-bar{height:6px;border-radius:3px;background:var(--inset-2);overflow:hidden;margin:4px 0 14px}
+.rp-bar i{display:block;height:100%;background:var(--accent);transform-origin:left;transform:scaleX(1);transition:transform .1s linear}
+.rp-q{font-size:19px!important;font-weight:600;color:var(--ink)!important;line-height:1.35;margin:0 0 12px!important;min-height:2.6em}
+.rp-q.rp-num{font-size:34px!important;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.01em;min-height:0;padding:6px 0 10px;border-radius:var(--r-el);transition:background .15s}
+.rp-q.ok{background:var(--ok-tint)} .rp-q.mal{background:var(--bad-tint)}
+.rp-q #rp-in{color:var(--accent);min-width:1.2em;display:inline-block;text-align:left}
+.rp-opts{display:grid;gap:8px}
+.rp-opt{text-align:left;padding:13px 14px;background:var(--inset);color:var(--ink);font-size:15.5px;font-weight:500;line-height:1.3}
+.rp-opt:hover{background:var(--accent-tint)}
+.rp-opt.ok{background:var(--ok-tint);color:var(--ok);font-weight:600}
+.rp-opt.mal{background:var(--bad-tint);color:var(--bad)}
+.rp-opt:disabled{opacity:1}
+.rp-pts{text-align:center;margin-top:10px!important}
+.rp-grid9{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(100%,300px);margin:6px auto 0}
+.rp-tile{aspect-ratio:1;padding:0;border-radius:14px;background:var(--inset-2);transition:background .12s,transform .12s;font-size:20px;font-weight:700;color:var(--ink)}
+.rp-tile.on{background:var(--accent);transform:scale(.96)}
+.rp-tile.mal{background:var(--bad)}
+.rp-tile.hecho{background:var(--ok-tint);color:var(--ok);opacity:.55}
+.rp-grid25{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;width:min(100%,360px);margin:6px auto 0}
+.rp-grid25 .rp-tile{border-radius:10px;font-size:18px}
+.rp-pad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(100%,300px);margin:8px auto 0}
+.rp-key{padding:14px 0;font-size:20px;font-weight:600;background:var(--inset);color:var(--ink);border-radius:12px;font-variant-numeric:tabular-nums}
+.rp-key.ok{background:var(--accent);color:#fff}
+.rp-zona{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;min-height:220px;border-radius:18px;
+  background:var(--bad-tint);color:var(--bad);font-size:26px;transition:background .1s;padding:20px}
+.rp-zona small{font-size:13px;font-weight:500;opacity:.8}
+.rp-zona.verde{background:var(--ok);color:#fff}
+.rp-zona.hecho{background:var(--inset);color:var(--ink)}
+.rp-zona.mal{background:var(--bad-tint);color:var(--bad)}
+.rp-res{text-align:center;background:var(--inset);border-radius:var(--r-el);padding:18px 14px;margin:0 0 12px}
+.rp-res b{display:block;font-size:34px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.rp-res small{display:block;margin-top:4px;font-size:13.5px;color:var(--ink-2)}
+.rt-forfeit{font-size:15px!important;color:var(--ink)!important;font-weight:600}
+.rt-final{background:var(--inset);border-radius:var(--r-el);padding:12px 14px;margin:0 0 10px}
+.rt-final p{margin:0!important;font-size:15px!important;color:var(--ink)!important}
+.rt-final p+p{margin-top:4px!important}
+.rt-ruleta{text-align:center;background:var(--accent-tint);border-radius:var(--r-el);padding:14px;margin:8px 0 0;font-size:16px!important;color:var(--ink)!important;font-weight:600;min-height:3.2em;display:flex;align-items:center;justify-content:center}
+body[data-game=rapido] #rules,
+body[data-game=rapido] .board-panel,
+body[data-game=rapido] #ax-acts,
+body[data-game=rapido] #result,
+body[data-game=rapido] #ranking,
+body[data-game=rapido] #diff,
+body[data-game=rapido] #sud-panel,
+body[data-game=rapido] #sud-acts,
+body[data-game=rapido] #sud-diff,
+body[data-game=rapido] #sud-result,
+body[data-game=rapido] #sud-ranking,
+body[data-game=rapido] #retos-panel{display:none!important}
+body[data-game=axioma] #rapido-panel,
+body[data-game=axioma] #retos-panel{display:none!important}
+
 /* --- qué se ve según el juego elegido --- */
 body[data-game=sudoku] #rules,
 body[data-game=sudoku] .board-panel,

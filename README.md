@@ -5,7 +5,8 @@ Puzle diario de deducción pura: no solo resuelves el tablero, descubres qué re
 - Sin azar, sin adivinar, sin cuenta. Cada tablero se genera y verifica en el dispositivo con solución única.
 - Tres modos: **Diario** (el mismo tablero para todo el mundo), **Flash** (rápido, 4×4) y **Libre** (niveles progresivos).
 - **Sudoku** aparte, con cinco niveles, tablero del día para cada uno y ranking por tiempo. Solo entra la cifra correcta: dos fallos gratis y luego 30 s cada uno; cada pista 1 min, tres como máximo. En **Ultra** no hay ninguna ayuda: se comprueba solo al completar.
-- **Retos**: concursos entre amigos con código y enlace, un tablero por día igual para todos, premio y clasificación individual, por equipos o por parejas. El servidor guarda los tableros y comprueba cada resultado.
+- **Juegos rápidos**: trivia, memoria, cálculo, reflejos y del 1 al 25, de un minuto cada uno. Para practicar sin cuenta o para retos.
+- **Retos**: concursos entre amigos con código y enlace: un sudoku al día o varias rondas seguidas de un juego rápido, premio para el primero, penitencia (o ruleta de penitencias) para el último, y clasificación individual, por equipos o por parejas. El servidor genera o guarda las rondas, cronometra y puntúa.
 - **Sudoku en pareja**: dos personas resuelven el mismo tablero a la vez, cada una desde su móvil, con el tiempo cronometrado por el servidor.
 - PWA: funciona sin conexión y se puede instalar en el móvil.
 - **Cuenta opcional con Google** para entrar en el ranking del reto diario. Sin configurarla, la app funciona igual y no muestra nada de cuentas.
@@ -31,6 +32,8 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `public/app.js` | Generador, verificador y lógica de juego |
 | `public/account.js` | Entrada con Google y ranking (solo si el backend está configurado) |
 | `public/sudoku.js` | Generador, verificador y juego del sudoku |
+| `public/rapidos-motor.js` | Juegos rápidos: preguntas, generadores y puntuación (lo usan el navegador y el Worker) |
+| `public/rapidos.js` | Pantalla de los juegos rápidos |
 | `public/retos.js` | Retos entre amigos y sudoku en pareja |
 | `public/tutorial.js` | Tutorial guiado con ejemplos, se abre en la primera visita |
 | `public/sw.js` | Service worker para uso sin conexión |
@@ -48,7 +51,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | --- | --- |
 | [SETUP.md](SETUP.md) | Puesta en marcha: Cloudflare, base de datos, inicio de sesión y estadísticas |
 | [COMO-JUGAR.md](COMO-JUGAR.md) | Qué es el juego, cómo empezar y una guía visual paso a paso |
-| [RETOS.md](RETOS.md) | Retos con premio entre amigos y sudoku en pareja: cómo se crean, se juegan y se puntúan |
+| [RETOS.md](RETOS.md) | Retos con premio entre amigos, juegos rápidos y sudoku en pareja: cómo se crean, se juegan y se puntúan |
 | [GAME.md](GAME.md) | Especificación exacta de las reglas, los modos y la generación de tableros |
 | [ANDROID.md](ANDROID.md) | Publicar en Android, empaquetando la web o como app nativa |
 

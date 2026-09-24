@@ -149,10 +149,16 @@ genera uno de práctica, que no cuenta para el ranking.
 En el menú hay dos entradas más, pensadas para jugar con otros. Las dos piden
 entrar con Google, porque hace falta saber quién es quién.
 
-**Retos.** Un concurso con código: quien organiza elige nivel, días y premio, y
-reparte el enlace. Cada día todos reciben el mismo sudoku; gana quien complete
-más rondas y, a igualdad, sume menos tiempo. Puede ser individual, por equipos
-o por parejas. Todo el detalle está en [RETOS.md](RETOS.md).
+**Juegos rápidos.** Trivia, memoria, cálculo, reflejos y del 1 al 25: cinco
+juegos de un minuto para practicar sueltos (sin cuenta, con mejor marca en el
+dispositivo) o para retos.
+
+**Retos.** Un concurso con código: quien organiza elige el juego (sudoku o uno
+de los rápidos), rondas, premio y penitencia, y reparte el enlace. Todos juegan
+lo mismo; gana quien complete más rondas y, a igualdad, tenga mejor marca. Puede
+ser individual, por equipos o por parejas. Al terminar, la ficha dice quién gana
+y a quién le toca la penitencia, con una ruleta por si no se pactó ninguna. Todo
+el detalle está en [RETOS.md](RETOS.md).
 
 **En pareja.** Dos personas resuelven el mismo tablero a la vez, cada una desde
 su móvil: lo que pone una lo ve la otra al instante, las cifras propias salen en

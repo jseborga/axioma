@@ -42,12 +42,17 @@ CREATE TABLE IF NOT EXISTS events (
   code       TEXT PRIMARY KEY,          -- código corto para unirse (6 letras)
   name       TEXT NOT NULL,
   owner_id   TEXT NOT NULL REFERENCES users(id),
-  level      INTEGER NOT NULL,          -- nivel del sudoku, 1…5
+  game       TEXT NOT NULL DEFAULT 'sudoku', -- sudoku | trivia | memoria | calculo | reflejos | numeros
+  level      INTEGER NOT NULL DEFAULT 0, -- nivel del sudoku, 1…5 (0 en los demás juegos)
   mode       TEXT NOT NULL DEFAULT 'solo',  -- 'solo' | 'equipo' | 'pareja'
   team_size  INTEGER NOT NULL DEFAULT 1,
-  start_day  INTEGER NOT NULL,          -- número de día del primer tablero
-  rounds     INTEGER NOT NULL,          -- un tablero por día
-  prize      TEXT,
+  pace       TEXT NOT NULL DEFAULT 'diario', -- 'diario': una ronda por día · 'seguido': las rondas una tras otra
+  start_day  INTEGER NOT NULL,          -- número de día en que empieza
+  rounds     INTEGER NOT NULL,          -- rondas (tableros o partidas)
+  days       INTEGER NOT NULL DEFAULT 1, -- días que dura (en ritmo diario, = rounds)
+  prize      TEXT,                      -- premio para quien gane
+  forfeit    TEXT,                      -- penitencia para quien quede último
+  seed       INTEGER NOT NULL DEFAULT 0, -- semilla secreta de los juegos rápidos
   created_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS event_rounds (
@@ -64,8 +69,8 @@ CREATE TABLE IF NOT EXISTS event_members (
   joined_at  INTEGER NOT NULL,
   PRIMARY KEY (event_code, user_id)
 );
--- cuándo abrió cada jugador cada tablero: el tiempo enviado no puede
--- ser menor que el que de verdad ha pasado desde entonces
+-- cuándo abrió cada jugador cada ronda (milisegundos): el tiempo de la
+-- ronda lo mide el servidor desde ese momento
 CREATE TABLE IF NOT EXISTS event_starts (
   event_code TEXT NOT NULL,
   round      INTEGER NOT NULL,
@@ -79,6 +84,7 @@ CREATE TABLE IF NOT EXISTS event_results (
   user_id    TEXT NOT NULL,
   team       TEXT,
   seconds    INTEGER NOT NULL,          -- con penalizaciones incluidas
+  score      INTEGER NOT NULL DEFAULT 0, -- puntos o milisegundos en los juegos rápidos
   errors     INTEGER NOT NULL DEFAULT 0,
   hints      INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,

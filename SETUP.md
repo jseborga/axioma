@@ -333,6 +333,19 @@ wrangler d1 execute axioma --remote --file=schema.sql
 o pegar ese bloque en la consola de D1. Hasta entonces, esas dos secciones de la
 app avisan de que faltan las tablas y todo lo demás sigue funcionando.
 
+Si creaste las tablas de retos con una versión anterior a los juegos rápidos
+(sin las columnas `game`, `pace`, `days`, `forfeit`, `seed` y `score`), lo más
+sencillo es borrarlas y volver a crearlas, porque solo guardaban retos de
+prueba:
+
+```sql
+DROP TABLE IF EXISTS coop_moves; DROP TABLE IF EXISTS coop_members; DROP TABLE IF EXISTS coop;
+DROP TABLE IF EXISTS event_results; DROP TABLE IF EXISTS event_starts;
+DROP TABLE IF EXISTS event_members; DROP TABLE IF EXISTS event_rounds; DROP TABLE IF EXISTS events;
+```
+
+y después pegar de nuevo `schema.sql`.
+
 Consultas útiles:
 
 ```sql
