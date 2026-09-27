@@ -658,7 +658,57 @@ body[data-game=rapido] #sud-result,
 body[data-game=rapido] #sud-ranking,
 body[data-game=rapido] #retos-panel{display:none!important}
 body[data-game=axioma] #rapido-panel,
-body[data-game=axioma] #retos-panel{display:none!important}
+body[data-game=axioma] #retos-panel,
+body[data-game=axioma] #concurso-panel{display:none!important}
+
+/* --- concursos de trivia --- */
+.concurso{order:2}
+body[data-game=concurso] #rules,
+body[data-game=concurso] .board-panel,
+body[data-game=concurso] #ax-acts,
+body[data-game=concurso] #result,
+body[data-game=concurso] #ranking,
+body[data-game=concurso] #diff,
+body[data-game=concurso] #sud-panel,
+body[data-game=concurso] #sud-acts,
+body[data-game=concurso] #sud-diff,
+body[data-game=concurso] #sud-result,
+body[data-game=concurso] #sud-ranking,
+body[data-game=concurso] #retos-panel,
+body[data-game=concurso] #rapido-panel{display:none!important}
+body:not([data-game=concurso]) #concurso-panel{display:none!important}
+.cq-reglas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 8px}
+.cq-reglas div{background:var(--inset);border-radius:var(--r-el);padding:8px 4px;text-align:center;min-width:0}
+.cq-reglas small{display:block;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.cq-reglas b{font-size:15.5px;letter-spacing:-.01em}
+.rt-head h3 small{font-size:14px;font-weight:500;color:var(--ink-2)}
+.cq-cat{font-size:12px!important;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2)!important;margin:0 0 4px!important}
+.cq-vidas{display:inline-flex;gap:4px;flex:none}
+.cq-vidas i{width:12px;height:12px;border-radius:50%;background:var(--ok)}
+.cq-vidas i.gastada{background:var(--bad)}
+.rp-pts.ok{color:var(--ok)} .rp-pts.bad{color:var(--bad)}
+.cq-mio{background:var(--accent-tint);border-radius:var(--r-el);padding:12px 14px;margin:0 0 10px}
+.cq-mio small{display:block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+.cq-mio b{display:block;font-size:20px;letter-spacing:-.02em;margin:2px 0}
+.cq-mio span{font-size:13px;color:var(--ink-2)}
+.cq-ganador{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,rgba(255,159,10,.18),rgba(255,204,0,.12));border-radius:var(--r-el);padding:14px;margin:4px 0 6px}
+.cq-ganador .av{width:52px;height:52px}
+.cq-ganador small{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#C77700}
+.cq-ganador b{display:block;font-size:20px;letter-spacing:-.02em}
+.cq-ganador span{display:block;font-size:13px;color:var(--ink-2)}
+.cq-ganador .cq-premio{color:var(--ink);font-weight:600;margin-top:2px}
+.cq-review{margin:14px 0 0;background:var(--inset);border-radius:var(--r-el);padding:10px 14px}
+.cq-review summary{cursor:pointer;font-weight:600;font-size:14.5px}
+.cq-review ol{margin:10px 0 0;padding-left:20px}
+.cq-review li{margin:0 0 10px;font-size:14px;line-height:1.35}
+.cq-review li small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3)}
+.cq-review li b{display:block;font-weight:600}
+.cq-review li span{display:block;color:var(--ink-2)}
+.cq-review li.ok span{color:var(--ok)} .cq-review li.mal span{color:var(--bad)}
+.cq-review li.mal span b{display:inline;color:var(--ink)}
+.rt-check{flex-direction:row!important;align-items:center;gap:10px!important;text-transform:none!important;letter-spacing:0!important;font-size:14.5px!important;color:var(--ink)!important;font-weight:500!important}
+.rt-check input{width:20px!important;height:20px;flex:none;accent-color:var(--accent)}
+@media (max-width:520px){.cq-reglas{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* --- qué se ve según el juego elegido --- */
 body[data-game=sudoku] #rules,

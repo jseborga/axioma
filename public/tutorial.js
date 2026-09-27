@@ -173,12 +173,13 @@ var SUDOKU=[
 },
 {
   t:"Con amigos: retos y pareja",
-  d:"En el menú hay más modos. Juegos rápidos: trivia, memoria, cálculo, reflejos y del 1 al 25, de un minuto cada uno. Retos: un concurso con código, premio para el primero y penitencia para el último, con sudoku o con un juego rápido, individual, por equipos o por parejas. En pareja: dos personas resuelven el mismo sudoku a la vez desde sus móviles. Retos y pareja piden entrar con Google.",
+  d:"En el menú hay más modos. Concursos de trivia: convocatorias con premio en las que juegas una sola vez hasta pasarte de los errores admitidos. Juegos rápidos: trivia, memoria, cálculo, reflejos y del 1 al 25, de un minuto cada uno. Retos: un concurso con código, premio para el primero y penitencia para el último, con sudoku o con un juego rápido, individual, por equipos o por parejas. En pareja: dos personas resuelven el mismo sudoku a la vez desde sus móviles.",
   a:function(){return '<div class="tut-niv">'+
+      '<div><b>Concursos de trivia</b><span>Te inscribes, juegas una vez y al cierre se publica el ranking y el ganador.</span></div>'+
       '<div><b>Juegos rápidos</b><span>Cinco juegos de un minuto; practica y guarda tu mejor marca.</span></div>'+
       '<div><b>Retos</b><span>Código, clasificación, premio y penitencia. Todos juegan lo mismo.</span></div>'+
       '<div><b>En pareja</b><span>Un sudoku a cuatro manos; tus cifras en azul, las de tu pareja en morado.</span></div>'+
-      '</div><p class="tut-note">Para una fiesta: trivia con cinco rondas seguidas y la ruleta de penitencias.</p>';}
+      '</div><p class="tut-note">Concursos, retos y pareja piden entrar con Google.</p>';}
 }];
 
 /* ---------- guía detallada ---------- */

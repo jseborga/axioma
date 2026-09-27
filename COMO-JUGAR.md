@@ -149,6 +149,11 @@ genera uno de práctica, que no cuenta para el ranking.
 En el menú hay dos entradas más, pensadas para jugar con otros. Las dos piden
 entrar con Google, porque hace falta saber quién es quién.
 
+**Concursos de trivia.** Una convocatoria con premio: te inscribes, juegas una
+sola vez respondiendo preguntas de cultura general y de cálculo hasta pasarte de
+los errores admitidos, y al cierre se publica el ranking con el ganador. Lo
+explica [CONCURSOS.md](CONCURSOS.md).
+
 **Juegos rápidos.** Trivia, memoria, cálculo, reflejos y del 1 al 25: cinco
 juegos de un minuto para practicar sueltos (sin cuenta, con mejor marca en el
 dispositivo) o para retos.

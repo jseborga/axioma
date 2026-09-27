@@ -360,6 +360,38 @@ FROM event_results r JOIN users u ON u.id=r.user_id
 WHERE r.event_code='CÓDIGO' ORDER BY r.round, r.seconds;
 ```
 
+### Añadir las tablas de concursos
+
+Los concursos de trivia usan tres tablas más: `contests`, `contest_entries` y
+`contest_answers`. También están al final de `schema.sql`, así que basta con
+volver a ejecutarlo (no toca nada de lo que ya existe):
+
+```
+wrangler d1 execute axioma --remote --file=schema.sql
+```
+
+o pegarlo en la consola de D1. Hasta entonces, la sección de concursos avisa de
+que faltan las tablas.
+
+Consultas útiles:
+
+```sql
+-- concursos y cuánta gente se inscribió y jugó
+SELECT c.code, c.name, c.prize, datetime(c.ends_at/1000,'unixepoch') AS cierre,
+       COUNT(e.user_id) AS inscritos, SUM(e.started_at IS NOT NULL) AS jugaron
+FROM contests c LEFT JOIN contest_entries e ON e.code=c.code
+GROUP BY c.code ORDER BY c.ends_at DESC LIMIT 20;
+
+-- ranking de un concurso
+SELECT u.name, u.email, e.correct, e.errors, e.total_ms, e.end_reason
+FROM contest_entries e JOIN users u ON u.id=e.user_id
+WHERE e.code='CÓDIGO' AND e.started_at IS NOT NULL
+ORDER BY e.correct DESC, e.errors ASC, e.total_ms ASC, e.started_at ASC;
+```
+
+La segunda consulta incluye el correo del ganador, que la app no muestra, por si
+hace falta contactarle para entregar el premio.
+
 ### Copia de seguridad
 
 ```
@@ -423,5 +455,7 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
 | `src/api.js` | La API: sesión, puntuaciones y ranking |
 | `src/retos.js` | La API de retos y salas en pareja |
+| `src/concursos.js` | La API de los concursos de trivia |
+| `src/preguntas.js` | El banco de preguntas de los concursos |
 | `wrangler.toml` | Nombre, archivos estáticos y enlace a la base de datos |
 | `schema.sql` | Tablas de la base D1 |

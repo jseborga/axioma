@@ -151,7 +151,7 @@ async function misRetos(env,user,ctx){
     "SELECT e.*,m.team AS my_team,"+
     " (SELECT COUNT(*) FROM event_members x WHERE x.event_code=e.code) AS members "+
     "FROM events e JOIN event_members m ON m.event_code=e.code AND m.user_id=? "+
-    "ORDER BY e.start_day DESC, e.created_at DESC LIMIT 50"
+    "ORDER BY e.start_day DESC, e.created_at DESC, e.rowid DESC LIMIT 50"
   ).bind(user.id).all();
   var mias=await env.DB.prepare("SELECT event_code,round FROM event_results WHERE user_id=?").bind(user.id).all();
   var jug={}; (mias.results||[]).forEach(function(x){(jug[x.event_code]=jug[x.event_code]||[]).push(x.round);});

@@ -124,3 +124,52 @@ CREATE TABLE IF NOT EXISTS coop_moves (
   created_at INTEGER NOT NULL,
   PRIMARY KEY (code, seq)
 );
+
+-- ============================================================
+-- Concursos de trivia: convocatorias con premio, fechas, dificultad
+-- y errores admitidos. Una sola participación por persona; las
+-- preguntas se generan en el servidor a partir de la semilla del
+-- concurso y del jugador, así que no hace falta guardarlas.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS contests (
+  code          TEXT PRIMARY KEY,
+  name          TEXT NOT NULL,
+  owner_id      TEXT NOT NULL REFERENCES users(id),
+  prize         TEXT,
+  description   TEXT,
+  level         INTEGER NOT NULL,        -- 1 fácil · 2 medio · 3 difícil · 4 progresiva
+  max_errors    INTEGER NOT NULL,        -- errores admitidos; uno más y termina la partida
+  max_questions INTEGER NOT NULL,        -- 10, 20, 30, 50 o 100
+  seconds_per_q INTEGER NOT NULL,        -- tiempo por pregunta
+  math          INTEGER NOT NULL DEFAULT 1, -- una de cada cuatro, de cálculo
+  public        INTEGER NOT NULL DEFAULT 0, -- aparece en la lista de concursos
+  starts_at     INTEGER NOT NULL,        -- milisegundos
+  ends_at       INTEGER NOT NULL,        -- milisegundos; entonces se publica el ranking
+  seed          INTEGER NOT NULL,
+  created_at    INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS contests_public ON contests(public, ends_at);
+CREATE TABLE IF NOT EXISTS contest_entries (
+  code        TEXT NOT NULL REFERENCES contests(code),
+  user_id     TEXT NOT NULL REFERENCES users(id),
+  joined_at   INTEGER NOT NULL,
+  started_at  INTEGER,                   -- primera pregunta: desde aquí ya cuenta la participación
+  finished_at INTEGER,
+  end_reason  TEXT,                      -- errores | completo | tiempo
+  idx         INTEGER NOT NULL DEFAULT 0, -- preguntas respondidas
+  correct     INTEGER NOT NULL DEFAULT 0,
+  errors      INTEGER NOT NULL DEFAULT 0,
+  total_ms    INTEGER NOT NULL DEFAULT 0, -- suma de tiempos de respuesta (desempate)
+  q_sent_at   INTEGER,                   -- cuándo se envió la pregunta pendiente
+  PRIMARY KEY (code, user_id)
+);
+CREATE INDEX IF NOT EXISTS contest_entries_rank ON contest_entries(code, correct, errors, total_ms);
+CREATE TABLE IF NOT EXISTS contest_answers (
+  code    TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  idx     INTEGER NOT NULL,
+  chosen  INTEGER NOT NULL,              -- opción elegida; -1 si se agotó el tiempo
+  ok      INTEGER NOT NULL,
+  ms      INTEGER NOT NULL,
+  PRIMARY KEY (code, user_id, idx)
+);

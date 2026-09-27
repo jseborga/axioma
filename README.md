@@ -5,6 +5,7 @@ Puzle diario de deducción pura: no solo resuelves el tablero, descubres qué re
 - Sin azar, sin adivinar, sin cuenta. Cada tablero se genera y verifica en el dispositivo con solución única.
 - Tres modos: **Diario** (el mismo tablero para todo el mundo), **Flash** (rápido, 4×4) y **Libre** (niveles progresivos).
 - **Sudoku** aparte, con cinco niveles, tablero del día para cada uno y ranking por tiempo. Solo entra la cifra correcta: dos fallos gratis y luego 30 s cada uno; cada pista 1 min, tres como máximo. En **Ultra** no hay ninguna ayuda: se comprueba solo al completar.
+- **Concursos de trivia**: convocatorias con premio, fechas, dificultad y errores admitidos. Cada persona se inscribe y juega una vez; al cierre se publica el ranking con el ganador. Las preguntas y respuestas viven solo en el servidor.
 - **Juegos rápidos**: trivia, memoria, cálculo, reflejos y del 1 al 25, de un minuto cada uno. Para practicar sin cuenta o para retos.
 - **Retos**: concursos entre amigos con código y enlace: un sudoku al día o varias rondas seguidas de un juego rápido, premio para el primero, penitencia (o ruleta de penitencias) para el último, y clasificación individual, por equipos o por parejas. El servidor genera o guarda las rondas, cronometra y puntúa.
 - **Sudoku en pareja**: dos personas resuelven el mismo tablero a la vez, cada una desde su móvil, con el tiempo cronometrado por el servidor.
@@ -34,6 +35,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `public/sudoku.js` | Generador, verificador y juego del sudoku |
 | `public/rapidos-motor.js` | Juegos rápidos: preguntas, generadores y puntuación (lo usan el navegador y el Worker) |
 | `public/rapidos.js` | Pantalla de los juegos rápidos |
+| `public/concursos.js` | Pantalla de los concursos de trivia |
 | `public/retos.js` | Retos entre amigos y sudoku en pareja |
 | `public/tutorial.js` | Tutorial guiado con ejemplos, se abre en la primera visita |
 | `public/sw.js` | Service worker para uso sin conexión |
@@ -42,6 +44,8 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
 | `src/api.js` | API: sesión, puntuaciones y rankings (axioma y sudoku) |
 | `src/retos.js` | API de retos y salas en pareja |
+| `src/concursos.js` | API de los concursos de trivia |
+| `src/preguntas.js` | Banco de preguntas de los concursos y generador de operaciones (solo en el servidor) |
 | `schema.sql` | Tablas de la base de datos D1 |
 | `wrangler.toml` | Configuración del Worker y enlace a D1 |
 
@@ -51,6 +55,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | --- | --- |
 | [SETUP.md](SETUP.md) | Puesta en marcha: Cloudflare, base de datos, inicio de sesión y estadísticas |
 | [COMO-JUGAR.md](COMO-JUGAR.md) | Qué es el juego, cómo empezar y una guía visual paso a paso |
+| [CONCURSOS.md](CONCURSOS.md) | Concursos de trivia con premio: cómo se crean, se juegan y se decide el ganador |
 | [RETOS.md](RETOS.md) | Retos con premio entre amigos, juegos rápidos y sudoku en pareja: cómo se crean, se juegan y se puntúan |
 | [GAME.md](GAME.md) | Especificación exacta de las reglas, los modos y la generación de tableros |
 | [ANDROID.md](ANDROID.md) | Publicar en Android, empaquetando la web o como app nativa |
