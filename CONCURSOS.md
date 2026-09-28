@@ -22,6 +22,7 @@ concursos y sus resultados no requiere cuenta; crear, inscribirse y jugar sí
 | Preguntas | 10, 20, 30, 50, o «hasta quedar eliminado» (máximo 100). |
 | Tiempo por pregunta | 10, 15, 20 o 30 segundos. Si se agota, cuenta como fallo. |
 | Operaciones matemáticas | Si se marca, una de cada cuatro preguntas es de cálculo. |
+| Áreas temáticas | Opcional: de qué áreas salen las preguntas (por ejemplo, solo Bolivia e Historia para un evento cívico). Sin marcar ninguna, salen de todas. Si en las áreas elegidas no hay preguntas suficientes, la app lo avisa antes de publicar. |
 | Empieza | Ahora, en 15 minutos, en 1 hora, mañana o una fecha y hora. |
 | Dura | De 30 minutos a una semana, o hasta una fecha y hora (entre 5 minutos y 31 días). |
 | Visibilidad | **Público**: aparece en la lista de concursos para todo el mundo. **Privado**: solo con el código o el enlace. |
@@ -62,21 +63,62 @@ lista, en «Resultados», durante dos semanas.
 
 ## Preguntas
 
-- **209 preguntas** de cultura general en diez categorías (geografía, Bolivia,
-  historia, ciencia, naturaleza, deportes, arte y cultura, lengua, tecnología y
-  gastronomía), cada una con su nivel: 45 fáciles, 99 medias y 65 difíciles.
-- **Operaciones generadas sin límite**, con la misma escala: sumas y restas de
-  dos cifras y tablas en el nivel fácil; sumas de tres cifras, divisiones,
-  porcentajes redondos y series en el medio; multiplicaciones de dos cifras,
-  prioridad de operaciones, cuadrados y raíces, porcentajes, fracciones y
-  series geométricas en el difícil.
+- **1053 preguntas** de cultura general en **19 áreas temáticas**:
+
+  | Área | Preguntas |
+  | --- | --- |
+  | Geografía | 80 |
+  | Bolivia | 89 |
+  | Latinoamérica | 40 |
+  | Historia | 78 |
+  | Ciencia | 80 |
+  | Naturaleza | 68 |
+  | Cuerpo humano y salud | 40 |
+  | Medio ambiente | 39 |
+  | Deportes | 70 |
+  | Arte y cultura | 60 |
+  | Literatura | 37 |
+  | Música | 40 |
+  | Cine y series | 40 |
+  | Mitología | 40 |
+  | Lengua | 60 |
+  | Inglés | 40 |
+  | Tecnología | 59 |
+  | Economía | 38 |
+  | Gastronomía | 55 |
+
+  Cada una tiene su nivel (301 fáciles, 477 medias y 275 difíciles). Casi todas las nuevas traen un
+  **«¿Sabías que…?»**: un dato curioso que se muestra al revelar la respuesta,
+  en la revisión del concurso y en la trivia en vivo.
+- **Operaciones generadas sin límite**, con la misma escala:
+  - **Fácil:** sumas y restas de dos cifras y tablas.
+  - **Medio:** sumas de tres cifras, divisiones, porcentajes redondos y series.
+  - **Difícil:** multiplicaciones de dos cifras, prioridad de operaciones,
+    cuadrados y raíces, porcentajes, fracciones y series geométricas.
 - Cada jugador recibe **su propia secuencia al azar**, sin repeticiones, así
-  que no sirve pasarse las respuestas; el nivel de cada posición es el mismo
+  que no sirve pasarse las respuestas. El nivel de cada posición es el mismo
   para todos, así que la dificultad es comparable.
-- El banco está en `src/preguntas.js` y se puede ampliar añadiendo líneas
-  `[nivel, categoría, pregunta, correcta, otra, otra, otra]`. Conviene no
-  repetir preguntas de la trivia de práctica (`public/rapidos-motor.js`), que es
-  pública.
+- **No se repiten durante 60 días.**
+  - La app anota qué preguntas vio cada persona y, al armarle una partida
+    nueva, evita las de los últimos 60 días.
+  - Solo cuando ya vio todas las de las áreas elegidas vuelve a las que vio
+    hace más tiempo.
+  - En la trivia en vivo pasa lo mismo por institución, o por organizador si
+    no hay institución: sus salas no repiten preguntas con el mismo público.
+  - En la trivia de práctica (sin cuenta), lo recuerda el propio teléfono.
+- **La secuencia de cada participante queda fijada** en cuanto recibe su
+  primera pregunta. Así no cambia aunque el banco se amplíe con el concurso
+  abierto. Los concursos empezados antes de esta versión siguen con su
+  secuencia original.
+- **Dónde está el banco:**
+  - El original está en `src/preguntas.js`.
+  - Las ampliaciones están en `src/banco/`, un archivo por grupo de áreas.
+  - Cada línea tiene la forma
+    `[nivel, área, pregunta, correcta, otra, otra, otra, «dato»]`.
+  - Conviene no repetir preguntas de la trivia de práctica
+    (`public/rapidos-motor.js`), porque es pública.
+  - No cambies el texto de una pregunta ya publicada: su identificador sale del
+    texto, y cambiarlo cuenta como una pregunta nueva.
 
 ## Qué hace el servidor para que sea justo
 
@@ -101,6 +143,13 @@ jugar todos a la vez en el mismo sitio.
 
 Tres tablas en D1, al final de `schema.sql`: `contests`, `contest_entries` y
 `contest_answers`. Ver «Añadir las tablas de concursos» en [SETUP.md](SETUP.md).
+
+Las áreas y la memoria de 60 días usan tres tablas más: `contest_areas`,
+`contest_seq` y `preguntas_vistas`. Ver «Añadir las tablas de trivia por áreas»
+en [SETUP.md](SETUP.md). Mientras falten, todo funciona como antes, pero:
+- no se pueden elegir áreas;
+- no se evita repetir preguntas;
+- los concursos usan solo el banco original.
 
 ## Concursos y cuestionarios de curso
 

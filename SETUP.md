@@ -492,6 +492,31 @@ SELECT s.code, s.titulo, s.premio, j.nombre, j.puesto FROM salas s JOIN sala_jug
 WHERE s.juego='sorteo' AND s.org_id='ID' AND j.puesto IS NOT NULL ORDER BY s.created_at DESC, j.puesto;
 ```
 
+### Añadir las tablas de trivia por áreas
+
+Para elegir **áreas temáticas** y que **no se repitan preguntas** durante 60 días
+(ver [CONCURSOS.md](CONCURSOS.md)) hacen falta tres tablas más. Pégalas en la
+consola de D1; se pueden ejecutar las veces que haga falta:
+
+```sql
+CREATE TABLE IF NOT EXISTS preguntas_vistas (quien TEXT NOT NULL, qid TEXT NOT NULL, visto_at INTEGER NOT NULL, PRIMARY KEY (quien, qid));
+CREATE INDEX IF NOT EXISTS preguntas_vistas_fecha ON preguntas_vistas(quien, visto_at);
+CREATE TABLE IF NOT EXISTS contest_seq (code TEXT NOT NULL, user_id TEXT NOT NULL, qids TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY (code, user_id));
+CREATE TABLE IF NOT EXISTS contest_areas (code TEXT PRIMARY KEY, areas TEXT NOT NULL);
+```
+
+Mientras falten, los concursos funcionan como antes, pero:
+- con el banco original;
+- sin elegir áreas;
+- sin memoria de lo visto.
+
+Para limpiar de vez en cuando lo que ya no hace falta:
+
+```sql
+-- lo visto hace más de 60 días ya no se usa
+DELETE FROM preguntas_vistas WHERE visto_at < (strftime('%s','now')-60*86400)*1000;
+```
+
 ### Ajustes de la plataforma
 
 Lo que se configura sin tocar código está en la sección `[vars]` de

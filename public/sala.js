@@ -216,8 +216,8 @@ function aviso(t,mal){var a=$("jg-aviso"); if(!a){if(!t)return; var p=panel.quer
   a.className="msg"+(mal?" bad":""); a.textContent=t||""; a.hidden=!t;}
 function envia(m){ if(localE)return localEnvia(m); if(ws&&ws.readyState===1)ws.send(JSON.stringify(m)); }
 function colorMarca(m){
-  [panel,document.body].forEach(function(el){el.style.removeProperty("--accent");el.style.removeProperty("--accent-tint");el.style.removeProperty("--marca");});
-  if(m&&/^#[0-9a-f]{6}$/i.test(m.color||"")){var el=esPantalla?document.body:panel;el.style.setProperty("--accent",m.color);el.style.setProperty("--accent-tint",m.color+"26");el.style.setProperty("--marca",m.color);}
+  [panel,document.body].forEach(function(el){["--accent","--accent-tint","--marca","--marca-ink"].forEach(function(k){el.style.removeProperty(k);});});
+  if(m&&/^#[0-9a-f]{6}$/i.test(m.color||"")){var el=esPantalla?document.body:panel;el.style.setProperty("--accent",m.color);el.style.setProperty("--accent-tint",m.color+"26");el.style.setProperty("--marca",m.color);el.style.setProperty("--marca-ink","#fff");}
 }
 
 /* ===================== PINTAR LA SALA ===================== */

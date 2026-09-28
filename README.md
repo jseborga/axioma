@@ -20,7 +20,7 @@ docente, concursos de trivia con premio y juegos de lógica, en una sola app.
 - Sin azar, sin adivinar, sin cuenta. Cada tablero se genera y verifica en el dispositivo con solución única.
 - Tres modos: **Diario** (el mismo tablero para todo el mundo), **Flash** (rápido, 4×4) y **Libre** (niveles progresivos).
 - **Sudoku** aparte, con cinco niveles, tablero del día para cada uno y ranking por tiempo. Solo entra la cifra correcta: dos fallos gratis y luego 30 s cada uno; cada pista 1 min, tres como máximo. En **Ultra** no hay ninguna ayuda: se comprueba solo al completar.
-- **Concursos de trivia**: convocatorias con premio, fechas, dificultad y errores admitidos. Cada persona se inscribe y juega una vez; al cierre se publica el ranking con el ganador. Las preguntas y respuestas viven solo en el servidor.
+- **Concursos de trivia**: más de mil preguntas en 19 áreas temáticas a elegir, con un «¿Sabías que…?» en cada una y sin repetir preguntas a la misma persona durante 60 días. Convocatorias con premio, fechas, dificultad y errores admitidos. Cada persona se inscribe y juega una vez; al cierre se publica el ranking con el ganador. Las preguntas y respuestas viven solo en el servidor.
 - **Juegos rápidos**: trivia, memoria, cálculo, reflejos y del 1 al 25, de un minuto cada uno. Para practicar sin cuenta o para retos.
 - **Retos**: concursos entre amigos con código y enlace: un sudoku al día o varias rondas seguidas de un juego rápido, premio para el primero, penitencia (o ruleta de penitencias) para el último, y clasificación individual, por equipos o por parejas. El servidor genera o guarda las rondas, cronometra y puntúa.
 - **Más juegos**: trece juegos en salas con código y QR, con vista de proyector y los teléfonos como mando. Estrategia contra el bot (Gomoku, Hex, tres en raya cuántico), juegos de mesa en grupo (Dudo, La sexta carta, Dos verdades y una mentira), dinámicas en vivo para eventos (trivia en vivo, botón del hype, carrera matemática), sorteo gamificado, subasta inversa y juegos solo para adultos con la edad verificada (Paranoia, Yo nunca). Ver [JUEGOS.md](JUEGOS.md).
@@ -77,7 +77,9 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `src/plataforma.js` | API de administración de la plataforma: resumen, usuarios, bloqueo y altas |
 | `src/ajustes.js` | Ajustes de la plataforma: nombre, correo de contacto y remitente (variables de `wrangler.toml`) |
 | `src/concursos.js` | API de los concursos y de los cuestionarios de curso |
-| `src/preguntas.js` | Banco de preguntas de los concursos y generador de operaciones (solo en el servidor) |
+| `src/preguntas.js` | Banco de preguntas de los concursos, áreas, secuencias sin repetir y generador de operaciones (solo en el servidor) |
+| `src/banco/*.js` | Ampliaciones del banco por áreas, con su «¿Sabías que…?» |
+| `public/areas.js` | Casillas para elegir las áreas temáticas de la trivia |
 | `src/sala.js` | API de salas y Durable Object `Sala`: conexiones WebSocket, turnos, relojes, bots y resultados |
 | `src/juegos.js` | Carga en el Worker las reglas de `public/juegos/` y las preguntas del servidor |
 | `schema.sql` | Tablas de la base de datos D1 |

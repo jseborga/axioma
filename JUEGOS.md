@@ -20,7 +20,7 @@ teléfonos hacen de mando.
 | En grupo | **Dudo** (dados mentirosos) | 2–6 | Sí | Los unos son comodines (opcional). Los dados de cada uno no salen del servidor hasta que se levantan |
 | | **La sexta carta** | 2–10 | Sí | 104 cartas con cabezas de penalización; gana quien menos junta |
 | | **Dos verdades y una mentira** | 3–30 | No | Se escriben en secreto y se votan una a una |
-| En vivo para eventos | **Trivia en vivo** | hasta 2000 | No | El anfitrión presenta y marca el ritmo. Puntúan acertar y la rapidez, medida en el servidor. Preguntas generales o de un banco de la institución |
+| En vivo para eventos | **Trivia en vivo** | hasta 2000 | No | El anfitrión presenta y marca el ritmo. Puntúan acertar y la rapidez, medida en el servidor. Preguntas generales (se eligen las áreas) o de un banco de la institución. Con «¿Sabías que…?» al revelar la respuesta; la misma institución no repite preguntas en 60 días |
 | | **Botón del hype** | hasta 2000 | No | 2 o 3 equipos inflan su objeto pulsando. Cupón opcional que solo ve el equipo ganador |
 | | **Carrera matemática** | hasta 2000 | Sí (3 niveles) | Cada uno resuelve operaciones distintas para avanzar su coche |
 | Sorteos y subastas | **Sorteo gamificado** | hasta 2000 | No | Boletos extra por participar con la institución y por la palabra secreta; «lluvia de esferas» en el proyector |
