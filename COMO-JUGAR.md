@@ -1,5 +1,9 @@
 # Cómo se juega a Axioma
 
+> Axioma es uno de los juegos de **The Final Test**. Se abre desde la portada
+> (tarjeta **Axioma**) o desde el menú, en **Axioma · lógica**. El tutorial se
+> muestra la primera vez que entras al juego.
+
 ## En qué consiste
 
 Axioma es un puzle de deducción. Un tablero cuadrado esconde un número fijo de

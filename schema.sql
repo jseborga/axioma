@@ -173,3 +173,107 @@ CREATE TABLE IF NOT EXISTS contest_answers (
   ms      INTEGER NOT NULL,
   PRIMARY KEY (code, user_id, idx)
 );
+
+-- ============================================================
+-- The Final Test · instituciones, cursos y bancos de preguntas
+-- ============================================================
+-- Perfil: aceptación de términos y fecha de nacimiento, obligatorios
+-- antes de unirse a una institución, un curso o un concurso.
+CREATE TABLE IF NOT EXISTS profiles (
+  user_id        TEXT PRIMARY KEY REFERENCES users(id),
+  birthdate      TEXT,                   -- AAAA-MM-DD
+  terms_version  TEXT,                   -- versión de términos y privacidad aceptada
+  terms_at       INTEGER,
+  guardian_name  TEXT,                   -- menores de 18: madre, padre o tutor
+  guardian_email TEXT,
+  guardian_ok    INTEGER NOT NULL DEFAULT 0, -- consentimiento del tutor confirmado
+  updated_at     INTEGER NOT NULL
+);
+-- Institución (universidad, instituto, colegio, empresa o comunidad)
+CREATE TABLE IF NOT EXISTS orgs (
+  id           TEXT PRIMARY KEY,         -- código corto
+  name         TEXT NOT NULL,
+  kind         TEXT NOT NULL,
+  email_domain TEXT,                     -- si se indica, solo entran cuentas de ese dominio
+  levels       TEXT NOT NULL,            -- estructura configurable, JSON: ["Facultad","Carrera","Materia"]
+  status       TEXT NOT NULL,            -- pendiente | activa | suspendida
+  teacher_code TEXT NOT NULL,            -- enlace para que se unan docentes
+  created_by   TEXT NOT NULL REFERENCES users(id),
+  created_at   INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS org_members (
+  org_id       TEXT NOT NULL REFERENCES orgs(id),
+  user_id      TEXT NOT NULL REFERENCES users(id),
+  role         TEXT NOT NULL,            -- admin | docente | auxiliar | estudiante | auspiciador
+  student_code TEXT,                     -- registro universitario o código interno
+  consent_ok   INTEGER NOT NULL DEFAULT 0, -- la institución tiene el consentimiento del tutor
+  joined_at    INTEGER NOT NULL,
+  PRIMARY KEY (org_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS org_members_user ON org_members(user_id);
+-- Unidades de la estructura (facultades, carreras, materias…), en árbol
+CREATE TABLE IF NOT EXISTS org_units (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  org_id     TEXT NOT NULL REFERENCES orgs(id),
+  parent_id  INTEGER,
+  depth      INTEGER NOT NULL,           -- 0 = primer nivel
+  name       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS org_units_org ON org_units(org_id, depth);
+-- Curso o paralelo: se entra con su código o enlace
+CREATE TABLE IF NOT EXISTS courses (
+  code       TEXT PRIMARY KEY,
+  org_id     TEXT NOT NULL REFERENCES orgs(id),
+  unit_id    INTEGER,                    -- materia (u otra unidad) a la que pertenece
+  name       TEXT NOT NULL,
+  term       TEXT,                       -- gestión: 1/2026, 2/2026…
+  owner_id   TEXT NOT NULL REFERENCES users(id),
+  approval   INTEGER NOT NULL DEFAULT 0, -- el docente aprueba a cada estudiante
+  archived   INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS courses_org ON courses(org_id);
+CREATE TABLE IF NOT EXISTS course_members (
+  code      TEXT NOT NULL REFERENCES courses(code),
+  user_id   TEXT NOT NULL REFERENCES users(id),
+  role      TEXT NOT NULL,               -- docente | auxiliar | estudiante
+  status    TEXT NOT NULL,               -- activo | pendiente
+  joined_at INTEGER NOT NULL,
+  PRIMARY KEY (code, user_id)
+);
+CREATE INDEX IF NOT EXISTS course_members_user ON course_members(user_id);
+-- Bancos de preguntas de cada docente dentro de su institución
+CREATE TABLE IF NOT EXISTS banks (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  org_id     TEXT NOT NULL REFERENCES orgs(id),
+  owner_id   TEXT NOT NULL REFERENCES users(id),
+  name       TEXT NOT NULL,
+  unit_id    INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS bank_questions (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  bank_id    INTEGER NOT NULL REFERENCES banks(id),
+  level      INTEGER NOT NULL,           -- 1 fácil · 2 medio · 3 difícil
+  topic      TEXT,
+  q          TEXT NOT NULL,
+  opts       TEXT NOT NULL,              -- JSON, la correcta es la de índice answer
+  answer     INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS bank_questions_bank ON bank_questions(bank_id);
+-- A quién va dirigido cada concurso o cuestionario, y sus preguntas congeladas
+CREATE TABLE IF NOT EXISTS contest_scope (
+  code        TEXT PRIMARY KEY REFERENCES contests(code),
+  kind        TEXT NOT NULL,             -- concurso | cuestionario
+  audience    TEXT NOT NULL,             -- publico | enlace | org | curso
+  org_id      TEXT,
+  course_code TEXT,
+  bank_id     INTEGER,
+  partial     TEXT,                      -- Práctica, Primer parcial…
+  pool        TEXT,                      -- JSON con las preguntas del banco al crear
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS contest_scope_course ON contest_scope(course_code);
+CREATE INDEX IF NOT EXISTS contest_scope_org ON contest_scope(org_id);

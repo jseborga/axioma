@@ -11,7 +11,7 @@ var $=function(id){return document.getElementById(id)};
 var panel=$("concurso-panel");
 if(!panel)return;
 
-var NIVELES={1:"Fácil",2:"Medio",3:"Difícil",4:"Progresiva"};
+var NIVELES={1:"Fácil",2:"Medio",3:"Difícil",4:"Progresiva",5:"Mixta"};
 var vista=null, refresco=null, reloj=null, desfase=0, teclas=null, activo=false;
 
 /* ---------- utilidades ---------- */
@@ -41,7 +41,10 @@ function ERR(e){return {not_configured:"Faltan las tablas de concursos en la bas
   unauthorized:"Tienes que entrar con Google.",not_found:"No existe ningún concurso con ese código.",finished:"Ese concurso ya terminó.",
   not_registered:"Primero tienes que inscribirte.",not_started:"El concurso todavía no ha empezado.",bad_name:"Ponle un nombre.",
   bad_end:"El concurso tiene que durar entre 5 minutos y 31 días.",bad_start:"La fecha de inicio no es válida.",
-  too_many:"Tienes demasiados concursos abiertos a la vez.",forbidden:"Solo quien lo organiza puede hacer eso."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
+  too_many:"Tienes demasiados concursos abiertos a la vez.",forbidden:"Solo quien lo organiza puede hacer eso.",
+  profile_required:"Antes tienes que completar tu registro.",restricted:"Es solo para los miembros de su curso o institución.",
+  consent_required:"Tienes menos de 18 años: para los concursos abiertos con premio hace falta el consentimiento de tu tutor o de tu institución.",
+  org_pending:"La institución todavía no está aprobada."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
 function errTxt(n){return n===0?"Sin errores: el primer fallo termina la partida":n===1?"1 error admitido":n+" errores admitidos";}
 function chip(c){
   var t=c.state==="pronto"?"Empieza en "+dura(c.starts_at-ahora()):c.state==="abierto"?"Termina en "+dura(c.ends_at-ahora()):"Terminado";
@@ -93,7 +96,19 @@ function inicio(){
 }
 
 /* ---------- crear ---------- */
+/* ejecuta una acción que exige registro completo; si falta, lo pide y reintenta */
+function conRegistro(accion){
+  return accion().catch(function(e){
+    if(e&&e.error==="profile_required"&&window.AxRegistro)
+      return AxRegistro.asegura().then(function(ok){ if(ok)return accion(); throw e; });
+    throw e;
+  });
+}
 function crear(){
+  if(window.AxRegistro){ AxRegistro.asegura().then(function(ok){ if(ok)crearForm(); }); return; }
+  crearForm();
+}
+function crearForm(){
   para(); vista={crear:true}; cab();
   pinta('<button type="button" class="rt-back" id="cq-back">‹ Concursos</button><h3>Crear un concurso</h3>'+
     '<form class="rt-form" id="cq-form">'+
@@ -137,9 +152,9 @@ function crear(){
     var f=fechas(), msg=$("c-msg"), go=$("c-go");
     if(isNaN(f.ini)||isNaN(f.fin)){msg.className="msg bad";msg.textContent="Revisa las fechas.";return;}
     go.disabled=true; msg.className="msg"; msg.textContent="Publicando…";
-    api("/api/contests",{name:$("c-name").value,prize:$("c-prize").value,description:$("c-desc").value,level:+$("c-level").value,
+    conRegistro(function(){return api("/api/contests",{name:$("c-name").value,prize:$("c-prize").value,description:$("c-desc").value,level:+$("c-level").value,
       max_errors:+$("c-err").value,max_questions:+$("c-q").value,seconds_per_q:+$("c-seg").value,math:$("c-math").checked,
-      public:$("c-pub").value==="1",starts_at:f.ini,ends_at:f.fin})
+      public:$("c-pub").value==="1",starts_at:f.ini,ends_at:f.fin});})
       .then(function(r){ficha(r.code,true);})
       .catch(function(er){go.disabled=false;msg.className="msg bad";msg.textContent=ERR(er);});
   };
@@ -150,9 +165,13 @@ function ficha(code,recien){
   para(); vista={code:code}; cab();
   api("/api/contests/"+code).then(function(c){
     desfase=c.now-Date.now();
-    var u=user(), me=c.me, h='<button type="button" class="rt-back" id="cq-back">‹ Concursos</button>'+
+    var u=user(), me=c.me, cuest=c.kind==="cuestionario", volver=c.course_code?"‹ Volver al curso":"‹ Concursos";
+    var h='<button type="button" class="rt-back" id="cq-back">'+volver+'</button>'+
       '<div class="rt-head"><h3>'+esc(c.name)+'</h3>'+chip(c)+'</div>'+
-      '<p class="rt-meta">Organiza '+esc(c.owner?"tú":c.owner_name)+' · '+c.registered+(c.registered===1?" inscrito":" inscritos")+
+      (c.course_code||c.org_name?'<p class="cq-ambito">'+(cuest?"Cuestionario":"Concurso")+
+        (c.course_name?' · '+esc(c.course_name)+(c.course_term?' ('+esc(c.course_term)+')':''):'')+
+        (c.org_name?' · '+esc(c.org_name):'')+(c.partial?' · <b>'+esc(c.partial)+'</b>':'')+'</p>':'')+
+      '<p class="rt-meta">'+(cuest?'Docente: ':'Organiza ')+esc(c.owner?"tú":c.owner_name)+' · '+c.registered+(c.registered===1?" inscrito":" inscritos")+
         (c.played?' · '+c.played+' ya '+(c.played===1?"jugó":"jugaron"):'')+'</p>'+
       (c.prize?'<p class="rt-prize">🏆 '+esc(c.prize)+'</p>':'')+
       (c.description?'<p>'+esc(c.description)+'</p>':'')+
@@ -165,11 +184,16 @@ function ficha(code,recien){
       '<p class="fine">'+(c.state==="terminado"?"Terminó el "+fecha(c.ends_at)+".":"Del "+fecha(c.starts_at)+" al "+fecha(c.ends_at)+".")+
         (c.math?" Incluye operaciones matemáticas.":"")+'</p>';
 
-    if(c.state!=="terminado")h+='<div class="rt-code"><span>Código</span><b>'+c.code+'</b><button type="button" class="ghost" id="cq-copy">Copiar enlace</button>'+
+    if(c.manage)h+='<div class="actions"><button type="button" class="primary" id="cq-registros">Registros y estadísticas</button></div>';
+    if(c.state!=="terminado"&&!cuest)h+='<div class="rt-code"><span>Código</span><b>'+c.code+'</b><button type="button" class="ghost" id="cq-copy">Copiar enlace</button>'+
       (navigator.share?'<button type="button" class="ghost" id="cq-share">Invitar</button>':'')+'</div>';
     if(recien)h+='<p class="fine ok">Concurso publicado. Comparte el código o el enlace para que la gente se inscriba.</p>';
 
-    if(c.state==="terminado"){
+    if(c.state==="terminado"&&cuest){
+      h+=(me&&me.started?'<div class="cq-mio"><small>Tu resultado</small><b>'+me.correct+' aciertos · '+me.errors+(me.errors===1?" error":" errores")+'</b>'+
+          '<span>'+motivo(me.reason)+' · '+tiempo(me.total_ms)+' respondiendo</span></div>':'<p class="rt-hoy">No participaste en este cuestionario.</p>')+
+         revisionHtml(c.review);
+    }else if(c.state==="terminado"){
       h+=resultado(c);
     }else if(!u){
       h+=(window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="cq-login">Entrar con Google para inscribirte</button></div>':
@@ -180,7 +204,7 @@ function ficha(code,recien){
     }else if(me.finished){
       h+='<div class="cq-mio"><small>Tu participación</small><b>'+me.correct+' aciertos · '+me.errors+(me.errors===1?" error":" errores")+'</b>'+
          '<span>'+motivo(me.reason)+' · '+tiempo(me.total_ms)+' respondiendo</span></div>'+
-         '<p class="fine">El ranking se publica al cierre, el '+fecha(c.ends_at)+'.</p>';
+         '<p class="fine">'+(cuest?'Las respuestas correctas se publican al cierre, el ':'El ranking se publica al cierre, el ')+fecha(c.ends_at)+'.</p>';
     }else if(c.state==="pronto"){
       h+='<p class="rt-hoy ok">Estás inscrito. Podrás jugar a partir del '+fecha(c.starts_at)+'.</p>';
     }else if(me.started){
@@ -191,20 +215,22 @@ function ficha(code,recien){
          '<p class="fine"><b>Solo tienes una oportunidad.</b> En cuanto aparezca la primera pregunta ya cuenta como tu participación, aunque salgas. '+
          errTxt(c.max_errors)+'.</p>';
     }
-    if(c.owner&&c.state!=="terminado")h+='<div class="actions"><button type="button" class="ghost" id="cq-cerrar">Cerrar el concurso ahora y publicar el ranking</button></div>';
+    if(c.manage&&c.state!=="terminado")h+='<div class="actions"><button type="button" class="ghost" id="cq-cerrar">'+
+      (cuest?'Cerrar el cuestionario ahora':'Cerrar el concurso ahora y publicar el ranking')+'</button></div>';
     pinta(h);
 
-    $("cq-back").onclick=inicio;
+    $("cq-back").onclick=function(){ if(c.course_code&&window.AxAula){AxApp.setMode("aula");AxAula.curso(c.course_code);} else inicio(); };
+    if($("cq-registros"))$("cq-registros").onclick=function(){registros(c);};
     if($("cq-copy"))$("cq-copy").onclick=function(){var b=this,t=enlace(c.code);
       if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent="Copiar enlace";},1400);});
       else prompt("Copia el enlace:",t);};
     if($("cq-share"))$("cq-share").onclick=function(){navigator.share({text:"Participa en «"+c.name+"»"+(c.prize?" y gana "+c.prize:"")+": "+enlace(c.code)}).catch(function(){});};
     if($("cq-login"))$("cq-login").onclick=function(){AxAccount.abrirCuenta();};
     if($("cq-inscribir"))$("cq-inscribir").onclick=function(){this.disabled=true;
-      api("/api/contests/"+code+"/join",{}).then(function(){ficha(code);}).catch(function(e){alert(ERR(e));ficha(code);});};
+      conRegistro(function(){return api("/api/contests/"+code+"/join",{});}).then(function(){ficha(code);}).catch(function(e){alert(ERR(e));ficha(code);});};
     if($("cq-jugar"))$("cq-jugar").onclick=function(){juego(c);};
     if($("cq-cerrar"))$("cq-cerrar").onclick=function(){
-      if(!confirm("¿Cerrar «"+c.name+"» ahora? Nadie más podrá jugar y se publicará el ranking."))return;
+      if(!confirm(cuest?"¿Cerrar «"+c.name+"» ahora? Nadie más podrá responder y cada estudiante verá sus respuestas.":"¿Cerrar «"+c.name+"» ahora? Nadie más podrá jugar y se publicará el ranking."))return;
       api("/api/contests/"+code+"/close",{}).then(function(){ficha(code);}).catch(function(e){alert(ERR(e));});};
     /* mientras está abierto se refresca solo; al llegar el cierre aparece el ranking */
     if(c.state!=="terminado"){
@@ -212,11 +238,77 @@ function ficha(code,recien){
       refresco=setTimeout(function(){ if(activo&&vista&&vista.code===code&&!vista.jugando)ficha(code); },Math.max(1000,Math.min(20000,falta+800)));
     }
   }).catch(function(e){
+    if(e&&e.error==="restricted"){
+      pinta('<button type="button" class="rt-back" id="cq-back">‹ Concursos</button><h3>'+esc(e.name)+'</h3>'+
+        '<p>'+(e.kind==="cuestionario"?"Este cuestionario":"Este concurso")+' es solo para '+
+        (e.course_name?'el curso <b>'+esc(e.course_name)+'</b>':'los miembros de <b>'+esc(e.org_name)+'</b>')+'.</p>'+
+        (e.course_code?'<div class="actions"><button class="primary" id="cq-curso">Ir al curso para unirme</button></div>':'')+
+        (user()?'':'<p class="fine">Si ya perteneces, entra con Google.</p>'));
+      $("cq-back").onclick=inicio;
+      if($("cq-curso"))$("cq-curso").onclick=function(){AxApp.setMode("aula");AxAula.curso(e.course_code);};
+      return;
+    }
     pinta('<button type="button" class="rt-back" id="cq-back">‹ Concursos</button><p class="fine bad">'+esc(ERR(e))+'</p>');
     $("cq-back").onclick=inicio;
   });
 }
 function motivo(r){return r==="errores"?"Superaste los errores admitidos":r==="completo"?"Respondiste todas las preguntas":r==="tiempo"?"Se cerró el concurso":"";}
+
+function revisionHtml(rv){
+  if(!rv||!rv.length)return "";
+  var h='<details class="cq-review"><summary>Tus respuestas ('+rv.filter(function(x){return x.ok;}).length+' de '+rv.length+')</summary><ol>';
+  rv.forEach(function(x){
+    h+='<li class="'+(x.ok?"ok":"mal")+'"><small>'+esc(x.cat)+'</small><b>'+esc(x.q)+'</b>'+
+      (x.ok?'<span>✓ '+esc(x.answer)+'</span>':'<span>✗ '+(x.chosen===null?"sin responder a tiempo":esc(x.chosen))+' · correcta: <b>'+esc(x.answer)+'</b></span>')+'</li>';
+  });
+  return h+'</ol></details>';
+}
+
+/* ---------- registros para quien gestiona ---------- */
+function registros(c){
+  para(); vista={code:c.code,registros:true}; cab();
+  pinta('<p class="fine">Cargando registros…</p>');
+  api("/api/contests/"+c.code+"/results").then(function(r){
+    var jugaron=r.rows.filter(function(x){return x.started_at;}).length;
+    var h='<button type="button" class="rt-back" id="cq-back">‹ Volver</button>'+
+      '<div class="rt-head"><h3>Registros · '+esc(r.name)+'</h3>'+chip(r)+'</div>'+
+      '<p class="rt-meta">'+(r.course_name?esc(r.course_name)+(r.course_term?' ('+esc(r.course_term)+')':'')+' · ':'')+(r.partial?esc(r.partial)+' · ':'')+
+        jugaron+' de '+r.rows.length+' participaron</p>'+
+      '<div class="actions"><button class="primary" id="cq-xlsx">Descargar Excel</button></div>';
+    if(!r.rows.length)h+='<p class="fine">Todavía no hay nadie.</p>';
+    else{
+      h+='<div class="tabla-wrap"><table class="tabla"><thead><tr><th>#</th><th>Estudiante</th><th>Registro</th><th>Aciertos</th><th>Errores</th><th>Resp.</th><th>Tiempo</th><th>Estado</th></tr></thead><tbody>';
+      r.rows.forEach(function(x){
+        h+='<tr class="'+(x.status==="no participó"?"apagada":"")+'"><td>'+(x.rank||"—")+'</td><td>'+esc(x.name)+'<small>'+esc(x.email)+'</small></td><td>'+esc(x.student_code||"—")+'</td>'+
+          '<td><b>'+(x.started_at?x.correct:"—")+'</b></td><td>'+(x.started_at?x.errors:"—")+'</td><td>'+(x.started_at?x.answered:"—")+'</td>'+
+          '<td>'+(x.started_at?tiempo(x.total_ms):"—")+'</td><td>'+esc(x.status)+'</td></tr>';
+      });
+      h+='</tbody></table></div>';
+    }
+    if(r.questions.length){
+      h+='<h4>Preguntas, de la más fallada a la más acertada</h4><ol class="cq-est">';
+      r.questions.forEach(function(q){
+        h+='<li><div><b>'+esc(q.q)+'</b><small>'+esc(q.cat||"")+(q.level?' · '+({1:"fácil",2:"media",3:"difícil"}[q.level]||""):'')+' · '+q.correct+' de '+q.answered+'</small></div>'+
+           '<span class="cq-barra"><i style="width:'+q.pct+'%" class="'+(q.pct<50?"baja":q.pct<75?"media":"alta")+'"></i><em>'+q.pct+' %</em></span></li>';
+      });
+      h+='</ol>';
+    }
+    pinta(h);
+    $("cq-back").onclick=function(){ficha(c.code);};
+    $("cq-xlsx").onclick=function(){
+      var filas=[["Puesto","Estudiante","Correo","Registro","Aciertos","Errores","Respondidas","Tiempo (s)","Estado","Motivo del final","Inicio","Fin"]];
+      r.rows.forEach(function(x){
+        filas.push([x.rank||"",x.name,x.email,x.student_code||"",x.started_at?x.correct:"",x.started_at?x.errors:"",x.started_at?x.answered:"",
+          x.started_at?Math.round(x.total_ms/1000):"",x.status,motivo(x.reason),x.started_at?new Date(x.started_at).toLocaleString("es"):"",
+          x.finished_at?new Date(x.finished_at).toLocaleString("es"):""]);
+      });
+      var pq=[["Pregunta","Tema","Nivel","Respondida por","Aciertos","% de acierto"]];
+      r.questions.forEach(function(q){pq.push([q.q,q.cat||"",q.level?({1:"Fácil",2:"Medio",3:"Difícil"}[q.level]):"",q.answered,q.correct,q.pct]);});
+      var blob=AxExcel.escribir([{nombre:"Resultados",filas:filas,anchos:[8,28,28,14,10,10,12,11,14,26,20,20]},{nombre:"Preguntas",filas:pq,anchos:[60,20,10,14,10,12]}]);
+      AxExcel.descarga(blob,(r.name+(r.partial?" - "+r.partial:"")).replace(/[\\/:*?"<>|]+/g," ").trim()+".xlsx");
+    };
+  }).catch(function(e){pinta('<p class="fine bad">'+esc(ERR(e))+'</p>');});
+}
 
 function resultado(c){
   var h="";
@@ -316,5 +408,5 @@ function juego(c){
   if(window.AxAccount&&AxAccount.listo())ir(); else document.addEventListener("ax-user",ir);
 })();
 
-window.AxConcursos={abrir:abrir,cerrar:cerrar};
+window.AxConcursos={abrir:abrir,cerrar:cerrar,ficha:function(code){activo=true;panel.hidden=false;ficha(code);}};
 })();

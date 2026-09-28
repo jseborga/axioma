@@ -1,3 +1,5 @@
 # Copia este archivo a .dev.vars para desarrollo local (wrangler dev)
 GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
 SESSION_SECRET=una-cadena-larga-y-aleatoria
+# correos (separados por comas) que aprueban las instituciones nuevas
+PLATFORM_ADMINS=admin@ejemplo.com

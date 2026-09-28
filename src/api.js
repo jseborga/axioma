@@ -10,12 +10,14 @@
      POST /api/sudoku        → { day, level, seconds, errors, hints } (seconds ya lleva las penalizaciones)
      GET  /api/sudoku/ranking?day=N&level=L → { top:[…], me }
      /api/events/* y /api/coop/*  → retos y sudoku en pareja, en retos.js
-     /api/contests/*              → concursos de trivia, en concursos.js
+     /api/contests/*              → concursos y cuestionarios, en concursos.js
+     /api/profile, /api/orgs/*, /api/courses/*, /api/banks/*, /api/admin/* → instituciones, en aula.js
    Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET. Binding D1: DB.
    =========================================================== */
 
 import { handleRetos } from "./retos.js";
 import { handleConcursos } from "./concursos.js";
+import { handleAula } from "./aula.js";
 
 var COOKIE="ax_session";
 var SESSION_DAYS=30;
@@ -42,6 +44,8 @@ export async function handleApi(req,env,url){
       return await sudokuGuarda(req,env);
     if(path==="/sudoku/ranking"&&req.method==="GET")
       return await sudokuRanking(req,env,url);
+    if(/^\/(profile|orgs|courses|banks|admin)(\/|$)/.test(path))
+      return await handleAula(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(path.indexOf("/contests")===0)
       return await handleConcursos(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(path.indexOf("/events")===0||path.indexOf("/coop")===0)

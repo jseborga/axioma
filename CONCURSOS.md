@@ -101,3 +101,15 @@ jugar todos a la vez en el mismo sitio.
 
 Tres tablas en D1, al final de `schema.sql`: `contests`, `contest_entries` y
 `contest_answers`. Ver «Añadir las tablas de concursos» en [SETUP.md](SETUP.md).
+
+## Concursos y cuestionarios de curso
+
+El mismo motor sirve a los **cuestionarios** del aula ([AULA.md](AULA.md)): se
+crean desde un curso, solo los ven sus miembros, pueden sacar las preguntas de un
+banco del docente y, al cierre, cada estudiante ve su resultado y su corrección,
+sin ranking público ni ganador. Quien gestiona un concurso o cuestionario tiene
+además **Registros y estadísticas**, con descarga en Excel.
+
+Para inscribirse en cualquier concurso hace falta el registro con consentimiento.
+Los menores de 18 años no pueden entrar en concursos abiertos con premio hasta que
+conste el consentimiento de su tutor o de su institución.

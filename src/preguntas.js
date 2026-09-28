@@ -250,11 +250,11 @@ export function semilla(txt){
   for(i=0;i<txt.length;i++){h^=txt.charCodeAt(i); h=Math.imul(h,0x01000193);}
   return h>>>0;
 }
-function rng(s){var a=s>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
+export function rng(s){var a=s>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
   t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};}
 function entre(r,a,b){return a+Math.floor(r()*(b-a+1));}
 function uno(r,l){return l[Math.floor(r()*l.length)];}
-function baraja(a,r){for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+export function baraja(a,r){for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
 /* coloca la correcta en una posición al azar entre las cuatro */
 function opciones(correcta,otras,r){
@@ -332,4 +332,17 @@ export function secuencia(seed,dif,conMates,n){
     out.push(q||matematica(l,r));
   }
   return out;
+}
+
+/* ---------- secuencia desde un banco propio ----------
+   pool: preguntas congeladas al crear el cuestionario, [{id,q,opts,answer,level,topic}].
+   Cada jugador recibe n al azar, sin repetir, con las opciones barajadas;
+   en dificultad progresiva se ordenan de fácil a difícil. */
+export function secuenciaPool(seed,pool,n,progresiva){
+  var r=rng(seed), idx=baraja(pool.map(function(_,i){return i;}),r).slice(0,Math.min(n,pool.length));
+  if(progresiva)idx.sort(function(a,b){return (pool[a].level||2)-(pool[b].level||2);});
+  return idx.map(function(i){
+    var p=pool[i], orden=baraja(p.opts.map(function(_,k){return k;}),r);
+    return {id:p.id,tema:p.topic||"",nivel:p.level||2,q:p.q,o:orden.map(function(k){return p.opts[k];}),c:orden.indexOf(p.answer)};
+  });
 }

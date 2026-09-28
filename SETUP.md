@@ -1,4 +1,4 @@
-# Puesta en marcha de Axioma
+# Puesta en marcha de The Final Test
 
 Guía completa para publicar la app en Cloudflare, activar el inicio de sesión con
 Google, crear la base de datos y consultar las estadísticas.
@@ -7,7 +7,7 @@ El juego funciona sin nada de esto: si no configuras el inicio de sesión, la ap
 se publica igual y sencillamente no muestra cuentas ni ranking. Puedes hacer solo
 la parte 1 y dejar el resto para más adelante.
 
-Axioma se despliega como un **Worker** de Cloudflare: un único proyecto que sirve
+The Final Test se despliega como un **Worker** de Cloudflare (se llama `axioma`; no cambies el nombre, porque de él dependen la URL y los orígenes autorizados de Google): un único proyecto que sirve
 los archivos del juego (la carpeta `public`) y atiende la API (la carpeta `src`).
 
 **Lo que necesitas antes de empezar**
@@ -169,14 +169,15 @@ las pistas usadas.
    ```
 
 2. En el panel de Cloudflare, entra en tu Worker y ve a **Settings** →
-   **Variables and Secrets**. Añade estas dos:
+   **Variables and Secrets**. Añade estas tres:
 
    | Nombre | Tipo | Valor |
    | --- | --- | --- |
    | `GOOGLE_CLIENT_ID` | Secret | El ID de cliente de la parte 3 |
    | `SESSION_SECRET` | Secret | La clave que acabas de generar |
+   | `PLATFORM_ADMINS` | Secret | Tu correo de Google (o varios, separados por comas): quién aprueba las instituciones nuevas del aula |
 
-   **Añade las dos como Secret, no como texto plano.** Los secretos sobreviven a
+   **Añádelas como Secret, no como texto plano.** Los secretos sobreviven a
    todos los despliegues, mientras que las variables de texto pueden quedar
    borradas al desplegar, porque el archivo de configuración manda sobre ellas.
    El identificador de cliente no es información sensible, pero guardarlo como
@@ -392,6 +393,48 @@ ORDER BY e.correct DESC, e.errors ASC, e.total_ms ASC, e.started_at ASC;
 La segunda consulta incluye el correo del ganador, que la app no muestra, por si
 hace falta contactarle para entregar el premio.
 
+### Añadir las tablas del aula
+
+El aula (instituciones, cursos, bancos de preguntas y cuestionarios, ver
+[AULA.md](AULA.md)) y el registro con consentimiento usan nueve tablas más:
+`profiles`, `orgs`, `org_members`, `org_units`, `courses`, `course_members`,
+`banks`, `bank_questions` y `contest_scope`. Están al final de `schema.sql`:
+
+```
+wrangler d1 execute axioma --remote --file=schema.sql
+```
+
+o pégalo en la consola de D1 (**Workers & Pages → D1 → axioma → Console**). Todo
+usa `CREATE … IF NOT EXISTS`, así que se puede ejecutar las veces que haga falta.
+
+Después añade el secreto **`PLATFORM_ADMINS`** con tu correo (parte 4). Con él,
+cada institución nueva queda pendiente hasta que la apruebes en **Aula →
+Administración de la plataforma**. Sin él, las instituciones se activan al
+registrarse, lo que solo conviene para pruebas.
+
+Consultas útiles:
+
+```sql
+-- instituciones, estado y miembros
+SELECT o.name, o.status, o.kind, COUNT(m.user_id) AS miembros
+FROM orgs o LEFT JOIN org_members m ON m.org_id=o.id GROUP BY o.id ORDER BY o.created_at DESC;
+
+-- cursos con su número de estudiantes
+SELECT c.code, c.name, c.term, o.name AS institucion,
+       SUM(cm.role='estudiante' AND cm.status='activo') AS estudiantes
+FROM courses c JOIN orgs o ON o.id=c.org_id LEFT JOIN course_members cm ON cm.code=c.code
+GROUP BY c.code ORDER BY c.created_at DESC;
+
+-- menores registrados y si consta el consentimiento
+SELECT u.name, u.email, p.birthdate, p.guardian_name, p.guardian_email, p.guardian_ok
+FROM profiles p JOIN users u ON u.id=p.user_id
+WHERE date(p.birthdate,'+18 years') > date('now');
+```
+
+Si cambias los términos o la política de privacidad de forma importante, sube
+`TERMS_VERSION` en `src/aula.js`: todo el mundo los vuelve a aceptar en su
+siguiente acción.
+
 ### Copia de seguridad
 
 ```
@@ -439,7 +482,7 @@ alguna vez necesitas expulsar a todos.
 ## Desarrollo en local
 
 ```
-cp .dev.vars.example .dev.vars     # y rellena las dos variables
+cp .dev.vars.example .dev.vars     # y rellena las variables
 wrangler d1 execute axioma --local --file=schema.sql
 wrangler dev --port 8788
 ```
@@ -455,7 +498,8 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
 | `src/api.js` | La API: sesión, puntuaciones y ranking |
 | `src/retos.js` | La API de retos y salas en pareja |
-| `src/concursos.js` | La API de los concursos de trivia |
+| `src/aula.js` | La API del aula: perfiles, instituciones, cursos y bancos |
+| `src/concursos.js` | La API de los concursos y de los cuestionarios de curso |
 | `src/preguntas.js` | El banco de preguntas de los concursos |
 | `wrangler.toml` | Nombre, archivos estáticos y enlace a la base de datos |
 | `schema.sql` | Tablas de la base D1 |

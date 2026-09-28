@@ -1,0 +1,86 @@
+/* ===========================================================
+   THE FINAL TEST · portada
+   Lo que hay en la plataforma: el aula (instituciones, cursos y
+   cuestionarios), los concursos, los juegos de lógica —Axioma entre
+   ellos— y los retos con amigos. Con un código se entra directo a
+   un curso o a un concurso.
+   =========================================================== */
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var panel=$("inicio-panel"); if(!panel)return;
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function get(path){return fetch(path,{credentials:"same-origin"}).then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j;});});}
+function user(){return window.AxAccount&&AxAccount.user();}
+function ir(m){if(window.AxApp)AxApp.setMode(m);}
+
+var ICONO={
+  aula:'<svg viewBox="0 0 24 24"><path d="M12 4 2 9l10 5 8-4v6h2V9L12 4z"/><path d="M6 12.6V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.4l-6 3-6-3z" opacity=".55"/></svg>',
+  concurso:'<svg viewBox="0 0 24 24"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v3H8v-3h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zm0 4H6v1a2 2 0 0 0 1.2 1.8A6 6 0 0 1 7 8.7V7zm10 0v1.7c0 .4 0 .8-.2 1.1A2 2 0 0 0 18 8V7h-1z"/></svg>',
+  axioma:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5" rx="1.2"/><rect x="9.5" y="3" width="5" height="5" rx="1.2" opacity=".35"/><rect x="16" y="3" width="5" height="5" rx="1.2"/><rect x="3" y="9.5" width="5" height="5" rx="1.2" opacity=".35"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.2"/><rect x="16" y="9.5" width="5" height="5" rx="1.2" opacity=".35"/><rect x="3" y="16" width="5" height="5" rx="1.2"/><rect x="9.5" y="16" width="5" height="5" rx="1.2" opacity=".35"/><rect x="16" y="16" width="5" height="5" rx="1.2"/></svg>',
+  sudoku:'<svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm2 2v4h4V5H5zm6 0v4h2V5h-2zm4 0v4h4V5h-4zM5 11v2h4v-2H5zm6 0v2h2v-2h-2zm4 0v2h4v-2h-4zM5 15v4h4v-4H5zm6 0v4h2v-4h-2zm4 0v4h4v-4h-4z"/></svg>',
+  rapido:'<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
+  reto:'<svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6H2zm15.5 0c0-2-.7-3.7-1.9-5 .5-.1.9-.1 1.4-.1 3.1 0 5 2.2 5 5.1h-4.5z"/></svg>'
+};
+
+function tarjeta(modo,icono,titulo,texto,extra,clase){
+  return '<button type="button" class="ini-card '+(clase||"")+'" data-modo="'+modo+'"><span class="ini-ico">'+ICONO[icono]+'</span>'+
+    '<span class="ini-txt"><b>'+titulo+'</b><small>'+texto+'</small>'+(extra?'<em>'+extra+'</em>':'')+'</span></button>';
+}
+
+function abrir(){
+  panel.hidden=false;
+  var u=user();
+  panel.innerHTML=
+    '<div class="ini-hero"><h2>Aprende, compite y demuéstralo.</h2>'+
+    '<p>Cuestionarios de clase con registros para el docente, concursos de trivia con premio y juegos de lógica, en un mismo lugar.</p>'+
+    '<form class="rt-join ini-codigo" id="ini-form"><input id="ini-code" placeholder="Código de curso o concurso" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Entrar</button></form>'+
+    '<p class="msg" id="ini-msg"></p></div>'+
+    '<div class="ini-grid ini-dos">'+
+      tarjeta("aula","aula","Aula","Instituciones, cursos por paralelo, bancos de preguntas y cuestionarios de parcial con registros y Excel.",'<span id="ini-aula">'+(u?"Tus cursos…":"Para universidades e institutos")+'</span>',"grande")+
+      tarjeta("concurso","concurso","Concursos de trivia","Te inscribes, juegas una sola vez y al cierre se publica el ranking y el ganador.",'<span id="ini-conc">Cargando…</span>',"grande")+
+    '</div>'+
+    '<h4 class="ini-cap">Juegos de lógica</h4>'+
+    '<div class="ini-grid">'+
+      tarjeta("day","axioma","Axioma","El reto diario: deduce el tablero y descubre la regla que lo gobierna.")+
+      tarjeta("sud","sudoku","Sudoku","Cinco niveles, tablero del día y ranking por tiempo.")+
+      tarjeta("rapido","rapido","Juegos rápidos","Trivia, memoria, cálculo, reflejos y del 1 al 25.")+
+    '</div>'+
+    '<h4 class="ini-cap">Con amigos</h4>'+
+    '<div class="ini-grid ini-dos">'+
+      tarjeta("reto","reto","Retos","Concursos con código, premio para el primero y penitencia para el último.")+
+      tarjeta("pareja","sudoku","En pareja","Un sudoku a cuatro manos, cada uno desde su móvil.")+
+    '</div>';
+  var bs=panel.querySelectorAll("[data-modo]"),i;
+  for(i=0;i<bs.length;i++)bs[i].onclick=function(){ir(this.getAttribute("data-modo"));};
+  $("ini-form").onsubmit=function(e){
+    e.preventDefault();
+    var c=$("ini-code").value.trim().toUpperCase(), msg=$("ini-msg");
+    if(c.length!==6){msg.className="msg bad";msg.textContent="Los códigos tienen seis caracteres.";return;}
+    msg.className="msg"; msg.textContent="Buscando…";
+    /* primero curso, luego concurso */
+    get("/api/courses/"+c).then(function(){ if(window.AxAula){ir("aula");AxAula.curso(c);} })
+      .catch(function(){ return get("/api/contests/"+c).then(function(){ir("concurso");if(window.AxConcursos)AxConcursos.ficha(c);},function(er){
+        if(er&&er.error==="restricted"){ir("concurso");if(window.AxConcursos)AxConcursos.ficha(c);return;}
+        msg.className="msg bad"; msg.textContent="No hay ningún curso ni concurso con ese código."; }); });
+  };
+  get("/api/contests").then(function(r){
+    var n=r.open.filter(function(c){return c.state==="abierto";}).length;
+    $("ini-conc").textContent=n?(n===1?"1 abierto ahora":n+" abiertos ahora"):"Ninguno abierto: crea el primero";
+  }).catch(function(){ $("ini-conc").textContent="Ver concursos"; });
+  if(u)get("/api/orgs").then(function(r){
+    var activos=r.courses.filter(function(c){return !c.archived&&c.status==="activo";});
+    var abiertos=activos.reduce(function(s,c){return s+(c.open||0);},0);
+    $("ini-aula").textContent=activos.length?(activos.length+(activos.length===1?" curso":" cursos")+(abiertos?" · "+abiertos+" cuestionario"+(abiertos>1?"s":"")+" abierto"+(abiertos>1?"s":""):"")):
+      (r.orgs.length?r.orgs.length+(r.orgs.length===1?" institución":" instituciones"):"Únete con el código de tu curso");
+  }).catch(function(){ var e=$("ini-aula"); if(e)e.textContent="Completa tu registro para empezar"; });
+}
+function cerrar(){ panel.hidden=true; }
+document.addEventListener("ax-user",function(){ if(!panel.hidden)abrir(); });
+document.addEventListener("ax-perfil",function(){ if(!panel.hidden)abrir(); });
+
+window.AxInicio={abrir:abrir,cerrar:cerrar};
+/* app.js elige la portada antes de que se cargue este archivo */
+if(document.body.getAttribute("data-game")==="inicio")abrir();
+})();

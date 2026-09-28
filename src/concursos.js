@@ -14,10 +14,11 @@
      POST /api/contests/:code/answer       { idx, o } → acierto o fallo
      POST /api/contests/:code/close        quien organiza la cierra ya
    =========================================================== */
-import { secuencia, semilla, CATEGORIAS } from "./preguntas.js";
+import { secuencia, secuenciaPool, semilla, CATEGORIAS } from "./preguntas.js";
+import { perfil, puedePremio, rolOrg, accesoCurso, puedeUsarBanco } from "./aula.js";
 
 var GRACIA=2000;               /* ms de margen por la red al responder */
-var PREGUNTAS=[10,20,30,50,100], SEGUNDOS=[10,15,20,30];
+var PREGUNTAS=[10,20,30,50,100], SEGUNDOS=[10,15,20,30,45,60];
 var MIN_MS=5*60000, MAX_MS=31*86400000, MAX_ABIERTOS=20, TOP=100;
 var ALFABETO="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -33,6 +34,7 @@ export async function handleConcursos(req,env,url,path,ctx){
     if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/next$/))&&req.method==="POST")return await siguiente(env,user,m[1],json);
     if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/answer$/))&&req.method==="POST")return await responde(req,env,user,m[1],json);
     if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/close$/))&&req.method==="POST")return await cierra(env,user,m[1],json);
+    if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/results$/))&&req.method==="GET")return await resultados(env,user,m[1],json);
   }catch(e){
     if(/no such table/i.test(String(e&&e.message)))return json({error:"not_configured"},null,503);
     throw e;
@@ -44,13 +46,43 @@ export async function handleConcursos(req,env,url,path,ctx){
 function limpia(s,max){return String(s==null?"":s).replace(/\s+/g," ").trim().slice(0,max);}
 function codigo(){var b=new Uint8Array(6);crypto.getRandomValues(b);var s="";for(var i=0;i<6;i++)s+=ALFABETO[b[i]%ALFABETO.length];return s;}
 function estado(c,now){return now<c.starts_at?"pronto":now<c.ends_at?"abierto":"terminado";}
-function carga(env,code){return env.DB.prepare("SELECT * FROM contests WHERE code=?").bind(code).first();}
+/* el concurso con su alcance: a quién va dirigido y, si sale de un banco, sus preguntas congeladas */
+async function carga(env,code){
+  var c=await env.DB.prepare(
+    "SELECT c.*,s.kind,s.audience,s.org_id,s.course_code,s.bank_id,s.partial,s.pool FROM contests c LEFT JOIN contest_scope s ON s.code=c.code WHERE c.code=?"
+  ).bind(code).first();
+  if(!c)return null;
+  if(!c.kind)c.kind="concurso";
+  if(!c.audience)c.audience=c.public?"publico":"enlace";
+  c.poolList=c.pool?JSON.parse(c.pool):null;
+  return c;
+}
+/* quién lo gestiona: quien lo creó, quien gestiona el curso o la administración de la institución */
+async function gestiona(env,c,user){
+  if(!user)return false;
+  if(c.owner_id===user.id)return true;
+  if(c.audience==="curso"&&c.course_code){var a=await accesoCurso(env,c.course_code,user.id);return !!(a&&a.gestiona);}
+  if(c.org_id)return (await rolOrg(env,c.org_id,user.id))==="admin";
+  return false;
+}
+/* quién puede verlo y participar */
+async function accede(env,c,user){
+  if(c.audience==="org")return !!(user&&await rolOrg(env,c.org_id,user.id));
+  if(c.audience==="curso"){ if(!user)return false; var a=await accesoCurso(env,c.course_code,user.id); return !!(a&&(a.gestiona||a.estudiante)); }
+  return true;
+}
 function entrada(env,code,uid){return env.DB.prepare("SELECT * FROM contest_entries WHERE code=? AND user_id=?").bind(code,uid).first();}
-function preguntas(c,uid){return secuencia(semilla(c.seed+":"+uid),c.level,!!c.math,c.max_questions);}
+function preguntas(c,uid){
+  if(c.poolList)return secuenciaPool(semilla(c.seed+":"+uid),c.poolList,c.max_questions,c.level===4);
+  return secuencia(semilla(c.seed+":"+uid),c.level,!!c.math,c.max_questions);
+}
+function categoria(q){return CATEGORIAS[q.cat]||q.tema||"";}
 function publico(c,now){
   return {code:c.code,name:c.name,prize:c.prize,description:c.description,level:c.level,max_errors:c.max_errors,
           max_questions:c.max_questions,seconds_per_q:c.seconds_per_q,math:!!c.math,public:!!c.public,
-          starts_at:c.starts_at,ends_at:c.ends_at,state:estado(c,now)};
+          starts_at:c.starts_at,ends_at:c.ends_at,state:estado(c,now),
+          kind:c.kind||"concurso",audience:c.audience||(c.public?"publico":"enlace"),partial:c.partial||null,
+          course_code:c.course_code||null,org_id:c.org_id||null,from_bank:!!c.pool};
 }
 function resumen(e){
   if(!e)return null;
@@ -70,42 +102,89 @@ async function lista(env,user,json){
     .bind(now,now-14*86400000).all();
   var mios={results:[]};
   if(user)mios=await env.DB.prepare(
-    "SELECT c.*,"+cuenta+","+ganador+",e.started_at AS my_started,e.finished_at AS my_finished,e.correct AS my_correct,e.errors AS my_errors "+
-    "FROM contests c LEFT JOIN contest_entries e ON e.code=c.code AND e.user_id=? "+
+    "SELECT c.*,s.kind,s.audience,s.partial,s.course_code,s.org_id,"+cuenta+","+ganador+",e.started_at AS my_started,e.finished_at AS my_finished,e.correct AS my_correct,e.errors AS my_errors "+
+    "FROM contests c LEFT JOIN contest_scope s ON s.code=c.code LEFT JOIN contest_entries e ON e.code=c.code AND e.user_id=? "+
     "WHERE c.owner_id=? OR e.user_id IS NOT NULL ORDER BY c.ends_at DESC LIMIT 30"
   ).bind(user.id,user.id).all();
-  function sale(c){var o=publico(c,now);o.registered=c.inscritos;if(c.ganador!==undefined)o.winner=c.ganador;
+  function sale(c){var o=publico(c,now);o.registered=c.inscritos;if(c.ganador!==undefined&&c.kind!=="cuestionario")o.winner=c.ganador;
     if(c.my_started!==undefined){o.owner=user&&c.owner_id===user.id;o.me=c.my_started===null&&c.my_finished===null&&c.my_correct===null?null:
       {started:!!c.my_started,finished:!!c.my_finished,correct:c.my_correct,errors:c.my_errors};}
     return o;}
   return json({now:now,open:(abiertos.results||[]).map(sale),recent:(recientes.results||[]).map(sale),mine:(mios.results||[]).map(sale)});
 }
 
-/* ---------- crear ---------- */
+/* ---------- crear ----------
+   kind: concurso (con premio y ranking) | cuestionario (de curso, con nota)
+   audience: publico | enlace | org (miembros de la institución) | curso (estudiantes del curso)
+   bank_id: si se indica, las preguntas salen de ese banco (filtradas por tema y nivel) y se congelan */
 async function crea(req,env,user,json){
   var b=await req.json().catch(function(){return {}});
   var now=Date.now();
-  var name=limpia(b.name,60), prize=limpia(b.prize,200), desc=limpia(b.description,300);
+  if(!(await perfil(env,user.id)).complete)return json({error:"profile_required"},null,403);
+  var name=limpia(b.name,60), prize=limpia(b.prize,200), desc=limpia(b.description,300), partial=limpia(b.partial,40);
   var level=parseInt(b.level,10), maxErr=parseInt(b.max_errors,10), maxQ=parseInt(b.max_questions,10), seg=parseInt(b.seconds_per_q,10);
   var ini=parseInt(b.starts_at,10), fin=parseInt(b.ends_at,10);
+  var kind=b.kind==="cuestionario"?"cuestionario":"concurso";
+  var aud=["publico","enlace","org","curso"].indexOf(b.audience)>=0?b.audience:(b.public?"publico":"enlace");
+  var bankId=parseInt(b.bank_id,10)||0, conBanco=bankId>0;
   if(name.length<2)return json({error:"bad_name"},null,400);
-  if(!(level>=1&&level<=4))return json({error:"bad_level"},null,400);
-  if(!(maxErr>=0&&maxErr<=10))return json({error:"bad_errors"},null,400);
-  if(PREGUNTAS.indexOf(maxQ)<0)return json({error:"bad_questions"},null,400);
+  if(!(level>=1&&level<=(conBanco?5:4)))return json({error:"bad_level"},null,400);
+  if(!(maxErr>=0&&maxErr<=100))return json({error:"bad_errors"},null,400);
+  if(conBanco?!(maxQ>=1&&maxQ<=100):PREGUNTAS.indexOf(maxQ)<0)return json({error:"bad_questions"},null,400);
   if(SEGUNDOS.indexOf(seg)<0)return json({error:"bad_seconds"},null,400);
-  if(!(ini>=now-120000&&ini<=now+60*86400000))return json({error:"bad_start"},null,400);
+  if(!(ini>=now-120000&&ini<=now+120*86400000))return json({error:"bad_start"},null,400);
   if(ini<now)ini=now;
   if(!(fin>=ini+MIN_MS&&fin<=ini+MAX_MS))return json({error:"bad_end"},null,400);
+  if(kind==="cuestionario"&&aud!=="curso"&&aud!=="org")return json({error:"bad_audience"},null,400);
+
+  /* a quién va dirigido y con qué permiso */
+  var orgId=null, curso=null;
+  if(aud==="curso"){
+    var a=await accesoCurso(env,String(b.course_code||""),user.id);
+    if(!a)return json({error:"not_found"},null,404);
+    if(!a.gestiona)return json({error:"forbidden"},null,403);
+    curso=a.curso.code; orgId=a.curso.org_id;
+  }else if(aud==="org"){
+    orgId=String(b.org_id||"");
+    var r=await rolOrg(env,orgId,user.id);
+    if(r!=="admin"&&r!=="docente")return json({error:"forbidden"},null,403);
+  }
+  if(orgId){
+    var o=await env.DB.prepare("SELECT status FROM orgs WHERE id=?").bind(orgId).first();
+    if(!o||o.status!=="activa")return json({error:"org_pending"},null,403);
+  }
+
+  /* preguntas del banco, congeladas en el momento de crear */
+  var pool=null;
+  if(conBanco){
+    var bk=await puedeUsarBanco(env,bankId,user.id);
+    if(!bk)return json({error:"forbidden_bank"},null,403);
+    if(orgId&&bk.org_id!==orgId)return json({error:"forbidden_bank"},null,403);
+    var bo=await env.DB.prepare("SELECT status FROM orgs WHERE id=?").bind(bk.org_id).first();
+    if(!bo||bo.status!=="activa")return json({error:"org_pending"},null,403);
+    var sql="SELECT id,level,topic,q,opts,answer FROM bank_questions WHERE bank_id=?", args=[bankId];
+    var tema=limpia(b.topic,60); if(tema){sql+=" AND topic=?";args.push(tema);}
+    if(level>=1&&level<=3){sql+=" AND level=?";args.push(level);}
+    var st=env.DB.prepare(sql), filas=(await st.bind.apply(st,args).all()).results||[];
+    if(!filas.length)return json({error:"empty_pool"},null,400);
+    pool=filas.map(function(x){return {id:x.id,level:x.level,topic:x.topic||"",q:x.q,opts:JSON.parse(x.opts),answer:x.answer};});
+    if(maxQ>pool.length)maxQ=pool.length;
+  }
+
   var activos=await env.DB.prepare("SELECT COUNT(*) AS n FROM contests WHERE owner_id=? AND ends_at>?").bind(user.id,now).first();
-  if(activos.n>=MAX_ABIERTOS)return json({error:"too_many"},null,400);
+  if(activos.n>=MAX_ABIERTOS*3)return json({error:"too_many"},null,400);
   var code,intentos=0,choque;
   do{code=codigo();intentos++;choque=await env.DB.prepare("SELECT 1 FROM contests WHERE code=?").bind(code).first();}while(choque&&intentos<5);
-  await env.DB.prepare(
+  var ops=[env.DB.prepare(
     "INSERT INTO contests(code,name,owner_id,prize,description,level,max_errors,max_questions,seconds_per_q,math,public,starts_at,ends_at,seed,created_at) "+
     "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-  ).bind(code,name,user.id,prize,desc,level,maxErr,maxQ,seg,b.math===false?0:1,b.public?1:0,ini,fin,
-         crypto.getRandomValues(new Uint32Array(1))[0],now).run();
-  return json({ok:true,code:code});
+  ).bind(code,name,user.id,prize,desc,level,maxErr,maxQ,seg,(b.math===false||conBanco)?0:1,aud==="publico"?1:0,ini,fin,
+         crypto.getRandomValues(new Uint32Array(1))[0],now)];
+  if(kind!=="concurso"||aud==="org"||aud==="curso"||conBanco||partial)ops.push(env.DB.prepare(
+    "INSERT INTO contest_scope(code,kind,audience,org_id,course_code,bank_id,partial,pool,created_at) VALUES(?,?,?,?,?,?,?,?,?)"
+  ).bind(code,kind,aud,orgId,curso,conBanco?bankId:null,partial||null,pool?JSON.stringify(pool):null,now));
+  await env.DB.batch(ops);
+  return json({ok:true,code:code,max_questions:maxQ});
 }
 
 /* ---------- ficha ---------- */
@@ -113,6 +192,20 @@ async function ficha(env,user,code,json){
   var c=await carga(env,code);
   if(!c)return json({error:"not_found"},null,404);
   var now=Date.now(), o=publico(c,now);
+  if(c.org_id){
+    var org=await env.DB.prepare("SELECT name FROM orgs WHERE id=?").bind(c.org_id).first();
+    o.org_name=org?org.name:"";
+  }
+  if(c.course_code){
+    var cu=await env.DB.prepare("SELECT name,term FROM courses WHERE code=?").bind(c.course_code).first();
+    o.course_name=cu?cu.name:""; o.course_term=cu?cu.term:"";
+  }
+  o.manage=await gestiona(env,c,user);
+  if(!o.manage&&!(await accede(env,c,user))){
+    /* restringido: solo lo necesario para saber a qué curso o institución unirse */
+    return json({error:"restricted",name:c.name,kind:o.kind,audience:o.audience,course_code:c.course_code,course_name:o.course_name||"",
+                 org_name:o.org_name||""},null,403);
+  }
   var dueño=await env.DB.prepare("SELECT name FROM users WHERE id=?").bind(c.owner_id).first();
   var n=await env.DB.prepare(
     "SELECT COUNT(*) AS inscritos, SUM(started_at IS NOT NULL) AS jugaron, SUM(finished_at IS NOT NULL) AS terminaron FROM contest_entries WHERE code=?"
@@ -122,8 +215,11 @@ async function ficha(env,user,code,json){
   var e=user?await entrada(env,code,user.id):null;
   o.me=resumen(e);
 
-  /* el ranking y las respuestas correctas solo se publican al terminar */
-  if(o.state==="terminado"){
+  /* el ranking y las respuestas correctas solo se publican al terminar;
+     en un cuestionario, cada estudiante ve solo lo suyo y el docente lo ve todo en /results */
+  if(o.state==="terminado"&&o.kind==="cuestionario"){
+    if(e&&e.started_at)o.review=await revision(env,c,user.id);
+  }else if(o.state==="terminado"){
     var rows=await env.DB.prepare(
       "SELECT e.user_id,u.name,u.picture,e.correct,e.errors,e.total_ms,e.idx FROM contest_entries e JOIN users u ON u.id=e.user_id "+
       "WHERE e.code=? AND e.started_at IS NOT NULL ORDER BY e.correct DESC,e.errors ASC,e.total_ms ASC,e.started_at ASC LIMIT ?"
@@ -142,15 +238,18 @@ async function ficha(env,user,code,json){
         ).bind(code,e.correct,e.correct,e.errors,e.errors,e.total_ms,e.total_ms,e.started_at).first();
         o.my_rank=(ant.n||0)+1;
       }
-      var resp=await env.DB.prepare("SELECT idx,chosen,ok FROM contest_answers WHERE code=? AND user_id=? ORDER BY idx").bind(code,user.id).all();
-      var qs=preguntas(c,user.id);
-      o.review=(resp.results||[]).map(function(a){
-        var q=qs[a.idx];
-        return {n:a.idx+1,cat:CATEGORIAS[q.cat],q:q.q,chosen:a.chosen>=0?q.o[a.chosen]:null,answer:q.o[q.c],ok:!!a.ok};
-      });
+      o.review=await revision(env,c,user.id);
     }
   }
   return json(o);
+}
+async function revision(env,c,uid){
+  var resp=await env.DB.prepare("SELECT idx,chosen,ok FROM contest_answers WHERE code=? AND user_id=? ORDER BY idx").bind(c.code,uid).all();
+  var qs=preguntas(c,uid);
+  return (resp.results||[]).map(function(a){
+    var q=qs[a.idx];
+    return {n:a.idx+1,cat:categoria(q),q:q.q,chosen:a.chosen>=0?q.o[a.chosen]:null,answer:q.o[q.c],ok:!!a.ok};
+  });
 }
 
 /* ---------- inscripción ---------- */
@@ -158,6 +257,11 @@ async function inscribe(env,user,code,json){
   var c=await carga(env,code);
   if(!c)return json({error:"not_found"},null,404);
   if(estado(c,Date.now())==="terminado")return json({error:"finished"},null,400);
+  if(!(await perfil(env,user.id)).complete)return json({error:"profile_required"},null,403);
+  if(!(await accede(env,c,user)))return json({error:"restricted"},null,403);
+  /* menores sin consentimiento del tutor: fuera de concursos abiertos con premio */
+  if((c.audience==="publico"||c.audience==="enlace")&&c.prize&&!(await puedePremio(env,user.id)))
+    return json({error:"consent_required"},null,403);
   await env.DB.prepare("INSERT INTO contest_entries(code,user_id,joined_at) VALUES(?,?,?) ON CONFLICT DO NOTHING")
     .bind(code,user.id,Date.now()).run();
   return json({ok:true});
@@ -166,7 +270,7 @@ async function inscribe(env,user,code,json){
 /* ---------- partida ---------- */
 function preguntaPublica(c,e,q,msLeft){
   /* nunca se envía cuál es la correcta */
-  return {idx:e.idx,number:e.idx+1,max:c.max_questions,cat:CATEGORIAS[q.cat],q:q.q,o:q.o,ms:Math.max(0,msLeft),
+  return {idx:e.idx,number:e.idx+1,max:c.max_questions,cat:categoria(q),q:q.q,o:q.o,ms:Math.max(0,msLeft),
           limit:c.seconds_per_q*1000,correct:e.correct,errors:e.errors,max_errors:c.max_errors};
 }
 function fin(e){return {finished:true,me:resumen(e)};}
@@ -239,9 +343,57 @@ async function responde(req,env,user,code,json){
 async function cierra(env,user,code,json){
   var c=await carga(env,code);
   if(!c)return json({error:"not_found"},null,404);
-  if(c.owner_id!==user.id)return json({error:"forbidden"},null,403);
+  if(!(await gestiona(env,c,user)))return json({error:"forbidden"},null,403);
   var now=Date.now();
   if(estado(c,now)==="terminado")return json({ok:true});
   await env.DB.prepare("UPDATE contests SET ends_at=?,starts_at=MIN(starts_at,?) WHERE code=?").bind(now,now,code).run();
   return json({ok:true});
+}
+
+/* ---------- registros para el docente ----------
+   Todos los participantes (y, en un cuestionario de curso, también quienes
+   no participaron), con su registro universitario, y la estadística de
+   cada pregunta: cuántos la respondieron y cuántos acertaron. */
+async function resultados(env,user,code,json){
+  var c=await carga(env,code);
+  if(!c)return json({error:"not_found"},null,404);
+  if(!(await gestiona(env,c,user)))return json({error:"forbidden"},null,403);
+  var ent=await env.DB.prepare(
+    "SELECT e.*,u.name,u.email,om.student_code FROM contest_entries e JOIN users u ON u.id=e.user_id "+
+    "LEFT JOIN org_members om ON om.org_id=? AND om.user_id=e.user_id WHERE e.code=? "+
+    "ORDER BY e.started_at IS NULL,e.correct DESC,e.errors ASC,e.total_ms ASC,e.started_at ASC"
+  ).bind(c.org_id||"",code).all();
+  var filas=(ent.results||[]).map(function(e){
+    return {user_id:e.user_id,name:e.name,email:e.email,student_code:e.student_code||"",
+            status:e.finished_at?"terminado":e.started_at?"en curso":"inscrito",
+            correct:e.correct,errors:e.errors,answered:e.idx,total_ms:e.total_ms,reason:e.end_reason||"",
+            started_at:e.started_at,finished_at:e.finished_at};
+  });
+  if(c.course_code){
+    var faltan=await env.DB.prepare(
+      "SELECT u.id,u.name,u.email,om.student_code FROM course_members cm JOIN users u ON u.id=cm.user_id "+
+      "LEFT JOIN org_members om ON om.org_id=? AND om.user_id=cm.user_id "+
+      "WHERE cm.code=? AND cm.role='estudiante' AND cm.status='activo' AND cm.user_id NOT IN (SELECT user_id FROM contest_entries WHERE code=?) ORDER BY u.name"
+    ).bind(c.org_id||"",c.course_code,code).all();
+    (faltan.results||[]).forEach(function(u){
+      filas.push({user_id:u.id,name:u.name,email:u.email,student_code:u.student_code||"",status:"no participó",
+                  correct:0,errors:0,answered:0,total_ms:0,reason:"",started_at:null,finished_at:null});
+    });
+  }
+  var pos=0; filas.forEach(function(f){ if(f.started_at)f.rank=++pos; });
+
+  /* estadística por pregunta: se reconstruye la secuencia de cada participante */
+  var resp=await env.DB.prepare("SELECT user_id,idx,ok FROM contest_answers WHERE code=?").bind(code).all();
+  var porPregunta={}, secs={};
+  (resp.results||[]).forEach(function(a){
+    var sec=secs[a.user_id]||(secs[a.user_id]=preguntas(c,a.user_id)), q=sec[a.idx]; if(!q)return;
+    var k=q.id?("#"+q.id):q.q, x=porPregunta[k]||(porPregunta[k]={q:q.q,cat:categoria(q),level:q.nivel||null,answered:0,correct:0});
+    x.answered++; if(a.ok)x.correct++;
+  });
+  var preguntasEst=Object.keys(porPregunta).map(function(k){var x=porPregunta[k];x.pct=Math.round(100*x.correct/x.answered);return x;})
+    .sort(function(a,b){return a.pct-b.pct||b.answered-a.answered;});
+  var o=publico(c,Date.now());
+  if(c.course_code){var cu=await env.DB.prepare("SELECT name,term FROM courses WHERE code=?").bind(c.course_code).first();o.course_name=cu?cu.name:"";o.course_term=cu?cu.term:"";}
+  o.rows=filas; o.questions=preguntasEst;
+  return json(o);
 }

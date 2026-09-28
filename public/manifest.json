@@ -1,21 +1,45 @@
 {
   "id": "/",
-  "name": "Axioma — deduce el tablero y la regla",
-  "short_name": "Axioma",
-  "description": "Un puzle diario de deducción pura. No solo resuelves el tablero: descubres qué regla lo gobierna.",
+  "name": "The Final Test — aprende, compite y demuéstralo",
+  "short_name": "Final Test",
+  "description": "Cuestionarios de clase con registros para el docente, concursos de trivia con premio y juegos de lógica como Axioma y Sudoku.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "lang": "es",
   "dir": "ltr",
-  "categories": ["games", "puzzle"],
+  "categories": [
+    "education",
+    "games",
+    "puzzle"
+  ],
   "background_color": "#F2F2F7",
   "theme_color": "#007AFF",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ]
 }

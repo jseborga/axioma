@@ -321,5 +321,9 @@ liga("[data-tut]",function(){return enSudoku()?SUDOKU:TECNICA;});
 var _render=render;
 render=function(){_render();liga(".tut-card [data-tut]",TECNICA);};
 
-try{ if(!localStorage.getItem("ax_tut")) setTimeout(function(){abrir(SIMPLE);},400); }catch(e){}
+/* ya no se abre sola al cargar: la portada es The Final Test, y la guía
+   aparece la primera vez que alguien entra en Axioma */
+window.AxTutorial={primeraVez:function(){
+  try{ if(!localStorage.getItem("ax_tut")) setTimeout(function(){abrir(SIMPLE);},300); }catch(e){}
+}};
 })();

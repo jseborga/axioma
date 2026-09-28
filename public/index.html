@@ -3,60 +3,53 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Axioma — deduce el tablero y la regla</title>
-<meta name="description" content="Un puzle diario de deducción pura. No solo resuelves el tablero: descubres qué regla lo gobierna. Sin azar, sin adivinar, sin cuenta.">
+<title>The Final Test — cuestionarios, concursos y juegos de lógica</title>
+<meta name="description" content="Cuestionarios de clase con registros para docentes, concursos de trivia con premio y juegos de lógica como Axioma y el sudoku.">
 <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Final Test">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta property="og:title" content="Axioma">
-<meta property="og:description" content="No solo resuelves el tablero: descubres qué regla lo gobierna.">
+<meta property="og:title" content="The Final Test">
+<meta property="og:description" content="Aprende, compite y demuéstralo: cuestionarios, concursos y juegos de lógica.">
 <link rel="stylesheet" href="axioma.css">
 </head>
 <body>
 
 <header class="top">
   <div class="brand">
-    <div class="logo" aria-hidden="true">
-      <svg viewBox="0 0 28 28" fill="none">
-        <rect x="3" y="3" width="6.5" height="6.5" rx="1.6"/>
-        <rect x="10.75" y="3" width="6.5" height="6.5" rx="1.6" opacity=".3"/>
-        <rect x="18.5" y="3" width="6.5" height="6.5" rx="1.6"/>
-        <rect x="3" y="10.75" width="6.5" height="6.5" rx="1.6" opacity=".3"/>
-        <rect x="10.75" y="10.75" width="6.5" height="6.5" rx="1.6"/>
-        <rect x="18.5" y="10.75" width="6.5" height="6.5" rx="1.6" opacity=".3"/>
-        <rect x="3" y="18.5" width="6.5" height="6.5" rx="1.6"/>
-        <rect x="10.75" y="18.5" width="6.5" height="6.5" rx="1.6" opacity=".3"/>
-        <rect x="18.5" y="18.5" width="6.5" height="6.5" rx="1.6"/>
-      </svg>
-    </div>
+    <button class="logo" id="logo-inicio" type="button" aria-label="Ir al inicio">
+      <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M7.4 14.6l4.3 4.3 9-9.8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
     <div>
-      <h1>Axioma</h1>
-      <p class="tag">Deduce el tablero. Descubre la regla.</p>
+      <h1>The Final Test</h1>
+      <p class="tag" id="tagline">Aprende, compite y demuéstralo.</p>
     </div>
   </div>
 
   <div class="meta">
     <div class="modewrap">
       <button class="modebtn" id="mode-btn" type="button" aria-haspopup="true" aria-expanded="false">
-        <span id="mode-label">Diario</span>
+        <span id="mode-label">Inicio</span>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="modemenu" id="mode-menu" role="menu" hidden>
-        <p class="menu-cap">Axioma</p>
-        <button role="menuitemradio" id="t-day"   aria-checked="true"  type="button"><b>Diario</b><small>El reto de hoy, igual para todos</small></button>
-        <button role="menuitemradio" id="t-flash" aria-checked="false" type="button"><b>Flash</b><small>Partida corta en un tablero de 4×4</small></button>
-        <button role="menuitemradio" id="t-free"  aria-checked="false" type="button"><b>Libre</b><small>Los que quieras, tú eliges la dificultad</small></button>
-        <p class="menu-cap">Sudoku</p>
-        <button role="menuitemradio" id="t-sud"   aria-checked="false" type="button"><b>Sudoku</b><small>Cinco niveles y ranking por tiempo</small></button>
-        <p class="menu-cap">Juegos</p>
+        <button role="menuitemradio" id="t-inicio" aria-checked="true" type="button"><b>Inicio</b><small>Todo lo que hay en The Final Test</small></button>
+        <p class="menu-cap">Aprender</p>
+        <button role="menuitemradio" id="t-aula" aria-checked="false" type="button"><b>Aula</b><small>Instituciones, cursos, bancos y cuestionarios</small></button>
         <button role="menuitemradio" id="t-concurso" aria-checked="false" type="button"><b>Concursos de trivia</b><small>Inscríbete, juega una vez y gana el premio</small></button>
+        <p class="menu-cap">Axioma · lógica</p>
+        <button role="menuitemradio" id="t-day"   aria-checked="false" type="button"><b>Axioma diario</b><small>El reto de hoy, igual para todos</small></button>
+        <button role="menuitemradio" id="t-flash" aria-checked="false" type="button"><b>Axioma flash</b><small>Partida corta en un tablero de 4×4</small></button>
+        <button role="menuitemradio" id="t-free"  aria-checked="false" type="button"><b>Axioma libre</b><small>Los que quieras, tú eliges la dificultad</small></button>
+        <p class="menu-cap">Juegos</p>
+        <button role="menuitemradio" id="t-sud"   aria-checked="false" type="button"><b>Sudoku</b><small>Cinco niveles y ranking por tiempo</small></button>
         <button role="menuitemradio" id="t-rapido" aria-checked="false" type="button"><b>Juegos rápidos</b><small>Trivia, memoria, cálculo, reflejos… un minuto cada uno</small></button>
         <p class="menu-cap">Con amigos</p>
-        <button role="menuitemradio" id="t-reto"  aria-checked="false" type="button"><b>Retos</b><small>Concursos con código, premio y clasificación</small></button>
+        <button role="menuitemradio" id="t-reto"  aria-checked="false" type="button"><b>Retos</b><small>Concursos con código, premio y penitencia</small></button>
         <button role="menuitemradio" id="t-pareja" aria-checked="false" type="button"><b>En pareja</b><small>Un sudoku a cuatro manos, en tiempo real</small></button>
       </div>
     </div>
@@ -146,6 +139,10 @@
     <p class="msg" id="msg" role="status" aria-live="polite"></p>
   </section>
 
+  <section class="inicio" id="inicio-panel" hidden aria-label="Inicio"></section>
+
+  <section class="panel retos aula" id="aula-panel" hidden aria-live="polite" aria-label="Aula"></section>
+
   <section class="panel retos" id="retos-panel" hidden aria-live="polite" aria-label="Retos"></section>
 
   <section class="panel retos rapido" id="rapido-panel" hidden aria-live="polite" aria-label="Juegos rápidos"></section>
@@ -212,12 +209,15 @@
 </div>
 
 <footer>
-  Cada tablero se genera y se verifica en tu dispositivo: solo hay una solución y nunca hace falta adivinar.
-  Funciona sin conexión y no pide ninguna cuenta.
+  <span id="pie-juego">Los tableros de lógica se generan y se verifican en tu dispositivo: solo hay una solución y nunca hace falta adivinar.</span>
+  <span class="pie-legal"><a href="terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="privacidad.html" target="_blank" rel="noopener">Privacidad</a></span>
 </footer>
 
 <div class="tut" id="tut"></div>
+<div class="tut" id="reg"></div>
 
+<script src="banco-formato.js"></script>
+<script src="xlsx.js"></script>
 <script src="sudoku.js"></script>
 <script src="rapidos-motor.js"></script>
 <script src="app.js"></script>
@@ -226,5 +226,8 @@
 <script src="rapidos.js"></script>
 <script src="concursos.js"></script>
 <script src="retos.js"></script>
+<script src="registro.js"></script>
+<script src="aula.js"></script>
+<script src="inicio.js"></script>
 </body>
 </html>
