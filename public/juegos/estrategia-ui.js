@@ -22,8 +22,12 @@ function turno(g,ctx,fichas){
     (g.hasta?'<span class="jg-reloj" data-hasta="'+g.hasta+'"></span>':'')+'</div>';
 }
 
+/* al terminar se deja a la vista el tablero final, con la línea o el camino ganador */
+function tableroFinal(tipo){return function(g,ctx){if(!g)return ""; var d=document.createElement("div"); S.UI[tipo].jugador(d,g,ctx); return d.innerHTML;};}
+
 /* ===================== GOMOKU ===================== */
 S.registra("gomoku",{
+  fin:tableroFinal("gomoku"),
   icono:"⚫",local:true,niveles:NIV,
   desc:"Cinco en línea en un tablero de 15×15: el primero que alinea cinco piezas gana.",
   reglas:["Se juega por turnos: negras y blancas colocan una pieza en cualquier casilla libre.","Gana quien alinee cinco o más seguidas en horizontal, vertical o diagonal.","Si se llena el tablero sin cinco en línea, es empate."],
@@ -80,6 +84,7 @@ function hexBot(E){
   return {c:cand[mej]};
 }
 S.registra("hex",{
+  fin:tableroFinal("hex"),
   icono:"⬢",local:true,niveles:NIV,
   desc:"Une tus dos bordes del tablero antes que el rival. Sin capturas ni empates.",
   reglas:["Rojo empieza y une el borde de arriba con el de abajo; azul, el de la izquierda con el de la derecha.","Por turnos, cada uno pinta una casilla libre.","Gana quien forme un camino continuo entre sus dos bordes. En Hex nunca hay empate."],
@@ -108,6 +113,7 @@ S.registra("hex",{
 /* ===================== TRES EN RAYA CUÁNTICO ===================== */
 var selQ=null;
 S.registra("cuantico",{
+  fin:tableroFinal("cuantico"),
   icono:"⚛️",local:true,niveles:["Fácil","Medio"],
   desc:"Cada jugada está en dos casillas a la vez hasta que el tablero se mide.",
   reglas:["En tu turno eliges DOS casillas: tu marca queda en superposición en ambas (por ejemplo X₁ en dos sitios).","Las marcas enlazan casillas. Cuando un enlace cierra un ciclo, el tablero se mide: el rival de quien lo cerró elige en cuál de sus dos casillas se queda esa marca, y las demás marcas del ciclo caen en cascada.","Las marcas medidas son definitivas. Gana quien forme tres en raya con marcas medidas.","Si los dos forman línea en la misma medición, gana la línea cuya marca más reciente es más antigua; el otro se lleva medio punto."],
