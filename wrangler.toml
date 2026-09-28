@@ -22,3 +22,6 @@ database_id = "ad3327ea-8049-4330-8b69-b8081a235045"
 [vars]
 APP_NAME = "The Final Test"
 CONTACT_EMAIL = "julioseborga@gmail.com"
+# Verificación de jugadores invitados: "prueba" muestra el código en pantalla
+# sin enviar nada; "real" lo enviará por SMS o correo cuando se conecte el servicio.
+VERIFY_MODE = "prueba"

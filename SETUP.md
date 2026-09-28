@@ -435,6 +435,30 @@ Si cambias los términos o la política de privacidad de forma importante, sube
 `TERMS_VERSION` en `src/aula.js`: todo el mundo los vuelve a aceptar en su
 siguiente acción.
 
+### Añadir las tablas de empresas e invitados
+
+**Empresas y eventos** ([EMPRESAS.md](EMPRESAS.md)) usa siete tablas más:
+`org_brand`, `org_invites`, `contest_options`, `guests`, `verify_codes`,
+`contact_consents` y `user_blocks`. Están al final de `schema.sql`; se crean igual
+que las anteriores (consola de D1 o `wrangler d1 execute axioma --remote
+--file=schema.sql`). Hasta entonces todo lo demás sigue funcionando y la sección de
+empresas avisa de que faltan las tablas.
+
+Consultas útiles:
+
+```sql
+-- invitados verificados (y cuántos con código de prueba)
+SELECT verified_by, COUNT(*) FROM guests GROUP BY verified_by;
+
+-- participantes de una empresa que aceptaron que los contacten
+SELECT u.name, COALESCE(g.contact,u.email) AS contacto
+FROM contact_consents cc JOIN users u ON u.id=cc.user_id LEFT JOIN guests g ON g.user_id=u.id
+WHERE cc.org_id='ID' AND cc.marketing=1;
+
+-- usuarios bloqueados
+SELECT u.name, u.email, b.reason, datetime(b.created_at/1000,'unixepoch') FROM user_blocks b JOIN users u ON u.id=b.user_id;
+```
+
 ### Ajustes de la plataforma
 
 Lo que se configura sin tocar código está en la sección `[vars]` de
@@ -445,6 +469,7 @@ Lo que se configura sin tocar código está en la sección `[vars]` de
 | `APP_NAME` | Nombre que se muestra de la plataforma |
 | `CONTACT_EMAIL` | Correo de contacto que aparece en los términos, la política de privacidad y el pie de la app |
 | `MAIL_FROM` | *(Para más adelante)* remitente de los correos de avisos y validaciones; si falta, se usa `CONTACT_EMAIL` |
+| `VERIFY_MODE` | Verificación de jugadores invitados: `"prueba"` (muestra el código en pantalla, no envía nada) o `"real"` (lo enviará por SMS o correo cuando se conecte el servicio). Ver [EMPRESAS.md](EMPRESAS.md) |
 
 Para cambiarlos, edita `wrangler.toml` y sube el cambio: se despliegan con la app.
 Las páginas los leen de `/api/config`, así que no hay que tocar el HTML. Lo
@@ -515,7 +540,10 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `src/api.js` | La API: sesión, puntuaciones y ranking |
 | `src/retos.js` | La API de retos y salas en pareja |
 | `src/aula.js` | La API del aula: perfiles, instituciones, cursos y bancos |
-| `src/ajustes.js` | Ajustes de la plataforma (nombre, correo de contacto, remitente) |
+| `src/invitados.js` | La API de invitados verificados con código |
+| `src/marcas.js` | La API de marcas, convocatorias, métricas y participantes |
+| `src/plataforma.js` | La API de administración de la plataforma |
+| `src/ajustes.js` | Ajustes de la plataforma (nombre, correo de contacto, remitente, verificación) |
 | `src/concursos.js` | La API de los concursos y de los cuestionarios de curso |
 | `src/preguntas.js` | El banco de preguntas de los concursos |
 | `wrangler.toml` | Nombre, archivos estáticos y enlace a la base de datos |

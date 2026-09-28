@@ -57,7 +57,13 @@ function openPanel(){ $("acct-panel").hidden=false; renderPanel(); if(!user)load
 function closePanel(){ $("acct-panel").hidden=true; }
 function renderPanel(){
   var p=$("acct-panel"); if(p.hidden)return;
-  if(user){
+  if(user&&user.guest){
+    p.innerHTML='<div class="acct-me"><div><b>'+esc(user.name)+'</b><small>Invitado'+(user.email?' · '+esc(user.email):'')+'</small></div></div>'+
+      '<p>Participas como invitado, verificado con un código, en las convocatorias que lo admiten. Para crear retos, usar el aula o entrar en otros concursos, entra con Google.</p>'+
+      '<div class="actions"><button class="ghost" id="acct-out">Salir</button></div>'+
+      '<button class="close" id="acct-close" aria-label="Cerrar">×</button>';
+    $("acct-out").onclick=logout;
+  }else if(user){
     p.innerHTML='<div class="acct-me">'+
       (user.picture?'<img src="'+esc(user.picture)+'" alt="" referrerpolicy="no-referrer">':'')+
       '<div><b>'+esc(user.name)+'</b><small>'+esc(user.email||"")+'</small></div></div>'+
@@ -100,7 +106,7 @@ function onCredential(resp){
   var host=$("gsi-btn"); if(host)host.innerHTML='<span class="gsi-wait">Entrando…</span>';
   api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:resp.credential})})
     .then(function(r){setUser(r.user);})
-    .catch(function(){ if(host)host.innerHTML='<span class="gsi-wait">No se pudo iniciar sesión. Inténtalo de nuevo.</span>'; renderPanel(); });
+    .catch(function(e){ var h=$("gsi-btn"); if(h)h.innerHTML='<span class="gsi-wait">'+(e&&e.error==="blocked"?"Esta cuenta está bloqueada por la administración de la plataforma.":"No se pudo iniciar sesión. Inténtalo de nuevo.")+'</span>'; });
 }
 function logout(){
   api("/api/auth/logout",{method:"POST"}).catch(function(){}).then(function(){
@@ -245,7 +251,9 @@ function verSud(day,level){
 window.AxAccount={onDailySolved:onDailySolved,showRanking:showRanking,
   sudokuResuelto:sudokuResuelto,verRankingSudoku:verSud,user:function(){return user},
   configurado:function(){return !!(cfg&&cfg.googleClientId)},listo:function(){return cfg!==null||cargado},
-  abrirCuenta:openPanel};
+  abrirCuenta:openPanel,
+  /* tras verificar a un invitado: vuelve a leer la sesión */
+  refresca:function(){ return api("/api/me").then(function(m){ if(m.user)$("acct").hidden=false; setUser(m.user||null); return user; }); }};
 
 $("acct-btn").onclick=function(){ if($("acct-panel").hidden)openPanel(); else closePanel(); };
 init();

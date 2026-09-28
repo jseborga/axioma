@@ -12,6 +12,9 @@
      /api/events/* y /api/coop/*  → retos y sudoku en pareja, en retos.js
      /api/contests/*              → concursos y cuestionarios, en concursos.js
      /api/profile, /api/orgs/*, /api/courses/*, /api/banks/*, /api/admin/* → instituciones, en aula.js
+     /api/guest/*                 → jugadores invitados verificados con código, en invitados.js
+     /api/brands/*, /api/orgs/:id/(brand|contests|metrics|participants) → marcas, en marcas.js
+     /api/admin/(summary|users…)  → administración de la plataforma, en plataforma.js
    Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET y las de ajustes.js. Binding D1: DB.
    =========================================================== */
 
@@ -19,6 +22,9 @@ import { handleRetos } from "./retos.js";
 import { handleConcursos } from "./concursos.js";
 import { handleAula } from "./aula.js";
 import { ajustesPublicos } from "./ajustes.js";
+import { handleInvitados, esInvitado } from "./invitados.js";
+import { handleMarcas } from "./marcas.js";
+import { handlePlataforma } from "./plataforma.js";
 
 var COOKIE="ax_session";
 var SESSION_DAYS=30;
@@ -45,6 +51,12 @@ export async function handleApi(req,env,url){
       return await sudokuGuarda(req,env);
     if(path==="/sudoku/ranking"&&req.method==="GET")
       return await sudokuRanking(req,env,url);
+    if(path.indexOf("/guest/")===0)
+      return await handleInvitados(req,env,url,path,{json:json,sesion:function(sub){return abreSesion(env,sub);}});
+    if(/^\/brands(\/|$)/.test(path)||/^\/orgs\/[A-Z0-9]{6}\/(brand|contests|metrics|participants)$/.test(path))
+      return await handleMarcas(req,env,url,path,{json:json,user:await currentUser(req,env)});
+    if(/^\/admin\/(summary|users)(\/|$)/.test(path)||(path==="/admin/orgs"&&req.method==="POST")||/^\/admin\/orgs\/[A-Z0-9]{6}\/admins$/.test(path))
+      return await handlePlataforma(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/(profile|orgs|courses|banks|admin)(\/|$)/.test(path))
       return await handleAula(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(path.indexOf("/contests")===0)
@@ -108,8 +120,25 @@ async function currentUser(req,env){
   if(!env.SESSION_SECRET||!env.DB)return null;
   var p=await verify(readCookie(req,COOKIE),env.SESSION_SECRET);
   if(!p)return null;
-  var row=await env.DB.prepare("SELECT id,name,picture,email FROM users WHERE id=?").bind(p.sub).first();
-  return row||null;
+  var row;
+  try{
+    row=await env.DB.prepare("SELECT u.id,u.name,u.picture,u.email,(SELECT 1 FROM user_blocks b WHERE b.user_id=u.id) AS bloqueado FROM users u WHERE u.id=?").bind(p.sub).first();
+  }catch(e){ /* sin la tabla de bloqueos (base anterior a empresas) */
+    row=await env.DB.prepare("SELECT id,name,picture,email FROM users WHERE id=?").bind(p.sub).first();
+  }
+  if(!row||row.bloqueado)return null;
+  delete row.bloqueado;
+  if(esInvitado(row))row.guest=true;
+  return row;
+}
+/* cookie de sesión para un usuario ya verificado (Google o invitado) */
+async function abreSesion(env,sub){
+  var now=Math.floor(Date.now()/1000);
+  var token=await sign({sub:sub,exp:now+SESSION_DAYS*86400},env.SESSION_SECRET);
+  return COOKIE+"="+token+"; Path=/; Max-Age="+(SESSION_DAYS*86400)+"; HttpOnly; Secure; SameSite=Lax";
+}
+async function bloqueado(env,uid){
+  try{return !!(await env.DB.prepare("SELECT 1 FROM user_blocks WHERE user_id=?").bind(uid).first());}catch(e){return false;}
 }
 
 /* ---------- entrada con Google ---------- */
@@ -127,6 +156,7 @@ async function loginWithGoogle(req,env){
   if(t.email_verified!=="true"&&t.email_verified!==true)return json({error:"email_not_verified"},null,401);
   if(!t.sub)return json({error:"invalid_token"},null,401);
 
+  if(await bloqueado(env,t.sub))return json({error:"blocked"},null,403);
   var now=Math.floor(Date.now()/1000);
   var name=(t.name||t.given_name||t.email.split("@")[0]).slice(0,60);
   await env.DB.prepare(
@@ -134,8 +164,7 @@ async function loginWithGoogle(req,env){
     "ON CONFLICT(id) DO UPDATE SET email=excluded.email,name=excluded.name,picture=excluded.picture,last_seen=excluded.last_seen"
   ).bind(t.sub,t.email,name,t.picture||"",now,now).run();
 
-  var token=await sign({sub:t.sub,exp:now+SESSION_DAYS*86400},env.SESSION_SECRET);
-  var cookie=COOKIE+"="+token+"; Path=/; Max-Age="+(SESSION_DAYS*86400)+"; HttpOnly; Secure; SameSite=Lax";
+  var cookie=await abreSesion(env,t.sub);
   return json({user:{id:t.sub,name:name,picture:t.picture||"",email:t.email}},{"Set-Cookie":cookie});
 }
 

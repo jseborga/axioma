@@ -6,6 +6,10 @@
      CONTACT_EMAIL  correo de contacto de términos, privacidad y pie
      MAIL_FROM      remitente de los correos que envíe la plataforma
                     (avisos, validaciones); si falta, CONTACT_EMAIL
+     VERIFY_MODE    cómo se verifican los jugadores invitados:
+                    "prueba" (por defecto) no envía nada y muestra el
+                    código en pantalla; "real" lo envía por SMS o correo
+                    con el servicio configurado (aún no conectado)
    Los datos sensibles (PLATFORM_ADMINS, claves de servicios de correo)
    van como Secret y no se publican nunca en /api/config.
    =========================================================== */
@@ -19,12 +23,13 @@ export function ajustes(env){
   return {
     nombre:String(env.APP_NAME||"").trim()||"The Final Test",
     contacto:contacto,
-    remitente:correo(env.MAIL_FROM)||contacto
+    remitente:correo(env.MAIL_FROM)||contacto,
+    verificacion:String(env.VERIFY_MODE||"").trim().toLowerCase()==="real"?"real":"prueba"
   };
 }
 
 /* lo que puede ver cualquiera: va en GET /api/config */
 export function ajustesPublicos(env){
   var a=ajustes(env);
-  return {appName:a.nombre,contactEmail:a.contacto};
+  return {appName:a.nombre,contactEmail:a.contacto,verifyMode:a.verificacion};
 }

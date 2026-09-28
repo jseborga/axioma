@@ -277,3 +277,78 @@ CREATE TABLE IF NOT EXISTS contest_scope (
 );
 CREATE INDEX IF NOT EXISTS contest_scope_course ON contest_scope(course_code);
 CREATE INDEX IF NOT EXISTS contest_scope_org ON contest_scope(org_id);
+
+-- ============================================================
+-- The Final Test · empresas, marcas e invitados
+-- ============================================================
+-- Marca pública de una institución o empresa: su página (?marca=slug),
+-- su color y su logo, para compartir convocatorias con QR.
+CREATE TABLE IF NOT EXISTS org_brand (
+  org_id      TEXT PRIMARY KEY REFERENCES orgs(id),
+  slug        TEXT NOT NULL UNIQUE,
+  color       TEXT,
+  logo        TEXT,                     -- imagen pequeña en data URL
+  tagline     TEXT,
+  description TEXT,
+  website     TEXT,
+  updated_at  INTEGER NOT NULL
+);
+-- Altas de administración o docencia por correo: se aplican cuando esa
+-- persona entra con Google.
+CREATE TABLE IF NOT EXISTS org_invites (
+  org_id     TEXT NOT NULL REFERENCES orgs(id),
+  email      TEXT NOT NULL,
+  role       TEXT NOT NULL,
+  invited_by TEXT,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (org_id, email)
+);
+CREATE INDEX IF NOT EXISTS org_invites_email ON org_invites(email);
+-- Opciones de una convocatoria: si admite jugadores invitados
+CREATE TABLE IF NOT EXISTS contest_options (
+  code       TEXT PRIMARY KEY REFERENCES contests(code),
+  guests     INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+-- Jugadores invitados: sin Google, verificados con un código por SMS o
+-- correo. Su usuario se deriva del contacto, así que un mismo teléfono o
+-- correo es siempre la misma persona (una participación por convocatoria).
+CREATE TABLE IF NOT EXISTS guests (
+  user_id     TEXT PRIMARY KEY REFERENCES users(id),
+  channel     TEXT NOT NULL,            -- sms | email
+  contact     TEXT NOT NULL,            -- teléfono o correo normalizado
+  verified_by TEXT NOT NULL,            -- prueba (códigos ficticios) | sms | email
+  created_at  INTEGER NOT NULL,
+  verified_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS guests_contact ON guests(contact);
+-- Códigos de verificación pendientes
+CREATE TABLE IF NOT EXISTS verify_codes (
+  id         TEXT PRIMARY KEY,
+  channel    TEXT NOT NULL,
+  contact    TEXT NOT NULL,
+  code_hash  TEXT NOT NULL,
+  data       TEXT NOT NULL,             -- nombre, fecha de nacimiento, consentimientos
+  ip         TEXT,
+  attempts   INTEGER NOT NULL DEFAULT 0,
+  expires_at INTEGER NOT NULL,
+  used_at    INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS verify_codes_contact ON verify_codes(contact, created_at);
+CREATE INDEX IF NOT EXISTS verify_codes_ip ON verify_codes(ip, created_at);
+-- Consentimiento para que una institución o empresa contacte a un participante
+CREATE TABLE IF NOT EXISTS contact_consents (
+  user_id    TEXT NOT NULL REFERENCES users(id),
+  org_id     TEXT NOT NULL REFERENCES orgs(id),
+  marketing  INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, org_id)
+);
+-- Usuarios bloqueados por la administración de la plataforma
+CREATE TABLE IF NOT EXISTS user_blocks (
+  user_id    TEXT PRIMARY KEY,
+  reason     TEXT,
+  blocked_by TEXT,
+  created_at INTEGER NOT NULL
+);

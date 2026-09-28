@@ -12,8 +12,11 @@ var $=function(id){return document.getElementById(id)};
 var panel=$("aula-panel"); if(!panel)return;
 var BF=window.AxBanco, XL=window.AxExcel;
 
-var vista=null, activo=false, pendiente=null;
+var vista=null, activo=false, pendiente=null, seccion="aula";
 var TIPOS={universidad:"Universidad",instituto:"Instituto",colegio:"Colegio",empresa:"Empresa",comunidad:"Comunidad"};
+var ACADEMICAS={universidad:1,instituto:1,colegio:1};
+function academica(k){return !!ACADEMICAS[k];}
+function tiposDe(sec){return Object.keys(TIPOS).filter(function(k){return sec==="empresas"?!academica(k):academica(k);});}
 var PLANTILLAS={universidad:["Facultad","Carrera","Materia"],instituto:["Carrera","Materia"],colegio:["Nivel","Curso","Materia"],empresa:["Área","Equipo"],comunidad:["Grupo"]};
 var ROLES={admin:"Administración",docente:"Docente",auxiliar:"Auxiliar",estudiante:"Estudiante",auspiciador:"Auspiciador"};
 var PARCIALES=["Práctica","Primer parcial","Segundo parcial","Tercer parcial","Examen final","Segunda instancia"];
@@ -48,7 +51,11 @@ function ERR(e){return {not_configured:"Faltan las tablas del aula en la base de
   unit_in_use:"No se puede borrar: tiene unidades, cursos o bancos asociados.",too_deep:"Ese nivel no existe en la estructura.",
   last_admin:"La institución no puede quedarse sin administración.",too_many:"Has llegado al límite.",empty_pool:"No hay preguntas con ese tema y nivel en el banco.",
   forbidden_bank:"No puedes usar ese banco en este curso.",bank_full:"El banco está lleno (máximo "+(e&&e.max||"")+" preguntas).",
-  bad_end:"El cuestionario tiene que durar entre 5 minutos y 31 días.",bad_start:"La fecha de inicio no es válida.",invalid:(e&&e.errores||[]).join(" ")
+  bad_end:"Tiene que durar entre 5 minutos y 31 días.",bad_start:"La fecha de inicio no es válida.",invalid:(e&&e.errores||[]).join(" "),
+  bad_slug:"La dirección de la página solo admite letras, números y guiones (de 3 a 40).",slug_taken:"Esa dirección ya la usa otra marca.",
+  bad_color:"El color no es válido.",bad_logo:"El logo no es válido o es demasiado grande.",bad_website:"El sitio web tiene que empezar por https://",
+  bad_email:"Revisa el correo.",google_required:"Para esto hace falta entrar con Google.",cannot_block_admin:"No se puede bloquear a la administración de la plataforma."
+
   }[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
 function aviso(id,t,mal){var m=$(id);if(!m)return;m.className="msg"+(mal?" bad":" good");m.textContent=t;}
 function atras(t,f){return '<button type="button" class="rt-back" id="au-back">‹ '+esc(t)+'</button>';}
@@ -60,9 +67,12 @@ function ligaTabs(f){var bs=panel.querySelectorAll(".au-tabs [data-tab]"),i;for(
 function chipEstado(s){return '<span class="chip '+(s==="activa"?"activo":s==="pendiente"?"pronto":"terminado")+'">'+
   ({activa:"Activa",pendiente:"Pendiente",suspendida:"Suspendida"}[s]||s)+'</span>';}
 function aConcurso(code){ if(window.AxApp)AxApp.setMode("concurso"); if(window.AxConcursos)AxConcursos.ficha(code); }
+function nombreSeccion(){return seccion==="empresas"?"Empresas":"Aula";}
 
 /* ---------- entrada ---------- */
-function abrir(){ activo=true; panel.hidden=false; var p=pendiente; pendiente=null;
+function abrir(m){ activo=true; panel.hidden=false; var p=pendiente; pendiente=null;
+  var sec=m==="empresas"?"empresas":m==="aula"?"aula":seccion;
+  if(sec!==seccion){seccion=sec;vista=null;}
   if(p)p(); else if(vista&&vista.render)vista.render(); else inicio(); }
 function cerrar(){ activo=false; panel.hidden=true; }
 document.addEventListener("ax-user",function(){ if(activo&&vista&&vista.render)vista.render(); });
@@ -70,8 +80,10 @@ document.addEventListener("ax-perfil",function(){ if(activo&&vista&&vista.render
 
 /* ===================== INICIO DEL AULA ===================== */
 function inicio(){
+  if(seccion==="empresas")return inicioEmpresas();
   vista={render:inicio}; $("hdr").textContent="Aula";
   var u=user();
+  if(u&&u.guest){pinta('<h3>Aula</h3><p>'+esc(ERR({error:"google_required"}))+' Ahora participas como invitado.</p>');return;}
   if(!u){
     pinta('<h3>Aula</h3><p>Cuestionarios de clase con registros para el docente: la institución organiza su estructura (facultades, carreras, materias…), cada docente crea sus cursos y bancos de preguntas, y los estudiantes entran con el enlace de su curso.</p>'+
       (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="au-login">Entrar con Google</button></div>':'<p class="fine">El inicio de sesión no está configurado.</p>'));
@@ -90,18 +102,21 @@ function inicio(){
         (c.status==="pendiente"?'<span class="chip pronto">Pendiente</span>':c.open?'<span class="chip activo">'+c.open+' abierto'+(c.open>1?'s':'')+'</span>':'<span class="chip">'+esc(ROLES[c.role]||c.role)+'</span>')+'</span>'+
         '<small>'+esc(c.org_name)+(c.unit_name?' · '+esc(c.unit_name):'')+(c.term?' · '+esc(c.term):'')+(c.status!=="pendiente"?' · '+esc(ROLES[c.role]||c.role):'')+'</small></button>';
     }).join(""):'<p class="fine">Todavía no estás en ningún curso. Pide a tu docente el código o el enlace del curso.</p>';
+    var mias=r.orgs.filter(function(o){return academica(o.kind);});
     h+='<h4>Tus instituciones</h4>';
-    h+=r.orgs.length?r.orgs.map(function(o){
+    h+=mias.length?mias.map(function(o){
       return '<button type="button" class="rt-card" data-org="'+o.id+'"><span class="rt-card-top"><b>'+esc(o.name)+'</b>'+chipEstado(o.status)+'</span>'+
         '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+esc(ROLES[o.role]||o.role)+(o.email_domain?' · @'+esc(o.email_domain):'')+'</small></button>';
     }).join(""):'<p class="fine">No perteneces a ninguna institución.</p>';
-    h+='<div class="actions"><button class="ghost" id="au-nueva">Registrar una institución</button></div>';
+    h+='<div class="actions"><button class="ghost" id="au-nueva">Registrar una institución</button></div>'+
+      (r.orgs.length>mias.length?'<p class="fine">Tus empresas y comunidades están en <a href="#" id="au-emp">Empresas y eventos</a>.</p>':'');
     if(r.platform_admin)h+='<div class="actions"><button class="ghost" id="au-plat">Administración de la plataforma'+(r.pending_orgs?' · '+r.pending_orgs+' pendiente'+(r.pending_orgs>1?'s':''):'')+'</button></div>';
     pinta(h);
     var bs=panel.querySelectorAll("[data-curso]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){curso(this.getAttribute("data-curso"));};
     bs=panel.querySelectorAll("[data-org]"); for(i=0;i<bs.length;i++)bs[i].onclick=function(){org(this.getAttribute("data-org"));};
     $("au-nueva").onclick=crearOrg;
-    if($("au-plat"))$("au-plat").onclick=plataforma;
+    if($("au-emp"))$("au-emp").onclick=function(e){e.preventDefault();AxApp.setMode("empresas");};
+    if($("au-plat"))$("au-plat").onclick=function(){plataforma();};
     $("au-join").onsubmit=function(e){
       e.preventDefault(); var c=$("au-code").value.trim().toUpperCase();
       if(c.length===6)curso(c);
@@ -127,23 +142,25 @@ function uneDocente(code){
 function crearOrg(){
   AxRegistro.asegura().then(function(ok){ if(!ok)return;
   vista={render:crearOrg};
-  pinta(atras("Aula")+'<h3>Registrar una institución</h3>'+
+  var emp=seccion==="empresas", tipos=tiposDe(seccion);
+  pinta(atras(nombreSeccion())+'<h3>'+(emp?'Registrar una empresa o comunidad':'Registrar una institución')+'</h3>'+
     '<form class="rt-form" id="au-form">'+
-    '<label>Nombre<input id="o-name" maxlength="90" required placeholder="Universidad Mayor de San Andrés"></label>'+
-    '<label>Tipo<select id="o-kind">'+Object.keys(TIPOS).map(function(k){return '<option value="'+k+'">'+TIPOS[k]+'</option>';}).join("")+'</select></label>'+
+    '<label>Nombre<input id="o-name" maxlength="90" required placeholder="'+(emp?'Café Central':'Universidad Mayor de San Andrés')+'"></label>'+
+    '<label>Tipo<select id="o-kind">'+tipos.map(function(k){return '<option value="'+k+'">'+TIPOS[k]+'</option>';}).join("")+'</select></label>'+
+    (emp?'<p class="fine">Una empresa, marca, comunidad o evento: tendrás tu página con logo y color, convocatorias con QR para que la gente participe sin trámites, bancos de preguntas y métricas.</p>':
     '<label>Dominio de correo (opcional)<input id="o-dom" maxlength="80" placeholder="umsa.bo"></label>'+
     '<p class="fine">Con dominio, solo pueden entrar cuentas de ese correo institucional. Déjalo vacío para admitir cualquier cuenta de Google.</p>'+
     '<label>Estructura</label><div id="o-niveles" class="au-niveles"></div>'+
-    '<p class="fine">Son los niveles con los que se organiza la institución; los cursos y bancos cuelgan del último. Se pueden cambiar después.</p>'+
+    '<p class="fine">Son los niveles con los que se organiza la institución; los cursos y bancos cuelgan del último. Se pueden cambiar después.</p>')+
     '<div class="actions"><button class="primary" type="submit" id="o-go">Registrar</button></div><p class="msg" id="o-msg"></p></form>');
   $("au-back").onclick=inicio;
-  var niveles=PLANTILLAS.universidad.slice();
-  function pintaNiveles(){ $("o-niveles").innerHTML=editorNiveles(niveles); ligaNiveles($("o-niveles"),niveles,pintaNiveles); }
+  var niveles=PLANTILLAS[tipos[0]].slice();
+  function pintaNiveles(){ if(!$("o-niveles"))return; $("o-niveles").innerHTML=editorNiveles(niveles); ligaNiveles($("o-niveles"),niveles,pintaNiveles); }
   $("o-kind").onchange=function(){niveles=PLANTILLAS[this.value].slice();pintaNiveles();};
   pintaNiveles();
   $("au-form").onsubmit=function(e){
     e.preventDefault(); $("o-go").disabled=true;
-    api("/api/orgs",{name:$("o-name").value,kind:$("o-kind").value,email_domain:$("o-dom").value,levels:leeNiveles($("o-niveles"))})
+    api("/api/orgs",{name:$("o-name").value,kind:$("o-kind").value,email_domain:$("o-dom")?$("o-dom").value:"",levels:$("o-niveles")?leeNiveles($("o-niveles")):null})
       .then(function(r){org(r.id,"cursos",r.status==="pendiente"?"Institución registrada. Queda pendiente de aprobación por la administración de la plataforma; mientras tanto puedes preparar su estructura.":"Institución registrada.");})
       .catch(function(er){$("o-go").disabled=false;aviso("o-msg",ERR(er),true);});
   };
@@ -168,20 +185,27 @@ function org(id,tab,nota){
   pinta('<p class="fine">Cargando…</p>');
   api("/api/orgs/"+id).then(function(o){
     $("hdr").textContent=o.name;
-    var lista=[["cursos","Cursos"]];
-    if(o.can.teach)lista.push(["bancos","Bancos"],["registros","Registros"]);
-    if(o.can.admin)lista.push(["estructura","Estructura"],["miembros","Miembros"],["ajustes","Ajustes"]);
-    if(!tab||!lista.some(function(t){return t[0]===tab;}))tab="cursos";
-    pinta(atras("Aula")+'<div class="rt-head"><h3>'+esc(o.name)+'</h3>'+chipEstado(o.status)+'</div>'+
+    var acad=academica(o.kind), lista=[];
+    if(acad)lista.push(["cursos","Cursos"]);
+    if(o.can.teach)lista.push(["convocatorias","Convocatorias"],["bancos","Bancos"]);
+    if(o.can.teach&&acad)lista.push(["registros","Registros"]);
+    if(o.can.admin||o.platform_admin)lista.push(["metricas","Métricas"]);
+    if(o.can.admin&&acad)lista.push(["estructura","Estructura"]);
+    if(o.can.admin)lista.push(["miembros","Miembros"],["ajustes",acad?"Ajustes":"Marca y ajustes"]);
+    if(!lista.length)lista.push(["cursos","Cursos"]);
+    if(!tab||!lista.some(function(t){return t[0]===tab;}))tab=lista[0][0];
+    pinta(atras(nombreSeccion())+'<div class="rt-head"><h3>'+esc(o.name)+'</h3>'+chipEstado(o.status)+'</div>'+
       '<p class="rt-meta">'+esc(TIPOS[o.kind]||o.kind)+' · tu rol: '+esc(ROLES[o.role]||o.role||"—")+(o.email_domain?' · solo @'+esc(o.email_domain):'')+
         ' · '+Object.keys(o.counts).map(function(k){return o.counts[k]+' '+(ROLES[k]||k).toLowerCase();}).join(", ")+'</p>'+
       (o.status==="pendiente"?'<p class="rt-hoy">Pendiente de aprobación por la administración de la plataforma. Puedes preparar la estructura y los miembros; los cursos se abren al aprobarla.</p>':'')+
       (o.status==="suspendida"?'<p class="rt-hoy">Institución suspendida por la administración de la plataforma.</p>':'')+
       (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
+      (!o.role&&o.platform_admin?'<p class="rt-hoy">Estás viendo esta institución como administración de la plataforma.</p>':'')+
       (lista.length>1?tabs(lista,tab):'')+'<div id="au-tab"></div>');
     $("au-back").onclick=inicio;
     ligaTabs(function(t){org(id,t);});
-    ({cursos:tabCursos,bancos:tabBancos,registros:tabRegistros,estructura:tabEstructura,miembros:tabMiembros,ajustes:tabAjustes})[tab](o);
+    ({cursos:tabCursos,convocatorias:tabConvocatorias,bancos:tabBancos,registros:tabRegistros,metricas:tabMetricas,estructura:tabEstructura,
+      miembros:tabMiembros,ajustes:tabAjustes})[tab](o);
   }).catch(function(e){pinta(atras("Aula")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
 }
 function opcionesUnidades(o,soloHojas,sel){
@@ -317,12 +341,24 @@ function tabMiembros(o){
       '<p class="fine">Quien entre con este enlace se une como docente. Los estudiantes no lo necesitan: entran con el código de su curso. Si el enlace circula de más, cámbialo.</p>'+
       '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Miembro</th><th>Registro</th><th>Rol</th><th>Consentimiento</th><th></th></tr></thead><tbody>'+
       r.members.map(function(m){
-        return '<tr><td>'+esc(m.name)+(m.me?' <em>(tú)</em>':'')+'<small>'+esc(m.email)+'</small></td><td>'+esc(m.student_code||"—")+'</td>'+
+        return '<tr><td>'+esc(m.name)+(m.me?' <em>(tú)</em>':'')+'<small>'+esc(m.email||(m.guest?"invitado":""))+'</small></td><td>'+esc(m.student_code||"—")+'</td>'+
           '<td><select data-rol="'+m.id+'">'+Object.keys(ROLES).map(function(k){return '<option value="'+k+'"'+(k===m.role?' selected':'')+'>'+ROLES[k]+'</option>';}).join("")+'</select></td>'+
           '<td>'+(m.minor?'<label class="au-cons"><input type="checkbox" data-cons="'+m.id+'"'+(m.consent_ok?' checked':'')+'> Menor: la institución tiene el consentimiento</label>':'<small>Mayor de edad</small>')+'</td>'+
           '<td>'+(m.me?'':'<button type="button" class="ghost au-mini" data-quita="'+m.id+'">Quitar</button>')+'</td></tr>';
-      }).join("")+'</tbody></table></div><p class="msg" id="m-msg"></p>';
+      }).join("")+'</tbody></table></div><p class="msg" id="m-msg"></p>'+
+      '<h4>Dar de alta por correo</h4><form class="rt-join au-invita" id="m-inv"><input id="m-email" type="email" placeholder="correo@ejemplo.com" autocomplete="off">'+
+      '<select id="m-rol"><option value="admin">Administración</option><option value="docente">'+(academica(o.kind)?'Docente':'Creador de retos')+'</option></select>'+
+      '<button type="submit" class="primary">Dar de alta</button></form>'+
+      '<p class="fine">Si ya tiene cuenta queda dada de alta al momento; si no, en cuanto entre con Google con ese correo.</p>'+
+      (r.invites&&r.invites.length?'<ul class="au-inv">'+r.invites.map(function(i){return '<li><span>'+esc(i.email)+' · '+esc(ROLES[i.role]||i.role)+' · pendiente</span>'+
+        '<button type="button" class="ghost au-mini" data-desinv="'+esc(i.email)+'">Quitar</button></li>';}).join("")+'</ul>':'');
     t.innerHTML=h;
+    $("m-inv").onsubmit=function(e){e.preventDefault();
+      api("/api/orgs/"+o.id+"/invites",{email:$("m-email").value,role:$("m-rol").value}).then(function(x){
+        tabMiembros(o); setTimeout(function(){aviso("m-msg",x.added?"Dado de alta.":"Invitación guardada: se aplicará cuando entre con Google.");},300);})
+        .catch(function(er){aviso("m-msg",ERR(er),true);});};
+    var di=t.querySelectorAll("[data-desinv]"),j; for(j=0;j<di.length;j++)di[j].onclick=function(){
+      api("/api/orgs/"+o.id+"/invites",{email:this.getAttribute("data-desinv"),remove:true}).then(function(){tabMiembros(o);});};
     $("m-copy").onclick=function(){copia(enlace("docente",o.teacher_code),this);};
     $("m-nuevo").onclick=function(){ if(!confirm("El enlace actual dejará de funcionar. ¿Cambiarlo?"))return;
       api("/api/orgs/"+o.id+"/teacher-code",{}).then(function(){org(o.id,"miembros");}); };
@@ -339,13 +375,15 @@ function tabMiembros(o){
 
 function tabAjustes(o){
   var t=$("au-tab");
-  t.innerHTML='<form class="rt-form" id="a-form"><label>Nombre<input id="a-name" maxlength="90" value="'+esc(o.name)+'"></label>'+
-    '<label>Dominio de correo (opcional)<input id="a-dom" maxlength="80" value="'+esc(o.email_domain)+'" placeholder="umsa.bo"></label>'+
-    '<p class="fine">Con dominio, solo entran cuentas de ese correo. Quien ya es miembro no se ve afectado.</p>'+
+  t.innerHTML='<h4>Marca y página pública</h4><div id="a-marca"><p class="fine">Cargando…</p></div>'+
+    '<h4>Datos</h4><form class="rt-form" id="a-form"><label>Nombre<input id="a-name" maxlength="90" value="'+esc(o.name)+'"></label>'+
+    (academica(o.kind)?'<label>Dominio de correo (opcional)<input id="a-dom" maxlength="80" value="'+esc(o.email_domain)+'" placeholder="umsa.bo"></label>'+
+    '<p class="fine">Con dominio, solo entran cuentas de ese correo. Quien ya es miembro no se ve afectado.</p>':'')+
     '<div class="actions"><button class="primary" type="submit">Guardar</button></div><p class="msg" id="a-msg"></p></form>';
   $("a-form").onsubmit=function(e){e.preventDefault();
-    api("/api/orgs/"+o.id+"/settings",{name:$("a-name").value,email_domain:$("a-dom").value}).then(function(){org(o.id,"ajustes","Guardado.");})
+    api("/api/orgs/"+o.id+"/settings",$("a-dom")?{name:$("a-name").value,email_domain:$("a-dom").value}:{name:$("a-name").value}).then(function(){org(o.id,"ajustes","Guardado.");})
       .catch(function(er){aviso("a-msg",ERR(er),true);});};
+  editorMarca(o);
 }
 
 /* ===================== CURSO ===================== */
@@ -442,28 +480,25 @@ function tabAjustesCurso(c,t){
       .then(function(){curso(c.code,"Guardado.","ajustes");}).catch(function(er){aviso("ca-msg",ERR(er),true);});};
 }
 
-/* ===================== NUEVO CUESTIONARIO ===================== */
-function crearCuestionario(c){
-  vista={render:function(){crearCuestionario(c);}};
-  var bancos=c.banks||[];
-  pinta(atras("Volver al curso")+'<h3>Nuevo cuestionario</h3><p class="rt-meta">'+esc(c.name)+'</p>'+
-    '<form class="rt-form" id="q-form">'+
-    '<label>Nombre<input id="q-name" maxlength="60" required placeholder="Parcial 1 · Derivadas"></label>'+
-    '<label>Parcial<input id="q-par" maxlength="40" list="q-pars" placeholder="Primer parcial"><datalist id="q-pars">'+PARCIALES.map(function(p){return '<option value="'+p+'">';}).join("")+'</datalist></label>'+
-    '<label>Preguntas<select id="q-bank">'+bancos.map(function(b){return '<option value="'+b.id+'">Banco: '+esc(b.name)+' ('+b.n+')</option>';}).join("")+
+/* ===================== PREGUNTAS DE UN CUESTIONARIO O CONVOCATORIA =====================
+   Bloque común: de qué banco salen las preguntas, tema, dificultad,
+   cuántas, tiempo, errores y fechas. */
+function camposPreguntas(bancos,errDef){
+  var errs=[["100","Sin límite: se responden todas"],["0","Ninguno: el primer fallo termina"],["1","1"],["2","2"],["3","3"],["5","5"]];
+  return '<label>Preguntas<select id="q-bank">'+bancos.map(function(b){return '<option value="'+b.id+'">Banco: '+esc(b.name)+' ('+b.n+')</option>';}).join("")+
       '<option value="0">Cultura general de la plataforma</option></select></label>'+
     '<div class="rt-2"><label>Tema<select id="q-tema"><option value="">Todos</option></select></label>'+
     '<label>Dificultad<select id="q-level"></select></label></div>'+
     '<p class="fine" id="q-disp"></p>'+
     '<div class="rt-2"><label>Número de preguntas<input type="number" id="q-n" min="1" max="100" value="10"></label>'+
-    '<label>Tiempo por pregunta<select id="q-seg"><option value="15">15 s</option><option value="20">20 s</option><option value="30" selected>30 s</option><option value="45">45 s</option><option value="60">60 s</option></select></label></div>'+
-    '<label>Errores admitidos<select id="q-err"><option value="100" selected>Sin límite: se responden todas</option><option value="0">Ninguno: el primer fallo termina</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></label>'+
+    '<label>Tiempo por pregunta<select id="q-seg"><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="30" selected>30 s</option><option value="45">45 s</option><option value="60">60 s</option></select></label></div>'+
+    '<label>Errores admitidos<select id="q-err">'+errs.map(function(e){return '<option value="'+e[0]+'"'+(e[0]===String(errDef)?' selected':'')+'>'+e[1]+'</option>';}).join("")+'</select></label>'+
     '<div class="rt-2"><label>Se abre<select id="q-ini"><option value="0">Ahora</option><option value="15">En 15 minutos</option><option value="60">En 1 hora</option><option value="1440">Mañana a esta hora</option><option value="x">Fecha y hora…</option></select></label>'+
     '<label>Dura<select id="q-dur"><option value="30">30 minutos</option><option value="60" selected>1 hora</option><option value="120">2 horas</option><option value="1440">1 día</option><option value="10080">1 semana</option><option value="x">Hasta fecha y hora…</option></select></label></div>'+
-    '<div class="rt-2"><label id="q-ini-f-l" hidden>Apertura<input type="datetime-local" id="q-ini-f"></label><label id="q-fin-f-l" hidden>Cierre<input type="datetime-local" id="q-fin-f"></label></div>'+
-    '<p class="fine">Cada estudiante recibe las preguntas en otro orden y con las opciones barajadas, una sola vez. Las respuestas correctas se muestran al cierre.</p>'+
-    '<div class="actions"><button class="primary" type="submit" id="q-go">Crear cuestionario</button></div><p class="msg" id="q-msg"></p></form>');
-  $("au-back").onclick=function(){curso(c.code);};
+    '<div class="rt-2"><label id="q-ini-f-l" hidden>Apertura<input type="datetime-local" id="q-ini-f"></label><label id="q-fin-f-l" hidden>Cierre<input type="datetime-local" id="q-fin-f"></label></div>';
+}
+/* liga el bloque y devuelve una función que lee sus valores (null si las fechas no valen) */
+function ligaPreguntas(){
   var info=null;
   function local(ms){var d=new Date(ms-new Date(ms).getTimezoneOffset()*60000);return d.toISOString().slice(0,16);}
   function niveles(){
@@ -478,7 +513,7 @@ function crearCuestionario(c){
     if(!b||!info){$("q-disp").textContent=b?"":"Preguntas generales de la plataforma (cultura general y cálculo).";return;}
     var tema=$("q-tema").value, lv=+$("q-level").value;
     var n=info.questions.filter(function(q){return (!tema||q.topic===tema)&&(lv>=4||q.level===lv);}).length;
-    $("q-disp").textContent=n+" pregunta"+(n===1?"":"s")+" disponible"+(n===1?"":"s")+" con ese tema y nivel"+(+$("q-n").value>n?": el cuestionario tendrá "+n+".":".");
+    $("q-disp").textContent=n+" pregunta"+(n===1?"":"s")+" disponible"+(n===1?"":"s")+" con ese tema y nivel"+(+$("q-n").value>n?": tendrá "+n+".":".");
   }
   function cargaBanco(){
     var b=+$("q-bank").value; info=null; $("q-tema").innerHTML='<option value="">Todos</option>';
@@ -498,18 +533,36 @@ function crearCuestionario(c){
     if($("q-dur").value==="x"&&!$("q-fin-f").value)$("q-fin-f").value=local(Date.now()+2*86400000);
   };
   cargaBanco();
-  $("q-form").onsubmit=function(e){
-    e.preventDefault();
+  return function(){
     var ini=$("q-ini").value==="x"?new Date($("q-ini-f").value).getTime():Date.now()+(+$("q-ini").value)*60000;
     var fin=$("q-dur").value==="x"?new Date($("q-fin-f").value).getTime():ini+(+$("q-dur").value)*60000;
-    if(isNaN(ini)||isNaN(fin)){aviso("q-msg","Revisa las fechas.",true);return;}
+    if(isNaN(ini)||isNaN(fin))return null;
     var b=+$("q-bank").value, n=Math.max(1,Math.min(100,+$("q-n").value||10));
+    /* las preguntas generales van en tandas fijas */
     if(!b&&[10,20,30,50,100].indexOf(n)<0){n=[10,20,30,50,100].filter(function(x){return x>=n;})[0]||100;}
     var err=+$("q-err").value; if(err===100)err=Math.max(n,10);
+    return {bank_id:b||null,topic:$("q-tema").value,level:+$("q-level").value,max_questions:n,max_errors:err,
+            seconds_per_q:+$("q-seg").value,math:!b,starts_at:ini,ends_at:fin};
+  };
+}
+
+/* ===================== NUEVO CUESTIONARIO ===================== */
+function crearCuestionario(c){
+  vista={render:function(){crearCuestionario(c);}};
+  pinta(atras("Volver al curso")+'<h3>Nuevo cuestionario</h3><p class="rt-meta">'+esc(c.name)+'</p>'+
+    '<form class="rt-form" id="q-form">'+
+    '<label>Nombre<input id="q-name" maxlength="60" required placeholder="Parcial 1 · Derivadas"></label>'+
+    '<label>Parcial<input id="q-par" maxlength="40" list="q-pars" placeholder="Primer parcial"><datalist id="q-pars">'+PARCIALES.map(function(p){return '<option value="'+p+'">';}).join("")+'</datalist></label>'+
+    camposPreguntas(c.banks||[],100)+
+    '<p class="fine">Cada estudiante recibe las preguntas en otro orden y con las opciones barajadas, una sola vez. Las respuestas correctas se muestran al cierre.</p>'+
+    '<div class="actions"><button class="primary" type="submit" id="q-go">Crear cuestionario</button></div><p class="msg" id="q-msg"></p></form>');
+  $("au-back").onclick=function(){curso(c.code);};
+  var lee=ligaPreguntas();
+  $("q-form").onsubmit=function(e){
+    e.preventDefault();
+    var v=lee(); if(!v){aviso("q-msg","Revisa las fechas.",true);return;}
     $("q-go").disabled=true;
-    api("/api/contests",{name:$("q-name").value,kind:"cuestionario",audience:"curso",course_code:c.code,bank_id:b||null,topic:$("q-tema").value,
-      level:+$("q-level").value,partial:$("q-par").value,max_questions:n,max_errors:err,seconds_per_q:+$("q-seg").value,
-      math:!b,starts_at:ini,ends_at:fin})
+    api("/api/contests",Object.assign(v,{name:$("q-name").value,kind:"cuestionario",audience:"curso",course_code:c.code,partial:$("q-par").value}))
       .then(function(r){aConcurso(r.code);})
       .catch(function(er){$("q-go").disabled=false;aviso("q-msg",ERR(er),true);});
   };
@@ -628,24 +681,304 @@ function importador(b){
   }
 }
 
-/* ===================== PLATAFORMA ===================== */
-function plataforma(){
-  vista={render:plataforma};
+/* ===================== EMPRESAS Y EVENTOS ===================== */
+function inicioEmpresas(){
+  vista={render:inicioEmpresas}; $("hdr").textContent="Empresas";
+  var u=user();
+  var cab='<h3>Empresas y eventos</h3><p>Para empresas, marcas, comunidades y eventos: tu página con logo y color, convocatorias de trivia con premio que la gente abre desde un QR '+
+    'y juega sin trámites (con Google o con su teléfono o correo verificado), bancos de preguntas propios y métricas de participación.</p>';
+  function directorio(){
+    api("/api/brands").then(function(r){
+      var d=$("em-dir"); if(!d)return;
+      d.innerHTML=r.brands.length?r.brands.map(function(b){
+        return '<button type="button" class="rt-card mc-tarjeta" data-slug="'+esc(b.slug)+'" style="--marca:'+esc(b.color||"var(--ink)")+'">'+
+          '<span class="mc-logo">'+(b.logo?'<img src="'+esc(b.logo)+'" alt="">':'<i>'+esc(b.name.charAt(0))+'</i>')+'</span>'+
+          '<span class="mc-t"><b>'+esc(b.name)+'</b><small>'+esc(b.tagline||TIPOS[b.kind]||"")+'</small></span>'+
+          (b.open?'<span class="chip activo">'+b.open+' abierta'+(b.open>1?'s':'')+'</span>':'')+'</button>';}).join(""):'<p class="fine">Todavía no hay marcas publicadas.</p>';
+      var bs=d.querySelectorAll("[data-slug]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){AxMarca.ver(this.getAttribute("data-slug"));};
+    }).catch(function(){var d=$("em-dir");if(d)d.innerHTML='<p class="fine">No se pudo cargar.</p>';});
+  }
+  if(!u||u.guest){
+    pinta(cab+(u?'<p class="fine">Participas como invitado. Para registrar tu empresa, entra con Google.</p>':
+      (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="em-login">Entrar con Google para registrar mi empresa</button></div>':''))+
+      '<h4>Marcas con convocatorias</h4><div id="em-dir"><p class="fine">Cargando…</p></div>');
+    if($("em-login"))$("em-login").onclick=function(){AxAccount.abrirCuenta();};
+    directorio(); return;
+  }
+  pinta(cab+'<p class="fine">Cargando…</p>');
+  api("/api/orgs").then(function(r){
+    var mias=r.orgs.filter(function(o){return !academica(o.kind);});
+    var h=cab+'<h4>Tus empresas y comunidades</h4>'+
+      (mias.length?mias.map(function(o){
+        return '<button type="button" class="rt-card" data-org="'+o.id+'"><span class="rt-card-top"><b>'+esc(o.name)+'</b>'+chipEstado(o.status)+'</span>'+
+          '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+esc(ROLES[o.role]||o.role)+'</small></button>';}).join(""):
+        '<p class="fine">Todavía no administras ninguna. Regístrala o pide a la administración de la plataforma que te dé de alta.</p>')+
+      '<div class="actions"><button class="ghost" id="em-nueva">Registrar una empresa o comunidad</button></div>'+
+      (r.platform_admin?'<div class="actions"><button class="ghost" id="au-plat">Administración de la plataforma'+(r.pending_orgs?' · '+r.pending_orgs+' pendiente'+(r.pending_orgs>1?'s':''):'')+'</button></div>':'')+
+      '<h4>Marcas con convocatorias</h4><div id="em-dir"><p class="fine">Cargando…</p></div>';
+    pinta(h);
+    var bs=panel.querySelectorAll("[data-org]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){org(this.getAttribute("data-org"));};
+    $("em-nueva").onclick=crearOrg;
+    if($("au-plat"))$("au-plat").onclick=function(){plataforma();};
+    directorio();
+  }).catch(function(e){
+    if(e&&e.error==="profile_required"){
+      pinta(cab+'<p>Primero completa tu registro: fecha de nacimiento y aceptación de términos y privacidad.</p><div class="actions"><button class="primary" id="au-reg">Completar mi registro</button></div>');
+      $("au-reg").onclick=function(){AxRegistro.asegura().then(function(ok){if(ok)inicioEmpresas();});};
+      return;
+    }
+    pinta(cab+'<p class="fine bad">'+esc(ERR(e))+'</p>');
+  });
+}
+
+/* convocatorias de la institución o empresa */
+function enlaceConcurso(code){return location.origin+location.pathname+"?concurso="+code;}
+function enlaceMarca(slug){return location.origin+location.pathname+"?marca="+slug;}
+function qrConvocatoria(o,c){AxQR.abre({url:enlaceConcurso(c.code),titulo:c.name,subtitulo:c.prize?"Premio: "+c.prize:"",marca:o.name,
+  color:o.brand&&o.brand.color,logo:o.brand&&o.brand.logo,directo:true});}
+function tabConvocatorias(o){
+  var t=$("au-tab"); t.innerHTML='<p class="fine">Cargando…</p>';
+  api("/api/orgs/"+o.id+"/contests").then(function(r){
+    var h="";
+    if(o.status!=="activa")h+='<p class="rt-hoy">Las convocatorias se abren cuando la institución esté aprobada.</p>';
+    else h+='<div class="actions"><button class="primary" id="cv-nueva">Nueva convocatoria</button></div>';
+    h+=o.brand?'<div class="rt-code"><span>Tu página</span><b class="au-codigo">'+esc(o.brand.slug)+'</b><button type="button" class="ghost" id="cv-ver">Ver</button>'+
+        '<button type="button" class="ghost" id="cv-qrp">QR de la página</button></div>':
+      (o.can.admin?'<p class="fine">Configura tu marca en <a href="#" id="cv-marca">'+(academica(o.kind)?"Ajustes":"Marca y ajustes")+'</a> para tener página propia con tus convocatorias y su QR.</p>':'');
+    h+=r.contests.length?r.contests.map(function(c){
+      return '<div class="au-conv"><button type="button" class="rt-card" data-conv="'+c.code+'"><span class="rt-card-top"><b>'+esc(c.name)+'</b>'+
+          '<span class="chip '+(c.state==="abierto"?"activo":c.state)+'">'+({pronto:"Pronto",abierto:"Abierta",terminado:"Cerrada"}[c.state])+'</span></span>'+
+          '<small>'+({publico:"Pública",enlace:"Con enlace o QR",org:"Solo miembros"}[c.audience]||"")+(c.guests?' · admite invitados':'')+
+          (c.prize?' · 🏆 '+esc(c.prize):'')+' · '+c.registered+' inscritos · '+c.played+' jugaron'+(c.mine?'':' · de '+esc(c.owner_name))+'</small></button>'+
+        (c.state!=="terminado"?'<button type="button" class="ghost au-mini" data-qr="'+c.code+'">QR</button>':'')+'</div>';
+    }).join(""):'<p class="fine">Todavía no hay convocatorias. Crea la primera a partir de un banco de preguntas o con las preguntas generales de la plataforma.</p>';
+    t.innerHTML=h;
+    if($("cv-nueva"))$("cv-nueva").onclick=function(){crearConvocatoria(o);};
+    if($("cv-ver"))$("cv-ver").onclick=function(){AxMarca.ver(o.brand.slug);};
+    if($("cv-qrp"))$("cv-qrp").onclick=function(){AxQR.abre({url:enlaceMarca(o.brand.slug),titulo:o.name,subtitulo:"Retos y convocatorias",marca:o.name,color:o.brand.color,logo:o.brand.logo});};
+    if($("cv-marca"))$("cv-marca").onclick=function(e){e.preventDefault();org(o.id,"ajustes");};
+    var bs=t.querySelectorAll("[data-conv]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){aConcurso(this.getAttribute("data-conv"));};
+    bs=t.querySelectorAll("[data-qr]"); for(i=0;i<bs.length;i++)bs[i].onclick=function(){var k=this.getAttribute("data-qr");qrConvocatoria(o,r.contests.filter(function(c){return c.code===k;})[0]);};
+  }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+function crearConvocatoria(o){
+  vista={render:function(){crearConvocatoria(o);}};
   pinta('<p class="fine">Cargando…</p>');
-  api("/api/admin/orgs").then(function(r){
-    var h=atras("Aula")+'<h3>Administración de la plataforma</h3><p class="fine">Las instituciones nuevas quedan pendientes hasta que las apruebes. Suspender una impide que entren nuevos miembros y que se creen cursos o cuestionarios.</p>';
-    h+=r.orgs.length?r.orgs.map(function(o){
-      return '<div class="au-fila"><div><b>'+esc(o.name)+'</b> '+chipEstado(o.status)+'<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+o.members+' miembro'+(o.members===1?'':'s')+
-        ' · solicitó '+esc(o.creator_name)+' ('+esc(o.creator_email)+') · '+fecha(o.created_at)+(o.email_domain?' · @'+esc(o.email_domain):'')+'</small></div>'+
-        (o.status!=="activa"?'<button type="button" class="primary au-mini" data-est="activa" data-id="'+o.id+'">Aprobar</button>':'')+
-        (o.status!=="suspendida"?'<button type="button" class="ghost au-mini" data-est="suspendida" data-id="'+o.id+'">Suspender</button>':'')+'</div>';
-    }).join(""):'<p class="fine">No hay instituciones.</p>';
-    pinta(h); $("au-back").onclick=inicio;
-    var s=panel.querySelectorAll("[data-est]"),i;
-    for(i=0;i<s.length;i++)s[i].onclick=function(){
-      api("/api/admin/orgs/"+this.getAttribute("data-id"),{status:this.getAttribute("data-est")}).then(plataforma).catch(function(er){alert(ERR(er));});
+  api("/api/orgs/"+o.id+"/banks").then(function(r){
+    var bancos=r.banks.map(function(b){return {id:b.id,name:b.name,n:b.questions};});
+    pinta(atras(o.name)+'<h3>Nueva convocatoria</h3><p class="rt-meta">'+esc(o.name)+'</p>'+
+      '<form class="rt-form" id="q-form">'+
+      '<label>Nombre<input id="q-name" maxlength="60" required placeholder="Trivia del aniversario"></label>'+
+      '<label>Premio (opcional)<input id="q-prize" maxlength="200" placeholder="Un café gratis para el ganador"></label>'+
+      '<label>Descripción (opcional)<input id="q-desc" maxlength="300" placeholder="Cómo se entrega el premio, dónde, bases…"></label>'+
+      camposPreguntas(bancos,3)+
+      '<label>Quién puede participar<select id="q-aud"><option value="publico">Cualquiera: aparece en tu página y en Concursos</option>'+
+        '<option value="enlace">Solo quien tenga el enlace o el QR</option><option value="org">Solo los miembros de '+esc(o.name)+'</option></select></label>'+
+      '<label class="rt-check"><input type="checkbox" id="q-inv" checked> <span>Admitir invitados: participan sin cuenta, con su teléfono o correo verificado por código</span></label>'+
+      '<p class="fine">Una sola participación por persona (por cuenta de Google o por teléfono o correo verificado). Los menores de 18 años no entran en convocatorias con premio sin el consentimiento de su tutor.</p>'+
+      '<div class="actions"><button class="primary" type="submit" id="q-go">Publicar convocatoria</button></div><p class="msg" id="q-msg"></p></form>');
+    $("au-back").onclick=function(){org(o.id,"convocatorias");};
+    $("q-aud").onchange=function(){$("q-inv").disabled=this.value==="org";if(this.value==="org")$("q-inv").checked=false;};
+    var lee=ligaPreguntas();
+    $("q-form").onsubmit=function(e){
+      e.preventDefault();
+      var v=lee(); if(!v){aviso("q-msg","Revisa las fechas.",true);return;}
+      $("q-go").disabled=true;
+      api("/api/contests",Object.assign(v,{name:$("q-name").value,prize:$("q-prize").value,description:$("q-desc").value,kind:"concurso",
+        audience:$("q-aud").value,org_id:o.id,guests:$("q-inv").checked}))
+        .then(function(x){aConcurso(x.code);})
+        .catch(function(er){$("q-go").disabled=false;aviso("q-msg",ERR(er),true);});
     };
-  }).catch(function(e){pinta(atras("Aula")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+  }).catch(function(e){pinta(atras(o.name)+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=function(){org(o.id,"convocatorias");};});
+}
+
+/* ---------- métricas ---------- */
+function pl(n,uno,varios){return n===1?uno:varios;}
+function kpi(v,t,s){return '<div class="mt-kpi"><b>'+esc(v)+'</b><span>'+esc(t)+'</span>'+(s?'<small>'+esc(s)+'</small>':'')+'</div>';}
+/* barras de 30 días: una sola serie, con detalle al pasar el dedo o el ratón y la tabla debajo */
+function barras(titulo,dias,valor,detalle){
+  var max=Math.max.apply(null,dias.map(valor).concat([1])), total=dias.reduce(function(a,d){return a+valor(d);},0);
+  function dia(s){var p=s.split("-");return +p[2]+"/"+(+p[1]);}
+  return '<figure class="mt-barras"><figcaption>'+esc(titulo)+' <small>'+total+' en 30 días</small></figcaption>'+
+    '<div class="mt-plot" role="img" aria-label="'+esc(titulo)+': '+total+' en 30 días">'+dias.map(function(d){var v=valor(d);
+      return '<span class="mt-col" tabindex="0" data-tip="'+esc(dia(d.day)+": "+(detalle?detalle(d):v))+'"><i style="height:'+(v?Math.max(4,Math.round(100*v/max)):0)+'%"></i></span>';}).join("")+'</div>'+
+    '<div class="mt-eje"><span>'+dia(dias[0].day)+'</span><span>'+max+' máx.</span><span>'+dia(dias[dias.length-1].day)+'</span></div>'+
+    '<details class="mt-tabla"><summary>Ver como tabla</summary><table class="tabla"><thead><tr><th>Día</th><th>Valor</th></tr></thead><tbody>'+
+      dias.filter(function(d){return valor(d);}).map(function(d){return '<tr><td>'+dia(d.day)+'</td><td>'+esc(detalle?detalle(d):valor(d))+'</td></tr>';}).join("")+
+    '</tbody></table></details></figure>';
+}
+function tabMetricas(o){
+  var t=$("au-tab"); t.innerHTML='<p class="fine">Cargando…</p>';
+  api("/api/orgs/"+o.id+"/metrics").then(function(m){
+    var conv=m.contests.concurso||{total:0,open:0}, cues=m.contests.cuestionario||{total:0,open:0};
+    var h='<div class="mt-kpis">'+
+      kpi(m.people,pl(m.people,"persona","personas"),"participaron en algo")+kpi(m.guests,pl(m.guests,"invitado","invitados"),"sin cuenta, verificados")+
+      kpi(m.plays,pl(m.plays,"partida","partidas"),m.finished+pl(m.finished," terminada"," terminadas"))+kpi(m.avg_correct===null?"—":m.avg_correct,"aciertos de media","por partida")+
+      kpi(conv.total,pl(conv.total,"convocatoria","convocatorias"),conv.open+pl(conv.open," abierta"," abiertas"))+(academica(o.kind)?kpi(cues.total,pl(cues.total,"cuestionario","cuestionarios"),cues.open+pl(cues.open," abierto"," abiertos")):"")+
+      kpi(m.marketing,pl(m.marketing,"acepta contacto","aceptan contacto"),"de "+m.consents+pl(m.consents," que respondió"," que respondieron"))+kpi(m.questions,pl(m.questions,"pregunta","preguntas"),m.banks+pl(m.banks," banco"," bancos"))+'</div>'+
+      barras("Inscripciones por día",m.daily,function(d){return d.n;});
+    if(m.top.length){
+      h+='<h4>Con más participación</h4><div class="tabla-wrap"><table class="tabla"><thead><tr><th>Convocatoria</th><th>Tipo</th><th>Estado</th><th>Inscritos</th><th>Jugaron</th></tr></thead><tbody>'+
+        m.top.map(function(c){return '<tr class="clic" data-quiz="'+c.code+'"><td><b>'+esc(c.name)+'</b></td><td>'+(c.kind==="cuestionario"?"Cuestionario":"Convocatoria")+'</td>'+
+          '<td>'+({pronto:"Próxima",abierto:"Abierta",terminado:"Cerrada"}[c.state])+'</td><td>'+c.registered+'</td><td>'+c.played+'</td></tr>';}).join("")+'</tbody></table></div>';
+    }
+    h+='<p class="fine">Miembros: '+Object.keys(m.members).map(function(k){return m.members[k]+' '+(ROLES[k]||k).toLowerCase();}).join(", ")+
+      (academica(o.kind)?' · cursos: '+m.active_courses+' activos de '+m.courses:'')+'.</p>'+
+      '<div class="actions"><button class="ghost" id="mt-xlsx">Exportar participantes a Excel</button></div><p class="msg" id="mt-msg"></p>';
+    t.innerHTML=h;
+    var bs=t.querySelectorAll("[data-quiz]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){aConcurso(this.getAttribute("data-quiz"));};
+    $("mt-xlsx").onclick=function(){
+      aviso("mt-msg","Preparando…");
+      api("/api/orgs/"+o.id+"/participants").then(function(r){
+        var f=[["Nombre","Correo","Teléfono","Tipo","Verificación","Acepta contacto","Convocatorias","Partidas","Mejor resultado","Última actividad"]];
+        r.people.forEach(function(p){f.push([p.name,p.email,p.phone,p.type==="invitado"?"Invitado":"Google",p.verified_by==="prueba"?"Código de prueba":p.type==="invitado"?"Código":"Google",
+          p.marketing===true?"Sí":p.marketing===false?"No":"",p.contests,p.played,p.best,p.last?new Date(p.last).toLocaleString("es"):""]);});
+        XL.descarga(XL.escribir([{nombre:"Participantes",filas:f,anchos:[28,30,18,10,16,14,12,10,14,20]}]),"Participantes "+o.name+".xlsx");
+        aviso("mt-msg",r.people.length+" participante"+(r.people.length===1?"":"s")+" exportado"+(r.people.length===1?"":"s")+". Contacta solo a quien aceptó.");
+      }).catch(function(er){aviso("mt-msg",ERR(er),true);});
+    };
+  }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+
+/* ---------- marca ---------- */
+/* el logo se reduce en el navegador a 256 px como máximo antes de guardarlo */
+function reduceLogo(file){
+  return new Promise(function(resolve,reject){
+    var r=new FileReader();
+    r.onload=function(){var im=new Image();
+      im.onload=function(){
+        var k=Math.min(1,256/Math.max(im.width,im.height)), cv=document.createElement("canvas");
+        cv.width=Math.max(1,Math.round(im.width*k)); cv.height=Math.max(1,Math.round(im.height*k));
+        cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+        var d=cv.toDataURL("image/png"); if(d.length>110000)d=cv.toDataURL("image/jpeg",.85);
+        resolve(d);
+      };
+      im.onerror=function(){reject(new Error("No se pudo leer la imagen."));}; im.src=r.result;};
+    r.onerror=function(){reject(new Error("No se pudo leer la imagen."));}; r.readAsDataURL(file);
+  });
+}
+function editorMarca(o){
+  var z=$("a-marca");
+  api("/api/orgs/"+o.id+"/brand").then(function(r){
+    var b=r.brand||{slug:r.suggested_slug,color:"#1c1c1e",logo:"",tagline:"",description:"",website:""}, logo=b.logo||"";
+    z.innerHTML='<form class="rt-form" id="mb-form">'+
+      '<div class="mb-prev" id="mb-prev"></div>'+
+      '<label>Dirección de la página<span class="mb-url">'+esc(location.host+location.pathname)+'?marca=<input id="mb-slug" maxlength="40" value="'+esc(b.slug)+'"></span></label>'+
+      '<div class="rt-2"><label>Color<input type="color" id="mb-color" value="'+esc(b.color||"#1c1c1e")+'"></label>'+
+      '<div class="mb-campo"><span>Logo</span><span class="mb-logo-acc"><label class="ghost au-archivo">Subir imagen<input type="file" id="mb-logo" accept="image/png,image/jpeg,image/webp" hidden></label>'+
+        '<button type="button" class="ghost au-mini" id="mb-sinlogo">Quitar</button></span></div></div>'+
+      '<label>Lema<input id="mb-tag" maxlength="80" value="'+esc(b.tagline)+'" placeholder="El mejor café del barrio"></label>'+
+      '<label>Descripción<textarea id="mb-desc" maxlength="400" rows="3" placeholder="Qué hacéis y qué ganan quienes participan">'+esc(b.description)+'</textarea></label>'+
+      '<label>Sitio web (opcional)<input id="mb-web" maxlength="200" value="'+esc(b.website)+'" placeholder="https://"></label>'+
+      '<div class="actions"><button class="primary" type="submit" id="mb-go">Guardar marca</button>'+(r.brand?'<button type="button" class="ghost" id="mb-ver">Ver página</button>':'')+'</div>'+
+      '<p class="msg" id="mb-msg"></p></form>';
+    function prev(){
+      var c=$("mb-color").value;
+      $("mb-prev").innerHTML='<div class="mc-cab mini" style="--marca:'+esc(c)+'"><span class="mc-logo grande">'+(logo?'<img src="'+esc(logo)+'" alt="">':'<i>'+esc(o.name.charAt(0))+'</i>')+'</span>'+
+        '<div><h2>'+esc(o.name)+'</h2><p>'+esc($("mb-tag").value)+'</p></div></div>';
+    }
+    prev(); $("mb-color").oninput=prev; $("mb-tag").oninput=prev;
+    $("mb-logo").onchange=function(){var f=this.files[0]; if(!f)return;
+      reduceLogo(f).then(function(d){logo=d;prev();aviso("mb-msg","Logo listo: guarda para publicarlo.");}).catch(function(er){aviso("mb-msg",er.message,true);});};
+    $("mb-sinlogo").onclick=function(){logo="";prev();};
+    if($("mb-ver"))$("mb-ver").onclick=function(){AxMarca.ver(b.slug);};
+    $("mb-form").onsubmit=function(e){e.preventDefault(); $("mb-go").disabled=true;
+      api("/api/orgs/"+o.id+"/brand",{slug:$("mb-slug").value,color:$("mb-color").value,logo:logo,tagline:$("mb-tag").value,description:$("mb-desc").value,website:$("mb-web").value})
+        .then(function(x){org(o.id,"ajustes","Marca guardada: tu página es ?marca="+x.slug);})
+        .catch(function(er){$("mb-go").disabled=false;aviso("mb-msg",ERR(er),true);});};
+  }).catch(function(e){z.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+
+/* ===================== PLATAFORMA =====================
+   Resumen con métricas globales, instituciones (aprobar, suspender, dar
+   de alta con su administración) y usuarios (buscar, filtrar, bloquear). */
+function plataforma(tab,filtro){
+  tab=tab||"resumen"; filtro=filtro||{};
+  vista={render:function(){plataforma(tab,filtro);}};
+  pinta(atras(nombreSeccion())+'<h3>Administración de la plataforma</h3>'+tabs([["resumen","Resumen"],["orgs","Instituciones"],["usuarios","Usuarios"]],tab)+'<div id="au-tab"><p class="fine">Cargando…</p></div>');
+  $("au-back").onclick=inicio;
+  ligaTabs(function(t){plataforma(t);});
+  var t=$("au-tab");
+  api("/api/admin/summary").then(function(r){
+    if(tab==="resumen")platResumen(t,r);
+    else if(tab==="orgs")platOrgs(t,r);
+    else platUsuarios(t,r,filtro);
+  }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+function platResumen(t,r){
+  var k=r.orgs_by_kind, pend=r.orgs.filter(function(o){return o.status==="pendiente";}).length;
+  var porTipo=Object.keys(k).map(function(x){return (TIPOS[x]||x)+": "+k[x].total;}).join(" · ")||"ninguna";
+  t.innerHTML=(r.verify_mode==="prueba"?'<p class="rt-hoy">Verificación de invitados en <b>modo de pruebas</b>: los códigos se muestran en pantalla y no se envía nada. '+
+      'Cambia VERIFY_MODE a "real" cuando conectes el servicio de SMS o correo.</p>':'')+
+    '<div class="mt-kpis">'+kpi(r.users,pl(r.users,"cuenta de Google","cuentas de Google"))+kpi(r.guests,pl(r.guests,"invitado","invitados"),(r.guests_by.prueba||0)+" con código de prueba")+
+      kpi(r.orgs.length,pl(r.orgs.length,"institución","instituciones"),pend?pend+pl(pend," pendiente"," pendientes"):"")+kpi(r.open_contests,pl(r.open_contests,"abierta ahora","abiertas ahora"),"de "+r.contests+" en total")+
+      kpi(r.entries.week,pl(r.entries.week,"inscripción","inscripciones"),"últimos 7 días")+kpi(r.entries.month,pl(r.entries.month,"inscripción","inscripciones"),"últimos 30 días")+kpi(r.blocked,pl(r.blocked,"bloqueado","bloqueados"))+'</div>'+
+    '<p class="fine">Por tipo: '+esc(porTipo)+'.</p>'+
+    barras("Usuarios nuevos por día",r.daily,function(d){return d.google+d.guests;},function(d){return (d.google+d.guests)+" ("+d.google+" Google, "+d.guests+" invitados)";});
+}
+function platOrgs(t,r){
+  t.innerHTML='<details class="au-nuevo"><summary>Dar de alta una institución o empresa</summary><form class="rt-form" id="po-form">'+
+      '<label>Nombre<input id="po-name" maxlength="90" required></label>'+
+      '<div class="rt-2"><label>Tipo<select id="po-kind">'+Object.keys(TIPOS).map(function(k){return '<option value="'+k+'"'+(k==="empresa"?' selected':'')+'>'+TIPOS[k]+'</option>';}).join("")+'</select></label>'+
+      '<label>Correo de su administración<input id="po-email" type="email" placeholder="responsable@empresa.com"></label></div>'+
+      '<p class="fine">Queda activa al momento. Si esa persona ya tiene cuenta, es administradora ya; si no, lo será en cuanto entre con Google con ese correo.</p>'+
+      '<div class="actions"><button class="primary" type="submit" id="po-go">Dar de alta</button></div><p class="msg" id="po-msg"></p></form></details>'+
+    (r.orgs.length?r.orgs.map(function(o){
+      return '<div class="au-fila po-org"><div><b>'+esc(o.name)+'</b> '+chipEstado(o.status)+
+        '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+o.members+' miembro'+(o.members===1?'':'s')+' · '+o.admins+' admin. · '+o.contests+' convocatorias y cuestionarios · '+
+          o.people+' participante'+(o.people===1?'':'s')+(o.last_activity?' · última actividad '+fecha(o.last_activity):'')+(o.slug?' · ?marca='+esc(o.slug):'')+'</small>'+
+        (o.invites.length?'<small>Altas pendientes: '+o.invites.map(function(i){return esc(i.email)+' ('+esc(ROLES[i.role]||i.role)+')';}).join(", ")+'</small>':'')+'</div>'+
+        (o.status!=="activa"?'<button type="button" class="primary au-mini" data-est="activa" data-id="'+o.id+'">Aprobar</button>':'')+
+        (o.status!=="suspendida"?'<button type="button" class="ghost au-mini" data-est="suspendida" data-id="'+o.id+'">Suspender</button>':'')+
+        '<button type="button" class="ghost au-mini" data-adm="'+o.id+'">+ Administración</button>'+
+        '<button type="button" class="ghost au-mini" data-met="'+o.id+'">Métricas</button>'+
+        '<button type="button" class="ghost au-mini" data-usr="'+o.id+'">Usuarios</button></div>';
+    }).join(""):'<p class="fine">No hay instituciones.</p>')+'<p class="msg" id="po-res"></p>';
+  $("po-form").onsubmit=function(e){e.preventDefault(); $("po-go").disabled=true;
+    api("/api/admin/orgs",{name:$("po-name").value,kind:$("po-kind").value,admin_email:$("po-email").value}).then(function(x){
+      plataforma("orgs"); setTimeout(function(){aviso("po-res",x.admin&&x.admin.invited?"Alta hecha. La administración quedará asignada cuando esa persona entre con Google.":"Alta hecha.");},400);
+    }).catch(function(er){$("po-go").disabled=false;aviso("po-msg",ERR(er),true);});};
+  var s=t.querySelectorAll("[data-est]"),i;
+  for(i=0;i<s.length;i++)s[i].onclick=function(){
+    api("/api/admin/orgs/"+this.getAttribute("data-id"),{status:this.getAttribute("data-est")}).then(function(){plataforma("orgs");}).catch(function(er){alert(ERR(er));});};
+  s=t.querySelectorAll("[data-adm]");
+  for(i=0;i<s.length;i++)s[i].onclick=function(){var id=this.getAttribute("data-adm"), m=prompt("Correo de la nueva administración:"); if(!m)return;
+    api("/api/admin/orgs/"+id+"/admins",{email:m,role:"admin"}).then(function(x){plataforma("orgs");setTimeout(function(){aviso("po-res",x.added?"Dada de alta.":"Invitación guardada.");},400);})
+      .catch(function(er){alert(ERR(er));});};
+  s=t.querySelectorAll("[data-met]"); for(i=0;i<s.length;i++)s[i].onclick=function(){org(this.getAttribute("data-met"),"metricas");};
+  s=t.querySelectorAll("[data-usr]"); for(i=0;i<s.length;i++)s[i].onclick=function(){plataforma("usuarios",{org:this.getAttribute("data-usr")});};
+}
+function platUsuarios(t,r,f){
+  t.innerHTML='<form class="au-filtros" id="pu-f"><label>Buscar<input id="pu-q" value="'+esc(f.q||"")+'" placeholder="Nombre, correo o teléfono"></label>'+
+    '<label>Tipo<select id="pu-t"><option value="">Todos</option><option value="google"'+(f.type==="google"?' selected':'')+'>Google</option>'+
+      '<option value="invitado"'+(f.type==="invitado"?' selected':'')+'>Invitados</option><option value="bloqueado"'+(f.type==="bloqueado"?' selected':'')+'>Bloqueados</option></select></label>'+
+    '<label>Institución<select id="pu-o"><option value="">Todas</option>'+r.orgs.map(function(o){return '<option value="'+o.id+'"'+(o.id===f.org?' selected':'')+'>'+esc(o.name)+'</option>';}).join("")+'</select></label></form>'+
+    '<div id="pu-lista"><p class="fine">Cargando…</p></div>';
+  function busca(){plataforma("usuarios",{q:$("pu-q").value,type:$("pu-t").value,org:$("pu-o").value});}
+  $("pu-f").onsubmit=function(e){e.preventDefault();busca();};
+  $("pu-t").onchange=$("pu-o").onchange=busca;
+  var q=["offset="+(f.offset||0)]; if(f.q)q.push("q="+encodeURIComponent(f.q)); if(f.type)q.push("type="+f.type); if(f.org)q.push("org="+f.org);
+  api("/api/admin/users?"+q.join("&")).then(function(u){
+    var h='<p class="fine">'+u.total+' usuario'+(u.total===1?'':'s')+(u.total>u.users.length?' · mostrando '+(u.offset+1)+'–'+(u.offset+u.users.length):'')+'</p>';
+    if(u.users.length){
+      h+='<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Usuario</th><th>Tipo</th><th>Instituciones</th><th>Particip.</th><th>Última vez</th><th></th></tr></thead><tbody>'+
+        u.users.map(function(x){return '<tr class="'+(x.blocked?"apagada":"")+'"><td>'+esc(x.name)+'<small>'+esc(x.phone||x.email||"—")+'</small></td>'+
+          '<td>'+(x.type==="invitado"?'Invitado<small>'+(x.verified_by==="prueba"?"código de prueba":"verificado")+'</small>':'Google')+(x.blocked?'<small>Bloqueado: '+esc(x.block_reason)+'</small>':'')+'</td>'+
+          '<td><small>'+esc(x.orgs||"—")+'</small></td><td>'+x.entries+'</td><td>'+fecha(x.last_seen)+'</td>'+
+          '<td><button type="button" class="ghost au-mini" data-bl="'+esc(x.id)+'" data-v="'+(x.blocked?0:1)+'">'+(x.blocked?"Desbloquear":"Bloquear")+'</button></td></tr>';}).join("")+
+        '</tbody></table></div>';
+      if(u.total>u.offset+u.users.length)h+='<div class="actions"><button class="ghost" id="pu-mas">Siguientes</button></div>';
+    }
+    h+='<p class="msg" id="pu-msg"></p>';
+    $("pu-lista").innerHTML=h;
+    if($("pu-mas"))$("pu-mas").onclick=function(){plataforma("usuarios",Object.assign({},f,{offset:(f.offset||0)+100}));};
+    var s=$("pu-lista").querySelectorAll("[data-bl]"),i;
+    for(i=0;i<s.length;i++)s[i].onclick=function(){
+      var id=this.getAttribute("data-bl"), v=this.getAttribute("data-v")==="1", motivo="";
+      if(v){motivo=prompt("Motivo del bloqueo (lo verá la administración):","Uso indebido");if(motivo===null)return;}
+      api("/api/admin/users/"+encodeURIComponent(id),{blocked:v,reason:motivo}).then(function(){plataforma("usuarios",f);}).catch(function(er){aviso("pu-msg",ERR(er),true);});
+    };
+  }).catch(function(e){$("pu-lista").innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
 }
 
 /* ---------- enlaces: ?curso=CÓDIGO y ?docente=CÓDIGO ---------- */
@@ -664,5 +997,6 @@ function plataforma(){
   if(window.AxAccount&&AxAccount.listo())ir(); else document.addEventListener("ax-user",ir);
 })();
 
-window.AxAula={abrir:abrir,cerrar:cerrar,curso:function(code){activo=true;panel.hidden=false;curso(code);},org:org};
+window.AxAula={abrir:abrir,cerrar:cerrar,curso:function(code){activo=true;panel.hidden=false;curso(code);},
+  org:function(id,tab){activo=true;panel.hidden=false;org(id,tab);}};
 })();

@@ -20,6 +20,7 @@ var ICONO={
   concurso:'<svg viewBox="0 0 24 24"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v3H8v-3h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zm0 4H6v1a2 2 0 0 0 1.2 1.8A6 6 0 0 1 7 8.7V7zm10 0v1.7c0 .4 0 .8-.2 1.1A2 2 0 0 0 18 8V7h-1z"/></svg>',
   axioma:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5" rx="1.2"/><rect x="9.5" y="3" width="5" height="5" rx="1.2" opacity=".35"/><rect x="16" y="3" width="5" height="5" rx="1.2"/><rect x="3" y="9.5" width="5" height="5" rx="1.2" opacity=".35"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.2"/><rect x="16" y="9.5" width="5" height="5" rx="1.2" opacity=".35"/><rect x="3" y="16" width="5" height="5" rx="1.2"/><rect x="9.5" y="16" width="5" height="5" rx="1.2" opacity=".35"/><rect x="16" y="16" width="5" height="5" rx="1.2"/></svg>',
   sudoku:'<svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm2 2v4h4V5H5zm6 0v4h2V5h-2zm4 0v4h4V5h-4zM5 11v2h4v-2H5zm6 0v2h2v-2h-2zm4 0v2h4v-2h-4zM5 15v4h4v-4H5zm6 0v4h2v-4h-2zm4 0v4h4v-4h-4z"/></svg>',
+  empresa:'<svg viewBox="0 0 24 24"><path d="M4 21V5.5L12 3l8 2.5V21h-6v-4h-4v4H4zm3-13v2h2V8H7zm4 0v2h2V8h-2zm4 0v2h2V8h-2zM7 12v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z"/></svg>',
   rapido:'<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
   reto:'<svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6H2zm15.5 0c0-2-.7-3.7-1.9-5 .5-.1.9-.1 1.4-.1 3.1 0 5 2.2 5 5.1h-4.5z"/></svg>'
 };
@@ -37,8 +38,9 @@ function abrir(){
     '<p>Cuestionarios de clase con registros para el docente, concursos de trivia con premio y juegos de lógica, en un mismo lugar.</p>'+
     '<form class="rt-join ini-codigo" id="ini-form"><input id="ini-code" placeholder="Código de curso o concurso" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Entrar</button></form>'+
     '<p class="msg" id="ini-msg"></p></div>'+
-    '<div class="ini-grid ini-dos">'+
-      tarjeta("aula","aula","Aula","Instituciones, cursos por paralelo, bancos de preguntas y cuestionarios de parcial con registros y Excel.",'<span id="ini-aula">'+(u?"Tus cursos…":"Para universidades e institutos")+'</span>',"grande")+
+    '<div class="ini-grid">'+
+      tarjeta("aula","aula","Aula","Instituciones, cursos por paralelo, bancos de preguntas y cuestionarios de parcial con registros y Excel.",'<span id="ini-aula">'+(u&&!u.guest?"Tus cursos…":"Para universidades e institutos")+'</span>',"grande")+
+      tarjeta("empresas","empresa","Empresas y eventos","Tu marca, convocatorias con premio que se abren con un QR y se juegan sin trámites, y métricas.",'<span id="ini-emp">Cargando…</span>',"grande")+
       tarjeta("concurso","concurso","Concursos de trivia","Te inscribes, juegas una sola vez y al cierre se publica el ranking y el ganador.",'<span id="ini-conc">Cargando…</span>',"grande")+
     '</div>'+
     '<h4 class="ini-cap">Juegos de lógica</h4>'+
@@ -69,7 +71,11 @@ function abrir(){
     var n=r.open.filter(function(c){return c.state==="abierto";}).length;
     $("ini-conc").textContent=n?(n===1?"1 abierto ahora":n+" abiertos ahora"):"Ninguno abierto: crea el primero";
   }).catch(function(){ $("ini-conc").textContent="Ver concursos"; });
-  if(u)get("/api/orgs").then(function(r){
+  get("/api/brands").then(function(r){
+    var n=r.brands.reduce(function(a,b){return a+b.open;},0), e=$("ini-emp"); if(!e)return;
+    e.textContent=n?(n===1?"1 convocatoria abierta":n+" convocatorias abiertas"):(r.brands.length?r.brands.length+(r.brands.length===1?" marca":" marcas"):"Registra tu empresa");
+  }).catch(function(){ var e=$("ini-emp"); if(e)e.textContent="Registra tu empresa"; });
+  if(u&&!u.guest)get("/api/orgs").then(function(r){
     var activos=r.courses.filter(function(c){return !c.archived&&c.status==="activo";});
     var abiertos=activos.reduce(function(s,c){return s+(c.open||0);},0);
     $("ini-aula").textContent=activos.length?(activos.length+(activos.length===1?" curso":" cursos")+(abiertos?" · "+abiertos+" cuestionario"+(abiertos>1?"s":"")+" abierto"+(abiertos>1?"s":""):"")):

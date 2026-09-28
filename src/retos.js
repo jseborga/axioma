@@ -28,6 +28,8 @@ export async function handleRetos(req,env,url,path,ctx){
   var json=ctx.json, user=ctx.user;
   if(!env.DB)return json({error:"not_configured"},null,503);
   if(!user)return json({error:"unauthorized"},null,401);
+  /* los retos entre amigos son con cuenta de Google; los invitados solo juegan convocatorias */
+  if(String(user.id).indexOf("g_")===0&&req.method==="POST")return json({error:"google_required"},null,403);
   var m;
   try{
     if(path==="/events"&&req.method==="POST")return await creaReto(req,env,user,ctx);

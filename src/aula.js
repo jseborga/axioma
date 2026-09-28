@@ -29,13 +29,17 @@
      GET  /api/banks/:id                  preguntas
      POST /api/banks/:id/import           { items } revalidadas aquí con las mismas reglas
      POST /api/banks/:id/questions/:qid   { remove } o una pregunta nueva
+     GET  /api/orgs/:id/members           también las altas pendientes por correo
+     POST /api/orgs/:id/invites           { email, role, remove } alta por correo (admin)
    Plataforma
      GET  /api/admin/orgs · POST /api/admin/orgs/:id { status }
+   Los jugadores invitados (sin Google) no pueden usar nada de esto:
+   solo participan en las convocatorias que los admiten.
    =========================================================== */
 import "../public/banco-formato.js";
 var B=globalThis.AxBanco;
 
-export var TERMS_VERSION="2026-09-28";
+export var TERMS_VERSION="2026-09-28.2";   /* versión 2: empresas, invitados y consentimiento de contacto */
 var KINDS={universidad:["Facultad","Carrera","Materia"],instituto:["Carrera","Materia"],colegio:["Nivel","Curso","Materia"],
            empresa:["Área","Equipo"],comunidad:["Grupo"]};
 var ROLES=["admin","docente","auxiliar","estudiante","auspiciador"];
@@ -59,6 +63,37 @@ function dominioOk(org,user){
   if(!org.email_domain)return true;
   var e=String(user.email||"").toLowerCase(), d=String(org.email_domain).toLowerCase();
   return e.endsWith("@"+d)||e.endsWith("."+d);
+}
+export function esInvitado(user){return !!(user&&String(user.id).indexOf("g_")===0);}
+function correoOk(e){return /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e);}
+/* altas por correo pendientes: se aplican cuando esa persona entra con Google */
+export async function aceptaInvitaciones(env,user){
+  if(!user||esInvitado(user)||!user.email)return;
+  var r;
+  try{r=await env.DB.prepare("SELECT org_id,role FROM org_invites WHERE email=?").bind(String(user.email).toLowerCase()).all();}catch(e){return;}
+  var inv=r.results||[]; if(!inv.length)return;
+  var now=Date.now(), ops=[];
+  inv.forEach(function(i){
+    ops.push(env.DB.prepare("INSERT INTO org_members(org_id,user_id,role,joined_at) VALUES(?,?,?,?) ON CONFLICT(org_id,user_id) DO UPDATE SET role=CASE WHEN excluded.role='admin' THEN 'admin' ELSE org_members.role END")
+      .bind(i.org_id,user.id,i.role,now));
+    ops.push(env.DB.prepare("DELETE FROM org_invites WHERE org_id=? AND email=?").bind(i.org_id,String(user.email).toLowerCase()));
+  });
+  await env.DB.batch(ops);
+}
+export async function invita(env,orgId,email,role,por){
+  email=String(email||"").trim().toLowerCase();
+  if(!correoOk(email))return {error:"bad_email"};
+  if(["admin","docente"].indexOf(role)<0)role="admin";
+  var u=await env.DB.prepare("SELECT id FROM users WHERE lower(email)=? AND substr(id,1,2)<>'g_'").bind(email).first();
+  var now=Date.now();
+  if(u){
+    await env.DB.prepare("INSERT INTO org_members(org_id,user_id,role,joined_at) VALUES(?,?,?,?) ON CONFLICT(org_id,user_id) DO UPDATE SET role=excluded.role")
+      .bind(orgId,u.id,role,now).run();
+    return {ok:true,added:true};
+  }
+  await env.DB.prepare("INSERT INTO org_invites(org_id,email,role,invited_by,created_at) VALUES(?,?,?,?,?) ON CONFLICT(org_id,email) DO UPDATE SET role=excluded.role")
+    .bind(orgId,email,role,por,now).run();
+  return {ok:true,invited:true};
 }
 export async function perfil(env,uid){
   var p=await env.DB.prepare("SELECT * FROM profiles WHERE user_id=?").bind(uid).first();
@@ -104,6 +139,7 @@ export async function handleAula(req,env,url,path,ctx){
     if(path==="/profile"&&req.method==="GET")return await verPerfil(env,user,json);
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})$/))&&req.method==="GET")return await fichaCurso(env,user,m[1],json);
     if(!user)return json({error:"unauthorized"},null,401);
+    if(esInvitado(user))return json({error:"google_required"},null,403);
     if(path==="/profile"&&req.method==="POST")return await guardaPerfil(req,env,user,json);
     /* todo lo demás exige haber completado el registro con consentimiento */
     var pf=await perfil(env,user.id);
@@ -118,6 +154,7 @@ export async function handleAula(req,env,url,path,ctx){
     if((m=path.match(/^\/orgs\/([A-Z0-9]{6})\/units\/(\d+)$/))&&req.method==="POST")return await cambiaUnidad(env,user,m[1],+m[2],body,json);
     if((m=path.match(/^\/orgs\/([A-Z0-9]{6})\/members$/))&&req.method==="GET")return await miembros(env,user,m[1],json);
     if((m=path.match(/^\/orgs\/([A-Z0-9]{6})\/members\/([^/]+)$/))&&req.method==="POST")return await cambiaMiembro(env,user,m[1],decodeURIComponent(m[2]),body,json);
+    if((m=path.match(/^\/orgs\/([A-Z0-9]{6})\/invites$/))&&req.method==="POST")return await invitaOrg(env,user,m[1],body,json);
     if((m=path.match(/^\/orgs\/([A-Z0-9]{6})\/teacher-code$/))&&req.method==="POST")return await nuevoCodigo(env,user,m[1],json);
     if((m=path.match(/^\/orgs\/([A-Z0-9]{6})\/courses$/))&&req.method==="GET")return await cursosOrg(env,user,m[1],json);
     if((m=path.match(/^\/orgs\/([A-Z0-9]{6})\/courses$/))&&req.method==="POST")return await creaCurso(env,user,m[1],body,json);
@@ -142,6 +179,7 @@ export async function handleAula(req,env,url,path,ctx){
 /* ---------- perfil y consentimiento ---------- */
 async function verPerfil(env,user,json){
   if(!user)return json({user:null});
+  await aceptaInvitaciones(env,user);
   var p=await perfil(env,user.id);
   return json({user:user,profile:p,terms_version:TERMS_VERSION,platform_admin:esAdminPlataforma(env,user),
                admins_configured:!!String(env.PLATFORM_ADMINS||"").trim()});
@@ -170,6 +208,7 @@ function orgPublica(o){
   return {id:o.id,name:o.name,kind:o.kind,email_domain:o.email_domain||"",levels:JSON.parse(o.levels||"[]"),status:o.status};
 }
 async function misOrgs(env,user,json){
+  await aceptaInvitaciones(env,user);
   var orgs=await env.DB.prepare(
     "SELECT o.*,m.role FROM org_members m JOIN orgs o ON o.id=m.org_id WHERE m.user_id=? ORDER BY o.name"
   ).bind(user.id).all();
@@ -216,6 +255,7 @@ async function fichaOrg(env,user,id,json){
   var out=orgPublica(o); out.role=rol; out.platform_admin=pa; out.units=units.results||[]; out.counts=cuenta;
   out.can={admin:rol==="admin",teach:rol==="admin"||rol==="docente",active:o.status==="activa"};
   if(rol==="admin")out.teacher_code=o.teacher_code;
+  try{var br=await env.DB.prepare("SELECT slug,color,logo FROM org_brand WHERE org_id=?").bind(id).first();out.brand=br||null;}catch(e){out.brand=null;}
   return json(out);
 }
 async function soloAdmin(env,user,id){
@@ -279,9 +319,21 @@ async function miembros(env,user,id,json){
     "SELECT u.id,u.name,u.email,u.picture,m.role,m.student_code,m.consent_ok,m.joined_at,p.birthdate "+
     "FROM org_members m JOIN users u ON u.id=m.user_id LEFT JOIN profiles p ON p.user_id=m.user_id WHERE m.org_id=? ORDER BY m.role,u.name"
   ).bind(id).all();
+  var inv={results:[]};
+  try{inv=await env.DB.prepare("SELECT email,role,created_at FROM org_invites WHERE org_id=? ORDER BY created_at").bind(id).all();}catch(e){}
   return json({members:(r.results||[]).map(function(x){var e=edad(x.birthdate);
     return {id:x.id,name:x.name,email:x.email,picture:x.picture,role:x.role,student_code:x.student_code,consent_ok:!!x.consent_ok,
-            minor:e!==null&&e<18,joined_at:x.joined_at,me:x.id===user.id};})});
+            minor:e!==null&&e<18,joined_at:x.joined_at,me:x.id===user.id,guest:esInvitado(x)};}),
+    invites:inv.results||[]});
+}
+async function invitaOrg(env,user,id,b,json){
+  var a=await soloAdmin(env,user,id); if(a.err)return json({error:a.err},null,a.st);
+  if(b.remove){
+    await env.DB.prepare("DELETE FROM org_invites WHERE org_id=? AND email=?").bind(id,String(b.email||"").trim().toLowerCase()).run();
+    return json({ok:true});
+  }
+  var r=await invita(env,id,b.email,b.role,user.id);
+  return r.error?json(r,null,400):json(r);
 }
 async function cambiaMiembro(env,user,id,uid,b,json){
   var a=await soloAdmin(env,user,id); if(a.err)return json({error:a.err},null,a.st);

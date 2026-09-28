@@ -44,7 +44,9 @@ function ERR(e){return {not_configured:"Faltan las tablas de concursos en la bas
   too_many:"Tienes demasiados concursos abiertos a la vez.",forbidden:"Solo quien lo organiza puede hacer eso.",
   profile_required:"Antes tienes que completar tu registro.",restricted:"Es solo para los miembros de su curso o institución.",
   consent_required:"Tienes menos de 18 años: para los concursos abiertos con premio hace falta el consentimiento de tu tutor o de tu institución.",
-  org_pending:"La institución todavía no está aprobada."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
+  org_pending:"La institución todavía no está aprobada.",
+  google_required:"Esta convocatoria es para cuentas de Google: sal de la sesión de invitado y entra con Google.",
+  guests_not_allowed:"Esta convocatoria no admite invitados."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
 function errTxt(n){return n===0?"Sin errores: el primer fallo termina la partida":n===1?"1 error admitido":n+" errores admitidos";}
 function chip(c){
   var t=c.state==="pronto"?"Empieza en "+dura(c.starts_at-ahora()):c.state==="abierto"?"Termina en "+dura(c.ends_at-ahora()):"Terminado";
@@ -62,7 +64,7 @@ function cerrar(){ activo=false; para(); panel.hidden=true; }
 document.addEventListener("ax-user",function(){ if(activo&&vista&&!vista.jugando)(vista.code?ficha(vista.code):inicio()); });
 
 /* ---------- inicio ---------- */
-function inicio(){
+function inicio(){ colorMarca(null);
   para(); vista={}; cab();
   var u=user(), conCuenta=window.AxAccount&&AxAccount.configurado&&AxAccount.configurado();
   pinta('<h3>Concursos de trivia</h3>'+
@@ -161,12 +163,18 @@ function crearForm(){
 }
 
 /* ---------- ficha ---------- */
+function colorMarca(c){
+  panel.style.removeProperty("--accent"); panel.style.removeProperty("--accent-tint");
+  if(c&&c.brand&&/^#[0-9a-f]{6}$/i.test(c.brand.color||"")){panel.style.setProperty("--accent",c.brand.color);panel.style.setProperty("--accent-tint",c.brand.color+"26");}
+}
 function ficha(code,recien){
   para(); vista={code:code}; cab();
   api("/api/contests/"+code).then(function(c){
-    desfase=c.now-Date.now();
+    desfase=c.now-Date.now(); colorMarca(c);
     var u=user(), me=c.me, cuest=c.kind==="cuestionario", volver=c.course_code?"‹ Volver al curso":"‹ Concursos";
-    var h='<button type="button" class="rt-back" id="cq-back">'+volver+'</button>'+
+    if(c.brand)volver="‹ "+c.org_name;
+    var h='<button type="button" class="rt-back" id="cq-back">'+esc(volver)+'</button>'+
+      (c.brand?'<div class="cq-marca">'+(c.brand.logo?'<img src="'+esc(c.brand.logo)+'" alt="">':'')+'<span>Convocatoria de <b>'+esc(c.org_name)+'</b></span></div>':'')+
       '<div class="rt-head"><h3>'+esc(c.name)+'</h3>'+chip(c)+'</div>'+
       (c.course_code||c.org_name?'<p class="cq-ambito">'+(cuest?"Cuestionario":"Concurso")+
         (c.course_name?' · '+esc(c.course_name)+(c.course_term?' ('+esc(c.course_term)+')':''):'')+
@@ -186,6 +194,7 @@ function ficha(code,recien){
 
     if(c.manage)h+='<div class="actions"><button type="button" class="primary" id="cq-registros">Registros y estadísticas</button></div>';
     if(c.state!=="terminado"&&!cuest)h+='<div class="rt-code"><span>Código</span><b>'+c.code+'</b><button type="button" class="ghost" id="cq-copy">Copiar enlace</button>'+
+      (window.AxQR?'<button type="button" class="ghost" id="cq-qr">QR</button>':'')+
       (navigator.share?'<button type="button" class="ghost" id="cq-share">Invitar</button>':'')+'</div>';
     if(recien)h+='<p class="fine ok">Concurso publicado. Comparte el código o el enlace para que la gente se inscriba.</p>';
 
@@ -195,11 +204,19 @@ function ficha(code,recien){
          revisionHtml(c.review);
     }else if(c.state==="terminado"){
       h+=resultado(c);
+    }else if(!u&&c.guests){
+      h+='<div class="actions"><button class="primary" id="cq-inv">Participar con mi teléfono o correo</button></div>'+
+         (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="ghost" id="cq-login">o entra con Google</button></div>':'')+
+         '<p class="fine">Sin cuenta: te enviamos un código para comprobar que eres tú. Con cada teléfono o correo se participa una sola vez.</p>';
     }else if(!u){
       h+=(window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="cq-login">Entrar con Google para inscribirte</button></div>':
          '<p class="fine">El inicio de sesión no está configurado en esta instalación.</p>');
+    }else if(!me&&u.guest&&!c.guests){
+      h+='<p class="rt-hoy">'+ERR({error:"google_required"})+'</p><div class="actions"><button class="ghost" id="cq-login">Mi cuenta</button></div>';
     }else if(!me){
-      h+='<div class="actions"><button class="primary" id="cq-inscribir">Inscribirme</button></div>'+
+      var mk=c.org_id&&(c.audience==="publico"||c.audience==="enlace")&&!u.guest;
+      h+=(mk?'<label class="rt-check cq-mk"><input type="checkbox" id="cq-mk"> <span>Acepto que '+esc(c.org_name||"quien organiza")+' me contacte con novedades y promociones (opcional).</span></label>':'')+
+         '<div class="actions"><button class="primary" id="cq-inscribir">Inscribirme</button></div>'+
          '<p class="fine">Inscribirte no te obliga a jugar ya: podrás hacerlo en cualquier momento hasta el cierre.</p>';
     }else if(me.finished){
       h+='<div class="cq-mio"><small>Tu participación</small><b>'+me.correct+' aciertos · '+me.errors+(me.errors===1?" error":" errores")+'</b>'+
@@ -219,7 +236,9 @@ function ficha(code,recien){
       (cuest?'Cerrar el cuestionario ahora':'Cerrar el concurso ahora y publicar el ranking')+'</button></div>';
     pinta(h);
 
-    $("cq-back").onclick=function(){ if(c.course_code&&window.AxAula){AxApp.setMode("aula");AxAula.curso(c.course_code);} else inicio(); };
+    $("cq-back").onclick=function(){
+      if(c.brand&&window.AxMarca){AxMarca.ver(c.brand.slug);return;}
+      if(c.course_code&&window.AxAula){AxApp.setMode("aula");AxAula.curso(c.course_code);} else inicio(); };
     if($("cq-registros"))$("cq-registros").onclick=function(){registros(c);};
     if($("cq-copy"))$("cq-copy").onclick=function(){var b=this,t=enlace(c.code);
       if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent="Copiar enlace";},1400);});
@@ -227,7 +246,15 @@ function ficha(code,recien){
     if($("cq-share"))$("cq-share").onclick=function(){navigator.share({text:"Participa en «"+c.name+"»"+(c.prize?" y gana "+c.prize:"")+": "+enlace(c.code)}).catch(function(){});};
     if($("cq-login"))$("cq-login").onclick=function(){AxAccount.abrirCuenta();};
     if($("cq-inscribir"))$("cq-inscribir").onclick=function(){this.disabled=true;
-      conRegistro(function(){return api("/api/contests/"+code+"/join",{});}).then(function(){ficha(code);}).catch(function(e){alert(ERR(e));ficha(code);});};
+      var cuerpo=$("cq-mk")?{marketing:$("cq-mk").checked}:{};
+      conRegistro(function(){return api("/api/contests/"+code+"/join",cuerpo);}).then(function(){ficha(code);}).catch(function(e){alert(ERR(e));ficha(code);});};
+    if($("cq-inv"))$("cq-inv").onclick=function(){
+      AxInvitado.abre({code:code,org_name:c.org_name,prize:c.prize}).then(function(ok){
+        if(!ok)return;
+        api("/api/contests/"+code+"/join",{}).then(function(){ficha(code);}).catch(function(e){alert(ERR(e));ficha(code);});
+      });};
+    if($("cq-qr"))$("cq-qr").onclick=function(){AxQR.abre({url:enlace(c.code),titulo:c.name,subtitulo:c.prize?"Premio: "+c.prize:"",marca:c.org_name||"",
+      color:c.brand&&c.brand.color,logo:c.brand&&c.brand.logo,directo:true});};
     if($("cq-jugar"))$("cq-jugar").onclick=function(){juego(c);};
     if($("cq-cerrar"))$("cq-cerrar").onclick=function(){
       if(!confirm(cuest?"¿Cerrar «"+c.name+"» ahora? Nadie más podrá responder y cada estudiante verá sus respuestas.":"¿Cerrar «"+c.name+"» ahora? Nadie más podrá jugar y se publicará el ranking."))return;
@@ -277,9 +304,12 @@ function registros(c){
       '<div class="actions"><button class="primary" id="cq-xlsx">Descargar Excel</button></div>';
     if(!r.rows.length)h+='<p class="fine">Todavía no hay nadie.</p>';
     else{
-      h+='<div class="tabla-wrap"><table class="tabla"><thead><tr><th>#</th><th>Estudiante</th><th>Registro</th><th>Aciertos</th><th>Errores</th><th>Resp.</th><th>Tiempo</th><th>Estado</th></tr></thead><tbody>';
+      var curso=!!r.course_code;
+      h+='<div class="tabla-wrap"><table class="tabla"><thead><tr><th>#</th><th>'+(curso?"Estudiante":"Participante")+'</th><th>'+(curso?"Registro":"Contacto")+'</th><th>Aciertos</th><th>Errores</th><th>Resp.</th><th>Tiempo</th><th>Estado</th></tr></thead><tbody>';
       r.rows.forEach(function(x){
-        h+='<tr class="'+(x.status==="no participó"?"apagada":"")+'"><td>'+(x.rank||"—")+'</td><td>'+esc(x.name)+'<small>'+esc(x.email)+'</small></td><td>'+esc(x.student_code||"—")+'</td>'+
+        var contacto=curso?esc(x.student_code||"—"):(esc(x.phone||x.email||"—")+'<small>'+(x.guest?"Invitado · "+(x.verified_by==="prueba"?"código de prueba":"verificado"):"Google")+
+          (x.marketing===true?" · acepta contacto":"")+'</small>');
+        h+='<tr class="'+(x.status==="no participó"?"apagada":"")+'"><td>'+(x.rank||"—")+'</td><td>'+esc(x.name)+(curso?'<small>'+esc(x.email)+'</small>':'')+'</td><td>'+contacto+'</td>'+
           '<td><b>'+(x.started_at?x.correct:"—")+'</b></td><td>'+(x.started_at?x.errors:"—")+'</td><td>'+(x.started_at?x.answered:"—")+'</td>'+
           '<td>'+(x.started_at?tiempo(x.total_ms):"—")+'</td><td>'+esc(x.status)+'</td></tr>';
       });
@@ -296,15 +326,16 @@ function registros(c){
     pinta(h);
     $("cq-back").onclick=function(){ficha(c.code);};
     $("cq-xlsx").onclick=function(){
-      var filas=[["Puesto","Estudiante","Correo","Registro","Aciertos","Errores","Respondidas","Tiempo (s)","Estado","Motivo del final","Inicio","Fin"]];
+      var filas=[["Puesto","Participante","Correo","Teléfono","Registro","Tipo","Verificación","Acepta contacto","Aciertos","Errores","Respondidas","Tiempo (s)","Estado","Motivo del final","Inicio","Fin"]];
       r.rows.forEach(function(x){
-        filas.push([x.rank||"",x.name,x.email,x.student_code||"",x.started_at?x.correct:"",x.started_at?x.errors:"",x.started_at?x.answered:"",
+        filas.push([x.rank||"",x.name,x.email||"",x.phone||"",x.student_code||"",x.guest?"Invitado":"Google",x.verified_by==="prueba"?"Código de prueba":x.guest?"Código":"Google",
+          x.marketing===true?"Sí":x.marketing===false?"No":"",x.started_at?x.correct:"",x.started_at?x.errors:"",x.started_at?x.answered:"",
           x.started_at?Math.round(x.total_ms/1000):"",x.status,motivo(x.reason),x.started_at?new Date(x.started_at).toLocaleString("es"):"",
           x.finished_at?new Date(x.finished_at).toLocaleString("es"):""]);
       });
       var pq=[["Pregunta","Tema","Nivel","Respondida por","Aciertos","% de acierto"]];
       r.questions.forEach(function(q){pq.push([q.q,q.cat||"",q.level?({1:"Fácil",2:"Medio",3:"Difícil"}[q.level]):"",q.answered,q.correct,q.pct]);});
-      var blob=AxExcel.escribir([{nombre:"Resultados",filas:filas,anchos:[8,28,28,14,10,10,12,11,14,26,20,20]},{nombre:"Preguntas",filas:pq,anchos:[60,20,10,14,10,12]}]);
+      var blob=AxExcel.escribir([{nombre:"Resultados",filas:filas,anchos:[8,28,28,16,14,10,16,14,10,10,12,11,14,26,20,20]},{nombre:"Preguntas",filas:pq,anchos:[60,20,10,14,10,12]}]);
       AxExcel.descarga(blob,(r.name+(r.partial?" - "+r.partial:"")).replace(/[\\/:*?"<>|]+/g," ").trim()+".xlsx");
     };
   }).catch(function(e){pinta('<p class="fine bad">'+esc(ERR(e))+'</p>');});

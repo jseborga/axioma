@@ -8,6 +8,13 @@ docente, concursos de trivia con premio y juegos de lógica, en una sola app.
   bancos de preguntas importados desde Excel o texto con revisión previa,
   cuestionarios de parcial y registros por estudiante y por pregunta, descargables
   en Excel. Registro con consentimiento y reglas para menores. Ver [AULA.md](AULA.md).
+- **Empresas y eventos**: página propia con logo y color, convocatorias con premio
+  que se comparten con un QR y se juegan sin trámites (con Google o como invitado
+  verificado por código), métricas y exportación de participantes. Ver
+  [EMPRESAS.md](EMPRESAS.md).
+- **Administración de la plataforma**: aprobar y dar de alta instituciones y
+  empresas con su administración, métricas globales y por institución, y usuarios
+  con búsqueda y bloqueo.
 - **Axioma**, el puzle de deducción con el que empezó el proyecto, es ahora uno de
   los juegos: no solo resuelves el tablero, descubres qué regla lo gobierna.
 - Sin azar, sin adivinar, sin cuenta. Cada tablero se genera y verifica en el dispositivo con solución única.
@@ -41,6 +48,9 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `public/app.js` | Modos, portada y juego de Axioma (generador y verificador) |
 | `public/inicio.js` | Portada de The Final Test |
 | `public/aula.js` | Pantallas del aula: instituciones, cursos, bancos, cuestionarios y registros |
+| `public/marca.js` | Página pública de una marca (`?marca=`) y directorio |
+| `public/invitado.js` | Participar como invitado: datos, código y verificación |
+| `public/qr.js`, `public/vendor/qrcode.js` | QR y cartel PNG (librería qrcode-generator, MIT) |
 | `public/registro.js` | Registro con fecha de nacimiento, consentimiento y términos |
 | `public/banco-formato.js` | Lectura y validación de preguntas desde tabla o texto (lo usan el navegador y el Worker) |
 | `public/xlsx.js` | Lectura y escritura de Excel (.xlsx) sin dependencias |
@@ -59,6 +69,9 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `src/api.js` | API: sesión, puntuaciones y rankings (axioma y sudoku) |
 | `src/retos.js` | API de retos y salas en pareja |
 | `src/aula.js` | API del aula: perfiles, instituciones, cursos, bancos y administración |
+| `src/invitados.js` | API de invitados: códigos de verificación, límites y sesión |
+| `src/marcas.js` | API de marcas, convocatorias de institución, métricas y participantes |
+| `src/plataforma.js` | API de administración de la plataforma: resumen, usuarios, bloqueo y altas |
 | `src/ajustes.js` | Ajustes de la plataforma: nombre, correo de contacto y remitente (variables de `wrangler.toml`) |
 | `src/concursos.js` | API de los concursos y de los cuestionarios de curso |
 | `src/preguntas.js` | Banco de preguntas de los concursos y generador de operaciones (solo en el servidor) |
@@ -71,6 +84,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | --- | --- |
 | [SETUP.md](SETUP.md) | Puesta en marcha: Cloudflare, base de datos, inicio de sesión y estadísticas |
 | [COMO-JUGAR.md](COMO-JUGAR.md) | Qué es el juego, cómo empezar y una guía visual paso a paso |
+| [EMPRESAS.md](EMPRESAS.md) | Empresas y eventos: marca, convocatorias con QR, invitados verificados, métricas y administración |
 | [AULA.md](AULA.md) | Instituciones, roles, cursos, bancos de preguntas, cuestionarios y registros |
 | [CONCURSOS.md](CONCURSOS.md) | Concursos de trivia con premio: cómo se crean, se juegan y se decide el ganador |
 | [RETOS.md](RETOS.md) | Retos con premio entre amigos, juegos rápidos y sudoku en pareja: cómo se crean, se juegan y se puntúan |

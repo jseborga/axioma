@@ -38,8 +38,9 @@
       </button>
       <div class="modemenu" id="mode-menu" role="menu" hidden>
         <button role="menuitemradio" id="t-inicio" aria-checked="true" type="button"><b>Inicio</b><small>Todo lo que hay en The Final Test</small></button>
-        <p class="menu-cap">Aprender</p>
+        <p class="menu-cap">Aprender y competir</p>
         <button role="menuitemradio" id="t-aula" aria-checked="false" type="button"><b>Aula</b><small>Instituciones, cursos, bancos y cuestionarios</small></button>
+        <button role="menuitemradio" id="t-empresas" aria-checked="false" type="button"><b>Empresas y eventos</b><small>Tu marca, tus convocatorias con QR y tus métricas</small></button>
         <button role="menuitemradio" id="t-concurso" aria-checked="false" type="button"><b>Concursos de trivia</b><small>Inscríbete, juega una vez y gana el premio</small></button>
         <p class="menu-cap">Axioma · lógica</p>
         <button role="menuitemradio" id="t-day"   aria-checked="false" type="button"><b>Axioma diario</b><small>El reto de hoy, igual para todos</small></button>
@@ -143,6 +144,8 @@
 
   <section class="panel retos aula" id="aula-panel" hidden aria-live="polite" aria-label="Aula"></section>
 
+  <section class="marca" id="marca-panel" hidden aria-live="polite" aria-label="Marca"></section>
+
   <section class="panel retos" id="retos-panel" hidden aria-live="polite" aria-label="Retos"></section>
 
   <section class="panel retos rapido" id="rapido-panel" hidden aria-live="polite" aria-label="Juegos rápidos"></section>
@@ -215,9 +218,13 @@
 
 <div class="tut" id="tut"></div>
 <div class="tut" id="reg"></div>
+<div class="tut" id="inv"></div>
+<div class="tut" id="qr-modal"></div>
 
 <script src="banco-formato.js"></script>
 <script src="xlsx.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="qr.js"></script>
 <script src="sudoku.js"></script>
 <script src="rapidos-motor.js"></script>
 <script src="app.js"></script>
@@ -227,7 +234,9 @@
 <script src="concursos.js"></script>
 <script src="retos.js"></script>
 <script src="registro.js"></script>
+<script src="invitado.js"></script>
 <script src="aula.js"></script>
+<script src="marca.js"></script>
 <script src="inicio.js"></script>
 </body>
 </html>
