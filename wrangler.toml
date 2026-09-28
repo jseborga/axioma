@@ -1,4 +1,4 @@
-# Configuración del Worker de Axioma
+# Configuración del Worker de The Final Test (se llama «axioma»: no cambiar el nombre)
 name = "axioma"
 main = "src/index.js"
 compatibility_date = "2026-01-01"
@@ -14,3 +14,11 @@ binding = "ASSETS"
 binding = "DB"
 database_name = "axioma"
 database_id = "ad3327ea-8049-4330-8b69-b8081a235045"
+
+# Ajustes de la plataforma (ver src/ajustes.js). Se cambian aquí y se
+# despliegan con la app (cada despliegue impone estos valores sobre los del panel).
+# Más adelante, para enviar correos y validaciones: MAIL_FROM (remitente)
+# aquí, y la clave del servicio de correo como Secret, nunca en este archivo.
+[vars]
+APP_NAME = "The Final Test"
+CONTACT_EMAIL = "julioseborga@gmail.com"

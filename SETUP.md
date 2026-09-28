@@ -435,6 +435,22 @@ Si cambias los términos o la política de privacidad de forma importante, sube
 `TERMS_VERSION` en `src/aula.js`: todo el mundo los vuelve a aceptar en su
 siguiente acción.
 
+### Ajustes de la plataforma
+
+Lo que se configura sin tocar código está en la sección `[vars]` de
+`wrangler.toml` y se lee en `src/ajustes.js`:
+
+| Variable | Para qué |
+| --- | --- |
+| `APP_NAME` | Nombre que se muestra de la plataforma |
+| `CONTACT_EMAIL` | Correo de contacto que aparece en los términos, la política de privacidad y el pie de la app |
+| `MAIL_FROM` | *(Para más adelante)* remitente de los correos de avisos y validaciones; si falta, se usa `CONTACT_EMAIL` |
+
+Para cambiarlos, edita `wrangler.toml` y sube el cambio: se despliegan con la app.
+Las páginas los leen de `/api/config`, así que no hay que tocar el HTML. Lo
+sensible (`PLATFORM_ADMINS` y, cuando llegue el envío de correos, la clave del
+servicio) va siempre como **Secret** en el panel, nunca en `wrangler.toml`.
+
 ### Copia de seguridad
 
 ```
@@ -499,6 +515,7 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `src/api.js` | La API: sesión, puntuaciones y ranking |
 | `src/retos.js` | La API de retos y salas en pareja |
 | `src/aula.js` | La API del aula: perfiles, instituciones, cursos y bancos |
+| `src/ajustes.js` | Ajustes de la plataforma (nombre, correo de contacto, remitente) |
 | `src/concursos.js` | La API de los concursos y de los cuestionarios de curso |
 | `src/preguntas.js` | El banco de preguntas de los concursos |
 | `wrangler.toml` | Nombre, archivos estáticos y enlace a la base de datos |

@@ -1,7 +1,7 @@
 /* ===========================================================
    AXIOMA · API (Cloudflare Workers + D1)
    Rutas:
-     GET  /api/config        → { googleClientId }  (vacío si no está configurado)
+     GET  /api/config        → { googleClientId, appName, contactEmail }  (vacíos si no están configurados)
      GET  /api/me            → { user } o { user:null }
      POST /api/auth/google   → { credential } → verifica el ID token, crea sesión
      POST /api/auth/logout   → borra la sesión
@@ -12,12 +12,13 @@
      /api/events/* y /api/coop/*  → retos y sudoku en pareja, en retos.js
      /api/contests/*              → concursos y cuestionarios, en concursos.js
      /api/profile, /api/orgs/*, /api/courses/*, /api/banks/*, /api/admin/* → instituciones, en aula.js
-   Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET. Binding D1: DB.
+   Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET y las de ajustes.js. Binding D1: DB.
    =========================================================== */
 
 import { handleRetos } from "./retos.js";
 import { handleConcursos } from "./concursos.js";
 import { handleAula } from "./aula.js";
+import { ajustesPublicos } from "./ajustes.js";
 
 var COOKIE="ax_session";
 var SESSION_DAYS=30;
@@ -29,7 +30,7 @@ export async function handleApi(req,env,url){
     if(path==="/config"&&req.method==="GET")
       /* solo se anuncia el inicio de sesión cuando las tres piezas están listas,
          para que el botón nunca aparezca si luego iría a fallar */
-      return json({googleClientId:ready(env)?env.GOOGLE_CLIENT_ID:""});
+      return json(Object.assign({googleClientId:ready(env)?env.GOOGLE_CLIENT_ID:""},ajustesPublicos(env)));
     if(path==="/me"&&req.method==="GET")
       return json({user:await currentUser(req,env)});
     if(path==="/auth/google"&&req.method==="POST")

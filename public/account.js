@@ -23,6 +23,8 @@ function dayNumber(){return Math.floor((Date.now()-Date.UTC(2026,0,1))/86400000)
 function init(){
   api("/api/config").then(function(c){
     cfg=c;
+    var pc=$("pie-contacto");
+    if(pc&&c.contactEmail){pc.querySelector("a").href="mailto:"+c.contactEmail;pc.querySelector("a").title=c.contactEmail;pc.hidden=false;}
     if(!c.googleClientId){cargado=true;avisa();return;}
     $("acct").hidden=false;
     return api("/api/me").then(function(m){cargado=true;setUser(m.user||null);});

@@ -59,6 +59,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `src/api.js` | API: sesión, puntuaciones y rankings (axioma y sudoku) |
 | `src/retos.js` | API de retos y salas en pareja |
 | `src/aula.js` | API del aula: perfiles, instituciones, cursos, bancos y administración |
+| `src/ajustes.js` | Ajustes de la plataforma: nombre, correo de contacto y remitente (variables de `wrangler.toml`) |
 | `src/concursos.js` | API de los concursos y de los cuestionarios de curso |
 | `src/preguntas.js` | Banco de preguntas de los concursos y generador de operaciones (solo en el servidor) |
 | `schema.sql` | Tablas de la base de datos D1 |
