@@ -15,6 +15,7 @@
      /api/guest/*                 → jugadores invitados verificados con código, en invitados.js
      /api/brands/*, /api/orgs/:id/(brand|contests|metrics|participants) → marcas, en marcas.js
      /api/admin/(summary|users…)  → administración de la plataforma, en plataforma.js
+     /api/salas/*                 → salas de juego en vivo (Durable Object), en sala.js
    Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET y las de ajustes.js. Binding D1: DB.
    =========================================================== */
 
@@ -25,6 +26,7 @@ import { ajustesPublicos } from "./ajustes.js";
 import { handleInvitados, esInvitado } from "./invitados.js";
 import { handleMarcas } from "./marcas.js";
 import { handlePlataforma } from "./plataforma.js";
+import { handleSalas } from "./sala.js";
 
 var COOKIE="ax_session";
 var SESSION_DAYS=30;
@@ -51,6 +53,8 @@ export async function handleApi(req,env,url){
       return await sudokuGuarda(req,env);
     if(path==="/sudoku/ranking"&&req.method==="GET")
       return await sudokuRanking(req,env,url);
+    if(/^\/salas(\/|$)/.test(path))
+      return await handleSalas(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(path.indexOf("/guest/")===0)
       return await handleInvitados(req,env,url,path,{json:json,sesion:function(sub){return abreSesion(env,sub);}});
     if(/^\/brands(\/|$)/.test(path)||/^\/orgs\/[A-Z0-9]{6}\/(brand|contests|metrics|participants)$/.test(path))

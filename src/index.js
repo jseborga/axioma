@@ -4,6 +4,8 @@
    archivos estáticos servidos desde la carpeta public.
    =========================================================== */
 import { handleApi } from "./api.js";
+/* salas en vivo: la clase del Durable Object tiene que exportarse desde aquí */
+export { Sala } from "./sala.js";
 
 export default {
   async fetch(request, env){

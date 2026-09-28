@@ -63,12 +63,14 @@ async function resumen(env,json){
     q("SELECT org_id,email,role,created_at FROM org_invites ORDER BY created_at")
   ]);
   var rows=function(i){return r[i].results||[];}, uno=function(i){return rows(i)[0]||{};};
+  var salas={total:0,month:0};
+  try{var sr=await env.DB.prepare("SELECT COUNT(*) AS n,SUM(created_at>?) AS mes FROM salas").bind(now-30*86400000).first(); salas={total:sr.n||0,month:sr.mes||0};}catch(er){}
   var invitados={}, totalInv=0; rows(1).forEach(function(x){invitados[x.verified_by]=x.n;totalInv+=x.n;});
   var orgs={}; rows(2).forEach(function(x){var k=orgs[x.kind]||(orgs[x.kind]={total:0});k.total+=x.n;k[x.status]=x.n;});
   var dias=[],porDia={}; rows(6).forEach(function(x){porDia[x.d]={g:x.goo||0,i:x.inv||0};});
   for(var d=0;d<30;d++){var v=porDia[d]||{g:0,i:0};dias.push({day:new Date((desde+d*86400)*1000).toISOString().slice(0,10),google:v.g,guests:v.i});}
   var inv={}; rows(8).forEach(function(x){(inv[x.org_id]=inv[x.org_id]||[]).push({email:x.email,role:x.role});});
-  return json({users:uno(0).n||0,guests:totalInv,guests_by:invitados,blocked:uno(5).n||0,orgs_by_kind:orgs,
+  return json({rooms:salas,users:uno(0).n||0,guests:totalInv,guests_by:invitados,blocked:uno(5).n||0,orgs_by_kind:orgs,
     contests:uno(3).n||0,open_contests:uno(3).abiertos||0,
     entries:{week:uno(4).semana||0,month:uno(4).mes||0,total:uno(4).total||0},daily:dias,
     orgs:rows(7).map(function(o){return {id:o.id,name:o.name,kind:o.kind,status:o.status,created_at:o.created_at,slug:o.slug||"",

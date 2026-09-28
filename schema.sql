@@ -352,3 +352,34 @@ CREATE TABLE IF NOT EXISTS user_blocks (
   blocked_by TEXT,
   created_at INTEGER NOT NULL
 );
+
+-- ============================================================
+-- The Final Test · salas de juego en vivo
+-- ============================================================
+-- Cada sala vive en un Durable Object; aquí queda su ficha para
+-- listarlas, controlar el acceso y sacar métricas.
+CREATE TABLE IF NOT EXISTS salas (
+  code       TEXT PRIMARY KEY,
+  juego      TEXT NOT NULL,
+  host_id    TEXT NOT NULL REFERENCES users(id),
+  org_id     TEXT,
+  acceso     TEXT NOT NULL,             -- libre | invitados | cuenta
+  titulo     TEXT,
+  premio     TEXT,
+  estado     TEXT NOT NULL,             -- espera | terminada
+  jugadores  INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  ended_at   INTEGER
+);
+CREATE INDEX IF NOT EXISTS salas_host ON salas(host_id, created_at);
+CREATE INDEX IF NOT EXISTS salas_org ON salas(org_id, created_at);
+-- Resultado de cada participante al terminar una partida
+CREATE TABLE IF NOT EXISTS sala_jugadores (
+  code       TEXT NOT NULL,
+  user_id    TEXT NOT NULL,
+  nombre     TEXT,
+  puesto     INTEGER,
+  puntos     INTEGER,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (code, user_id)
+);

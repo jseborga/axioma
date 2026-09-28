@@ -473,7 +473,7 @@ function hint(){
 
 /* ---------- controles ---------- */
 function setMode(m){
-  ["inicio","aula","empresas","day","flash","free","sud","concurso","rapido","reto","pareja"].forEach(function(x){
+  ["inicio","aula","empresas","day","flash","free","sud","concurso","rapido","juegos","reto","pareja"].forEach(function(x){
     $("t-"+x).setAttribute("aria-checked",x===m?"true":"false");
   });
   $("mode-label").textContent=MODOS[m];
@@ -483,9 +483,11 @@ function setMode(m){
   if(window.AxInicio&&m!=="inicio")AxInicio.cerrar();
   if(window.AxAula&&m!=="aula"&&m!=="empresas")AxAula.cerrar();
   if(window.AxMarca&&m!=="marca")AxMarca.cerrar();
-  if(m==="inicio"||m==="aula"||m==="empresas"||m==="marca"){
+  if(window.AxSala&&m!=="juegos"&&m!=="pantalla")AxSala.cerrar();
+  if(m!=="pantalla")document.body.removeAttribute("data-proyector");
+  if(m==="inicio"||m==="aula"||m==="empresas"||m==="marca"||m==="juegos"||m==="pantalla"){
     detiene();
-    document.body.setAttribute("data-game",m==="empresas"?"aula":m);
+    document.body.setAttribute("data-game",m==="empresas"?"aula":m==="pantalla"?"juegos":m);
     document.body.removeAttribute("data-sub");
     $("diff").hidden=true; $("sud-diff").hidden=true;
     $("sud-panel").hidden=true; $("sud-acts").hidden=true;
@@ -493,6 +495,7 @@ function setMode(m){
     if(m==="inicio"&&window.AxInicio)AxInicio.abrir();
     if((m==="aula"||m==="empresas")&&window.AxAula)AxAula.abrir(m);
     if(m==="marca"&&window.AxMarca)AxMarca.abrir();
+    if((m==="juegos"||m==="pantalla")&&window.AxSala)AxSala.abrir();
     window.scrollTo(0,0);
     return;
   }
@@ -543,7 +546,7 @@ function setMode(m){
   newBoard();
   if(window.AxTutorial)AxTutorial.primeraVez();   /* la guía de Axioma, la primera vez que se entra */
 }
-var MODOS={inicio:"Inicio",aula:"Aula",empresas:"Empresas",marca:"Marca",day:"Axioma",flash:"Axioma flash",free:"Axioma libre",sud:"Sudoku",concurso:"Concursos",rapido:"Rápidos",reto:"Retos",pareja:"En pareja"};
+var MODOS={inicio:"Inicio",aula:"Aula",empresas:"Empresas",marca:"Marca",juegos:"Más juegos",pantalla:"Proyector",day:"Axioma",flash:"Axioma flash",free:"Axioma libre",sud:"Sudoku",concurso:"Concursos",rapido:"Rápidos",reto:"Retos",pareja:"En pareja"};
 var menu=$("mode-menu"), mbtn=$("mode-btn");
 function abreMenu(v){
   menu.hidden=!v; mbtn.setAttribute("aria-expanded",v?"true":"false");
@@ -553,7 +556,7 @@ document.addEventListener("click",function(e){
   if(!menu.hidden && !menu.contains(e.target) && e.target!==mbtn) abreMenu(false);
 });
 document.addEventListener("keydown",function(e){ if(e.key==="Escape")abreMenu(false); });
-["inicio","aula","empresas","day","flash","free","sud","concurso","rapido","reto","pareja"].forEach(function(m){
+["inicio","aula","empresas","day","flash","free","sud","concurso","rapido","juegos","reto","pareja"].forEach(function(m){
   $("t-"+m).onclick=function(){abreMenu(false);setMode(m);};
 });
 window.AxApp={setMode:setMode};

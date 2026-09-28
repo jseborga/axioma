@@ -49,6 +49,7 @@
         <p class="menu-cap">Juegos</p>
         <button role="menuitemradio" id="t-sud"   aria-checked="false" type="button"><b>Sudoku</b><small>Cinco niveles y ranking por tiempo</small></button>
         <button role="menuitemradio" id="t-rapido" aria-checked="false" type="button"><b>Juegos rápidos</b><small>Trivia, memoria, cálculo, reflejos… un minuto cada uno</small></button>
+        <button role="menuitemradio" id="t-juegos" aria-checked="false" type="button"><b>Más juegos</b><small>Estrategia, juegos en grupo y en vivo con proyector</small></button>
         <p class="menu-cap">Con amigos</p>
         <button role="menuitemradio" id="t-reto"  aria-checked="false" type="button"><b>Retos</b><small>Concursos con código, premio y penitencia</small></button>
         <button role="menuitemradio" id="t-pareja" aria-checked="false" type="button"><b>En pareja</b><small>Un sudoku a cuatro manos, en tiempo real</small></button>
@@ -146,6 +147,8 @@
 
   <section class="marca" id="marca-panel" hidden aria-live="polite" aria-label="Marca"></section>
 
+  <section class="juegos" id="juegos-panel" hidden aria-live="polite" aria-label="Juegos"></section>
+
   <section class="panel retos" id="retos-panel" hidden aria-live="polite" aria-label="Retos"></section>
 
   <section class="panel retos rapido" id="rapido-panel" hidden aria-live="polite" aria-label="Juegos rápidos"></section>
@@ -234,9 +237,29 @@
 <script src="concursos.js"></script>
 <script src="retos.js"></script>
 <script src="registro.js"></script>
+<script src="juegos/nucleo.js"></script>
+<script src="juegos/gomoku.js"></script>
+<script src="juegos/hex.js"></script>
+<script src="juegos/cuantico.js"></script>
+<script src="juegos/dudo.js"></script>
+<script src="juegos/sexta.js"></script>
+<script src="juegos/verdades.js"></script>
+<script src="juegos/trivia.js"></script>
+<script src="juegos/hype.js"></script>
+<script src="juegos/carrera.js"></script>
+<script src="juegos/sorteo.js"></script>
+<script src="juegos/subasta.js"></script>
+<script src="juegos/paranoia.js"></script>
+<script src="juegos/yonunca.js"></script>
 <script src="invitado.js"></script>
 <script src="aula.js"></script>
 <script src="marca.js"></script>
+<script src="sala.js"></script>
+<script src="juegos/estrategia-ui.js"></script>
+<script src="juegos/grupo-ui.js"></script>
+<script src="juegos/vivo-ui.js"></script>
+<script src="juegos/especial-ui.js"></script>
+<script src="juegos/adultos-ui.js"></script>
 <script src="inicio.js"></script>
 </body>
 </html>

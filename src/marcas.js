@@ -160,8 +160,10 @@ export async function metricasOrg(env,id){
   var tipos={}; filas(3).forEach(function(r){tipos[r.kind]={total:r.n,open:r.abiertos||0};});
   var dias=[],porDia={}; filas(5).forEach(function(r){porDia[r.d]=r.n;});
   for(var d=0;d<30;d++)dias.push({day:new Date(desde+d*86400000).toISOString().slice(0,10),n:porDia[d]||0});
-  var e=uno(4);
-  return {members:miembros,courses:uno(1).n||0,active_courses:uno(1).activos||0,banks:uno(2).bancos||0,questions:uno(2).preguntas||0,
+  var e=uno(4), salas={rooms:0,room_players:0};
+  /* salas de juego en vivo (si ya existen sus tablas) */
+  try{var sr=await env.DB.prepare("SELECT COUNT(*) AS n,SUM(jugadores) AS j FROM salas WHERE org_id=?").bind(id).first(); salas={rooms:sr.n||0,room_players:sr.j||0};}catch(er){}
+  return {rooms:salas.rooms,room_players:salas.room_players,members:miembros,courses:uno(1).n||0,active_courses:uno(1).activos||0,banks:uno(2).bancos||0,questions:uno(2).preguntas||0,
     contests:tipos,registrations:e.inscripciones||0,plays:e.partidas||0,finished:e.terminadas||0,people:e.personas||0,guests:e.invitados||0,
     avg_correct:e.media===null||e.media===undefined?null:Math.round(e.media*10)/10,daily:dias,
     top:filas(6).map(function(c){return {code:c.code,name:c.name,kind:c.kind,state:estado(c,now),registered:c.n,played:c.jugaron||0};}),

@@ -15,6 +15,17 @@ binding = "DB"
 database_name = "axioma"
 database_id = "ad3327ea-8049-4330-8b69-b8081a235045"
 
+# Salas de juego en vivo: un Durable Object por sala mantiene las conexiones
+# (WebSocket) y el estado de la partida. En el plan gratuito solo se admiten
+# con almacenamiento SQLite, de ahí «new_sqlite_classes».
+[[durable_objects.bindings]]
+name = "SALAS"
+class_name = "Sala"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Sala"]
+
 # Ajustes de la plataforma (ver src/ajustes.js). Se cambian aquí y se
 # despliegan con la app (cada despliegue impone estos valores sobre los del panel).
 # Más adelante, para enviar correos y validaciones: MAIL_FROM (remitente)

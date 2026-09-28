@@ -22,6 +22,7 @@ var ICONO={
   sudoku:'<svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm2 2v4h4V5H5zm6 0v4h2V5h-2zm4 0v4h4V5h-4zM5 11v2h4v-2H5zm6 0v2h2v-2h-2zm4 0v2h4v-2h-4zM5 15v4h4v-4H5zm6 0v4h2v-4h-2zm4 0v4h4v-4h-4z"/></svg>',
   empresa:'<svg viewBox="0 0 24 24"><path d="M4 21V5.5L12 3l8 2.5V21h-6v-4h-4v4H4zm3-13v2h2V8H7zm4 0v2h2V8h-2zm4 0v2h2V8h-2zM7 12v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z"/></svg>',
   rapido:'<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
+  juegos:'<svg viewBox="0 0 24 24"><path d="M7 6h10a5 5 0 0 1 4.9 6l-.9 4.4a2.7 2.7 0 0 1-4.6 1.3L14.2 15H9.8l-2.2 2.7a2.7 2.7 0 0 1-4.6-1.3L2.1 12A5 5 0 0 1 7 6zm0 3v1.5H5.5V12H7v1.5h1.5V12H10v-1.5H8.5V9H7zm9.5 0a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2zm-2 2.4a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2z"/></svg>',
   reto:'<svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6H2zm15.5 0c0-2-.7-3.7-1.9-5 .5-.1.9-.1 1.4-.1 3.1 0 5 2.2 5 5.1h-4.5z"/></svg>'
 };
 
@@ -36,7 +37,7 @@ function abrir(){
   panel.innerHTML=
     '<div class="ini-hero"><h2>Aprende, compite y demuéstralo.</h2>'+
     '<p>Cuestionarios de clase con registros para el docente, concursos de trivia con premio y juegos de lógica, en un mismo lugar.</p>'+
-    '<form class="rt-join ini-codigo" id="ini-form"><input id="ini-code" placeholder="Código de curso o concurso" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Entrar</button></form>'+
+    '<form class="rt-join ini-codigo" id="ini-form"><input id="ini-code" placeholder="Código de curso, concurso o sala" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Entrar</button></form>'+
     '<p class="msg" id="ini-msg"></p></div>'+
     '<div class="ini-grid">'+
       tarjeta("aula","aula","Aula","Instituciones, cursos por paralelo, bancos de preguntas y cuestionarios de parcial con registros y Excel.",'<span id="ini-aula">'+(u&&!u.guest?"Tus cursos…":"Para universidades e institutos")+'</span>',"grande")+
@@ -50,7 +51,8 @@ function abrir(){
       tarjeta("rapido","rapido","Juegos rápidos","Trivia, memoria, cálculo, reflejos y del 1 al 25.")+
     '</div>'+
     '<h4 class="ini-cap">Con amigos</h4>'+
-    '<div class="ini-grid ini-dos">'+
+    '<div class="ini-grid">'+
+      tarjeta("juegos","juegos","Más juegos","Gomoku, Hex, Dudo, trivia en vivo con proyector, sorteos, subastas y más.")+
       tarjeta("reto","reto","Retos","Concursos con código, premio para el primero y penitencia para el último.")+
       tarjeta("pareja","sudoku","En pareja","Un sudoku a cuatro manos, cada uno desde su móvil.")+
     '</div>';
@@ -61,11 +63,12 @@ function abrir(){
     var c=$("ini-code").value.trim().toUpperCase(), msg=$("ini-msg");
     if(c.length!==6){msg.className="msg bad";msg.textContent="Los códigos tienen seis caracteres.";return;}
     msg.className="msg"; msg.textContent="Buscando…";
-    /* primero curso, luego concurso */
+    /* primero curso, luego concurso y por último sala de juego */
     get("/api/courses/"+c).then(function(){ if(window.AxAula){ir("aula");AxAula.curso(c);} })
       .catch(function(){ return get("/api/contests/"+c).then(function(){ir("concurso");if(window.AxConcursos)AxConcursos.ficha(c);},function(er){
         if(er&&er.error==="restricted"){ir("concurso");if(window.AxConcursos)AxConcursos.ficha(c);return;}
-        msg.className="msg bad"; msg.textContent="No hay ningún curso ni concurso con ese código."; }); });
+        return get("/api/salas/"+c).then(function(){ir("juegos");if(window.AxSala)AxSala.entra(c,false);},function(){
+          msg.className="msg bad"; msg.textContent="No hay ningún curso, concurso ni sala con ese código."; }); }); });
   };
   get("/api/contests").then(function(r){
     var n=r.open.filter(function(c){return c.state==="abierto";}).length;

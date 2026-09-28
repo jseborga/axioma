@@ -817,7 +817,8 @@ function tabMetricas(o){
       kpi(m.people,pl(m.people,"persona","personas"),"participaron en algo")+kpi(m.guests,pl(m.guests,"invitado","invitados"),"sin cuenta, verificados")+
       kpi(m.plays,pl(m.plays,"partida","partidas"),m.finished+pl(m.finished," terminada"," terminadas"))+kpi(m.avg_correct===null?"—":m.avg_correct,"aciertos de media","por partida")+
       kpi(conv.total,pl(conv.total,"convocatoria","convocatorias"),conv.open+pl(conv.open," abierta"," abiertas"))+(academica(o.kind)?kpi(cues.total,pl(cues.total,"cuestionario","cuestionarios"),cues.open+pl(cues.open," abierto"," abiertos")):"")+
-      kpi(m.marketing,pl(m.marketing,"acepta contacto","aceptan contacto"),"de "+m.consents+pl(m.consents," que respondió"," que respondieron"))+kpi(m.questions,pl(m.questions,"pregunta","preguntas"),m.banks+pl(m.banks," banco"," bancos"))+'</div>'+
+      kpi(m.marketing,pl(m.marketing,"acepta contacto","aceptan contacto"),"de "+m.consents+pl(m.consents," que respondió"," que respondieron"))+kpi(m.questions,pl(m.questions,"pregunta","preguntas"),m.banks+pl(m.banks," banco"," bancos"))+
+      (m.rooms?kpi(m.rooms,pl(m.rooms,"sala de juego","salas de juego"),(m.room_players||0)+" participaciones"):"")+'</div>'+
       barras("Inscripciones por día",m.daily,function(d){return d.n;});
     if(m.top.length){
       h+='<h4>Con más participación</h4><div class="tabla-wrap"><table class="tabla"><thead><tr><th>Convocatoria</th><th>Tipo</th><th>Estado</th><th>Inscritos</th><th>Jugaron</th></tr></thead><tbody>'+
@@ -914,7 +915,8 @@ function platResumen(t,r){
       'Cambia VERIFY_MODE a "real" cuando conectes el servicio de SMS o correo.</p>':'')+
     '<div class="mt-kpis">'+kpi(r.users,pl(r.users,"cuenta de Google","cuentas de Google"))+kpi(r.guests,pl(r.guests,"invitado","invitados"),(r.guests_by.prueba||0)+" con código de prueba")+
       kpi(r.orgs.length,pl(r.orgs.length,"institución","instituciones"),pend?pend+pl(pend," pendiente"," pendientes"):"")+kpi(r.open_contests,pl(r.open_contests,"abierta ahora","abiertas ahora"),"de "+r.contests+" en total")+
-      kpi(r.entries.week,pl(r.entries.week,"inscripción","inscripciones"),"últimos 7 días")+kpi(r.entries.month,pl(r.entries.month,"inscripción","inscripciones"),"últimos 30 días")+kpi(r.blocked,pl(r.blocked,"bloqueado","bloqueados"))+'</div>'+
+      kpi(r.entries.week,pl(r.entries.week,"inscripción","inscripciones"),"últimos 7 días")+kpi(r.entries.month,pl(r.entries.month,"inscripción","inscripciones"),"últimos 30 días")+kpi(r.blocked,pl(r.blocked,"bloqueado","bloqueados"))+
+      (r.rooms?kpi(r.rooms.month,pl(r.rooms.month,"sala de juego","salas de juego"),"últimos 30 días · "+r.rooms.total+" en total"):"")+'</div>'+
     '<p class="fine">Por tipo: '+esc(porTipo)+'.</p>'+
     barras("Usuarios nuevos por día",r.daily,function(d){return d.google+d.guests;},function(d){return (d.google+d.guests)+" ("+d.google+" Google, "+d.guests+" invitados)";});
 }

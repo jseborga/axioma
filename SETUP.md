@@ -459,6 +459,39 @@ WHERE cc.org_id='ID' AND cc.marketing=1;
 SELECT u.name, u.email, b.reason, datetime(b.created_at/1000,'unixepoch') FROM user_blocks b JOIN users u ON u.id=b.user_id;
 ```
 
+### Añadir las tablas de salas de juego
+
+**Más juegos** ([JUEGOS.md](JUEGOS.md)) usa dos tablas más, `salas` y
+`sala_jugadores`, que están al final de `schema.sql`. Si prefieres pegarlas en la
+consola de D1 (**Workers & Pages → D1 → axioma → Console**), son estas (se pueden
+ejecutar las veces que haga falta):
+
+```sql
+CREATE TABLE IF NOT EXISTS salas (code TEXT PRIMARY KEY, juego TEXT NOT NULL, host_id TEXT NOT NULL REFERENCES users(id), org_id TEXT, acceso TEXT NOT NULL, titulo TEXT, premio TEXT, estado TEXT NOT NULL, jugadores INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, ended_at INTEGER);
+CREATE INDEX IF NOT EXISTS salas_host ON salas(host_id, created_at);
+CREATE INDEX IF NOT EXISTS salas_org ON salas(org_id, created_at);
+CREATE TABLE IF NOT EXISTS sala_jugadores (code TEXT NOT NULL, user_id TEXT NOT NULL, nombre TEXT, puesto INTEGER, puntos INTEGER, created_at INTEGER NOT NULL, PRIMARY KEY (code, user_id));
+```
+
+Las partidas en sí viven en un **Durable Object** (`Sala`). No hay que crearlo a
+mano: `wrangler.toml` lo declara con su migración (`new_sqlite_classes`) y
+Cloudflare lo crea al desplegar. Funciona en el plan gratuito. Para eventos
+grandes y frecuentes conviene el plan Workers Paid (ver [JUEGOS.md](JUEGOS.md)).
+Hasta que existan las tablas, la sección avisa de que faltan y el resto de la app
+sigue igual.
+
+Consultas útiles:
+
+```sql
+-- salas por juego en los últimos 30 días
+SELECT juego, COUNT(*) AS salas, SUM(jugadores) AS jugadores FROM salas
+WHERE created_at > (strftime('%s','now')-30*86400)*1000 GROUP BY juego ORDER BY salas DESC;
+
+-- ganadores de los sorteos de una institución
+SELECT s.code, s.titulo, s.premio, j.nombre, j.puesto FROM salas s JOIN sala_jugadores j ON j.code=s.code
+WHERE s.juego='sorteo' AND s.org_id='ID' AND j.puesto IS NOT NULL ORDER BY s.created_at DESC, j.puesto;
+```
+
 ### Ajustes de la plataforma
 
 Lo que se configura sin tocar código está en la sección `[vars]` de
@@ -546,5 +579,6 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `src/ajustes.js` | Ajustes de la plataforma (nombre, correo de contacto, remitente, verificación) |
 | `src/concursos.js` | La API de los concursos y de los cuestionarios de curso |
 | `src/preguntas.js` | El banco de preguntas de los concursos |
+| `src/sala.js`, `src/juegos.js` | Las salas de juego en vivo (Durable Object) y las reglas que aplica |
 | `wrangler.toml` | Nombre, archivos estáticos y enlace a la base de datos |
 | `schema.sql` | Tablas de la base D1 |
