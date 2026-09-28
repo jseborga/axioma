@@ -8,6 +8,7 @@
 var S=window.AxSala, J=window.AxJuegos; if(!S||!J)return;
 var LET=["A","B","C","D","E","F"], FIG=["▲","◆","●","■","★","✚"];
 function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function reloj(h){return h?'<span class="jg-reloj" data-hasta="'+h+'"></span>':'';}
 function barra(h,total){return h?'<div class="jg-barra"><i data-hasta="'+h+'" data-total="'+total+'"></i></div>':'';}
 function patrocinio(ctx,g,grande){
@@ -27,6 +28,13 @@ function opciones(g,ctx,interactivo,mia){
     return '<button type="button" class="'+cls+'" data-i="'+i+'"'+(interactivo?'':' disabled')+'><i>'+FIG[i]+'</i><span>'+ctx.esc(t)+'</span>'+
       (g.reparto?'<em>'+g.reparto[i]+'</em>':'')+'</button>';}).join("")+'</div>';
 }
+/* áreas del banco general (si se usa un banco de la institución, no cuentan) */
+function areasTrivia(o){
+  if(!window.AxAreas)return "";
+  setTimeout(function(){var el=document.getElementById("tv-areas"); if(el)AxAreas.pinta(el,(o&&o.areas)||[]);},0);
+  return AxAreas.html("tv-areas");
+}
+function dato(g,grande){return g.dato?'<div class="vv-dato'+(grande?' grande':'')+'"><b>💡 ¿Sabías que…?</b> '+esc(g.dato)+'</div>':'';}
 S.registra("trivia",{
   icono:"🏆",
   desc:"Estilo concurso de televisión: todos responden a la vez mirando la pantalla grande. Puntúa acertar y ser rápido.",
@@ -35,15 +43,16 @@ S.registra("trivia",{
   opciones:function(o){return '<div class="rt-2"><label>Preguntas<select name="n"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option></select></label>'+
     '<label>Segundos por pregunta<select name="segundos"><option value="10">10</option><option value="15">15</option><option value="20" selected>20</option><option value="30">30</option></select></label></div>'+
     '<label>Dificultad (preguntas generales)<select name="nivel"><option value="1">Fácil</option><option value="2">Media</option><option value="3">Difícil</option><option value="4" selected>Progresiva</option></select></label>'+
-    '<label>Mensaje del patrocinador (opcional)<input name="patrocinio" maxlength="140" placeholder="Visítanos en el stand 12 · 2×1 hoy"></label>';},
+    '<label>Mensaje del patrocinador (opcional)<input name="patrocinio" maxlength="140" placeholder="Visítanos en el stand 12 · 2×1 hoy"></label>'+
+    areasTrivia(o);},
   leeOpciones:function(f){return {n:+f.querySelector("[name=n]").value,segundos:+f.querySelector("[name=segundos]").value,nivel:+f.querySelector("[name=nivel]").value,
-    patrocinio:f.querySelector("[name=patrocinio]").value};},
+    patrocinio:f.querySelector("[name=patrocinio]").value,areas:window.AxAreas?AxAreas.lee(f.querySelector("#tv-areas")):[]};},
   jugador:function(el,g,ctx){
     var h, tot=ctx.sala.opciones.segundos*1000;
     if(g.host){ /* quien presenta: control del ritmo */
       h='<div class="jg-turno mio"><span>Presentas · '+(g.fase==="intro"?'empieza enseguida':g.fase==="pregunta"?'pregunta '+(g.i+1)+' de '+g.n:g.fase==="resultado"?'resultados de la '+(g.i+1):'')+'</span>'+reloj(g.hasta)+'</div>'+
         (g.q?'<p class="vv-q">'+ctx.esc(g.q)+'</p>':'')+(g.fase==="pregunta"?'<p class="fine">'+g.respondidas+' de '+g.total+' han respondido</p>':'')+
-        (g.fase==="resultado"?opciones(g,ctx,false)+topHtml(g,ctx):'')+
+        (g.fase==="resultado"?opciones(g,ctx,false)+dato(g)+topHtml(g,ctx):'')+
         '<div class="actions"><button class="primary" id="vv-sig">Siguiente</button></div><p class="fine">Abre «Abrir en el proyector» en la pantalla grande para que todos lo vean.</p>';
       el.innerHTML=h; $("vv-sig").onclick=function(){this.disabled=true;ctx.envia({tipo:"siguiente"});}; return;
     }
@@ -58,7 +67,7 @@ S.registra("trivia",{
       var r=m.resp, bien=r&&r.i===g.c;
       h='<div class="vv-res '+(bien?'bien':'mal')+'"><b>'+(r?(bien?'¡Correcto! +'+r.pts:'Incorrecto'):'Sin respuesta')+'</b>'+
         '<span>'+(m.puntos||0)+' puntos'+(m.pos?' · puesto '+m.pos+' de '+g.total:'')+'</span></div>'+
-        '<p class="vv-q">'+ctx.esc(g.q)+'</p>'+opciones(g,ctx,false,r?r.i:null)+topHtml(g,ctx)+patrocinio(ctx,g);
+        '<p class="vv-q">'+ctx.esc(g.q)+'</p>'+opciones(g,ctx,false,r?r.i:null)+dato(g)+topHtml(g,ctx)+patrocinio(ctx,g);
     }else h='';
     el.innerHTML=h;
     if(g.fase==="pregunta"&&!m.resp)el.querySelectorAll("[data-i]").forEach(function(b){b.onclick=function(){
@@ -74,7 +83,7 @@ S.registra("trivia",{
     if(g.fase==="intro")h='<p class="vv-grande">¡Atentos a la primera pregunta!</p><p class="vv-cuenta">'+reloj(g.hasta)+'</p>'+patrocinio(ctx,g,true);
     else if(g.fase==="pregunta")h='<div class="jg-turno"><span>Pregunta '+(g.i+1)+' de '+g.n+(g.tema?' · '+ctx.esc(g.tema):'')+'</span><span>'+g.respondidas+' / '+g.total+' · '+reloj(g.hasta)+'</span></div>'+
       barra(g.hasta,tot)+'<p class="vv-q grande">'+ctx.esc(g.q)+'</p>'+opciones(g,ctx,false);
-    else if(g.fase==="resultado")h='<p class="vv-q">'+ctx.esc(g.q)+'</p>'+opciones(g,ctx,false)+'<div class="vv-dos">'+topHtml(g,ctx)+patrocinio(ctx,g,true)+'</div>';
+    else if(g.fase==="resultado")h='<p class="vv-q">'+ctx.esc(g.q)+'</p>'+opciones(g,ctx,false)+dato(g,true)+'<div class="vv-dos">'+topHtml(g,ctx)+patrocinio(ctx,g,true)+'</div>';
     else h='';
     el.innerHTML=h;
   }

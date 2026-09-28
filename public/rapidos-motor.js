@@ -214,10 +214,15 @@ var PENITENCIAS=[
 ];
 
 /* ---------- generación de una ronda ---------- */
-function genera(juego,seed){
+/* vistas (opcional, solo en práctica): {pregunta: cuándo se vio}; se
+   prefieren las no vistas y, si no quedan, las vistas hace más tiempo */
+function genera(juego,seed,vistas){
   var r=rng(seed), i;
   if(juego==="trivia"){
-    var idx=baraja(BANCO.map(function(_,j){return j;}),r).slice(0,10);
+    var idx=baraja(BANCO.map(function(_,j){return j;}),r);
+    if(vistas)idx=idx.filter(function(j){return !vistas[BANCO[j][0]];})
+      .concat(idx.filter(function(j){return vistas[BANCO[j][0]];}).sort(function(a,b){return vistas[BANCO[a][0]]-vistas[BANCO[b][0]];}));
+    idx=idx.slice(0,10);
     return {p:idx.map(function(j){
       var q=BANCO[j], orden=baraja([0,1,2,3],r);
       return {q:q[0],o:orden.map(function(k){return q[1][k];}),c:orden.indexOf(0)};

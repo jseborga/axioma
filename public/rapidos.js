@@ -23,6 +23,19 @@ function cab(juego,sub){var j=R.JUEGOS[juego];
 function seg(ms){return (ms/1000).toFixed(1).replace(".",",")+" s";}
 
 /* ---------- práctica ---------- */
+/* trivia de práctica: el teléfono recuerda qué preguntas salieron para no repetirlas en 60 días */
+var VISTAS_K="tft_trivia_vistas", VISTAS_MS=60*86400000;
+function vistasTrivia(){
+  var v={}, ahora=Date.now();
+  try{v=JSON.parse(localStorage.getItem(VISTAS_K)||"{}")||{};}catch(e){v={};}
+  Object.keys(v).forEach(function(k){if(!(ahora-v[k]<VISTAS_MS))delete v[k];});
+  return v;
+}
+function anotaVistas(ronda){
+  var v=vistasTrivia(), ahora=Date.now();
+  (ronda.p||[]).forEach(function(q){v[q.q]=ahora;});
+  try{localStorage.setItem(VISTAS_K,JSON.stringify(v));}catch(e){}
+}
 function practica(){
   limpia();
   var h='<h3>Juegos rápidos</h3>'+
@@ -51,7 +64,7 @@ function intro(juego,cfg){
     this.disabled=true;
     if(cfg){ cfg.pedirDatos().then(function(d){if(d)arranca(juego,d,cfg);})
       .catch(function(e){$("rp-go").disabled=false;$("rp-msg").className="msg bad";$("rp-msg").textContent=(cfg.error?cfg.error(e):"No se pudo cargar la ronda.");}); }
-    else arranca(juego,R.genera(juego,(Math.random()*4294967296)>>>0),null);
+    else{var ronda=R.genera(juego,(Math.random()*4294967296)>>>0,juego==="trivia"?vistasTrivia():null); if(juego==="trivia")anotaVistas(ronda); arranca(juego,ronda,null);}
   };
 }
 function arranca(juego,datos,cfg){

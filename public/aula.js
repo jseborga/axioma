@@ -492,6 +492,7 @@ function camposPreguntas(bancos,errDef){
     '<div class="rt-2"><label>Tema<select id="q-tema"><option value="">Todos</option></select></label>'+
     '<label>Dificultad<select id="q-level"></select></label></div>'+
     '<p class="fine" id="q-disp"></p>'+
+    (window.AxAreas?'<div id="q-areas-b" hidden>'+AxAreas.html("q-areas")+'</div>':'')+
     '<div class="rt-2"><label>Número de preguntas<input type="number" id="q-n" min="1" max="100" value="10"></label>'+
     '<label>Tiempo por pregunta<select id="q-seg"><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="30" selected>30 s</option><option value="45">45 s</option><option value="60">60 s</option></select></label></div>'+
     '<label>Errores admitidos<select id="q-err">'+errs.map(function(e){return '<option value="'+e[0]+'"'+(e[0]===String(errDef)?' selected':'')+'>'+e[1]+'</option>';}).join("")+'</select></label>'+
@@ -520,6 +521,7 @@ function ligaPreguntas(){
   function cargaBanco(){
     var b=+$("q-bank").value; info=null; $("q-tema").innerHTML='<option value="">Todos</option>';
     $("q-tema").disabled=!b;
+    if($("q-areas-b")){$("q-areas-b").hidden=!!b; if(!b&&!$("q-areas").querySelector("[data-area]"))AxAreas.pinta($("q-areas"),[]);}
     if(!b){niveles();return;}
     api("/api/banks/"+b).then(function(r){
       info=r; var temas={};
@@ -544,7 +546,7 @@ function ligaPreguntas(){
     if(!b&&[10,20,30,50,100].indexOf(n)<0){n=[10,20,30,50,100].filter(function(x){return x>=n;})[0]||100;}
     var err=+$("q-err").value; if(err===100)err=Math.max(n,10);
     return {bank_id:b||null,topic:$("q-tema").value,level:+$("q-level").value,max_questions:n,max_errors:err,
-            seconds_per_q:+$("q-seg").value,math:!b,starts_at:ini,ends_at:fin};
+            seconds_per_q:+$("q-seg").value,math:!b,starts_at:ini,ends_at:fin,areas:!b&&window.AxAreas?AxAreas.lee($("q-areas")):[]};
   };
 }
 

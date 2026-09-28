@@ -30,7 +30,8 @@ J.registra("trivia",{
   normaliza:function(o,E){
     var n=parseInt(o.n,10), s=parseInt(o.segundos,10), nv=parseInt(o.nivel,10);
     var op={n:[5,10,15,20].indexOf(n)>=0?n:10,segundos:[10,15,20,30].indexOf(s)>=0?s:20,nivel:[1,2,3,4].indexOf(nv)>=0?nv:4,
-      patrocinio:J.limpia(o.patrocinio,140)};
+      patrocinio:J.limpia(o.patrocinio,140),
+      areas:(Array.isArray(o.areas)?o.areas:[]).map(String).filter(function(a){return /^[a-z]{3}$/.test(a);}).slice(0,30)};
     if(o.banco)op.banco=parseInt(o.banco,10)||null;
     return op;
   },
@@ -41,7 +42,7 @@ J.registra("trivia",{
       qs=J.baraja(banco.slice(),r).slice(0,o.n).map(function(x){
         var idx=J.baraja(x.o.map(function(_,i){return i;}),r);
         return {q:x.q,o:idx.map(function(i){return x.o[i];}),c:idx.indexOf(x.c),tema:x.tema||""};});
-    }else qs=J.preguntasGenerales?J.preguntasGenerales(o.n,o.nivel,Math.floor(r()*4294967295)):[];
+    }else qs=J.preguntasGenerales?J.preguntasGenerales(o.n,o.nivel,Math.floor(r()*4294967295),o.areas,E.extra&&E.extra.evita):[];
     E.g={qs:qs,idx:-1,fase:"intro",hasta:ahora+INTRO_MS,puntos:{},aciertos:{},resp:{},fin:false,orden:[],pos:{}};
     jugadores(E).forEach(function(j){E.g.puntos[j.id]=0;E.g.aciertos[j.id]=0;});
   },
@@ -79,7 +80,7 @@ J.registra("trivia",{
       respondidas:Object.keys(g.resp).length,total:jugadores(E).length,patrocinio:E.opciones.patrocinio||""};
     if(q&&(g.fase==="pregunta"||g.fase==="resultado")){v.q=q.q;v.o=q.o;v.tema=q.tema;}
     if(g.fase==="resultado"||g.fin){
-      if(q){v.c=q.c;v.reparto=g.reparto;}
+      if(q){v.c=q.c;v.reparto=g.reparto;if(q.dato)v.dato=q.dato;}
       v.top=g.orden.slice(0,5).map(function(id){return {id:id,puntos:g.puntos[id]};});
       v.nombres={}; v.top.forEach(function(x){v.nombres[x.id]=J.nombre(E,x.id);});
     }
@@ -88,6 +89,8 @@ J.registra("trivia",{
     }
     return v;
   },
+  /* preguntas del banco general que ya salieron (para no repetirlas en 60 días) */
+  usadas:function(E){var g=E.g; return g.qs.slice(0,g.idx+1).map(function(q){return q.id;}).filter(Boolean);},
   resultado:function(E){var g=E.g;
     return J.puestos(Object.keys(g.puntos).map(function(id){return {id:id,puntos:g.puntos[id],unidad:"pts",nota:g.aciertos[id]+" aciertos"};}),false);}
 });

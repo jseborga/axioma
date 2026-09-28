@@ -1354,3 +1354,21 @@ body:not([data-proyector]) .vv-patro:not(.grande){background:var(--inset);color:
 .jg-proy .yn-vidas li{font-size:clamp(14px,1.5vw,30px)}
 .pa-nombres button{padding:12px 18px;border-radius:999px;background:var(--inset);color:var(--ink);font-weight:600;font-size:16px;border:0;min-width:5.5em}
 .pa-nombres button:active{background:var(--accent-tint)}
+
+/* ---------- áreas temáticas y «¿Sabías que…?» ---------- */
+.ar-box{border:1px solid var(--hair);border-radius:var(--r-el);padding:10px 12px 4px;margin:4px 0 10px;min-width:0}
+.ar-box legend{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);padding:0 6px}
+.ar-grid{display:flex;flex-wrap:wrap;gap:6px}
+.ar-chip{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:0!important;margin:0!important;text-transform:none!important;letter-spacing:0!important;cursor:pointer}
+.ar-chip input{position:absolute;opacity:0;width:1px;height:1px}
+.ar-chip span{padding:7px 12px;border-radius:999px;background:var(--inset);color:var(--ink);font-size:14px;font-weight:500;border:1.5px solid transparent;transition:background .15s}
+.ar-chip small{color:var(--ink-3);font-size:11.5px;margin-left:2px}
+.ar-chip input:checked+span{background:var(--accent-tint);border-color:var(--accent);color:var(--accent);font-weight:700}
+.ar-chip input:checked+span small{color:var(--accent)}
+.ar-chip input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.ar-nota{margin:8px 0 6px!important}
+.cq-dato{display:block;margin-top:4px;font-size:13px;font-style:normal;color:var(--ink-2);background:var(--inset);border-radius:10px;padding:6px 9px}
+.vv-dato{background:var(--accent-tint);border-radius:var(--r-el);padding:10px 12px;margin:0 0 10px;font-size:14.5px;line-height:1.4;color:var(--ink)}
+.vv-dato b{color:var(--accent);margin-right:4px}
+.jg-proy .vv-dato.grande{font-size:clamp(16px,1.8vw,36px);padding:1.2vh 1.4vw}
+.ar-chip input:disabled+span{opacity:.4;cursor:default}

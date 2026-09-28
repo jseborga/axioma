@@ -14,7 +14,7 @@
      POST /api/contests/:code/answer       { idx, o } → acierto o fallo
      POST /api/contests/:code/close        quien organiza la cierra ya
    =========================================================== */
-import { secuencia, secuenciaPool, semilla, CATEGORIAS } from "./preguntas.js";
+import { secuencia, secuenciaPool, semilla, CATEGORIAS, fichas, materializa, limpiaAreas, disponibles, hacenFalta, cuentaAreas } from "./preguntas.js";
 import { perfil, puedePremio, rolOrg, accesoCurso, puedeUsarBanco, esInvitado } from "./aula.js";
 
 var GRACIA=2000;               /* ms de margen por la red al responder */
@@ -27,6 +27,7 @@ export async function handleConcursos(req,env,url,path,ctx){
   if(!env.DB)return json({error:"not_configured"},null,503);
   try{
     if(path==="/contests"&&req.method==="GET")return await lista(env,user,json);
+    if(path==="/contests/areas"&&req.method==="GET")return json({areas:cuentaAreas()});
     if((m=path.match(/^\/contests\/([A-Z0-9]{6})$/))&&req.method==="GET")return await ficha(env,user,m[1],json);
     if(!user)return json({error:"unauthorized"},null,401);
     if(path==="/contests"&&req.method==="POST")return await crea(req,env,user,json);
@@ -55,6 +56,8 @@ async function carga(env,code){
   if(!c.kind)c.kind="concurso";
   if(!c.audience)c.audience=c.public?"publico":"enlace";
   c.poolList=c.pool?JSON.parse(c.pool):null;
+  /* áreas temáticas elegidas (tabla opcional) */
+  try{var ar=await env.DB.prepare("SELECT areas FROM contest_areas WHERE code=?").bind(code).first(); c.areas=ar?JSON.parse(ar.areas):[];}catch(x){c.areas=[];}
   /* ¿admite jugadores invitados? (tabla opcional: bases anteriores a empresas no la tienen) */
   try{var op=await env.DB.prepare("SELECT guests FROM contest_options WHERE code=?").bind(code).first();c.guests=!!(op&&op.guests);}catch(e){c.guests=false;}
   return c;
@@ -74,9 +77,33 @@ async function accede(env,c,user){
   return true;
 }
 function entrada(env,code,uid){return env.DB.prepare("SELECT * FROM contest_entries WHERE code=? AND user_id=?").bind(code,uid).first();}
-function preguntas(c,uid){
+/* las preguntas de un participante: de su secuencia fijada (fichas) o,
+   si empezó antes de que existieran, la secuencia original de siempre */
+function preguntas(c,uid,f){
   if(c.poolList)return secuenciaPool(semilla(c.seed+":"+uid),c.poolList,c.max_questions,c.level===4);
+  if(f)return materializa(c.seed+":"+uid,f);
   return secuencia(semilla(c.seed+":"+uid),c.level,!!c.math,c.max_questions);
+}
+var VISTAS_MS=60*86400000;          /* no repetir durante 60 días */
+async function leeFichas(env,c,uid){
+  if(c.poolList)return null;
+  try{var r=await env.DB.prepare("SELECT qids FROM contest_seq WHERE code=? AND user_id=?").bind(c.code,uid).first(); return r?JSON.parse(r.qids):null;}
+  catch(x){return null;}
+}
+/* al empezar: se fija la secuencia evitando lo que vio en los últimos 60 días */
+async function fijaFichas(env,c,uid,now){
+  if(c.poolList)return null;
+  try{
+    var v=await env.DB.prepare("SELECT qid FROM preguntas_vistas WHERE quien=? AND visto_at>? ORDER BY visto_at").bind(uid,now-VISTAS_MS).all();
+    var f=fichas(semilla(c.seed+":"+uid),c.level,!!c.math,c.max_questions,{areas:c.areas,evita:(v.results||[]).map(function(x){return x.qid;})});
+    await env.DB.prepare("INSERT OR IGNORE INTO contest_seq(code,user_id,qids,created_at) VALUES(?,?,?,?)").bind(c.code,uid,JSON.stringify(f),now).run();
+    return await leeFichas(env,c,uid);
+  }catch(x){return null;}                    /* sin las tablas nuevas: como antes */
+}
+function marcaVista(env,uid,q,now){
+  if(!q||!q.id||q.cat==="mat"||typeof q.id!=="string")return null;
+  return env.DB.prepare("INSERT INTO preguntas_vistas(quien,qid,visto_at) VALUES(?,?,?) ON CONFLICT(quien,qid) DO UPDATE SET visto_at=excluded.visto_at")
+    .bind(uid,q.id,now);
 }
 function categoria(q){return CATEGORIAS[q.cat]||q.tema||"";}
 function publico(c,now){
@@ -84,7 +111,8 @@ function publico(c,now){
           max_questions:c.max_questions,seconds_per_q:c.seconds_per_q,math:!!c.math,public:!!c.public,
           starts_at:c.starts_at,ends_at:c.ends_at,state:estado(c,now),
           kind:c.kind||"concurso",audience:c.audience||(c.public?"publico":"enlace"),partial:c.partial||null,
-          course_code:c.course_code||null,org_id:c.org_id||null,from_bank:!!c.pool,guests:!!c.guests};
+          course_code:c.course_code||null,org_id:c.org_id||null,from_bank:!!c.pool,guests:!!c.guests,
+          areas:(c.areas||[]).map(function(k){return CATEGORIAS[k]||k;})};
 }
 function resumen(e){
   if(!e)return null;
@@ -177,6 +205,12 @@ async function crea(req,env,user,json){
     if(maxQ>pool.length)maxQ=pool.length;
   }
 
+  /* áreas temáticas del banco general */
+  var areas=conBanco?[]:limpiaAreas(b.areas);
+  if(areas.length){
+    var hay=disponibles(areas), falta=hacenFalta(maxQ,b.math!==false);
+    if(hay<falta)return json({error:"few_questions",available:hay,needed:falta},null,400);
+  }
   var activos=await env.DB.prepare("SELECT COUNT(*) AS n FROM contests WHERE owner_id=? AND ends_at>?").bind(user.id,now).first();
   if(activos.n>=MAX_ABIERTOS*3)return json({error:"too_many"},null,400);
   var code,intentos=0,choque;
@@ -190,8 +224,9 @@ async function crea(req,env,user,json){
   if(kind!=="concurso"||aud==="org"||aud==="curso"||conBanco||partial||orgId)ops.push(env.DB.prepare(
     "INSERT INTO contest_scope(code,kind,audience,org_id,course_code,bank_id,partial,pool,created_at) VALUES(?,?,?,?,?,?,?,?,?)"
   ).bind(code,kind,aud,orgId,curso,conBanco?bankId:null,partial||null,pool?JSON.stringify(pool):null,now));
+  if(areas.length)ops.push(env.DB.prepare("INSERT INTO contest_areas(code,areas) VALUES(?,?)").bind(code,JSON.stringify(areas)));
   await env.DB.batch(ops);
-  return json({ok:true,code:code,max_questions:maxQ,guests:invitados});
+  return json({ok:true,code:code,max_questions:maxQ,guests:invitados,areas:areas});
 }
 
 /* ---------- ficha ---------- */
@@ -253,10 +288,10 @@ async function ficha(env,user,code,json){
 }
 async function revision(env,c,uid){
   var resp=await env.DB.prepare("SELECT idx,chosen,ok FROM contest_answers WHERE code=? AND user_id=? ORDER BY idx").bind(c.code,uid).all();
-  var qs=preguntas(c,uid);
+  var qs=preguntas(c,uid,await leeFichas(env,c,uid));
   return (resp.results||[]).map(function(a){
     var q=qs[a.idx];
-    return {n:a.idx+1,cat:categoria(q),q:q.q,chosen:a.chosen>=0?q.o[a.chosen]:null,answer:q.o[q.c],ok:!!a.ok};
+    return {n:a.idx+1,cat:categoria(q),q:q.q,chosen:a.chosen>=0?q.o[a.chosen]:null,answer:q.o[q.c],ok:!!a.ok,dato:q.dato||""};
   });
 }
 
@@ -320,16 +355,20 @@ async function siguiente(env,user,code,json){
       .bind(now,code,user.id).run();
     return json(fin(await entrada(env,code,user.id)));
   }
+  var f=await leeFichas(env,c,user.id);
   if(!e.started_at){
+    if(!f)f=await fijaFichas(env,c,user.id,now);
     await env.DB.prepare("UPDATE contest_entries SET started_at=? WHERE code=? AND user_id=? AND started_at IS NULL").bind(now,code,user.id).run();
   }
-  var lim=c.seconds_per_q*1000, qs=preguntas(c,user.id);
+  var lim=c.seconds_per_q*1000, qs=preguntas(c,user.id,f);
   if(e.q_sent_at){
     var pasado=now-e.q_sent_at;
     if(pasado<=lim+GRACIA)return json(preguntaPublica(c,e,qs[e.idx],lim-pasado));   /* recarga: misma pregunta, mismo reloj */
     /* se quedó sin responder: cuenta como fallo por tiempo */
+    var perdida=qs[e.idx];
     e=await registra(env,c,e,-1,false,lim,now);
     if(!e)e=await entrada(env,code,user.id);
+    var mv=marcaVista(env,user.id,perdida,now); if(mv)try{await mv.run();}catch(x){}
     if(e.finished_at)return json(fin(e));
   }
   var r=await env.DB.prepare(
@@ -349,10 +388,11 @@ async function responde(req,env,user,code,json){
   var b=await req.json().catch(function(){return {}});
   if(!e.q_sent_at||parseInt(b.idx,10)!==e.idx)return json({error:"stale",idx:e.idx},null,409);
   var now=Date.now(), lim=c.seconds_per_q*1000, pasado=now-e.q_sent_at;
-  var q=preguntas(c,user.id)[e.idx], o=parseInt(b.o,10);
+  var q=preguntas(c,user.id,await leeFichas(env,c,user.id))[e.idx], o=parseInt(b.o,10);
   var aTiempo=pasado<=lim+GRACIA, ok=aTiempo&&o===q.c;
   var e2=await registra(env,c,e,aTiempo&&o>=0&&o<4?o:-1,ok,Math.min(pasado,lim),now);
   if(!e2)return json({error:"stale",idx:e.idx},null,409);
+  var mv=marcaVista(env,user.id,q,now); if(mv)try{await mv.run();}catch(x){}
   return json({ok:true,correct:ok,timeout:!aTiempo,finished:!!e2.finished_at,me:resumen(e2),max_errors:c.max_errors});
 }
 
@@ -411,9 +451,11 @@ async function resultados(env,user,code,json){
 
   /* estadística por pregunta: se reconstruye la secuencia de cada participante */
   var resp=await env.DB.prepare("SELECT user_id,idx,ok FROM contest_answers WHERE code=?").bind(code).all();
-  var porPregunta={}, secs={};
+  var porPregunta={}, secs={}, fi={};
+  if(!c.poolList)try{((await env.DB.prepare("SELECT user_id,qids FROM contest_seq WHERE code=?").bind(code).all()).results||[])
+    .forEach(function(x){fi[x.user_id]=JSON.parse(x.qids);});}catch(x){}
   (resp.results||[]).forEach(function(a){
-    var sec=secs[a.user_id]||(secs[a.user_id]=preguntas(c,a.user_id)), q=sec[a.idx]; if(!q)return;
+    var sec=secs[a.user_id]||(secs[a.user_id]=preguntas(c,a.user_id,fi[a.user_id])), q=sec[a.idx]; if(!q)return;
     var k=q.id?("#"+q.id):q.q, x=porPregunta[k]||(porPregunta[k]={q:q.q,cat:categoria(q),level:q.nivel||null,answered:0,correct:0});
     x.answered++; if(a.ok)x.correct++;
   });

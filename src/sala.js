@@ -90,6 +90,11 @@ async function crea(req,env,user,json){
     var qs=(await env.DB.prepare("SELECT q,opts,answer,level,topic FROM bank_questions WHERE bank_id=?").bind(bk.id).all()).results||[];
     if(!qs.length)return json({error:"empty_pool"},null,400);
     extra.preguntas=qs.map(function(x){return {q:x.q,o:JSON.parse(x.opts),c:x.answer,nivel:x.level,tema:x.topic||""};});
+  }else if(d.usaBanco){
+    /* banco general: se evitan las preguntas que esta institución (o esta persona) usó en los últimos 60 días */
+    extra.quien=orgId?"org:"+orgId:"host:"+user.id;
+    try{extra.evita=((await env.DB.prepare("SELECT qid FROM preguntas_vistas WHERE quien=? AND visto_at>? ORDER BY visto_at")
+      .bind(extra.quien,now-60*86400000).all()).results||[]).map(function(x){return x.qid;});}catch(e){extra.evita=[];}
   }
   var code,choque,i=0;
   do{code=codigo();choque=await env.DB.prepare("SELECT 1 FROM salas WHERE code=?").bind(code).first();i++;}while(choque&&i<5);
@@ -295,6 +300,14 @@ export class Sala{
           .bind(E.code,j.id,j.nombre,x.puesto||null,x.puntos==null?null:Math.round(x.puntos),E.fin));});
       await db.batch(ops);
     }catch(e){ console.error("sala resultados",e&&e.message); }
+    /* preguntas del banco general ya usadas: no se repiten en 60 días (tampoco en «otra partida») */
+    var usadas=d.usadas?d.usadas(E):[];
+    if(usadas.length&&E.extra&&E.extra.quien){
+      E.extra.evita=(E.extra.evita||[]).filter(function(x){return usadas.indexOf(x)<0;}).concat(usadas);
+      try{var db2=this.env.DB, t=E.fin;
+        await db2.batch(usadas.map(function(q){return db2.prepare("INSERT INTO preguntas_vistas(quien,qid,visto_at) VALUES(?,?,?) ON CONFLICT(quien,qid) DO UPDATE SET visto_at=excluded.visto_at").bind(E.extra.quien,q,t);}));
+      }catch(e){ console.error("preguntas vistas",e&&e.message); }
+    }
   }
   /* ---------- envío: agrupado y solo si cambió lo que ve cada uno ---------- */
   difunde(){

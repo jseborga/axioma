@@ -9,11 +9,15 @@
    Nivel 1 fácil · 2 medio · 3 difícil. Las operaciones matemáticas
    se generan aparte, sin límite, con la misma escala de niveles.
    =========================================================== */
+import AMPLIACION from "./banco/index.js";
 
-export var CATEGORIAS={geo:"Geografía",bol:"Bolivia",his:"Historia",cie:"Ciencia",nat:"Naturaleza",
-  dep:"Deportes",cul:"Arte y cultura",len:"Lengua",tec:"Tecnología",gas:"Gastronomía",mat:"Cálculo"};
+export var CATEGORIAS={geo:"Geografía",bol:"Bolivia",lat:"Latinoamérica",his:"Historia",cie:"Ciencia",nat:"Naturaleza",
+  sal:"Cuerpo humano y salud",amb:"Medio ambiente",dep:"Deportes",cul:"Arte y cultura",lit:"Literatura",mus:"Música",
+  cin:"Cine y series",mit:"Mitología",len:"Lengua",ing:"Inglés",tec:"Tecnología",eco:"Economía",gas:"Gastronomía",mat:"Cálculo"};
 
-export var BANCO=[
+/* El banco original. Los concursos empezados antes de ampliar el banco
+   siguen usando solo este, para que su secuencia no cambie a mitad. */
+var BANCO_V1=[
 /* ---------- geografía ---------- */
 [1,"geo","¿Cuál es la capital de Francia?","París","Lyon","Marsella","Niza"],
 [1,"geo","¿Cuál es la capital de Italia?","Roma","Milán","Venecia","Nápoles"],
@@ -244,6 +248,10 @@ export var BANCO=[
 [3,"gas","¿Qué especia, la más cara del mundo, se obtiene de los estigmas de una flor?","El azafrán","La canela","La vainilla","El cardamomo"]
 ];
 
+/* banco completo: el original y las ampliaciones por áreas (src/banco/),
+   con un «¿Sabías que…?» opcional como octavo elemento */
+export var BANCO=BANCO_V1.concat(AMPLIACION);
+
 /* ---------- azar reproducible ---------- */
 export function semilla(txt){
   var h=0x811c9dc5, i; txt=String(txt);
@@ -314,7 +322,7 @@ function nivelEn(dif,i,r){
   return i<8?1:i<18?2:3;
 }
 export function secuencia(seed,dif,conMates,n){
-  var r=rng(seed), pool={1:[],2:[],3:[]}, ptr={1:0,2:0,3:0}, out=[], i;
+  var BANCO=BANCO_V1, r=rng(seed), pool={1:[],2:[],3:[]}, ptr={1:0,2:0,3:0}, out=[], i;
   BANCO.forEach(function(q,j){pool[q[0]].push(j);});
   baraja(pool[1],r); baraja(pool[2],r); baraja(pool[3],r);
   for(i=0;i<n;i++){
@@ -344,5 +352,71 @@ export function secuenciaPool(seed,pool,n,progresiva){
   return idx.map(function(i){
     var p=pool[i], orden=baraja(p.opts.map(function(_,k){return k;}),r);
     return {id:p.id,tema:p.topic||"",nivel:p.level||2,q:p.q,o:orden.map(function(k){return p.opts[k];}),c:orden.indexOf(p.answer)};
+  });
+}
+
+/* ===========================================================
+   Secuencias con áreas temáticas y sin repetir lo ya visto
+   Cada pregunta tiene un identificador estable (derivado del texto).
+   Una secuencia se describe con fichas: "q<id>" para una pregunta del
+   banco y "m<nivel>" para una operación. Las fichas se guardan (en los
+   concursos, al empezar cada participante), y la pregunta concreta, con
+   sus opciones barajadas, se regenera siempre igual desde la semilla.
+   =========================================================== */
+export function qid(b){return semilla(b[2]).toString(36);}
+var POR_ID={};
+BANCO.forEach(function(b){POR_ID[qid(b)]=b;});
+export var AREAS=Object.keys(CATEGORIAS).filter(function(k){return k!=="mat";});
+/* preguntas por área (para mostrar cuántas hay al elegir) */
+export function cuentaAreas(){
+  var n={}; AREAS.forEach(function(k){n[k]=0;}); BANCO.forEach(function(b){if(n[b[1]]!=null)n[b[1]]++;});
+  return AREAS.map(function(k){return {id:k,nombre:CATEGORIAS[k],n:n[k]};});
+}
+export function limpiaAreas(a){
+  if(!Array.isArray(a))return [];
+  var out=[]; a.forEach(function(x){x=String(x); if(AREAS.indexOf(x)>=0&&out.indexOf(x)<0)out.push(x);});
+  return out.length===AREAS.length?[]:out;             /* todas = sin filtro */
+}
+/* cuántas preguntas del banco hacen falta y cuántas hay en esas áreas */
+export function hacenFalta(n,conMates){var k=0;for(var i=0;i<n;i++)if(!(conMates&&i%4===3))k++;return k;}
+export function disponibles(areas){
+  if(!areas||!areas.length)return BANCO.length;
+  return BANCO.filter(function(b){return areas.indexOf(b[1])>=0;}).length;
+}
+/* opts: {areas:[…], evita:[qid…] de la más antigua a la más reciente} */
+export function fichas(seed,dif,conMates,n,opts){
+  opts=opts||{};
+  var r=rng(seed), areas=opts.areas&&opts.areas.length?opts.areas:null, visto={}, out=[], i, lv;
+  (opts.evita||[]).forEach(function(id,k){visto[id]=k+1;});
+  var nuevas={1:[],2:[],3:[]}, vistas={1:[],2:[],3:[]}, ptr={1:0,2:0,3:0}, ptrV={1:0,2:0,3:0};
+  BANCO.forEach(function(b){
+    if(areas&&areas.indexOf(b[1])<0)return;
+    var id=qid(b); (visto[id]?vistas:nuevas)[b[0]].push(id);
+  });
+  for(lv=1;lv<=3;lv++){
+    baraja(nuevas[lv],r);
+    vistas[lv].sort(function(a,b){return visto[a]-visto[b];});   /* si no queda otra, las vistas hace más tiempo */
+  }
+  for(i=0;i<n;i++){
+    var l=nivelEn(dif,i,r), f=null;
+    if(!(conMates&&i%4===3)){
+      var orden=l===1?[1,2,3]:l===2?[2,1,3]:[3,2,1];
+      for(var k=0;k<3&&!f;k++){lv=orden[k]; if(ptr[lv]<nuevas[lv].length)f="q"+nuevas[lv][ptr[lv]++];}
+      for(k=0;k<3&&!f;k++){lv=orden[k]; if(ptrV[lv]<vistas[lv].length)f="q"+vistas[lv][ptrV[lv]++];}
+    }
+    out.push(f||("m"+l));
+  }
+  return out;
+}
+/* de fichas a preguntas: cada una con su propio azar, estable */
+export function materializa(seed,lista){
+  return lista.map(function(f,i){
+    var r=rng(semilla(seed+":"+i));
+    if(f.charAt(0)==="q"){
+      var b=POR_ID[f.slice(1)];
+      if(b){var op=opciones(b[3],b.slice(4,7),r); return {id:f.slice(1),cat:b[1],nivel:b[0],q:b[2],o:op.o,c:op.c,dato:b[7]||""};}
+      f="m2";                                            /* pregunta retirada del banco: una operación en su lugar */
+    }
+    return matematica(+f.slice(1)||2,r);
   });
 }

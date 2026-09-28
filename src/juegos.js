@@ -19,8 +19,11 @@ import "../public/juegos/paranoia.js";
 import "../public/juegos/yonunca.js";
 
 /* preguntas y operaciones del servidor para los juegos en vivo */
-import { secuencia, matematica, CATEGORIAS } from "./preguntas.js";
-globalThis.AxJuegos.preguntasGenerales=function(n,nivel,seed){
-  return secuencia(seed,nivel,true,n).map(function(q){return {q:q.q,o:q.o,c:q.c,tema:CATEGORIAS[q.cat]||""};});
+import { fichas, materializa, limpiaAreas, matematica, CATEGORIAS } from "./preguntas.js";
+/* preguntas del banco general: de las áreas elegidas y evitando las que ya
+   usó el organizador en los últimos 60 días (evita, de la más antigua a la más reciente) */
+globalThis.AxJuegos.preguntasGenerales=function(n,nivel,seed,areas,evita){
+  var f=fichas(seed,nivel,true,n,{areas:limpiaAreas(areas||[]),evita:evita||[]});
+  return materializa(seed,f).map(function(q){return {id:q.id||null,q:q.q,o:q.o,c:q.c,tema:CATEGORIAS[q.cat]||"",dato:q.dato||""};});
 };
 globalThis.AxJuegos.operacion=function(nivel,r){var q=matematica(nivel,r);return {q:q.q.replace(/^¿Cuánto es /,"").replace(/\?$/,""),res:Number(q.o[q.c])};};

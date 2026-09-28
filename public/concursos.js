@@ -37,7 +37,8 @@ function dura(ms){
 function tiempo(ms){var s=Math.round(ms/1000),m=Math.floor(s/60),g=s%60;return m+":"+(g<10?"0":"")+g;}
 function avatar(u){return u.picture?'<img class="av" src="'+esc(u.picture)+'" alt="" referrerpolicy="no-referrer">':'<span class="av noimg"></span>';}
 function enlace(code){return location.origin+location.pathname+"?concurso="+code;}
-function ERR(e){return {not_configured:"Faltan las tablas de concursos en la base de datos. Hay que volver a ejecutar schema.sql (ver SETUP.md).",
+function ERR(e){if(e&&e.error==="few_questions")return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";
+  return {not_configured:"Faltan las tablas de concursos en la base de datos. Hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",not_found:"No existe ningún concurso con ese código.",finished:"Ese concurso ya terminó.",
   not_registered:"Primero tienes que inscribirte.",not_started:"El concurso todavía no ha empezado.",bad_name:"Ponle un nombre.",
   bad_end:"El concurso tiene que durar entre 5 minutos y 31 días.",bad_start:"La fecha de inicio no es válida.",
@@ -122,6 +123,7 @@ function crearForm(){
     '<div class="rt-2"><label>Preguntas<select id="c-q"><option value="10">10</option><option value="20" selected>20</option><option value="30">30</option><option value="50">50</option><option value="100">Hasta quedar eliminado (máx. 100)</option></select></label>'+
     '<label>Tiempo por pregunta<select id="c-seg"><option value="10">10 s</option><option value="15" selected>15 s</option><option value="20">20 s</option><option value="30">30 s</option></select></label></div>'+
     '<label class="rt-check"><input type="checkbox" id="c-math" checked> Incluir operaciones matemáticas (una de cada cuatro)</label>'+
+    (window.AxAreas?AxAreas.html("c-areas"):'')+
     '<div class="rt-2"><label>Empieza<select id="c-ini"><option value="0">Ahora</option><option value="15">En 15 minutos</option><option value="60">En 1 hora</option><option value="1440">Mañana a esta hora</option><option value="x">Elegir fecha y hora…</option></select></label>'+
     '<label>Dura<select id="c-dur"><option value="30">30 minutos</option><option value="60">1 hora</option><option value="180">3 horas</option><option value="1440" selected>1 día</option><option value="4320">3 días</option><option value="10080">1 semana</option><option value="x">Hasta fecha y hora…</option></select></label></div>'+
     '<div class="rt-2"><label id="c-ini-f-l" hidden>Fecha de inicio<input type="datetime-local" id="c-ini-f"></label>'+
@@ -147,6 +149,7 @@ function crearForm(){
       (e===0?"el primer fallo termina su partida":"con el fallo número "+(e+1)+" termina su partida")+
       ". Al cierre se publica el ranking: más aciertos, luego menos errores y luego menos tiempo.";
   }
+  if(window.AxAreas)AxAreas.pinta($("c-areas"),[]);
   ["c-ini","c-dur","c-err","c-ini-f","c-fin-f"].forEach(function(id){$(id).onchange=resumen;});
   resumen();
   $("cq-form").onsubmit=function(e){
@@ -156,7 +159,7 @@ function crearForm(){
     go.disabled=true; msg.className="msg"; msg.textContent="Publicando…";
     conRegistro(function(){return api("/api/contests",{name:$("c-name").value,prize:$("c-prize").value,description:$("c-desc").value,level:+$("c-level").value,
       max_errors:+$("c-err").value,max_questions:+$("c-q").value,seconds_per_q:+$("c-seg").value,math:$("c-math").checked,
-      public:$("c-pub").value==="1",starts_at:f.ini,ends_at:f.fin});})
+      public:$("c-pub").value==="1",starts_at:f.ini,ends_at:f.fin,areas:window.AxAreas?AxAreas.lee($("c-areas")):[]});})
       .then(function(r){ficha(r.code,true);})
       .catch(function(er){go.disabled=false;msg.className="msg bad";msg.textContent=ERR(er);});
   };
@@ -190,7 +193,7 @@ function ficha(code,recien){
         '<div><small>Por pregunta</small><b>'+c.seconds_per_q+' s</b></div>'+
       '</div>'+
       '<p class="fine">'+(c.state==="terminado"?"Terminó el "+fecha(c.ends_at)+".":"Del "+fecha(c.starts_at)+" al "+fecha(c.ends_at)+".")+
-        (c.math?" Incluye operaciones matemáticas.":"")+'</p>';
+        (c.math?" Incluye operaciones matemáticas.":"")+(c.areas&&c.areas.length?" Áreas: "+esc(c.areas.join(", "))+".":"")+'</p>';
 
     if(c.manage)h+='<div class="actions"><button type="button" class="primary" id="cq-registros">Registros y estadísticas</button></div>';
     if(c.state!=="terminado"&&!cuest)h+='<div class="rt-code"><span>Código</span><b>'+c.code+'</b><button type="button" class="ghost" id="cq-copy">Copiar enlace</button>'+
@@ -286,7 +289,8 @@ function revisionHtml(rv){
   var h='<details class="cq-review"><summary>Tus respuestas ('+rv.filter(function(x){return x.ok;}).length+' de '+rv.length+')</summary><ol>';
   rv.forEach(function(x){
     h+='<li class="'+(x.ok?"ok":"mal")+'"><small>'+esc(x.cat)+'</small><b>'+esc(x.q)+'</b>'+
-      (x.ok?'<span>✓ '+esc(x.answer)+'</span>':'<span>✗ '+(x.chosen===null?"sin responder a tiempo":esc(x.chosen))+' · correcta: <b>'+esc(x.answer)+'</b></span>')+'</li>';
+      (x.ok?'<span>✓ '+esc(x.answer)+'</span>':'<span>✗ '+(x.chosen===null?"sin responder a tiempo":esc(x.chosen))+' · correcta: <b>'+esc(x.answer)+'</b></span>')+
+      (x.dato?'<em class="cq-dato">💡 ¿Sabías que…? '+esc(x.dato)+'</em>':'')+'</li>';
   });
   return h+'</ol></details>';
 }
@@ -363,7 +367,8 @@ function resultado(c){
     h+='<details class="cq-review"><summary>Tus respuestas ('+c.review.filter(function(x){return x.ok;}).length+' de '+c.review.length+')</summary><ol>';
     c.review.forEach(function(x){
       h+='<li class="'+(x.ok?"ok":"mal")+'"><small>'+esc(x.cat)+'</small><b>'+esc(x.q)+'</b>'+
-        (x.ok?'<span>✓ '+esc(x.answer)+'</span>':'<span>✗ '+(x.chosen===null?"sin responder a tiempo":esc(x.chosen))+' · correcta: <b>'+esc(x.answer)+'</b></span>')+'</li>';
+        (x.ok?'<span>✓ '+esc(x.answer)+'</span>':'<span>✗ '+(x.chosen===null?"sin responder a tiempo":esc(x.chosen))+' · correcta: <b>'+esc(x.answer)+'</b></span>')+
+      (x.dato?'<em class="cq-dato">💡 ¿Sabías que…? '+esc(x.dato)+'</em>':'')+'</li>';
     });
     h+='</ol></details>';
   }

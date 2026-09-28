@@ -383,3 +383,31 @@ CREATE TABLE IF NOT EXISTS sala_jugadores (
   created_at INTEGER NOT NULL,
   PRIMARY KEY (code, user_id)
 );
+
+-- ============================================================
+-- The Final Test · trivia sin repetir y por áreas
+-- ============================================================
+-- Qué preguntas del banco general ha visto cada jugador (quien = id del
+-- usuario) o ha usado cada organizador en sus salas (quien = "org:ID" o
+-- "host:ID"). Al armar una partida se evitan las de los últimos 60 días.
+CREATE TABLE IF NOT EXISTS preguntas_vistas (
+  quien    TEXT NOT NULL,
+  qid      TEXT NOT NULL,
+  visto_at INTEGER NOT NULL,
+  PRIMARY KEY (quien, qid)
+);
+CREATE INDEX IF NOT EXISTS preguntas_vistas_fecha ON preguntas_vistas(quien, visto_at);
+-- Secuencia de preguntas de cada participante de un concurso, fijada al
+-- empezar: así no cambia aunque el banco se amplíe con el concurso abierto.
+CREATE TABLE IF NOT EXISTS contest_seq (
+  code       TEXT NOT NULL,
+  user_id    TEXT NOT NULL,
+  qids       TEXT NOT NULL,             -- JSON: ["q<id>", "m<nivel>", …]
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (code, user_id)
+);
+-- Áreas temáticas elegidas para un concurso (si no hay fila: todas)
+CREATE TABLE IF NOT EXISTS contest_areas (
+  code  TEXT PRIMARY KEY,
+  areas TEXT NOT NULL                   -- JSON: ["bol", "his", …]
+);
