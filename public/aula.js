@@ -68,6 +68,8 @@ function chipEstado(s){return '<span class="chip '+(s==="activa"?"activo":s==="p
   ({activa:"Activa",pendiente:"Pendiente",suspendida:"Suspendida"}[s]||s)+'</span>';}
 function aConcurso(code){ if(window.AxApp)AxApp.setMode("concurso"); if(window.AxConcursos)AxConcursos.ficha(code); }
 function nombreSeccion(){return seccion==="empresas"?"Empresas":"Aula";}
+/* en empresas, el rol «docente» es quien crea retos, convocatorias y premios */
+function nombreRol(r,kind){return r==="docente"&&kind&&!academica(kind)?"Creador de retos":(ROLES[r]||r);}
 
 /* ---------- entrada ---------- */
 function abrir(m){ activo=true; panel.hidden=false; var p=pendiente; pendiente=null;
@@ -924,15 +926,17 @@ function platOrgs(t,r){
       '<p class="fine">Queda activa al momento. Si esa persona ya tiene cuenta, es administradora ya; si no, lo será en cuanto entre con Google con ese correo.</p>'+
       '<div class="actions"><button class="primary" type="submit" id="po-go">Dar de alta</button></div><p class="msg" id="po-msg"></p></form></details>'+
     (r.orgs.length?r.orgs.map(function(o){
-      return '<div class="au-fila po-org"><div><b>'+esc(o.name)+'</b> '+chipEstado(o.status)+
+      return '<div class="po-bloque"><div class="au-fila po-org"><div><b>'+esc(o.name)+'</b> '+chipEstado(o.status)+
+        (o.admins?'':' <span class="chip pronto">Sin administración</span>')+
         '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+o.members+' miembro'+(o.members===1?'':'s')+' · '+o.admins+' admin. · '+o.contests+' convocatorias y cuestionarios · '+
           o.people+' participante'+(o.people===1?'':'s')+(o.last_activity?' · última actividad '+fecha(o.last_activity):'')+(o.slug?' · ?marca='+esc(o.slug):'')+'</small>'+
         (o.invites.length?'<small>Altas pendientes: '+o.invites.map(function(i){return esc(i.email)+' ('+esc(ROLES[i.role]||i.role)+')';}).join(", ")+'</small>':'')+'</div>'+
         (o.status!=="activa"?'<button type="button" class="primary au-mini" data-est="activa" data-id="'+o.id+'">Aprobar</button>':'')+
         (o.status!=="suspendida"?'<button type="button" class="ghost au-mini" data-est="suspendida" data-id="'+o.id+'">Suspender</button>':'')+
-        '<button type="button" class="ghost au-mini" data-adm="'+o.id+'">+ Administración</button>'+
+        '<button type="button" class="primary au-mini" data-adm="'+o.id+'" aria-expanded="false">Administración</button>'+
         '<button type="button" class="ghost au-mini" data-met="'+o.id+'">Métricas</button>'+
-        '<button type="button" class="ghost au-mini" data-usr="'+o.id+'">Usuarios</button></div>';
+        '<button type="button" class="ghost au-mini" data-usr="'+o.id+'">Usuarios</button></div>'+
+        '<div class="po-adm" id="po-adm-'+o.id+'" hidden></div></div>';
     }).join(""):'<p class="fine">No hay instituciones.</p>')+'<p class="msg" id="po-res"></p>';
   $("po-form").onsubmit=function(e){e.preventDefault(); $("po-go").disabled=true;
     api("/api/admin/orgs",{name:$("po-name").value,kind:$("po-kind").value,admin_email:$("po-email").value}).then(function(x){
@@ -942,11 +946,43 @@ function platOrgs(t,r){
   for(i=0;i<s.length;i++)s[i].onclick=function(){
     api("/api/admin/orgs/"+this.getAttribute("data-id"),{status:this.getAttribute("data-est")}).then(function(){plataforma("orgs");}).catch(function(er){alert(ERR(er));});};
   s=t.querySelectorAll("[data-adm]");
-  for(i=0;i<s.length;i++)s[i].onclick=function(){var id=this.getAttribute("data-adm"), m=prompt("Correo de la nueva administración:"); if(!m)return;
-    api("/api/admin/orgs/"+id+"/admins",{email:m,role:"admin"}).then(function(x){plataforma("orgs");setTimeout(function(){aviso("po-res",x.added?"Dada de alta.":"Invitación guardada.");},400);})
-      .catch(function(er){alert(ERR(er));});};
+  for(i=0;i<s.length;i++)s[i].onclick=function(){
+    var id=this.getAttribute("data-adm"), z=$("po-adm-"+id), abre=z.hidden;
+    z.hidden=!abre; this.setAttribute("aria-expanded",String(abre));
+    if(abre)gestores(id);
+  };
   s=t.querySelectorAll("[data-met]"); for(i=0;i<s.length;i++)s[i].onclick=function(){org(this.getAttribute("data-met"),"metricas");};
   s=t.querySelectorAll("[data-usr]"); for(i=0;i<s.length;i++)s[i].onclick=function(){plataforma("usuarios",{org:this.getAttribute("data-usr")});};
+}
+/* quién gestiona una institución, desde la administración de la plataforma */
+function gestores(id,nota){
+  var z=$("po-adm-"+id); if(!z)return;
+  z.innerHTML='<p class="fine">Cargando…</p>';
+  api("/api/admin/orgs/"+id+"/admins").then(function(r){
+    var k=r.kind, opts=function(sel){return ["admin","docente"].map(function(x){return '<option value="'+x+'"'+(x===sel?' selected':'')+'>'+nombreRol(x,k)+'</option>';}).join("");};
+    z.innerHTML='<p class="fine">La <b>administración</b> gestiona todo: marca, miembros, convocatorias, premios, bancos'+(academica(k)?', cursos y cuestionarios':'')+
+        '. '+(academica(k)?'Los <b>docentes</b> crean sus cursos, bancos, cuestionarios y convocatorias.':'Quien <b>crea retos</b> hace bancos de preguntas y convocatorias con premio.')+'</p>'+
+      (r.people.length?'<ul class="au-inv">'+r.people.map(function(p){
+        return '<li><span><b>'+esc(p.name)+'</b> · '+esc(p.email)+'</span><span class="po-acc"><select data-rolg="'+esc(p.id)+'">'+opts(p.role)+'</select>'+
+          '<button type="button" class="ghost au-mini" data-quitag="'+esc(p.id)+'">Quitar</button></span></li>';}).join("")+'</ul>':
+        '<p class="rt-hoy">Todavía no tiene a nadie que la administre. Designa a alguien por su correo.</p>')+
+      (r.invites.length?'<ul class="au-inv">'+r.invites.map(function(i){return '<li><span>'+esc(i.email)+' · '+nombreRol(i.role,k)+' · <em>pendiente: se aplica cuando entre con Google</em></span>'+
+        '<button type="button" class="ghost au-mini" data-quitai="'+esc(i.email)+'">Quitar</button></li>';}).join("")+'</ul>':'')+
+      '<form class="rt-join au-invita" data-desg="'+id+'"><input type="email" required placeholder="correo@empresa.com" autocomplete="off" aria-label="Correo">'+
+        '<select aria-label="Rol">'+opts("admin")+'</select><button type="submit" class="primary">Designar</button></form>'+
+      '<p class="msg" id="po-adm-msg-'+id+'">'+(nota?esc(nota):'')+'</p>';
+    if(nota)$("po-adm-msg-"+id).className="msg good";
+    function hace(datos,msg){api("/api/admin/orgs/"+id+"/admins",datos).then(function(x){gestores(id,msg||(x&&x.added?"Designado: ya puede gestionarla.":x&&x.invited?"Guardado: tendrá acceso en cuanto entre con Google con ese correo.":"Guardado."));})
+      .catch(function(er){aviso("po-adm-msg-"+id,ERR(er),true);});}
+    var f=z.querySelector("[data-desg]");
+    f.onsubmit=function(e){e.preventDefault();hace({email:f.querySelector("input").value,role:f.querySelector("select").value});};
+    var q=z.querySelectorAll("[data-rolg]"),j;
+    for(j=0;j<q.length;j++)q[j].onchange=function(){hace({user_id:this.getAttribute("data-rolg"),role:this.value},"Rol cambiado.");};
+    q=z.querySelectorAll("[data-quitag]");
+    for(j=0;j<q.length;j++)q[j].onclick=function(){if(!confirm("¿Quitar a esta persona de la institución?"))return;hace({user_id:this.getAttribute("data-quitag"),remove:true},"Quitado.");};
+    q=z.querySelectorAll("[data-quitai]");
+    for(j=0;j<q.length;j++)q[j].onclick=function(){hace({email:this.getAttribute("data-quitai"),remove:true},"Alta pendiente anulada.");};
+  }).catch(function(e){z.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
 }
 function platUsuarios(t,r,f){
   t.innerHTML='<form class="au-filtros" id="pu-f"><label>Buscar<input id="pu-q" value="'+esc(f.q||"")+'" placeholder="Nombre, correo o teléfono"></label>'+
@@ -965,13 +1001,29 @@ function platUsuarios(t,r,f){
         u.users.map(function(x){return '<tr class="'+(x.blocked?"apagada":"")+'"><td>'+esc(x.name)+'<small>'+esc(x.phone||x.email||"—")+'</small></td>'+
           '<td>'+(x.type==="invitado"?'Invitado<small>'+(x.verified_by==="prueba"?"código de prueba":"verificado")+'</small>':'Google')+(x.blocked?'<small>Bloqueado: '+esc(x.block_reason)+'</small>':'')+'</td>'+
           '<td><small>'+esc(x.orgs||"—")+'</small></td><td>'+x.entries+'</td><td>'+fecha(x.last_seen)+'</td>'+
-          '<td><button type="button" class="ghost au-mini" data-bl="'+esc(x.id)+'" data-v="'+(x.blocked?0:1)+'">'+(x.blocked?"Desbloquear":"Bloquear")+'</button></td></tr>';}).join("")+
+          '<td class="po-acc">'+(x.type==="google"&&x.email&&!x.blocked?'<button type="button" class="ghost au-mini" data-dg="'+esc(x.email)+'">Designar</button>':'')+
+            '<button type="button" class="ghost au-mini" data-bl="'+esc(x.id)+'" data-v="'+(x.blocked?0:1)+'">'+(x.blocked?"Desbloquear":"Bloquear")+'</button></td></tr>'+
+          (x.type==="google"&&x.email?'<tr class="po-dg" hidden data-dgf="'+esc(x.email)+'"><td colspan="6"><form class="rt-join au-invita"><span class="po-dg-t">Designar a '+esc(x.name)+' en</span>'+
+            '<select aria-label="Institución">'+r.orgs.map(function(o){return '<option value="'+o.id+'" data-k="'+o.kind+'">'+esc(o.name)+'</option>';}).join("")+'</select>'+
+            '<select aria-label="Rol"><option value="admin">Administración</option><option value="docente">Creador de retos o docente</option></select>'+
+            '<button type="submit" class="primary">Designar</button></form></td></tr>':'');}).join("")+
         '</tbody></table></div>';
       if(u.total>u.offset+u.users.length)h+='<div class="actions"><button class="ghost" id="pu-mas">Siguientes</button></div>';
     }
     h+='<p class="msg" id="pu-msg"></p>';
     $("pu-lista").innerHTML=h;
+    if(f.nota){aviso("pu-msg",f.nota);delete f.nota;}
     if($("pu-mas"))$("pu-mas").onclick=function(){plataforma("usuarios",Object.assign({},f,{offset:(f.offset||0)+100}));};
+    var dg=$("pu-lista").querySelectorAll("[data-dg]"),n;
+    for(n=0;n<dg.length;n++)dg[n].onclick=function(){
+      var fila=$("pu-lista").querySelector('[data-dgf="'+this.getAttribute("data-dg")+'"]'); fila.hidden=!fila.hidden;};
+    var fs=$("pu-lista").querySelectorAll("[data-dgf] form");
+    for(n=0;n<fs.length;n++)fs[n].onsubmit=function(e){
+      e.preventDefault(); var fm=this, sel=fm.querySelectorAll("select"), email=fm.parentNode.parentNode.getAttribute("data-dgf");
+      if(!r.orgs.length){aviso("pu-msg","Primero da de alta una institución o empresa.",true);return;}
+      api("/api/admin/orgs/"+sel[0].value+"/admins",{email:email,role:sel[1].value}).then(function(){
+        plataforma("usuarios",Object.assign({},f,{nota:email+" ya gestiona «"+sel[0].options[sel[0].selectedIndex].text+"»."}));})
+        .catch(function(er){aviso("pu-msg",ERR(er),true);});};
     var s=$("pu-lista").querySelectorAll("[data-bl]"),i;
     for(i=0;i<s.length;i++)s[i].onclick=function(){
       var id=this.getAttribute("data-bl"), v=this.getAttribute("data-v")==="1", motivo="";
@@ -980,6 +1032,10 @@ function platUsuarios(t,r,f){
     };
   }).catch(function(e){$("pu-lista").innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
 }
+
+/* se publica antes de atender el enlace: si la sesión ya se conoce, el cambio de modo es inmediato */
+window.AxAula={abrir:abrir,cerrar:cerrar,curso:function(code){activo=true;panel.hidden=false;curso(code);},
+  org:function(id,tab){activo=true;panel.hidden=false;org(id,tab);}};
 
 /* ---------- enlaces: ?curso=CÓDIGO y ?docente=CÓDIGO ---------- */
 (function(){
@@ -997,6 +1053,4 @@ function platUsuarios(t,r,f){
   if(window.AxAccount&&AxAccount.listo())ir(); else document.addEventListener("ax-user",ir);
 })();
 
-window.AxAula={abrir:abrir,cerrar:cerrar,curso:function(code){activo=true;panel.hidden=false;curso(code);},
-  org:function(id,tab){activo=true;panel.hidden=false;org(id,tab);}};
 })();

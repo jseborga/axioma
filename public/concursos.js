@@ -429,6 +429,9 @@ function juego(c){
   carga();
 }
 
+/* se publica antes de atender el enlace: si la sesión ya se conoce, el cambio de modo es inmediato */
+window.AxConcursos={abrir:abrir,cerrar:cerrar,ficha:function(code){activo=true;panel.hidden=false;ficha(code);}};
+
 /* ---------- entrada por enlace: ?concurso=CÓDIGO ---------- */
 (function(){
   var q=new URLSearchParams(location.search), code=q.get("concurso");
@@ -439,5 +442,4 @@ function juego(c){
   if(window.AxAccount&&AxAccount.listo())ir(); else document.addEventListener("ax-user",ir);
 })();
 
-window.AxConcursos={abrir:abrir,cerrar:cerrar,ficha:function(code){activo=true;panel.hidden=false;ficha(code);}};
 })();

@@ -83,6 +83,9 @@ function pinta(){
   });
 }
 
+/* se publica antes de atender el enlace: si la sesión ya se conoce, el cambio de modo es inmediato */
+window.AxMarca={abrir:abrir,cerrar:cerrar,ver:ver,directorio:function(){slug=null;if(window.AxApp)AxApp.setMode("marca");}};
+
 /* ---------- enlace: ?marca=slug ---------- */
 (function(){
   var q=new URLSearchParams(location.search), s=q.get("marca");
@@ -93,5 +96,4 @@ function pinta(){
   if(window.AxAccount&&AxAccount.listo())ir(); else document.addEventListener("ax-user",ir);
 })();
 
-window.AxMarca={abrir:abrir,cerrar:cerrar,ver:ver,directorio:function(){slug=null;if(window.AxApp)AxApp.setMode("marca");}};
 })();

@@ -114,10 +114,25 @@ En **Métricas** (administración de la empresa o de la plataforma):
 - **Resumen**: cuentas de Google, invitados (y cuántos con código de prueba),
   instituciones por tipo, convocatorias abiertas, inscripciones de la semana y del
   mes, bloqueados y usuarios nuevos por día.
-- **Instituciones**: aprobar o suspender, dar de alta con su administración,
-  añadir administración por correo, y ver las métricas o los usuarios de cada una.
+- **Instituciones**: aprobar o suspender, dar de alta con su administración, y
+  ver las métricas o los usuarios de cada una. El botón **Administración** de cada
+  institución muestra quién la gestiona y permite:
+  - **Designar** a alguien por su correo como *Administración* o como *Creador de
+    retos* (en instituciones educativas, *Docente*). Si ya tiene cuenta, puede
+    gestionarla al momento; si no, en cuanto entre con Google con ese correo.
+  - Cambiar su rol o **quitarlo** de la institución, y anular altas pendientes.
+  - Las que no tienen a nadie aparecen marcadas como *Sin administración*.
 - **Usuarios**: buscar por nombre, correo o teléfono; filtrar por tipo (Google,
-  invitados, bloqueados) o por institución; bloquear con un motivo y desbloquear.
+  invitados, bloqueados) o por institución; **designar** a una persona en cualquier
+  institución con el rol que corresponda; bloquear con un motivo y desbloquear.
+
+### Qué puede hacer cada rol
+
+| Rol | Puede |
+| --- | --- |
+| Administración | Todo en su institución: marca y página, miembros y roles, bancos, convocatorias con premio, cuestionarios y cursos, métricas y exportaciones |
+| Creador de retos (Docente en educación) | Sus bancos de preguntas, convocatorias con premio y QR, y en educación sus cursos y cuestionarios, con sus registros |
+| Estudiante o participante | Participar |
 
 ## Lo que viene después
 

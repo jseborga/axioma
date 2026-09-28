@@ -974,6 +974,15 @@ a.ghost.mc-web{display:inline-flex;align-items:center;justify-content:center;fle
 .mt-tabla{margin-top:6px;font-size:13.5px}
 .mt-tabla summary{cursor:pointer;color:var(--accent);font-weight:600}
 .mt-tabla .tabla{min-width:0;margin-top:6px}
-.au-filtros input{min-width:0}
+.au-filtros input{min-width:0;font-weight:400}
 .aula #mb-desc{font-family:inherit;font-size:15px;min-height:90px}
 .mb-campo .au-archivo{text-transform:none;letter-spacing:0;font-size:14px}
+.po-bloque{margin:0 0 8px}
+.po-bloque .po-org{margin:0}
+.po-adm{background:var(--card);border:1.5px solid var(--inset-2);border-top:0;border-radius:0 0 var(--r-el) var(--r-el);padding:10px 12px;margin:-6px 0 0}
+.po-adm .au-inv li{flex-wrap:wrap}
+.po-acc{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.po-acc select{font:inherit;font-size:13.5px;padding:6px 8px;border:0;border-radius:9px;background:var(--inset);color:var(--ink)}
+.po-dg td{background:var(--accent-tint)}
+.po-dg .au-invita{flex-wrap:wrap;align-items:center;margin:0}
+.po-dg-t{font-size:13.5px;font-weight:600}

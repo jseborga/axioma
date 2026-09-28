@@ -408,6 +408,9 @@ function pintaSala(s,fin){
   if($("rt-share"))$("rt-share").onclick=function(){comparte("Resolvamos un sudoku a cuatro manos en Axioma: "+enlace("pareja",s.code));};
 }
 
+/* se publica antes de atender el enlace: si la sesión ya se conoce, el cambio de modo es inmediato */
+window.AxRetos={abrir:abrir,cerrar:cerrar};
+
 /* ---------- entrada por enlace ---------- */
 (function(){
   var q=new URLSearchParams(location.search), r=q.get("reto"), p=q.get("pareja");
@@ -422,6 +425,4 @@ function pintaSala(s,fin){
   };
   if(window.AxAccount&&AxAccount.listo())ir(); else document.addEventListener("ax-user",ir);
 })();
-
-window.AxRetos={abrir:abrir,cerrar:cerrar};
 })();

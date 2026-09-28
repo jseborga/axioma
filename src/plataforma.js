@@ -6,7 +6,9 @@
      GET  /api/admin/users                ?q=&org=&type=google|invitado|bloqueado&offset=
      POST /api/admin/users/:id            { blocked:true|false, reason }
      POST /api/admin/orgs                 { name, kind, admin_email, role } alta directa (activa)
-     POST /api/admin/orgs/:id/admins      { email, role, remove } alta o baja de administración por correo
+     GET  /api/admin/orgs/:id/admins      administración y creadores de retos, y altas pendientes
+     POST /api/admin/orgs/:id/admins      { email, role } designar por correo · { email, remove } quitar un alta pendiente
+                                          { user_id, role } cambiar su rol · { user_id, remove } quitarlo de la institución
    (GET /api/admin/orgs y POST /api/admin/orgs/:id { status } siguen en aula.js)
    =========================================================== */
 import { esAdminPlataforma, invita } from "./aula.js";
@@ -26,6 +28,7 @@ export async function handlePlataforma(req,env,url,path,ctx){
     if(path==="/admin/users"&&req.method==="GET")return await usuarios(env,url,json);
     if((m=path.match(/^\/admin\/users\/([^/]+)$/))&&req.method==="POST")return await bloquea(env,user,decodeURIComponent(m[1]),b,json);
     if(path==="/admin/orgs"&&req.method==="POST")return await altaOrg(env,user,b,json);
+    if((m=path.match(/^\/admin\/orgs\/([A-Z0-9]{6})\/admins$/))&&req.method==="GET")return await verAdmins(env,m[1],json);
     if((m=path.match(/^\/admin\/orgs\/([A-Z0-9]{6})\/admins$/))&&req.method==="POST")return await admins(env,user,m[1],b,json);
   }catch(e){
     if(/no such table/i.test(String(e&&e.message)))return json({error:"not_configured"},null,503);
@@ -87,7 +90,9 @@ async function usuarios(env,url,json){
   var st2=env.DB.prepare(
     "SELECT u.id,u.name,u.email,u.created_at,u.last_seen,g.channel,g.contact,g.verified_by,bl.reason AS bloqueo,"+
     " (SELECT COUNT(*) FROM contest_entries e WHERE e.user_id=u.id) AS participaciones,"+
-    " (SELECT group_concat(o.name||' · '||m.role,', ') FROM org_members m JOIN orgs o ON o.id=m.org_id WHERE m.user_id=u.id) AS instituciones"+
+    " (SELECT group_concat(o.name||' · '||CASE m.role WHEN 'admin' THEN 'administración' WHEN 'docente' THEN "+
+    "CASE WHEN o.kind IN ('universidad','instituto','colegio') THEN 'docente' ELSE 'creador de retos' END ELSE m.role END,', ') "+
+    "FROM org_members m JOIN orgs o ON o.id=m.org_id WHERE m.user_id=u.id) AS instituciones"+
     base+" ORDER BY u.last_seen DESC LIMIT 100 OFFSET ?");
   var r=await st2.bind.apply(st2,args.concat([off])).all();
   return json({total:total.n,offset:off,users:(r.results||[]).map(function(u){
@@ -122,9 +127,35 @@ async function altaOrg(env,admin,b,json){
   }
   return json(r);
 }
+/* quién gestiona una institución: administración (todo) y creadores de retos o docentes
+   (bancos, convocatorias, cuestionarios y premios); más las altas por correo pendientes */
+async function verAdmins(env,id,json){
+  var o=await env.DB.prepare("SELECT id,name,kind FROM orgs WHERE id=?").bind(id).first();
+  if(!o)return json({error:"not_found"},null,404);
+  var m=await env.DB.prepare(
+    "SELECT u.id,u.name,u.email,m.role,m.joined_at FROM org_members m JOIN users u ON u.id=m.user_id "+
+    "WHERE m.org_id=? AND m.role IN ('admin','docente') ORDER BY m.role,u.name"
+  ).bind(id).all();
+  var i=await env.DB.prepare("SELECT email,role,created_at FROM org_invites WHERE org_id=? ORDER BY created_at").bind(id).all();
+  return json({id:o.id,name:o.name,kind:o.kind,people:m.results||[],invites:i.results||[]});
+}
 async function admins(env,admin,id,b,json){
   var o=await env.DB.prepare("SELECT id FROM orgs WHERE id=?").bind(id).first();
   if(!o)return json({error:"not_found"},null,404);
+  if(b.user_id){
+    var uid=String(b.user_id), mb=await env.DB.prepare("SELECT role FROM org_members WHERE org_id=? AND user_id=?").bind(id,uid).first();
+    if(!mb)return json({error:"not_found"},null,404);
+    if(b.remove){
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM course_members WHERE user_id=? AND code IN (SELECT code FROM courses WHERE org_id=?)").bind(uid,id),
+        env.DB.prepare("DELETE FROM org_members WHERE org_id=? AND user_id=?").bind(id,uid)
+      ]);
+      return json({ok:true});
+    }
+    if(["admin","docente","estudiante"].indexOf(b.role)<0)return json({error:"bad_role"},null,400);
+    await env.DB.prepare("UPDATE org_members SET role=? WHERE org_id=? AND user_id=?").bind(b.role,id,uid).run();
+    return json({ok:true});
+  }
   var email=String(b.email||"").trim().toLowerCase();
   if(b.remove){
     await env.DB.prepare("DELETE FROM org_invites WHERE org_id=? AND email=?").bind(id,email).run();
