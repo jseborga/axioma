@@ -104,6 +104,12 @@ vive en tu propia cuenta.
    El indicador `--remote` apunta a la base real. Con `--local` trabajarías sobre
    una copia en tu ordenador, útil solo para pruebas.
 
+   **Sin terminal**: abre `instalar.sql` (en la raíz del repositorio), copia todo
+   su contenido y pégalo en **Workers & Pages → D1 → axioma → Console**. Es el
+   mismo `schema.sql` con una sentencia por línea y sin comentarios. Se puede
+   ejecutar las veces que haga falta: solo crea lo que falta y no borra ni cambia
+   datos. Si la app dice que «faltan las tablas», esto lo resuelve de una vez.
+
 Esto crea dos tablas. La de usuarios guarda una fila por jugador que entre con
 Google. La de puntuaciones guarda una fila por jugador y día, con las movidas y
 las pistas usadas.
