@@ -26,7 +26,8 @@
      POST /api/courses/:code/settings     (quien gestiona el curso)
      POST /api/courses/:code/members/:uid { role, status, remove }
    Bancos
-     GET  /api/banks/:id                  preguntas
+     GET  /api/banks/:id                  preguntas (quien lo edita y los docentes de su materia)
+     POST /api/banks/:id                  { name, unit_id } renombrar o asignar la materia
      POST /api/banks/:id/import           { items } revalidadas aquí con las mismas reglas
      POST /api/banks/:id/questions/:qid   { remove } o una pregunta nueva
      GET  /api/orgs/:id/members           también las altas pendientes por correo
@@ -143,12 +144,26 @@ export async function accesoCurso(env,code,uid){
   var gestiona=!!uid&&(c.owner_id===uid||ro==="admin"||!!(m&&m.status==="activo"&&(m.role==="docente"||m.role==="auxiliar")));
   return {curso:c,miembro:m,rolOrg:ro,gestiona:gestiona,estudiante:!!(m&&m.status==="activo"&&m.role==="estudiante")};
 }
-/* bancos que un usuario puede usar para un cuestionario: los suyos y, si administra, los de su institución */
+/* materias que enseña alguien en una institución: las de los cursos que creó o en los que es docente o auxiliar */
+async function materiasDe(env,orgId,uid){
+  var r=await env.DB.prepare("SELECT DISTINCT c.unit_id FROM courses c LEFT JOIN course_members m ON m.code=c.code AND m.user_id=? "+
+    "WHERE c.org_id=? AND c.unit_id IS NOT NULL AND (c.owner_id=? OR (m.status='activo' AND m.role IN ('docente','auxiliar')))").bind(uid,orgId,uid).all();
+  var out={}; (r.results||[]).forEach(function(x){out[x.unit_id]=1;}); return out;
+}
+/* permisos sobre un banco: lo edita quien lo creó o la administración; lo ven y usan (sin editar)
+   los docentes que tienen un curso de esa misma materia; nadie más lo ve */
+async function permisoBanco(env,b,uid){
+  if(!b||!uid)return {ver:false,editar:false};
+  if(b.owner_id===uid)return {ver:true,editar:true};
+  var rol=await rolOrg(env,b.org_id,uid);
+  if(rol==="admin")return {ver:true,editar:true};
+  if((rol==="docente"||rol==="auxiliar")&&b.unit_id&&(await materiasDe(env,b.org_id,uid))[b.unit_id])return {ver:true,editar:false};
+  return {ver:false,editar:false};
+}
+/* bancos que un usuario puede usar para un cuestionario: los suyos, los de sus materias y, si administra, todos */
 export async function puedeUsarBanco(env,bankId,uid){
   var b=await env.DB.prepare("SELECT * FROM banks WHERE id=?").bind(bankId).first();
-  if(!b)return null;
-  if(b.owner_id===uid)return b;
-  return (await rolOrg(env,b.org_id,uid))==="admin"?b:null;
+  return (await permisoBanco(env,b,uid)).ver?b:null;
 }
 
 export async function handleAula(req,env,url,path,ctx){
@@ -188,6 +203,7 @@ export async function handleAula(req,env,url,path,ctx){
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/alta$/))&&req.method==="POST")return await altaMasiva(env,user,m[1],body,json);
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/libreta$/))&&req.method==="GET")return await libreta(env,user,m[1],json);
     if((m=path.match(/^\/banks\/(\d+)$/))&&req.method==="GET")return await verBanco(env,user,+m[1],json);
+    if((m=path.match(/^\/banks\/(\d+)$/))&&req.method==="POST")return await cambiaBanco(env,user,+m[1],body,json);
     if((m=path.match(/^\/banks\/(\d+)\/import$/))&&req.method==="POST")return await importa(env,user,+m[1],body,json);
     if((m=path.match(/^\/banks\/(\d+)\/questions\/(\d+|nueva)$/))&&req.method==="POST")return await cambiaPregunta(env,user,+m[1],m[2],body,json);
     if(path==="/admin/orgs"&&req.method==="GET")return await adminOrgs(env,user,json);
@@ -659,10 +675,13 @@ async function bancosOrg(env,user,id,json){
   if(rol!=="admin"&&rol!=="docente"&&rol!=="auxiliar")return json({error:"forbidden"},null,403);
   var r=await env.DB.prepare(
     "SELECT b.*,u.name AS unit_name,us.name AS owner_name,(SELECT COUNT(*) FROM bank_questions q WHERE q.bank_id=b.id) AS n "+
-    "FROM banks b LEFT JOIN org_units u ON u.id=b.unit_id JOIN users us ON us.id=b.owner_id WHERE b.org_id=? AND (b.owner_id=? OR ?='admin') ORDER BY b.name"
-  ).bind(id,user.id,rol).all();
-  return json({banks:(r.results||[]).map(function(b){return {id:b.id,name:b.name,unit_id:b.unit_id,unit_name:b.unit_name,
-    owner_name:b.owner_name,mine:b.owner_id===user.id,questions:b.n};})});
+    "FROM banks b LEFT JOIN org_units u ON u.id=b.unit_id JOIN users us ON us.id=b.owner_id WHERE b.org_id=? ORDER BY u.name,b.name"
+  ).bind(id).all();
+  var mias=rol==="admin"?{}:await materiasDe(env,id,user.id);
+  /* cada docente ve los suyos y los de las materias que enseña; la administración, todos */
+  var lista=(r.results||[]).filter(function(b){return rol==="admin"||b.owner_id===user.id||(b.unit_id&&mias[b.unit_id]);});
+  return json({banks:lista.map(function(b){return {id:b.id,name:b.name,unit_id:b.unit_id,unit_name:b.unit_name,
+    owner_name:b.owner_name,mine:b.owner_id===user.id,can_edit:rol==="admin"||b.owner_id===user.id,questions:b.n};})});
 }
 async function creaBanco(env,user,id,b,json){
   var o=await cargaOrg(env,id); if(!o)return json({error:"not_found"},null,404);
@@ -670,7 +689,10 @@ async function creaBanco(env,user,id,b,json){
   if(rol!=="admin"&&rol!=="docente")return json({error:"forbidden"},null,403);
   var name=limpia(b.name,80), unit=b.unit_id?+b.unit_id:null;
   if(name.length<2)return json({error:"bad_name"},null,400);
-  if(unit){var u=await env.DB.prepare("SELECT 1 FROM org_units WHERE id=? AND org_id=?").bind(unit,id).first();if(!u)return json({error:"bad_unit"},null,400);}
+  /* en una institución educativa, cada banco es de una materia (el último nivel de su estructura) */
+  if(esAcademica(o.kind)&&!unit)return json({error:"unit_required"},null,400);
+  if(unit){var u=await env.DB.prepare("SELECT depth FROM org_units WHERE id=? AND org_id=?").bind(unit,id).first();if(!u)return json({error:"bad_unit"},null,400);
+    if(esAcademica(o.kind)&&u.depth!==JSON.parse(o.levels||"[]").length-1)return json({error:"unit_required"},null,400);}
   var r=await env.DB.prepare("INSERT INTO banks(org_id,owner_id,name,unit_id,created_at) VALUES(?,?,?,?,?)").bind(id,user.id,name,unit,Date.now()).run();
   return json({ok:true,id:r.meta&&r.meta.last_row_id});
 }
@@ -680,11 +702,27 @@ async function bancoEditable(env,user,bid){
   if(b.owner_id!==user.id&&(await rolOrg(env,b.org_id,user.id))!=="admin")return {err:"forbidden",st:403};
   return {banco:b};
 }
-async function verBanco(env,user,bid,json){
+/* renombrar el banco o asignarle su materia (quien lo edita) */
+async function cambiaBanco(env,user,bid,b,json){
   var a=await bancoEditable(env,user,bid); if(a.err)return json({error:a.err},null,a.st);
+  var o=await cargaOrg(env,a.banco.org_id), name=b.name!==undefined?limpia(b.name,80):a.banco.name, unit=b.unit_id!==undefined?(b.unit_id?+b.unit_id:null):a.banco.unit_id;
+  if(name.length<2)return json({error:"bad_name"},null,400);
+  if(esAcademica(o.kind)&&!unit)return json({error:"unit_required"},null,400);
+  if(unit){var u=await env.DB.prepare("SELECT depth FROM org_units WHERE id=? AND org_id=?").bind(unit,o.id).first();if(!u)return json({error:"bad_unit"},null,400);
+    if(esAcademica(o.kind)&&u.depth!==JSON.parse(o.levels||"[]").length-1)return json({error:"unit_required"},null,400);}
+  await env.DB.prepare("UPDATE banks SET name=?,unit_id=? WHERE id=?").bind(name,unit,bid).run();
+  return json({ok:true});
+}
+async function verBanco(env,user,bid,json){
+  var bk=await env.DB.prepare("SELECT * FROM banks WHERE id=?").bind(bid).first();
+  if(!bk)return json({error:"not_found"},null,404);
+  var pm=await permisoBanco(env,bk,user.id); if(!pm.ver)return json({error:"forbidden"},null,403);
+  var a={banco:bk};
   var q=await env.DB.prepare("SELECT id,level,topic,q,opts,answer FROM bank_questions WHERE bank_id=? ORDER BY topic,level,id").bind(bid).all();
   var u=a.banco.unit_id?await env.DB.prepare("SELECT name FROM org_units WHERE id=?").bind(a.banco.unit_id).first():null;
-  return json({id:a.banco.id,name:a.banco.name,org_id:a.banco.org_id,unit_name:u?u.name:"",mine:a.banco.owner_id===user.id,
+  var ow=a.banco.owner_id===user.id?null:await env.DB.prepare("SELECT name FROM users WHERE id=?").bind(a.banco.owner_id).first();
+  return json({id:a.banco.id,name:a.banco.name,org_id:a.banco.org_id,unit_id:a.banco.unit_id,unit_name:u?u.name:"",mine:a.banco.owner_id===user.id,
+    can_edit:pm.editar,owner_name:ow?ow.name:"",
     questions:(q.results||[]).map(function(x){return {id:x.id,level:x.level,topic:x.topic||"",q:x.q,opts:JSON.parse(x.opts),answer:x.answer};})});
 }
 async function clavesBanco(env,bid){

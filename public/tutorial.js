@@ -312,7 +312,7 @@ GUIAS.aula=[
    ["Mi avance","En tu curso ves tus notas, tu promedio de exámenes y tu mejor intento en cada práctica. No hay ranking público."]]);}},
 {t:"Si eres docente",d:"",
  a:function(){return pasos([["Crea un curso","Nombre (por ejemplo, «Cálculo I · Paralelo A») y gestión. Comparte su código o QR con tus estudiantes."],
-   ["Prepara un banco de preguntas","Sube un Excel o CSV, o pega filas o texto con opciones A) B) C); antes de guardar ves cada pregunta revisada."],
+   ["Prepara un banco de preguntas","Cada banco es de una materia. Sube un Excel o CSV, o pega filas o texto con opciones A) B) C); antes de guardar ves cada pregunta revisada. Los docentes de esa materia pueden usarlo, pero solo tú y la administración lo editan."],
    ["Inscribe a tus estudiantes","Con el código del curso, o de golpe con «Alta masiva desde Excel» (nombre, correo y registro). Puedes dividir el curso en grupos."],
    ["Crea exámenes y prácticas","Examen: un solo intento y nota al cierre. Práctica: intentos ilimitados con corrección al momento. Para todo el curso o para un grupo."],
    ["Sigue la libreta","Cada estudiante con sus notas y su mejor intento en las prácticas, el promedio y la descarga en Excel. En cada cuestionario, además, la estadística por pregunta."]],

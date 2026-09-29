@@ -45,7 +45,7 @@ function copia(t,b){var o=b.textContent;
 function ERR(e){if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
   return {pro_required:"Las ayudas con IA son del plan Pro. Pide a la administración de la plataforma que lo active para tu institución.",
   ia_not_configured:"La IA no está configurada en esta instalación (falta la clave ANTHROPIC_API_KEY).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
-  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
+  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
@@ -259,17 +259,29 @@ function tabCursos(o){
 function tabBancos(o){
   var t=$("au-tab"); t.innerHTML='<p class="fine">Cargando…</p>';
   api("/api/orgs/"+o.id+"/banks").then(function(r){
-    var h='<details class="au-nuevo"'+(r.banks.length?'':' open')+'><summary>Nuevo banco de preguntas</summary><form class="rt-form" id="b-form">'+
+    /* en una institución educativa cada banco es de una materia (el último nivel de la estructura) */
+    var acad=academica(o.kind), mat=o.levels[o.levels.length-1]||"Materia", hojas=opcionesUnidades(o,true), h;
+    if(acad&&!hojas)h='<div class="au-caja"><h4>Primero, las '+esc(mat.toLowerCase())+'s</h4><p class="fine">Cada banco de preguntas pertenece a una '+esc(mat.toLowerCase())+
+        ', y así solo lo ven quien lo crea, la administración y los docentes que dictan esa '+esc(mat.toLowerCase())+'. Todavía no hay ninguna en la estructura de la institución.</p>'+
+        (o.can.admin?'<div class="actions"><button class="primary" type="button" id="b-estr">Crear la estructura</button></div>':'<p class="fine">Pide a la administración que las cree en <b>Estructura</b>.</p>')+'</div>';
+    else h='<details class="au-nuevo"'+(r.banks.length?'':' open')+'><summary>Nuevo banco de preguntas</summary><form class="rt-form" id="b-form">'+
       '<label>Nombre<input id="b-name" maxlength="80" required placeholder="Cálculo I · derivadas"></label>'+
-      '<label>'+esc(o.levels[o.levels.length-1])+' (opcional)<select id="b-unit"><option value="">(ninguna)</option>'+opcionesUnidades(o,true)+'</select></label>'+
+      '<label>'+esc(mat)+(acad?'':' (opcional)')+'<select id="b-unit"'+(acad?' required':'')+'><option value="">'+(acad?'Elige la '+esc(mat.toLowerCase())+'…':'(ninguna)')+'</option>'+hojas+'</select></label>'+
+      (acad?'<p class="fine">Lo editan tú y la administración. Los docentes que dictan esa '+esc(mat.toLowerCase())+' pueden verlo y usarlo en sus exámenes, sin cambiarlo.</p>':'')+
       '<div class="actions"><button class="primary" type="submit" id="b-go">Crear banco</button></div><p class="msg" id="b-msg"></p></form></details>';
-    h+=r.banks.length?r.banks.map(function(b){
+    var tarjeta=function(b){
       return '<button type="button" class="rt-card" data-banco="'+b.id+'"><span class="rt-card-top"><b>'+esc(b.name)+'</b><span class="chip">'+b.questions+' pregunta'+(b.questions===1?'':'s')+'</span></span>'+
-        '<small>'+(b.unit_name?esc(b.unit_name)+' · ':'')+'de '+esc(b.mine?"ti":b.owner_name)+'</small></button>';
-    }).join(""):'<p class="fine">Todavía no tienes bancos. Crea uno y súbele preguntas desde Excel o texto.</p>';
+        '<small>'+(acad&&!b.unit_name?'⚠ Sin '+esc(mat.toLowerCase())+' · ':'')+'de '+esc(b.mine?"ti":b.owner_name)+(b.can_edit?'':' · solo lectura')+'</small></button>';};
+    if(!r.banks.length)h+='<p class="fine">Todavía no tienes bancos. Crea uno y súbele preguntas desde Excel o texto.</p>';
+    else if(acad){ /* agrupados por materia */
+      var grupos={},orden=[]; r.banks.forEach(function(b){var k=b.unit_name||"";if(!grupos[k]){grupos[k]=[];orden.push(k);}grupos[k].push(b);});
+      orden.sort(function(a,b){return a===""?1:b===""?-1:a.localeCompare(b);});
+      orden.forEach(function(k){h+='<h4>'+esc(k||"Sin "+mat.toLowerCase())+'</h4>'+grupos[k].map(tarjeta).join("");});
+    }else h+=r.banks.map(tarjeta).join("");
     t.innerHTML=h;
+    if($("b-estr"))$("b-estr").onclick=function(){org(o.id,"estructura");};
     var bs=t.querySelectorAll("[data-banco]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){banco(+this.getAttribute("data-banco"));};
-    $("b-form").onsubmit=function(e){
+    if($("b-form"))$("b-form").onsubmit=function(e){
       e.preventDefault(); $("b-go").disabled=true;
       api("/api/orgs/"+o.id+"/banks",{name:$("b-name").value,unit_id:$("b-unit").value||null}).then(function(r2){banco(r2.id,"Banco creado. Ahora súbele preguntas.");})
         .catch(function(er){$("b-go").disabled=false;aviso("b-msg",ERR(er),true);});
@@ -709,23 +721,27 @@ function banco(id,nota,filtro){
     var temas={}; b.questions.forEach(function(q){temas[q.topic||"(sin tema)"]=(temas[q.topic||"(sin tema)"]||0)+1;});
     var lista=b.questions.filter(function(q){return !filtro||(q.topic||"(sin tema)")===filtro;});
     var h=atras("Bancos")+'<div class="rt-head"><h3>'+esc(b.name)+'</h3><span class="chip">'+b.questions.length+' preguntas</span></div>'+
-      '<p class="rt-meta">'+(b.unit_name?esc(b.unit_name)+' · ':'')+Object.keys(temas).length+' tema'+(Object.keys(temas).length===1?'':'s')+'</p>'+
+      '<p class="rt-meta">'+(b.unit_name?esc(b.unit_name)+' · ':'')+Object.keys(temas).length+' tema'+(Object.keys(temas).length===1?'':'s')+
+        (b.mine?'':' · de '+esc(b.owner_name))+(b.can_edit?' · <a href="#" id="bk-mat">'+(b.unit_name?'Cambiar nombre o materia':'Asignar materia')+'</a>':'')+'</p>'+
       (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
-      '<div class="actions au-acciones"><button class="primary" id="bk-imp">Importar preguntas</button><button class="ghost" id="bk-una">Añadir una</button>'+
+      (b.can_edit?'<div class="actions au-acciones"><button class="primary" id="bk-imp">Importar preguntas</button><button class="ghost" id="bk-una">Añadir una</button>'+
       '<button class="ghost" id="bk-plant">Plantilla Excel</button>'+(b.questions.length?'<button class="ghost" id="bk-exp">Exportar a Excel</button>':'')+'</div>'+
       '<div class="actions au-acciones ia-acciones"><button class="ghost ia-btn" id="bk-ia">✨ Generar con IA</button>'+(b.questions.length?'<button class="ghost ia-btn" id="bk-iarev">✨ Revisar con IA</button>':'')+'</div>'+
-      '<p class="fine" id="bk-plan"></p><div id="bk-zona"></div>';
+      '<p class="fine" id="bk-plan"></p>':'<p class="rt-hoy">Solo lectura: es un banco de tu materia. Puedes usarlo en tus exámenes y prácticas; lo corrige quien lo creó o la administración.</p>')+
+      '<div id="bk-zona"></div>';
     if(b.questions.length){
       h+='<div class="au-filtros"><label>Tema<select id="bk-tema"><option value="">Todos ('+b.questions.length+')</option>'+
         Object.keys(temas).sort().map(function(t){return '<option'+(t===filtro?' selected':'')+'>'+esc(t)+'</option>';}).join("")+'</select></label></div>';
       h+='<ol class="au-preguntas">'+lista.map(function(q){
         return '<li><div class="au-pq"><span class="au-nivel-chip n'+q.level+'">'+NIV[q.level]+'</span>'+(q.topic?'<small>'+esc(q.topic)+'</small>':'')+
           '<b>'+esc(q.q)+'</b><ul>'+q.opts.map(function(o,i){return '<li class="'+(i===q.answer?"ok":"")+'">'+(i===q.answer?'✓ ':'')+esc(o)+'</li>';}).join("")+'</ul></div>'+
-          '<div class="au-pq-acc"><button type="button" class="ghost au-mini" data-edita="'+q.id+'">Editar</button><button type="button" class="ghost au-mini" data-borra="'+q.id+'">Borrar</button></div></li>';
+          (b.can_edit?'<div class="au-pq-acc"><button type="button" class="ghost au-mini" data-edita="'+q.id+'">Editar</button><button type="button" class="ghost au-mini" data-borra="'+q.id+'">Borrar</button></div>':'')+'</li>';
       }).join("")+'</ol>';
     }else h+='<p class="fine">El banco está vacío. Importa preguntas desde un Excel o pegando texto, o añádelas de una en una.</p>';
     pinta(h);
     $("au-back").onclick=function(){org(b.org_id,"bancos");};
+    if($("bk-mat"))$("bk-mat").onclick=function(e){e.preventDefault();materiaBanco(b);};
+    if(!b.can_edit){ if($("bk-tema"))$("bk-tema").onchange=function(){banco(id,null,this.value||null);}; return; }
     $("bk-imp").onclick=function(){importador(b);};
     estadoIA(b.org_id).then(function(p){var e=$("bk-plan"); if(!e)return;
       e.innerHTML=p.pro?'✨ Plan Pro · quedan <b>'+p.disponibles+'</b> de '+p.cuota+' usos de IA este mes.':'✨ Generar y revisar preguntas con IA es parte del <b>plan Pro</b>.';});
@@ -745,6 +761,20 @@ function banco(id,nota,filtro){
     s=panel.querySelectorAll("[data-edita]");
     for(i=0;i<s.length;i++)s[i].onclick=function(){var qid=+this.getAttribute("data-edita");editor(b,b.questions.filter(function(q){return q.id===qid;})[0]);};
   }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+}
+/* nombre y materia de un banco */
+function materiaBanco(b){
+  var z=$("bk-zona"); z.innerHTML='<p class="fine">Cargando…</p>';
+  api("/api/orgs/"+b.org_id).then(function(o){
+    var mat=o.levels[o.levels.length-1]||"Materia", acad=academica(o.kind);
+    z.innerHTML='<form class="au-caja rt-form" id="bm-f"><h4>Nombre y '+esc(mat.toLowerCase())+'</h4>'+
+      '<label>Nombre<input id="bm-n" maxlength="80" required value="'+esc(b.name)+'"></label>'+
+      '<label>'+esc(mat)+'<select id="bm-u"'+(acad?' required':'')+'><option value="">'+(acad?'Elige…':'(ninguna)')+'</option>'+opcionesUnidades(o,true,b.unit_id)+'</select></label>'+
+      '<div class="actions"><button type="button" class="ghost" id="bm-no">Cancelar</button><button class="primary" type="submit">Guardar</button></div><p class="msg" id="bm-msg"></p></form>';
+    $("bm-no").onclick=function(){z.innerHTML="";};
+    $("bm-f").onsubmit=function(e){e.preventDefault();
+      api("/api/banks/"+b.id,{name:$("bm-n").value,unit_id:$("bm-u").value||null}).then(function(){banco(b.id,"Guardado.");}).catch(function(er){aviso("bm-msg",ERR(er),true);});};
+  }).catch(function(er){z.innerHTML='<p class="fine bad">'+esc(ERR(er))+'</p>';});
 }
 /* ===================== AYUDAS CON IA (plan Pro) ===================== */
 var planesIA={};

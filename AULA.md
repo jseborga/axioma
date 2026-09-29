@@ -87,7 +87,20 @@ Paralelo A», 2/2026).
 ## Bancos de preguntas
 
 Cada docente tiene sus bancos dentro de la institución (hasta 2000 preguntas por
-banco). En una institución educativa, los bancos son **solo para sus exámenes y
+banco). **Cada banco pertenece a una materia** (el último nivel de la estructura),
+y eso decide quién lo ve:
+
+| Quién | Qué puede hacer |
+| --- | --- |
+| Quien lo creó y la administración | Verlo, usarlo y **editarlo** (preguntas, importación, IA, nombre y materia) |
+| Docentes con un curso de esa misma materia | **Verlo y usarlo** en sus exámenes y prácticas, en solo lectura |
+| Los demás docentes | No lo ven |
+
+Si la institución todavía no tiene materias en su *Estructura*, la pestaña Bancos
+pide crearlas primero. Los bancos antiguos sin materia aparecen como «Sin
+materia» y quien los edita se la asigna desde el propio banco. Cada docente ve
+en *Registros* solo los cuestionarios de sus cursos, y nunca a los estudiantes
+de cursos ajenos. En una institución educativa, los bancos son **solo para sus exámenes y
 prácticas**: no se usan en concursos, retos ni juegos, y la institución no abre
 convocatorias ni salas de juego en su nombre. Para jugar con preguntas propias,
 cada persona tiene *Retos → Mis preguntas* (ver [RETOS.md](RETOS.md)). Cada pregunta lleva enunciado, una respuesta correcta, de 1 a 5
