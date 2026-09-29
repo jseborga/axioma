@@ -560,6 +560,22 @@ CREATE TABLE IF NOT EXISTS reto_preguntas (event_code TEXT PRIMARY KEY, fuente T
 Mientras falten, los retos y la trivia en vivo funcionan como antes, con
 cultura general, y *Mis preguntas* avisa de que faltan las tablas.
 
+### Añadir las tablas de tipos de pregunta e imágenes
+
+Para preguntas numéricas, de verdadero o falso y de texto libre, imágenes y
+desarrollo (ver [AULA.md](AULA.md)), pega esto en la consola de D1 (se puede
+ejecutar varias veces). También está incluido en `instalar.sql`:
+
+```sql
+CREATE TABLE IF NOT EXISTS bank_question_extra (question_id INTEGER PRIMARY KEY, tipo TEXT NOT NULL DEFAULT 'opcion', num TEXT, imagen TEXT, opt_imgs TEXT, desarrollo TEXT);
+CREATE TABLE IF NOT EXISTS preguntas_imagenes (id TEXT PRIMARY KEY, org_id TEXT, owner_id TEXT NOT NULL, tipo TEXT NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS preguntas_imagenes_owner ON preguntas_imagenes(owner_id, created_at);
+CREATE TABLE IF NOT EXISTS contest_textos (code TEXT NOT NULL, user_id TEXT NOT NULL, idx INTEGER NOT NULL, texto TEXT NOT NULL, estado TEXT NOT NULL, comentario TEXT, revisado_por TEXT, revisado_at INTEGER, created_at INTEGER NOT NULL, PRIMARY KEY (code, user_id, idx));
+```
+
+Mientras falten, las preguntas de opción múltiple funcionan como siempre; guardar
+una de otro tipo o con imagen avisa de que faltan las tablas.
+
 ### Activar las ayudas con IA (plan Pro)
 
 Las ayudas con IA para bancos y prácticas (ver [AULA.md](AULA.md)) necesitan

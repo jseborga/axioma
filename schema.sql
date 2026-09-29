@@ -518,3 +518,38 @@ CREATE TABLE IF NOT EXISTS reto_preguntas (
   nombre     TEXT,
   pool       TEXT NOT NULL                   -- JSON [[pregunta,[correcta,otra,…]],…]
 );
+
+-- =========================================================
+-- Tipos de pregunta, imágenes y desarrollo (bancos de las instituciones)
+-- =========================================================
+CREATE TABLE IF NOT EXISTS bank_question_extra (
+  question_id INTEGER PRIMARY KEY,           -- bank_questions.id
+  tipo        TEXT NOT NULL DEFAULT 'opcion', -- opcion | vf | numerica | abierta
+  num         TEXT,                          -- JSON {v, tol} de las numéricas
+  imagen      TEXT,                          -- id en preguntas_imagenes (enunciado)
+  opt_imgs    TEXT,                          -- JSON [id|null] alineado con opts
+  desarrollo  TEXT                           -- resolución paso a paso
+);
+CREATE TABLE IF NOT EXISTS preguntas_imagenes (
+  id         TEXT PRIMARY KEY,               -- 20 caracteres al azar
+  org_id     TEXT,
+  owner_id   TEXT NOT NULL,
+  tipo       TEXT NOT NULL,                  -- image/jpeg | image/png | image/webp
+  data       TEXT NOT NULL,                  -- base64
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS preguntas_imagenes_owner ON preguntas_imagenes(owner_id, created_at);
+-- Respuestas escritas de los cuestionarios: numéricas (corregidas solas) y de
+-- texto libre (pendientes hasta que el docente las califica)
+CREATE TABLE IF NOT EXISTS contest_textos (
+  code         TEXT NOT NULL,
+  user_id      TEXT NOT NULL,
+  idx          INTEGER NOT NULL,
+  texto        TEXT NOT NULL,
+  estado       TEXT NOT NULL,                -- pendiente | correcta | incorrecta
+  comentario   TEXT,
+  revisado_por TEXT,
+  revisado_at  INTEGER,
+  created_at   INTEGER NOT NULL,
+  PRIMARY KEY (code, user_id, idx)
+);

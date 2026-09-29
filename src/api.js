@@ -67,7 +67,7 @@ export async function handleApi(req,env,url){
       return await handleIA(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/admin\/(summary|users)(\/|$)/.test(path)||(path==="/admin/orgs"&&req.method==="POST")||/^\/admin\/orgs\/[A-Z0-9]{6}\/admins$/.test(path))
       return await handlePlataforma(req,env,url,path,{json:json,user:await currentUser(req,env)});
-    if(/^\/(profile|orgs|courses|banks|admin)(\/|$)/.test(path))
+    if(/^\/(profile|orgs|courses|banks|admin|img|imagenes)(\/|$)/.test(path))
       return await handleAula(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(path.indexOf("/contests")===0)
       return await handleConcursos(req,env,url,path,{json:json,user:await currentUser(req,env)});

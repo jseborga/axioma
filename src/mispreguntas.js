@@ -17,7 +17,7 @@
    "b<id>" (banco de una empresa o comunidad).
    =========================================================== */
 import "../public/banco-formato.js";
-import { rolOrg, esInvitado, esAcademica } from "./aula.js";
+import { rolOrg, esInvitado, esAcademica, extrasBanco } from "./aula.js";
 var B=globalThis.AxBanco;
 
 var MAX_BANCOS=20, MAX_PREGUNTAS=500, MAX_IMPORT=500;
@@ -52,7 +52,10 @@ export async function preguntasDeFuente(env,user,fuente){
   }else{
     var ok=(await bancosDeEmpresa(env,user)).some(function(x){return x.id===id;});
     if(!ok)return {error:"forbidden_bank"};
-    filas=(await env.DB.prepare("SELECT q,opts,answer,level,topic FROM bank_questions WHERE bank_id=?").bind(id).all()).results||[];
+    var ex=await extrasBanco(env,id);
+    /* para jugar solo sirven opción múltiple y verdadero/falso, sin imágenes en las opciones */
+    filas=((await env.DB.prepare("SELECT id,q,opts,answer,level,topic FROM bank_questions WHERE bank_id=?").bind(id).all()).results||[])
+      .filter(function(x){var e=ex[x.id];return !e||((e.tipo==="opcion"||e.tipo==="vf")&&!e.opt_imgs);});
   }
   if(!filas.length)return {error:"empty_pool"};
   return {preguntas:filas.map(function(x){return {q:x.q,o:JSON.parse(x.opts),c:x.answer,nivel:x.level,tema:x.topic||""};})};
@@ -95,17 +98,20 @@ async function importa(req,env,user,id,json){
   var d=await req.json().catch(function(){return {};});
   var items=(Array.isArray(d.items)?d.items:[]).map(function(x,i){
     var opts=Array.isArray(x.opts)?x.opts:[], ans=parseInt(x.answer,10)||0;
-    return {fila:x.fila||i+1,q:x.q,correcta:opts[ans]||"",otras:opts.filter(function(_,k){return k!==ans;}),nivel:x.level,tema:x.topic};
+    return {fila:x.fila||i+1,q:x.q,correcta:opts[ans]||"",otras:opts.filter(function(_,k){return k!==ans;}),nivel:x.level,tema:x.topic,tipo:x.tipo};
   });
   if(!items.length)return json({error:"empty"},null,400);
   if(items.length>MAX_IMPORT)return json({error:"too_many",max:MAX_IMPORT},null,400);
   var ya=(await env.DB.prepare("SELECT q FROM mis_preguntas WHERE banco_id=?").bind(id).all()).results||[], claves={};
   ya.forEach(function(x){claves[B.clave(x.q)]=1;});
-  var v=B.valida(items,claves), buenas=v.filter(function(x){return x.ok;});
+  var v=B.valida(items,claves).map(function(x){
+    /* para jugar: opción múltiple o verdadero/falso */
+    if(x.ok&&x.tipo!=="opcion"&&x.tipo!=="vf"){x.ok=false;x.errores.push("Para jugar solo sirven preguntas de opción múltiple o de verdadero o falso.");}
+    return x;}), buenas=v.filter(function(x){return x.ok;});
   if(ya.length+buenas.length>MAX_PREGUNTAS)return json({error:"bank_full",max:MAX_PREGUNTAS},null,400);
   var now=Date.now(), ops=buenas.map(function(x){
-    return env.DB.prepare("INSERT INTO mis_preguntas(banco_id,q,opts,answer,level,topic,created_at) VALUES(?,?,?,0,?,?,?)")
-      .bind(id,x.q,JSON.stringify(x.opts),x.level,x.topic||null,now);
+    return env.DB.prepare("INSERT INTO mis_preguntas(banco_id,q,opts,answer,level,topic,created_at) VALUES(?,?,?,?,?,?,?)")
+      .bind(id,x.q,JSON.stringify(x.opts),x.answer||0,x.level,x.topic||null,now);
   });
   for(var i=0;i<ops.length;i+=50)await env.DB.batch(ops.slice(i,i+50));
   return json({ok:true,added:buenas.length,rejected:v.filter(function(x){return !x.ok;}).map(function(x){return {fila:x.fila,q:x.q,errores:x.errores};})});

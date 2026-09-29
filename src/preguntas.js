@@ -350,8 +350,14 @@ export function secuenciaPool(seed,pool,n,progresiva){
   var r=rng(seed), idx=baraja(pool.map(function(_,i){return i;}),r).slice(0,Math.min(n,pool.length));
   if(progresiva)idx.sort(function(a,b){return (pool[a].level||2)-(pool[b].level||2);});
   return idx.map(function(i){
-    var p=pool[i], orden=baraja(p.opts.map(function(_,k){return k;}),r);
-    return {id:p.id,tema:p.topic||"",nivel:p.level||2,q:p.q,o:orden.map(function(k){return p.opts[k];}),c:orden.indexOf(p.answer)};
+    var p=pool[i], t=p.tipo||"opcion";
+    /* numérica y texto libre no tienen opciones; verdadero/falso mantiene su orden */
+    if(t==="numerica"||t==="abierta")return {id:p.id,tema:p.topic||"",nivel:p.level||2,q:p.q,o:[],c:-1,tipo:t,num:p.num||null,
+      modelo:t==="abierta"?(p.opts[0]||""):"",img:p.img||null,oimg:null,des:p.des||""};
+    var orden=t==="vf"?[0,1]:baraja(p.opts.map(function(_,k){return k;}),r);
+    var out={id:p.id,tema:p.topic||"",nivel:p.level||2,q:p.q,o:orden.map(function(k){return p.opts[k];}),c:orden.indexOf(p.answer)};
+    if(p.tipo){out.tipo=t;out.img=p.img||null;out.oimg=p.oimg?orden.map(function(k){return p.oimg[k]||null;}):null;out.des=p.des||"";}
+    return out;
   });
 }
 

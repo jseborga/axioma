@@ -72,3 +72,7 @@ CREATE INDEX IF NOT EXISTS mis_bancos_owner ON mis_bancos(owner_id);
 CREATE TABLE IF NOT EXISTS mis_preguntas (id INTEGER PRIMARY KEY AUTOINCREMENT, banco_id INTEGER NOT NULL, q TEXT NOT NULL, opts TEXT NOT NULL, answer INTEGER NOT NULL DEFAULT 0, level INTEGER NOT NULL DEFAULT 1, topic TEXT, created_at INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS mis_preguntas_banco ON mis_preguntas(banco_id);
 CREATE TABLE IF NOT EXISTS reto_preguntas (event_code TEXT PRIMARY KEY, fuente TEXT NOT NULL, nombre TEXT, pool TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS bank_question_extra (question_id INTEGER PRIMARY KEY, tipo TEXT NOT NULL DEFAULT 'opcion', num TEXT, imagen TEXT, opt_imgs TEXT, desarrollo TEXT);
+CREATE TABLE IF NOT EXISTS preguntas_imagenes (id TEXT PRIMARY KEY, org_id TEXT, owner_id TEXT NOT NULL, tipo TEXT NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS preguntas_imagenes_owner ON preguntas_imagenes(owner_id, created_at);
+CREATE TABLE IF NOT EXISTS contest_textos (code TEXT NOT NULL, user_id TEXT NOT NULL, idx INTEGER NOT NULL, texto TEXT NOT NULL, estado TEXT NOT NULL, comentario TEXT, revisado_por TEXT, revisado_at INTEGER, created_at INTEGER NOT NULL, PRIMARY KEY (code, user_id, idx));

@@ -251,3 +251,45 @@ Secrets `ANTHROPIC_API_KEY` y `AI_MODEL` (ver SETUP.md). Sin ellos,
 los botones siguen visibles, pero avisan de que la IA no está configurada.
 
 Tablas: `org_planes`, `ia_uso` e `ia_explicaciones` (ver SETUP.md).
+
+## Tipos de pregunta, imágenes y desarrollo
+
+Al añadir o editar una pregunta de un banco se elige el **tipo**:
+
+| Tipo | Cómo responde el estudiante | Cómo se corrige |
+| --- | --- | --- |
+| Opción múltiple | Elige una opción; las opciones pueden llevar **imagen** (p. ej. «elige el gráfico correcto») | Sola |
+| Verdadero o falso | Elige Verdadero o Falso | Sola |
+| Respuesta numérica | Escribe un número (con coma o punto) | Sola, con la **tolerancia** que fije el docente (± 0,05, por ejemplo) |
+| Texto libre | Escribe su respuesta | La califica el docente en **Por revisar** |
+
+- Cualquier pregunta puede llevar una **imagen en el enunciado** (una figura, un
+  gráfico, una fórmula). La app la reduce antes de subirla (lado mayor de 1000 px)
+  y la guarda una sola vez.
+- Cualquier pregunta puede llevar su **desarrollo** (la resolución paso a paso):
+  se muestra en las prácticas tras responder y en los exámenes al cierre.
+- Desde Excel o CSV, con fila de títulos, se admiten las columnas **Tipo**
+  (opción, vf, numérica, abierta), **Tolerancia** y **Desarrollo**; la plantilla
+  descargable trae un ejemplo de cada tipo. En el texto con opciones A) B) C),
+  una línea `DESARROLLO:` tras la respuesta añade la resolución. Las imágenes se
+  ponen desde el editor.
+- Los exámenes admiten hasta **5 minutos por pregunta**, pensados para el texto
+  libre.
+
+### Respuestas de texto libre
+
+- Mientras está **por revisar**, no cuenta como error ni elimina a nadie; el
+  estudiante ve cuántas respuestas le faltan por revisar.
+- En la ficha del cuestionario, quien lo gestiona tiene **Por revisar (N)**: ve
+  cada respuesta con la respuesta modelo, la marca **Correcta** o **Incorrecta** y
+  puede dejar un comentario. Marcar «Correcta» suma un acierto a la nota (y la
+  libreta se actualiza); cambiarla después la resta.
+- Al cierre, cada estudiante ve su respuesta, la calificación, el comentario y el
+  desarrollo.
+
+Las preguntas numéricas, de texto libre o con imágenes en las opciones son para
+Educativo: los concursos y juegos de empresas solo usan opción múltiple y
+verdadero o falso.
+
+Tablas: `bank_question_extra`, `preguntas_imagenes` y `contest_textos` (ver
+SETUP.md).

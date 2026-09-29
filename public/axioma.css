@@ -1502,3 +1502,33 @@ body[data-proyector] #nav-back{display:none}
 .mb-prev li.bien{box-shadow:inset 3px 0 0 var(--ok)}
 .mb-prev li.mal{background:var(--bad-tint);box-shadow:inset 3px 0 0 var(--bad)}
 .mb-emp{margin:6px 0 0;padding-left:18px;font-size:.92rem;line-height:1.5}
+
+/* ---------- tipos de pregunta e imágenes ---------- */
+.cq-img{display:block;max-width:100%;max-height:340px;margin:8px auto 12px;border-radius:12px;background:var(--card);object-fit:contain}
+.cq-img.mini{max-height:160px;margin:6px 0}
+.rp-opts.con-img{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.rp-opts.con-img .rp-opt{display:flex;flex-direction:column;align-items:center;gap:6px}
+.rp-opt img{max-width:100%;max-height:150px;border-radius:8px;object-fit:contain;background:#fff}
+.cq-escribe{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.cq-escribe input,.cq-escribe textarea{flex:1 1 220px;min-width:0;font:inherit;font-size:1.05rem;padding:12px 14px;border-radius:12px;border:1.5px solid var(--hair);background:var(--card);color:var(--ink)}
+.cq-escribe.abierta{flex-direction:column}
+.cq-escribe textarea{resize:vertical;min-height:120px}
+.cq-review li.pend{box-shadow:inset 3px 0 0 #FF9F0A}
+.cq-tuya{display:block;white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0}
+.cq-coment{display:block;color:var(--accent)}
+.cq-des,.au-des{margin-top:6px;font-size:.92rem}
+.cq-des summary,.au-des summary{cursor:pointer;color:var(--accent);font-weight:600}
+.cq-des p,.au-des p{margin:6px 0 0;line-height:1.45;overflow-wrap:anywhere}
+.cq-rev{display:flex;flex-direction:column;gap:6px}
+.cq-rev.correcta{box-shadow:inset 3px 0 0 var(--ok)}
+.cq-rev.incorrecta{box-shadow:inset 3px 0 0 var(--bad)}
+.cq-rev.pendiente{box-shadow:inset 3px 0 0 #FF9F0A}
+.cq-rev .rv-com{font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--hair);background:var(--card);color:var(--ink)}
+.cq-rev .actions{align-items:center;flex-wrap:wrap}
+.au-qimg{display:block;max-width:100%;max-height:200px;margin:6px 0;border-radius:10px;object-fit:contain;background:var(--card)}
+.au-tipo-chip{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-tint);color:var(--accent);margin-left:4px}
+.au-pq li.con-img img{display:block;max-height:80px;max-width:140px;border-radius:6px;margin-bottom:4px;object-fit:contain}
+.ed-opt{display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap}
+.ed-opt>label:first-child{flex:1 1 200px}
+.ed-oimg img,.ed-img img{max-height:70px;max-width:120px;border-radius:8px;object-fit:contain;display:block}
+.ed-img{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0}

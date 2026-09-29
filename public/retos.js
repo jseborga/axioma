@@ -227,7 +227,7 @@ function verMiBanco(id,nota){
       '<div class="actions"><button type="button" class="ghost" id="mb-ren">Cambiar nombre</button><button type="button" class="ghost" id="mb-del">Borrar el banco</button></div>');
     $("rt-back").onclick=function(){verMisBancos();};
     $("mb-ej").onclick=function(){$("mb-t").value=BF.EJEMPLO_TEXTO;};
-    if($("mb-plant"))$("mb-plant").onclick=function(){XL.descarga(XL.escribir([{nombre:"Preguntas",filas:BF.PLANTILLA,anchos:[50,24,24,24,24,8,18]}]),"plantilla-preguntas.xlsx");};
+    if($("mb-plant"))$("mb-plant").onclick=function(){XL.descarga(XL.escribir([{nombre:"Preguntas",filas:BF.PLANTILLA,anchos:[50,10,24,24,24,24,10,8,18,50]}]),"plantilla-preguntas.xlsx");};
     $("mb-rev").onclick=function(){revisa(BF.desdeTexto($("mb-t").value));};
     $("mb-f").onchange=function(){var f=this.files[0]; if(!f)return;
       if(/\.xlsx$/i.test(f.name)&&XL)f.arrayBuffer().then(XL.leer).then(function(filas){revisa(BF.desdeFilas(filas));}).catch(function(er){aviso(er.message||"No se pudo leer el archivo.");});
@@ -235,14 +235,15 @@ function verMiBanco(id,nota){
     function aviso(t,bien){$("mb-msg").className="msg "+(bien?"ok":"bad");$("mb-msg").textContent=t;}
     function revisa(items){
       var ya={}; b.questions.forEach(function(q){ya[BF.clave(q.q)]=1;});
-      var v=BF.valida(items,ya), buenas=v.filter(function(x){return x.ok;});
+      var v=BF.valida(items,ya).map(function(x){if(x.ok&&x.tipo!=="opcion"&&x.tipo!=="vf"){x.ok=false;x.errores.push("Para jugar solo sirven opción múltiple o verdadero/falso.");}return x;}),
+        buenas=v.filter(function(x){return x.ok;});
       if(!v.length){aviso("No se encontró ninguna pregunta. Revisa el formato.");$("mb-prev").innerHTML="";return;}
       aviso(v.length+" leídas: "+buenas.length+" válidas"+(v.length>buenas.length?", "+(v.length-buenas.length)+" con errores (no se importan)":"")+".",buenas.length>0);
       $("mb-prev").innerHTML='<ul class="mb-prev">'+v.map(function(x){return '<li class="'+(x.ok?"bien":"mal")+'">'+(x.ok?'✓ ':'✗ ')+'<b>'+esc(x.q||"—")+'</b>'+
           (x.ok?' <small>✓ '+esc(x.opts[0])+' · '+esc(x.opts.slice(1).join(" · "))+'</small>':' <small>'+esc(x.errores.join(" "))+'</small>')+'</li>';}).join("")+'</ul>'+
         (buenas.length?'<div class="actions"><button type="button" class="primary" id="mb-go">Guardar '+buenas.length+' pregunta'+(buenas.length===1?'':'s')+'</button></div>':'');
       if($("mb-go"))$("mb-go").onclick=function(){this.disabled=true;
-        api("/api/mis-bancos/"+id+"/import",{items:buenas.map(function(x){return {fila:x.fila,q:x.q,opts:x.opts,answer:0,level:x.level,topic:x.topic};})})
+        api("/api/mis-bancos/"+id+"/import",{items:buenas.map(function(x){return {fila:x.fila,q:x.q,opts:x.opts,answer:x.answer||0,level:x.level,topic:x.topic,tipo:x.tipo};})})
           .then(function(r){verMiBanco(id,r.added+(r.added===1?" pregunta guardada.":" preguntas guardadas."));})
           .catch(function(er){aviso(ERR(er));});};
     }

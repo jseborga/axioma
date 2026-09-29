@@ -45,7 +45,7 @@ function copia(t,b){var o=b.textContent;
 function ERR(e){if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
   return {pro_required:"Las ayudas con IA son del plan Pro. Pide a la administración de la plataforma que lo active para tu institución.",
   ia_not_configured:"La IA no está configurada en esta instalación (falta la clave ANTHROPIC_API_KEY).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
-  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
+  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
@@ -625,7 +625,7 @@ function camposPreguntas(bancos,errDef){
     '<p class="fine" id="q-disp"></p>'+
     (window.AxAreas?'<div id="q-areas-b" hidden>'+AxAreas.html("q-areas")+'</div>':'')+
     '<div class="rt-2"><label>Número de preguntas<input type="number" id="q-n" min="1" max="100" value="10"></label>'+
-    '<label>Tiempo por pregunta<select id="q-seg"><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="30" selected>30 s</option><option value="45">45 s</option><option value="60">60 s</option></select></label></div>'+
+    '<label>Tiempo por pregunta<select id="q-seg"><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="30" selected>30 s</option><option value="45">45 s</option><option value="60">1 min</option><option value="90">1 min 30 s</option><option value="120">2 min</option><option value="180">3 min</option><option value="300">5 min (texto libre)</option></select></label></div>'+
     '<label>Errores admitidos<select id="q-err">'+errs.map(function(e){return '<option value="'+e[0]+'"'+(e[0]===String(errDef)?' selected':'')+'>'+e[1]+'</option>';}).join("")+'</select></label>'+
     '<div class="rt-2"><label>Se abre<select id="q-ini"><option value="0">Ahora</option><option value="15">En 15 minutos</option><option value="60">En 1 hora</option><option value="1440">Mañana a esta hora</option><option value="x">Fecha y hora…</option></select></label>'+
     '<label>Dura<select id="q-dur"><option value="30">30 minutos</option><option value="60" selected>1 hora</option><option value="120">2 horas</option><option value="1440">1 día</option><option value="10080">1 semana</option><option value="x">Hasta fecha y hora…</option></select></label></div>'+
@@ -733,8 +733,9 @@ function banco(id,nota,filtro){
       h+='<div class="au-filtros"><label>Tema<select id="bk-tema"><option value="">Todos ('+b.questions.length+')</option>'+
         Object.keys(temas).sort().map(function(t){return '<option'+(t===filtro?' selected':'')+'>'+esc(t)+'</option>';}).join("")+'</select></label></div>';
       h+='<ol class="au-preguntas">'+lista.map(function(q){
-        return '<li><div class="au-pq"><span class="au-nivel-chip n'+q.level+'">'+NIV[q.level]+'</span>'+(q.topic?'<small>'+esc(q.topic)+'</small>':'')+
-          '<b>'+esc(q.q)+'</b><ul>'+q.opts.map(function(o,i){return '<li class="'+(i===q.answer?"ok":"")+'">'+(i===q.answer?'✓ ':'')+esc(o)+'</li>';}).join("")+'</ul></div>'+
+        return '<li><div class="au-pq"><span class="au-nivel-chip n'+q.level+'">'+NIV[q.level]+'</span>'+(q.tipo&&q.tipo!=="opcion"?'<span class="au-tipo-chip">'+esc(TIPO_CORTO[q.tipo])+'</span>':'')+
+          (q.topic?'<small>'+esc(q.topic)+'</small>':'')+'<b>'+esc(q.q)+'</b>'+(q.imagen?'<img class="au-qimg" src="/api/img/'+q.imagen+'" alt="" loading="lazy">':'')+respuestaBanco(q)+
+          (q.desarrollo?'<details class="au-des"><summary>Desarrollo</summary><p>'+esc(q.desarrollo).replace(/\n/g,"<br>")+'</p></details>':'')+'</div>'+
           (b.can_edit?'<div class="au-pq-acc"><button type="button" class="ghost au-mini" data-edita="'+q.id+'">Editar</button><button type="button" class="ghost au-mini" data-borra="'+q.id+'">Borrar</button></div>':'')+'</li>';
       }).join("")+'</ol>';
     }else h+='<p class="fine">El banco está vacío. Importa preguntas desde un Excel o pegando texto, o añádelas de una en una.</p>';
@@ -748,11 +749,14 @@ function banco(id,nota,filtro){
     $("bk-ia").onclick=function(){iaGenera(b);};
     if($("bk-iarev"))$("bk-iarev").onclick=function(){iaRevisa(b);};
     $("bk-una").onclick=function(){editor(b,null);};
-    $("bk-plant").onclick=function(){XL.descarga(XL.escribir([{nombre:"Preguntas",filas:BF.PLANTILLA,anchos:[50,24,24,24,24,8,18]}]),"plantilla-preguntas.xlsx");};
+    $("bk-plant").onclick=function(){XL.descarga(XL.escribir([{nombre:"Preguntas",filas:BF.PLANTILLA,anchos:[50,10,24,24,24,24,10,8,18,50]}]),"plantilla-preguntas.xlsx");};
     if($("bk-exp"))$("bk-exp").onclick=function(){
-      var filas=[["Pregunta","Correcta","Incorrecta 1","Incorrecta 2","Incorrecta 3","Incorrecta 4","Incorrecta 5","Nivel","Tema"]];
-      b.questions.forEach(function(q){var o=q.opts.slice(),c=o.splice(q.answer,1)[0];while(o.length<5)o.push("");filas.push([q.q,c].concat(o,[q.level,q.topic||""]));});
-      XL.descarga(XL.escribir([{nombre:"Preguntas",filas:filas,anchos:[50,24,24,24,24,24,24,8,18]}]),b.name.replace(/[\\/:*?"<>|]+/g," ").trim()+".xlsx");
+      var filas=[["Pregunta","Tipo","Correcta","Incorrecta 1","Incorrecta 2","Incorrecta 3","Incorrecta 4","Incorrecta 5","Tolerancia","Nivel","Tema","Desarrollo"]];
+      b.questions.forEach(function(q){var t=q.tipo||"opcion",o=q.opts.slice(),c=o.splice(q.answer,1)[0];
+        if(t!=="opcion")o=[]; if(t==="numerica")c=String(q.num?q.num.v:c).replace(".",",");
+        while(o.length<5)o.push("");
+        filas.push([q.q,{opcion:"opción",vf:"vf",numerica:"numérica",abierta:"abierta"}[t],c].concat(o,[q.num&&q.num.tol?String(q.num.tol).replace(".",","):"",q.level,q.topic||"",q.desarrollo||""]));});
+      XL.descarga(XL.escribir([{nombre:"Preguntas",filas:filas,anchos:[50,10,24,24,24,24,24,24,10,8,18,50]}]),b.name.replace(/[\\/:*?"<>|]+/g," ").trim()+".xlsx");
     };
     if($("bk-tema"))$("bk-tema").onchange=function(){banco(id,null,this.value||null);};
     var s=panel.querySelectorAll("[data-borra]"),i;
@@ -761,6 +765,14 @@ function banco(id,nota,filtro){
     s=panel.querySelectorAll("[data-edita]");
     for(i=0;i<s.length;i++)s[i].onclick=function(){var qid=+this.getAttribute("data-edita");editor(b,b.questions.filter(function(q){return q.id===qid;})[0]);};
   }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+}
+var TIPO_CORTO={vf:"V/F",numerica:"Numérica",abierta:"Texto libre"};
+/* la respuesta de una pregunta del banco, según su tipo */
+function respuestaBanco(q){
+  if(q.tipo==="numerica")return '<ul><li class="ok">✓ '+esc(String(q.num?q.num.v:q.opts[0]).replace(".",","))+(q.num&&q.num.tol?' ± '+esc(String(q.num.tol).replace(".",",")):'')+'</li></ul>';
+  if(q.tipo==="abierta")return '<p class="fine">'+(q.opts[0]?'Respuesta modelo: '+esc(q.opts[0]):'Respuesta libre: la corrige el docente.')+'</p>';
+  return '<ul>'+q.opts.map(function(o,i){var im=q.opt_imgs&&q.opt_imgs[i];
+    return '<li class="'+(i===q.answer?"ok":"")+(im?' con-img':'')+'">'+(im?'<img src="/api/img/'+im+'" alt="" loading="lazy">':'')+(i===q.answer?'✓ ':'')+esc(o)+'</li>';}).join("")+'</ul>';
 }
 /* nombre y materia de un banco */
 function materiaBanco(b){
@@ -857,31 +869,87 @@ function iaRevisa(b){
     }).catch(function(er){z.innerHTML='<div class="au-caja"><p class="fine bad">'+esc(ERR(er))+'</p></div>';});
   });
 }
+/* imágenes de preguntas: se reducen en el navegador (lado mayor 1000 px, JPEG) y se suben una vez */
+function reduceImagen(file){
+  return new Promise(function(resolve,reject){
+    if(!/^image\//.test(file.type))return reject(new Error("Elige una imagen (JPG, PNG o WebP)."));
+    var r=new FileReader();
+    r.onload=function(){var im=new Image();
+      im.onload=function(){
+        var lado=1000,cal=.82,d,cv=document.createElement("canvas");
+        do{ var k=Math.min(1,lado/Math.max(im.width,im.height)); cv.width=Math.max(1,Math.round(im.width*k)); cv.height=Math.max(1,Math.round(im.height*k));
+          var cx=cv.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height); cx.drawImage(im,0,0,cv.width,cv.height);
+          d=cv.toDataURL("image/jpeg",cal); lado=Math.round(lado*.8); cal=Math.max(.6,cal-.07);
+        }while(d.length>440000&&lado>300);
+        resolve(d);
+      };
+      im.onerror=function(){reject(new Error("No se pudo leer la imagen."));}; im.src=r.result;};
+    r.onerror=function(){reject(new Error("No se pudo leer la imagen."));}; r.readAsDataURL(file);
+  });
+}
+function subeImagen(orgId,file){return reduceImagen(file).then(function(d){return api("/api/imagenes",{org_id:orgId,data:d});}).then(function(r){return r.id;});}
+function urlImg(id){return "/api/img/"+id;}
 function editor(b,q){
-  var z=$("bk-zona"), o=q?q.opts.slice():["","","",""];
-  if(q){var c=o.splice(q.answer,1)[0];o.unshift(c);}
-  while(o.length<4)o.push("");
+  var z=$("bk-zona"), tipo=q&&q.tipo||"opcion", img=q&&q.imagen||null, o, oi;
+  /* filas de opciones: la correcta primero */
+  o=q&&tipo==="opcion"?q.opts.slice():["","","",""]; oi=q&&tipo==="opcion"&&q.opt_imgs?q.opt_imgs.slice():[];
+  if(q&&tipo==="opcion"&&q.answer){var c=o.splice(q.answer,1)[0];o.unshift(c);var ci=oi.splice(q.answer,1)[0];oi.unshift(ci);}
+  while(o.length<4)o.push(""); while(oi.length<6)oi.push(null);
+  var fila=function(i){return '<div class="ed-opt'+(i>3&&!o[i]&&!oi[i]?'" hidden':'"')+' data-fila="'+i+'"><label>'+(i===0?'Respuesta correcta':'Incorrecta '+i)+
+    '<input id="ed-o'+i+'" maxlength="150" value="'+esc(o[i]||"")+'"'+(i===0?' data-req="1"':'')+'></label>'+
+    '<span class="ed-oimg" id="ed-oi'+i+'">'+(oi[i]?'<img src="'+urlImg(oi[i])+'" alt="">':'')+'</span>'+
+    '<label class="ghost au-mini au-archivo" title="Imagen para esta opción">🖼<input type="file" accept="image/*" data-oimg="'+i+'" hidden></label>'+
+    (oi[i]?'<button type="button" class="ghost au-mini" data-oquita="'+i+'" title="Quitar imagen">✕</button>':'')+'</div>';};
   z.innerHTML='<form class="rt-form au-caja" id="ed-form"><h4>'+(q?"Editar pregunta":"Nueva pregunta")+'</h4>'+
+    '<label>Tipo<select id="ed-tipo">'+Object.keys(BF.TIPOS).map(function(k){return '<option value="'+k+'"'+(k===tipo?' selected':'')+'>'+BF.TIPOS[k]+'</option>';}).join("")+'</select></label>'+
     '<label>Enunciado<textarea id="ed-q" maxlength="300" rows="2" required>'+esc(q?q.q:"")+'</textarea></label>'+
-    '<label>Respuesta correcta<input id="ed-o0" maxlength="150" required value="'+esc(o[0])+'"></label>'+
-    [1,2,3,4,5].map(function(i){return '<label'+(i>3&&!o[i]?' hidden':'')+' data-extra="'+i+'">Incorrecta '+i+'<input id="ed-o'+i+'" maxlength="150" value="'+esc(o[i]||"")+'"></label>';}).join("")+
-    '<button type="button" class="ghost au-mini" id="ed-mas">+ Otra opción</button>'+
+    '<div class="ed-img"><span id="ed-imgv">'+(img?'<img src="'+urlImg(img)+'" alt="">':'')+'</span>'+
+      '<label class="ghost au-mini au-archivo">'+(img?'Cambiar imagen':'🖼 Añadir imagen al enunciado')+'<input type="file" accept="image/*" id="ed-imgf" hidden></label>'+
+      (img?'<button type="button" class="ghost au-mini" id="ed-imgq">Quitar imagen</button>':'')+'</div>'+
+    '<div id="ed-t-opcion">'+[0,1,2,3,4,5].map(fila).join("")+'<button type="button" class="ghost au-mini" id="ed-mas">+ Otra opción</button>'+
+      '<p class="fine">Puedes poner una imagen en cada opción (p. ej. «elige el gráfico correcto»); si la dejas sin texto, se llamará «Imagen 1», «Imagen 2»…</p></div>'+
+    '<div id="ed-t-vf"><label>La afirmación es<select id="ed-vf"><option value="0">Verdadera</option><option value="1">Falsa</option></select></label></div>'+
+    '<div id="ed-t-numerica" class="rt-2"><label>Respuesta correcta (número)<input id="ed-num" inputmode="decimal" placeholder="9,81" value="'+(q&&q.num?esc(String(q.num.v).replace(".",",")):"")+'"></label>'+
+      '<label>Tolerancia (±)<input id="ed-tol" inputmode="decimal" placeholder="0,05" value="'+(q&&q.num&&q.num.tol?esc(String(q.num.tol).replace(".",",")):"")+'"></label></div>'+
+    '<div id="ed-t-abierta"><label>Respuesta modelo (opcional, solo la ve quien corrige)<textarea id="ed-mod" maxlength="600" rows="2">'+esc(q&&tipo==="abierta"?q.opts[0]||"":"")+'</textarea></label>'+
+      '<p class="fine">El estudiante escribe su respuesta y queda «por revisar» hasta que la califiques.</p></div>'+
+    '<label>Desarrollo (opcional)<textarea id="ed-des" maxlength="2000" rows="3" placeholder="La resolución paso a paso: se muestra al corregir o al terminar.">'+esc(q?q.desarrollo||"":"")+'</textarea></label>'+
     '<div class="rt-2"><label>Nivel<select id="ed-lv"><option value="1">Fácil</option><option value="2">Medio</option><option value="3">Difícil</option></select></label>'+
     '<label>Tema<input id="ed-t" maxlength="60" value="'+esc(q?q.topic:"")+'"></label></div>'+
     '<div class="actions"><button type="button" class="ghost" id="ed-no">Cancelar</button><button class="primary" type="submit" id="ed-go">Guardar</button></div><p class="msg" id="ed-msg"></p></form>';
   $("ed-lv").value=String(q?q.level:2);
-  $("ed-mas").onclick=function(){var h=z.querySelector("label[data-extra][hidden]");if(h)h.hidden=false;};
+  if(q&&tipo==="vf")$("ed-vf").value=String(q.answer||0);
+  function muestra(){tipo=$("ed-tipo").value; ["opcion","vf","numerica","abierta"].forEach(function(t){$("ed-t-"+t).hidden=t!==tipo;});}
+  $("ed-tipo").onchange=muestra; muestra();
+  $("ed-mas").onclick=function(){var h=z.querySelector(".ed-opt[hidden]");if(h)h.hidden=false;};
   $("ed-no").onclick=function(){z.innerHTML="";};
+  function subiendo(on){$("ed-go").disabled=on; if(on)aviso("ed-msg","Subiendo la imagen…");}
+  $("ed-imgf").onchange=function(){var f=this.files[0]; if(!f)return; subiendo(true);
+    subeImagen(b.org_id,f).then(function(id){img=id;$("ed-imgv").innerHTML='<img src="'+urlImg(id)+'" alt="">';subiendo(false);aviso("ed-msg","Imagen lista.");})
+      .catch(function(er){subiendo(false);aviso("ed-msg",er.message||ERR(er),true);});};
+  if($("ed-imgq"))$("ed-imgq").onclick=function(){img=null;$("ed-imgv").innerHTML="";this.remove();};
+  z.querySelectorAll("[data-oimg]").forEach(function(inp){inp.onchange=function(){var i=+this.getAttribute("data-oimg"),f=this.files[0]; if(!f)return; subiendo(true);
+    subeImagen(b.org_id,f).then(function(id){oi[i]=id;$("ed-oi"+i).innerHTML='<img src="'+urlImg(id)+'" alt="">';subiendo(false);aviso("ed-msg","Imagen lista.");})
+      .catch(function(er){subiendo(false);aviso("ed-msg",er.message||ERR(er),true);});};});
+  z.querySelectorAll("[data-oquita]").forEach(function(bt){bt.onclick=function(){var i=+this.getAttribute("data-oquita");oi[i]=null;$("ed-oi"+i).innerHTML="";this.remove();};});
   z.scrollIntoView({behavior:"smooth",block:"start"});
   $("ed-form").onsubmit=function(e){
     e.preventDefault();
-    var opts=[0,1,2,3,4,5].map(function(i){return $("ed-o"+i).value.trim();}).filter(function(x,i){return i===0||x;});
-    var it=BF.valida([{fila:1,q:$("ed-q").value,correcta:opts[0],otras:opts.slice(1),nivel:$("ed-lv").value,tema:$("ed-t").value}],{})[0];
-    if(!it.ok){aviso("ed-msg",it.errores.join(" "),true);return;}
+    var it={fila:1,q:$("ed-q").value,nivel:$("ed-lv").value,tema:$("ed-t").value,tipo:tipo,desarrollo:$("ed-des").value}, filas=[], envio;
+    if(tipo==="opcion"){
+      [0,1,2,3,4,5].forEach(function(i){var t=$("ed-o"+i).value.trim(); if(!t&&oi[i])t="Imagen "+(filas.length+1); if(i===0||t)filas.push({t:t,img:oi[i]||null});});
+      it.correcta=filas[0].t; it.otras=filas.slice(1).map(function(f){return f.t;});
+    }else if(tipo==="vf")it.correcta=$("ed-vf").value==="0"?"Verdadero":"Falso";
+    else if(tipo==="numerica"){it.correcta=$("ed-num").value;it.tol=$("ed-tol").value;}
+    else it.correcta=$("ed-mod").value;
+    var v=BF.valida([it],{})[0];
+    if(!v.ok){aviso("ed-msg",v.errores.join(" "),true);return;}
+    envio={q:v.q,opts:v.opts,answer:v.answer,level:v.level,topic:v.topic,tipo:v.tipo,num:v.num||null,desarrollo:v.desarrollo,imagen:img};
+    if(tipo==="opcion")envio.opt_imgs=filas.map(function(f){return f.img;});
     $("ed-go").disabled=true;
-    api("/api/banks/"+b.id+"/questions/"+(q?q.id:"nueva"),{q:it.q,opts:it.opts,answer:0,level:it.level,topic:it.topic})
+    api("/api/banks/"+b.id+"/questions/"+(q?q.id:"nueva"),envio)
       .then(function(){banco(b.id,q?"Pregunta guardada.":"Pregunta añadida.");})
-      .catch(function(er){$("ed-go").disabled=false;aviso("ed-msg",ERR(er),true);});
+      .catch(function(er){$("ed-go").disabled=false;aviso("ed-msg",ERR(er)+(er.errores?" "+er.errores.join(" "):""),true);});
   };
 }
 function importador(b,iniciales,titulo){
@@ -916,15 +984,17 @@ function importador(b,iniciales,titulo){
       $("im-prev").innerHTML='<div class="tabla-wrap"><table class="tabla au-prev"><thead><tr><th>Fila</th><th>Revisión</th><th>Pregunta</th><th>Correcta</th><th>Otras</th><th>Nivel</th><th>Tema</th></tr></thead><tbody>'+
         v.map(function(x){return '<tr class="'+(x.ok?(x.avisos.length?"aviso":"bien"):"mal")+'"><td>'+(x.fila||"")+'</td>'+
           '<td class="au-rev">'+(x.ok?(x.avisos.length?'⚠ '+esc(x.avisos.join(" ")):'✓'):'✗ '+esc(x.errores.join(" ")))+'</td>'+
-          '<td>'+esc(x.q||"—")+'</td><td>'+esc(x.opts[0]||"—")+'</td>'+
-          '<td>'+esc(x.opts.slice(1).join(" | "))+'</td><td>'+NIV[x.level]+'</td><td>'+esc(x.topic||"")+'</td></tr>';}).join("")+
+          '<td>'+(x.tipo&&x.tipo!=="opcion"?'<small>'+esc(TIPO_CORTO[x.tipo])+'</small> ':'')+esc(x.q||"—")+'</td>'+
+          '<td>'+esc(x.tipo==="numerica"&&x.num?String(x.num.v).replace(".",",")+(x.num.tol?" ± "+String(x.num.tol).replace(".",","):""):x.opts[x.answer]||"—")+'</td>'+
+          '<td>'+esc(x.tipo==="opcion"?x.opts.slice(1).join(" | "):x.tipo==="vf"?x.opts[1-x.answer]:"")+'</td><td>'+NIV[x.level]+'</td><td>'+esc(x.topic||"")+'</td></tr>';}).join("")+
         '</tbody></table></div>'+(buenas.length?'<div class="actions"><button type="button" class="primary" id="im-go">Importar '+buenas.length+' pregunta'+(buenas.length===1?'':'s')+'</button></div>':'');
       if($("im-go"))$("im-go").onclick=function(){
         this.disabled=true;
         var lotes=[],i; for(i=0;i<buenas.length;i+=500)lotes.push(buenas.slice(i,i+500));
         var total=0,rech=0;
         lotes.reduce(function(p,l){return p.then(function(){
-          return api("/api/banks/"+b.id+"/import",{items:l.map(function(x){return {fila:x.fila,q:x.q,opts:x.opts,answer:0,level:x.level,topic:x.topic};})})
+          return api("/api/banks/"+b.id+"/import",{items:l.map(function(x){return {fila:x.fila,q:x.q,opts:x.opts,answer:x.answer||0,level:x.level,topic:x.topic,
+            tipo:x.tipo,num:x.num||null,desarrollo:x.desarrollo||""};})})
             .then(function(r2){total+=r2.added;rech+=r2.rejected.length;});});},Promise.resolve())
           .then(function(){banco(b.id,total+" pregunta"+(total===1?" importada":"s importadas")+(rech?" · "+rech+" rechazada"+(rech===1?"":"s")+" por el servidor":"")+".");})
           .catch(function(er){aviso("im-msg",ERR(er),true);});

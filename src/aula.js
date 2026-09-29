@@ -170,6 +170,8 @@ export async function handleAula(req,env,url,path,ctx){
   var json=ctx.json, user=ctx.user, m;
   if(!env.DB)return json({error:"not_configured"},null,503);
   try{
+    /* imágenes de preguntas: se sirven por su id al azar, sin sesión (como cualquier imagen) */
+    if((m=path.match(/^\/img\/([a-z0-9]{20})$/))&&req.method==="GET")return await sirveImagen(env,m[1]);
     if(path==="/profile"&&req.method==="GET")return await verPerfil(env,user,json);
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})$/))&&req.method==="GET")return await fichaCurso(env,user,m[1],json);
     if(!user)return json({error:"unauthorized"},null,401);
@@ -202,6 +204,7 @@ export async function handleAula(req,env,url,path,ctx){
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/groups\/(\d+)$/))&&req.method==="POST")return await cambiaGrupo(env,user,m[1],+m[2],body,json);
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/alta$/))&&req.method==="POST")return await altaMasiva(env,user,m[1],body,json);
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/libreta$/))&&req.method==="GET")return await libreta(env,user,m[1],json);
+    if(path==="/imagenes"&&req.method==="POST"){if(!user||esInvitado(user))return json({error:"unauthorized"},null,401);return await subeImagen(env,user,body,json);}
     if((m=path.match(/^\/banks\/(\d+)$/))&&req.method==="GET")return await verBanco(env,user,+m[1],json);
     if((m=path.match(/^\/banks\/(\d+)$/))&&req.method==="POST")return await cambiaBanco(env,user,+m[1],body,json);
     if((m=path.match(/^\/banks\/(\d+)\/import$/))&&req.method==="POST")return await importa(env,user,+m[1],body,json);
@@ -721,9 +724,58 @@ async function verBanco(env,user,bid,json){
   var q=await env.DB.prepare("SELECT id,level,topic,q,opts,answer FROM bank_questions WHERE bank_id=? ORDER BY topic,level,id").bind(bid).all();
   var u=a.banco.unit_id?await env.DB.prepare("SELECT name FROM org_units WHERE id=?").bind(a.banco.unit_id).first():null;
   var ow=a.banco.owner_id===user.id?null:await env.DB.prepare("SELECT name FROM users WHERE id=?").bind(a.banco.owner_id).first();
+  var ex=await extrasBanco(env,bid);
   return json({id:a.banco.id,name:a.banco.name,org_id:a.banco.org_id,unit_id:a.banco.unit_id,unit_name:u?u.name:"",mine:a.banco.owner_id===user.id,
     can_edit:pm.editar,owner_name:ow?ow.name:"",
-    questions:(q.results||[]).map(function(x){return {id:x.id,level:x.level,topic:x.topic||"",q:x.q,opts:JSON.parse(x.opts),answer:x.answer};})});
+    questions:(q.results||[]).map(function(x){var e=ex[x.id]||{};
+      return {id:x.id,level:x.level,topic:x.topic||"",q:x.q,opts:JSON.parse(x.opts),answer:x.answer,tipo:e.tipo||"opcion",
+        num:e.num||null,imagen:e.imagen||null,opt_imgs:e.opt_imgs||null,desarrollo:e.desarrollo||""};})});
+}
+/* ---------- tipos de pregunta, imágenes y desarrollo ----------
+   Van en una tabla aparte (bank_question_extra) para no tocar bank_questions:
+   tipo (opcion | vf | numerica | abierta), num {v, tol}, imagen del enunciado,
+   imágenes de las opciones (en el orden guardado: la correcta primero) y el
+   desarrollo. Las imágenes se guardan una vez en preguntas_imagenes con un id
+   al azar y se sirven en /api/img/:id. */
+var IMG_MAX=460000, IMG_DIA=400;
+function esIdImg(x){return typeof x==="string"&&/^[a-z0-9]{20}$/.test(x);}
+export async function extrasBanco(env,bid){
+  var out={};
+  try{((await env.DB.prepare("SELECT e.* FROM bank_question_extra e JOIN bank_questions q ON q.id=e.question_id WHERE q.bank_id=?").bind(bid).all()).results||[])
+    .forEach(function(e){out[e.question_id]={tipo:e.tipo||"opcion",num:e.num?JSON.parse(e.num):null,imagen:e.imagen||null,
+      opt_imgs:e.opt_imgs?JSON.parse(e.opt_imgs):null,desarrollo:e.desarrollo||""};});}catch(er){}
+  return out;
+}
+/* lo que se guarda aparte de una pregunta validada; null si no hace falta */
+function extraDe(x,imgs){
+  var oi=imgs&&Array.isArray(imgs.opt_imgs)&&x.tipo==="opcion"?imgs.opt_imgs.map(function(i){return esIdImg(i)?i:null;}):null;
+  var e={tipo:x.tipo||"opcion",num:x.num||null,desarrollo:x.desarrollo||"",imagen:imgs&&esIdImg(imgs.imagen)?imgs.imagen:null,
+    opt_imgs:oi&&oi.some(Boolean)?oi:null};
+  return (e.tipo!=="opcion"||e.desarrollo||e.imagen||e.opt_imgs)?e:null;
+}
+function opExtra(env,qid,e){
+  if(!e)return env.DB.prepare("DELETE FROM bank_question_extra WHERE question_id=?").bind(qid);
+  return env.DB.prepare("INSERT OR REPLACE INTO bank_question_extra(question_id,tipo,num,imagen,opt_imgs,desarrollo) VALUES(?,?,?,?,?,?)")
+    .bind(qid,e.tipo,e.num?JSON.stringify(e.num):null,e.imagen,e.opt_imgs?JSON.stringify(e.opt_imgs):null,e.desarrollo||null);
+}
+/* subir una imagen (ya reducida en el navegador) para una pregunta */
+async function subeImagen(env,user,b,json){
+  var rol=await rolOrg(env,String(b.org_id||""),user.id);
+  if(rol!=="admin"&&rol!=="docente"&&rol!=="auxiliar")return json({error:"forbidden"},null,403);
+  var m=/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+\/=]+)$/.exec(String(b.data||""));
+  if(!m)return json({error:"bad_image"},null,400);
+  if(m[2].length>IMG_MAX)return json({error:"image_too_big"},null,400);
+  var hoy=await env.DB.prepare("SELECT COUNT(*) AS n FROM preguntas_imagenes WHERE owner_id=? AND created_at>?").bind(user.id,Date.now()-86400000).first();
+  if(hoy.n>=IMG_DIA)return json({error:"too_many"},null,400);
+  var id=codigo(20).toLowerCase();
+  await env.DB.prepare("INSERT INTO preguntas_imagenes(id,org_id,owner_id,tipo,data,created_at) VALUES(?,?,?,?,?,?)").bind(id,String(b.org_id),user.id,m[1],m[2],Date.now()).run();
+  return json({ok:true,id:id,url:"/api/img/"+id});
+}
+async function sirveImagen(env,id){
+  var r=await env.DB.prepare("SELECT tipo,data FROM preguntas_imagenes WHERE id=?").bind(id).first();
+  if(!r)return new Response("No existe",{status:404});
+  var bin=atob(r.data), u=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+  return new Response(u,{headers:{"Content-Type":r.tipo,"Cache-Control":"public, max-age=31536000, immutable","X-Content-Type-Options":"nosniff"}});
 }
 async function clavesBanco(env,bid){
   var r=await env.DB.prepare("SELECT q FROM bank_questions WHERE bank_id=?").bind(bid).all(), k={};
@@ -734,7 +786,8 @@ async function clavesBanco(env,bid){
 function aItems(lista){
   return (Array.isArray(lista)?lista:[]).map(function(x,i){
     var opts=Array.isArray(x.opts)?x.opts:[], ans=parseInt(x.answer,10)||0;
-    return {fila:x.fila||i+1,q:x.q,correcta:opts[ans]||"",otras:opts.filter(function(_,k){return k!==ans;}),nivel:x.level,tema:x.topic};
+    return {fila:x.fila||i+1,q:x.q,correcta:opts[ans]||"",otras:opts.filter(function(_,k){return k!==ans;}),nivel:x.level,tema:x.topic,
+      tipo:x.tipo,tol:x.num&&x.num.tol!=null?String(x.num.tol):"",desarrollo:x.desarrollo};
   });
 }
 async function importa(env,user,bid,b,json){
@@ -746,10 +799,14 @@ async function importa(env,user,bid,b,json){
   var v=B.valida(items,ya.claves), buenas=v.filter(function(x){return x.ok;});
   if(ya.total+buenas.length>MAX_BANCO)return json({error:"bank_full",max:MAX_BANCO},null,400);
   var now=Date.now(), ops=buenas.map(function(x){
-    return env.DB.prepare("INSERT INTO bank_questions(bank_id,level,topic,q,opts,answer,created_at) VALUES(?,?,?,?,?,0,?)")
-      .bind(bid,x.level,x.topic||null,x.q,JSON.stringify(x.opts),now);
+    return env.DB.prepare("INSERT INTO bank_questions(bank_id,level,topic,q,opts,answer,created_at) VALUES(?,?,?,?,?,?,?)")
+      .bind(bid,x.level,x.topic||null,x.q,JSON.stringify(x.opts),x.answer||0,now);
   });
-  for(var i=0;i<ops.length;i+=50)await env.DB.batch(ops.slice(i,i+50));
+  for(var i=0;i<ops.length;i+=50){
+    var res=await env.DB.batch(ops.slice(i,i+50)), ex=[];
+    res.forEach(function(r,k){var e=extraDe(buenas[i+k]); if(e&&r.meta&&r.meta.last_row_id)ex.push(opExtra(env,r.meta.last_row_id,e));});
+    if(ex.length)try{await env.DB.batch(ex);}catch(er){if(/no such table/i.test(String(er&&er.message)))return json({error:"types_not_configured",added:i+res.length},null,503);throw er;}
+  }
   return json({ok:true,added:buenas.length,rejected:v.filter(function(x){return !x.ok;}).map(function(x){return {fila:x.fila,q:x.q,errores:x.errores};})});
 }
 async function cambiaPregunta(env,user,bid,qid,b,json){
@@ -757,21 +814,35 @@ async function cambiaPregunta(env,user,bid,qid,b,json){
   if(qid!=="nueva"){
     var q=await env.DB.prepare("SELECT * FROM bank_questions WHERE id=? AND bank_id=?").bind(+qid,bid).first();
     if(!q)return json({error:"not_found"},null,404);
-    if(b.remove){await env.DB.prepare("DELETE FROM bank_questions WHERE id=?").bind(+qid).run();await olvidaExplicacion(env,qid);return json({ok:true});}
+    if(b.remove){await env.DB.prepare("DELETE FROM bank_questions WHERE id=?").bind(+qid).run();await olvidaExplicacion(env,qid);
+      try{await env.DB.prepare("DELETE FROM bank_question_extra WHERE question_id=?").bind(+qid).run();}catch(er){}return json({ok:true});}
   }
   var ya=await clavesBanco(env,bid);
   if(qid!=="nueva"){ delete ya.claves[B.clave(q.q)]; }
   else if(ya.total>=MAX_BANCO)return json({error:"bank_full",max:MAX_BANCO},null,400);
   var v=B.valida(aItems([b]),ya.claves)[0];
   if(!v.ok)return json({error:"invalid",errores:v.errores},null,400);
-  if(qid==="nueva"){
-    var r=await env.DB.prepare("INSERT INTO bank_questions(bank_id,level,topic,q,opts,answer,created_at) VALUES(?,?,?,?,?,0,?)")
-      .bind(bid,v.level,v.topic||null,v.q,JSON.stringify(v.opts),Date.now()).run();
-    return json({ok:true,id:r.meta&&r.meta.last_row_id});
+  /* imágenes de las opciones: en el orden guardado (la correcta primero, sin opciones vacías) */
+  var oi=null;
+  if(v.tipo==="opcion"&&Array.isArray(b.opt_imgs)){
+    var ops=Array.isArray(b.opts)?b.opts:[], ans=parseInt(b.answer,10)||0, orden=[ans];
+    ops.forEach(function(o,k){if(k!==ans&&B.limpia(o))orden.push(k);});
+    oi=orden.map(function(k){return b.opt_imgs[k]||null;});
   }
-  await env.DB.prepare("UPDATE bank_questions SET level=?,topic=?,q=?,opts=?,answer=0 WHERE id=?").bind(v.level,v.topic||null,v.q,JSON.stringify(v.opts),+qid).run();
-  await olvidaExplicacion(env,qid);
-  return json({ok:true});
+  var imgs={imagen:b.imagen,opt_imgs:oi}, e=extraDe(v,imgs);
+  var usadas=[imgs.imagen].concat(oi||[]).filter(esIdImg);
+  for(var i=0;i<usadas.length;i++){var hay=await env.DB.prepare("SELECT 1 FROM preguntas_imagenes WHERE id=?").bind(usadas[i]).first(); if(!hay)return json({error:"bad_image"},null,400);}
+  var id=+qid;
+  if(qid==="nueva"){
+    var r=await env.DB.prepare("INSERT INTO bank_questions(bank_id,level,topic,q,opts,answer,created_at) VALUES(?,?,?,?,?,?,?)")
+      .bind(bid,v.level,v.topic||null,v.q,JSON.stringify(v.opts),v.answer||0,Date.now()).run();
+    id=r.meta&&r.meta.last_row_id;
+  }else{
+    await env.DB.prepare("UPDATE bank_questions SET level=?,topic=?,q=?,opts=?,answer=? WHERE id=?").bind(v.level,v.topic||null,v.q,JSON.stringify(v.opts),v.answer||0,id).run();
+    await olvidaExplicacion(env,qid);
+  }
+  try{await opExtra(env,id,e).run();}catch(er){if(e&&/no such table/i.test(String(er&&er.message)))return json({error:"types_not_configured"},null,503);}
+  return json(qid==="nueva"?{ok:true,id:id}:{ok:true});
 }
 /* la explicación con IA guardada deja de valer si la pregunta cambia */
 async function olvidaExplicacion(env,qid){

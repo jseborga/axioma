@@ -203,12 +203,13 @@ function ficha(code,recien){
         '<div><small>Dificultad</small><b>'+NIVELES[c.level]+'</b></div>'+
         '<div><small>Errores</small><b>'+(c.max_errors>=c.max_questions?"Sin límite":c.max_errors===0?"Ninguno":c.max_errors)+'</b></div>'+
         '<div><small>Preguntas</small><b>'+(c.max_questions===100?"Hasta 100":c.max_questions)+'</b></div>'+
-        '<div><small>Por pregunta</small><b>'+c.seconds_per_q+' s</b></div>'+
+        '<div><small>Por pregunta</small><b>'+segTxt(c.seconds_per_q)+'</b></div>'+
       '</div>'+
       '<p class="fine">'+(c.state==="terminado"?"Terminó el "+fecha(c.ends_at)+".":"Del "+fecha(c.starts_at)+" al "+fecha(c.ends_at)+".")+
         (c.math?" Incluye operaciones matemáticas.":"")+(c.areas&&c.areas.length?" Áreas: "+esc(c.areas.join(", "))+".":"")+'</p>';
 
-    if(c.manage)h+='<div class="actions"><button type="button" class="primary" id="cq-registros">Registros y estadísticas</button></div>';
+    if(c.manage)h+='<div class="actions"><button type="button" class="primary" id="cq-registros">Registros y estadísticas</button>'+
+      (cuest?'<button type="button" class="ghost" id="cq-revisar">Por revisar'+(c.to_review?' ('+c.to_review+')':'')+'</button>':'')+'</div>';
     if(c.state!=="terminado"&&!cuest)h+='<div class="rt-code"><span>Código</span><b>'+c.code+'</b><button type="button" class="ghost" id="cq-copy">Copiar enlace</button>'+
       (window.AxQR?'<button type="button" class="ghost" id="cq-qr">QR</button>':'')+
       (navigator.share?'<button type="button" class="ghost" id="cq-share">Invitar</button>':'')+'</div>';
@@ -218,7 +219,8 @@ function ficha(code,recien){
       h+=practicaFicha(c,u);
     }else if(c.state==="terminado"&&cuest){
       h+=(me&&me.started?'<div class="cq-mio"><small>Tu resultado</small><b>'+me.correct+' aciertos · '+me.errors+(me.errors===1?" error":" errores")+'</b>'+
-          '<span>'+motivo(me.reason)+' · '+tiempo(me.total_ms)+' respondiendo</span></div>':'<p class="rt-hoy">No participaste en este cuestionario.</p>')+
+          '<span>'+motivo(me.reason)+' · '+tiempo(me.total_ms)+' respondiendo</span></div>'+
+          (me.pending?'<p class="rt-hoy">'+me.pending+(me.pending===1?' respuesta escrita está':' respuestas escritas están')+' por revisar: tu nota puede subir.</p>':''):'<p class="rt-hoy">No participaste en este cuestionario.</p>')+
          revisionHtml(c.review);
     }else if(c.state==="terminado"){
       h+=resultado(c);
@@ -258,6 +260,7 @@ function ficha(code,recien){
       if(c.brand&&window.AxMarca){AxMarca.ver(c.brand.slug);return;}
       if(c.course_code&&window.AxAula){AxApp.setMode("aula");AxAula.curso(c.course_code);} else if(cuest)AxApp.setMode("aula"); else inicio(); };
     if($("cq-registros"))$("cq-registros").onclick=function(){registros(c);};
+    if($("cq-revisar"))$("cq-revisar").onclick=function(){revisar(c);};
     if($("cq-practica"))$("cq-practica").onclick=function(){practicar(c);};
     if($("cq-copy"))$("cq-copy").onclick=function(){var b=this,t=enlace(c.code);
       if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent="Copiar enlace";},1400);});
@@ -299,6 +302,20 @@ function ficha(code,recien){
     $("cq-back").onclick=inicio;
   });
 }
+/* ---------- tipos de pregunta: opción (con o sin imágenes), V/F, numérica y texto libre ---------- */
+function imgPregunta(q){return q.img?'<img class="cq-img" src="'+esc(q.img)+'" alt="Imagen de la pregunta">':'';}
+function escrita(q){return q.tipo==="numerica"||q.tipo==="abierta";}
+function respuestaHtml(q){
+  if(q.tipo==="numerica")return '<form class="cq-escribe" id="cq-escribe"><input id="cq-v" inputmode="decimal" autocomplete="off" maxlength="40" placeholder="Tu respuesta (un número)" aria-label="Tu respuesta">'+
+    '<button class="primary" type="submit">Responder</button></form>';
+  if(q.tipo==="abierta")return '<form class="cq-escribe abierta" id="cq-escribe"><textarea id="cq-t" rows="5" maxlength="4000" placeholder="Escribe tu respuesta…" aria-label="Tu respuesta"></textarea>'+
+    '<button class="primary" type="submit">Enviar respuesta</button><p class="fine">Esta respuesta la revisa tu docente.</p></form>';
+  var conImg=q.oimg&&q.oimg.some(Boolean);
+  return '<div class="rp-opts'+(conImg?' con-img':'')+'">'+q.o.map(function(o,k){var im=q.oimg&&q.oimg[k];
+    return '<button type="button" class="rp-opt" data-k="'+k+'">'+(im?'<img src="'+esc(im)+'" alt="">':'')+esc(o)+'</button>';}).join("")+'</div>';
+}
+function segTxt(s){return s>=60?(s%60?Math.floor(s/60)+" min "+(s%60)+" s":(s/60)+" min"):s+" s";}
+
 /* ---------- prácticas: intentos ilimitados y corrección al momento ---------- */
 function practicaFicha(c,u){
   var p=c.practica||{}, h='<div class="cq-mio"><small>Práctica · intentos ilimitados</small><b>'+(p.attempts?'Tu mejor intento: '+p.best+' %':'Todavía no la has hecho')+'</b>'+
@@ -320,19 +337,33 @@ function practicar(c){
       var q=r.questions[i];
       pinta('<button type="button" class="rt-back" id="cq-back">‹ Salir de la práctica</button>'+
         '<div class="rt-head"><h3>Pregunta '+(i+1)+' <small>de '+n+'</small></h3><span class="chip activo">'+bien+' ✓</span></div>'+
-        (q.cat?'<p class="cq-cat">'+esc(q.cat)+'</p>':'')+'<p class="rp-q">'+esc(q.q)+'</p>'+
-        '<div class="rp-opts">'+q.o.map(function(o,k){return '<button type="button" class="rp-opt" data-k="'+k+'">'+esc(o)+'</button>';}).join("")+'</div><div id="pr-fb"></div>');
+        (q.cat?'<p class="cq-cat">'+esc(q.cat)+'</p>':'')+'<p class="rp-q">'+esc(q.q)+'</p>'+imgPregunta(q)+respuestaHtml(q)+'<div id="pr-fb"></div>');
       salir();
-      var bs=panel.querySelectorAll(".rp-opt"),j;
-      for(j=0;j<bs.length;j++)bs[j].onclick=function(){
-        var k=+this.getAttribute("data-k"), ok=k===q.c; if(ok)bien++;
-        for(var x=0;x<bs.length;x++){bs[x].disabled=true; if(x===q.c)bs[x].classList.add("ok"); else if(x===k)bs[x].classList.add("mal");}
-        $("pr-fb").innerHTML='<div class="vv-res '+(ok?'bien':'mal')+'"><b>'+(ok?'¡Correcto!':'Incorrecto')+'</b>'+(ok?'':'<span>La correcta: '+esc(q.o[q.c])+'</span>')+'</div>'+
-          (q.dato?'<div class="vv-dato"><b>💡 ¿Sabías que…?</b> '+esc(q.dato)+'</div>':'')+
+      var dato=q.dato?'<div class="vv-dato"><b>💡 '+(c.from_bank?'Desarrollo':'¿Sabías que…?')+'</b> '+esc(q.dato).replace(/\n/g,"<br>")+'</div>':'';
+      function sigue(ok,extra){ if(ok)bien++;
+        $("pr-fb").innerHTML='<div class="vv-res '+(ok?'bien':'mal')+'"><b>'+(ok?'¡Correcto!':'Incorrecto')+'</b>'+(extra||'')+'</div>'+dato+
           '<div class="actions"><button class="primary" id="pr-sig">'+(i+1<n?'Siguiente':'Ver mi resultado')+'</button></div>';
         $("pr-sig").onclick=function(){i++; if(i<n)una(); else fin();};
         $("pr-sig").focus();
-      };
+      }
+      if(q.tipo==="numerica")$("cq-escribe").onsubmit=function(e){e.preventDefault(); var v=$("cq-v").value; if(!v.trim())return;
+        $("cq-v").disabled=true; this.querySelector("button").disabled=true;
+        var ok=window.AxBanco&&AxBanco.numeroOk(v,q.num);
+        sigue(ok,ok?'':'<span>La correcta: '+esc(String(q.num.v).replace(".",","))+(q.num.tol?' ± '+esc(String(q.num.tol).replace(".",",")):'')+'</span>');};
+      else if(q.tipo==="abierta")$("cq-escribe").onsubmit=function(e){e.preventDefault(); if(!$("cq-t").value.trim())return;
+        $("cq-t").disabled=true; this.querySelector("button").disabled=true;
+        /* texto libre: se compara con la respuesta modelo y cada uno decide */
+        $("pr-fb").innerHTML='<div class="vv-dato"><b>Respuesta modelo</b> '+(q.modelo?esc(q.modelo):'(el docente no dejó una)')+'</div>'+dato+
+          '<p class="fine">¿Tu respuesta era correcta?</p><div class="actions"><button class="primary" id="pr-si">Sí, la tenía bien</button><button class="ghost" id="pr-no">No</button></div>';
+        dato=""; $("pr-si").onclick=function(){sigue(true);}; $("pr-no").onclick=function(){sigue(false);};};
+      else{
+        var bs=panel.querySelectorAll(".rp-opt"),j;
+        for(j=0;j<bs.length;j++)bs[j].onclick=function(){
+          var k=+this.getAttribute("data-k"), ok=k===q.c;
+          for(var x=0;x<bs.length;x++){bs[x].disabled=true; if(x===q.c)bs[x].classList.add("ok"); else if(x===k)bs[x].classList.add("mal");}
+          sigue(ok,ok?'':'<span>La correcta: '+esc(q.o[q.c])+'</span>');
+        };
+      }
     }
     function fin(){
       pinta('<button type="button" class="rt-back" id="cq-back">‹ Volver a la práctica</button>'+
@@ -352,11 +383,43 @@ function revisionHtml(rv){
   if(!rv||!rv.length)return "";
   var h='<details class="cq-review"><summary>Tus respuestas ('+rv.filter(function(x){return x.ok;}).length+' de '+rv.length+')</summary><ol>';
   rv.forEach(function(x){
-    h+='<li class="'+(x.ok?"ok":"mal")+'"><small>'+esc(x.cat)+'</small><b>'+esc(x.q)+'</b>'+
-      (x.ok?'<span>✓ '+esc(x.answer)+'</span>':'<span>✗ '+(x.chosen===null?"sin responder a tiempo":esc(x.chosen))+' · correcta: <b>'+esc(x.answer)+'</b></span>')+
+    var linea;
+    if(x.tipo==="abierta")linea='<span>'+(x.pending?'⏳ Por revisar':x.ok?'✓ Correcta':'✗ Incorrecta')+'</span><span class="cq-tuya">Tu respuesta: '+(x.chosen===null?"sin responder a tiempo":esc(x.chosen))+'</span>'+
+      (x.comment?'<span class="cq-coment">Comentario del docente: '+esc(x.comment)+'</span>':'')+(x.answer?'<span>Respuesta modelo: '+esc(x.answer)+'</span>':'');
+    else linea=x.ok?'<span>✓ '+esc(x.answer)+(x.tipo==="numerica"&&x.chosen?' (escribiste '+esc(x.chosen)+')':'')+'</span>':
+      '<span>✗ '+(x.chosen===null?"sin responder a tiempo":esc(x.chosen))+' · correcta: <b>'+esc(x.answer)+'</b></span>';
+    h+='<li class="'+(x.pending?"pend":x.ok?"ok":"mal")+'"><small>'+esc(x.cat)+'</small><b>'+esc(x.q)+'</b>'+(x.img?'<img class="cq-img mini" src="'+esc(x.img)+'" alt="">':'')+linea+
+      (x.desarrollo?'<details class="cq-des"><summary>Desarrollo</summary><p>'+esc(x.desarrollo).replace(/\n/g,"<br>")+'</p></details>':'')+
       (x.dato?'<em class="cq-dato">💡 ¿Sabías que…? '+esc(x.dato)+'</em>':'')+'</li>';
   });
   return h+'</ol></details>';
+}
+
+/* ---------- respuestas de texto libre: el docente las califica ---------- */
+function revisar(c){
+  para(); vista={code:c.code};
+  pinta('<p class="fine">Cargando…</p>');
+  api("/api/contests/"+c.code+"/revisar").then(function(r){
+    var h='<button type="button" class="rt-back" id="cq-back">‹ '+esc(c.name)+'</button><h3>Respuestas por revisar</h3>'+
+      '<p class="fine">'+(r.answers.length?r.pending+' pendiente'+(r.pending===1?'':'s')+' de '+r.answers.length+'. Al marcar «Correcta» se suma un acierto a la nota de esa persona (y se resta si luego la cambias).':'Este cuestionario no tiene respuestas de texto libre.')+'</p>';
+    h+=r.answers.map(function(x,i){
+      return '<div class="au-caja cq-rev '+x.estado+'" id="rv-'+i+'"><small>'+esc(x.name)+' · pregunta '+x.n+'</small><b>'+esc(x.q)+'</b>'+(x.img?'<img class="cq-img mini" src="'+esc(x.img)+'" alt="">':'')+
+        '<p class="cq-tuya">'+esc(x.texto).replace(/\n/g,"<br>")+'</p>'+
+        (x.modelo?'<p class="fine">Respuesta modelo: '+esc(x.modelo)+'</p>':'')+
+        '<input class="rv-com" maxlength="300" placeholder="Comentario para la persona (opcional)" value="'+esc(x.comentario)+'">'+
+        '<div class="actions"><button type="button" class="'+(x.estado==="correcta"?"primary":"ghost")+'" data-rv="'+i+'" data-est="correcta">✓ Correcta</button>'+
+        '<button type="button" class="'+(x.estado==="incorrecta"?"primary":"ghost")+'" data-rv="'+i+'" data-est="incorrecta">✗ Incorrecta</button>'+
+        '<span class="chip '+(x.estado==="pendiente"?"pronto":"activo")+'">'+{pendiente:"Pendiente",correcta:"Correcta",incorrecta:"Incorrecta"}[x.estado]+'</span></div></div>';}).join("");
+    pinta(h);
+    $("cq-back").onclick=function(){ficha(c.code);};
+    panel.querySelectorAll("[data-rv]").forEach(function(b){b.onclick=function(){
+      var i=+this.getAttribute("data-rv"), x=r.answers[i], est=this.getAttribute("data-est"), caja=$("rv-"+i);
+      api("/api/contests/"+c.code+"/revisar",{user_id:x.user_id,idx:x.idx,estado:est,comentario:caja.querySelector(".rv-com").value})
+        .then(function(){x.estado=est; caja.className="au-caja cq-rev "+est;
+          caja.querySelectorAll("[data-rv]").forEach(function(y){y.className=y.getAttribute("data-est")===est?"primary":"ghost";});
+          var ch=caja.querySelector(".chip"); ch.className="chip activo"; ch.textContent=est==="correcta"?"Correcta":"Incorrecta";})
+        .catch(function(e){alert(ERR(e));});};});
+  }).catch(function(e){pinta('<button type="button" class="rt-back" id="cq-back">‹ Volver</button><p class="fine bad">'+esc(ERR(e))+'</p>');$("cq-back").onclick=function(){ficha(c.code);};});
 }
 
 /* ---------- registros para quien gestiona ---------- */
@@ -462,30 +525,36 @@ function juego(c){
     pinta('<div class="rt-head"><h3>Pregunta '+q.number+(q.max<100?' <small>de '+q.max+'</small>':'')+'</h3>'+vidas(q)+'</div>'+
       '<div class="rp-bar"><i id="cq-fill"></i></div>'+
       '<p class="cq-cat">'+esc(q.cat)+' · <span id="cq-seg">'+Math.ceil(q.ms/1000)+' s</span></p>'+
-      '<p class="rp-q">'+esc(q.q)+'</p>'+
-      '<div class="rp-opts">'+q.o.map(function(o,k){return '<button type="button" class="rp-opt" data-k="'+k+'">'+esc(o)+'</button>';}).join("")+'</div>'+
+      '<p class="rp-q">'+esc(q.q)+'</p>'+imgPregunta(q)+respuestaHtml(q)+
       '<p class="fine rp-pts" id="cq-est">'+q.correct+' aciertos · '+(q.max_errors>=q.max?q.errors+(q.errors===1?' fallo':' fallos'):q.errors+' de '+q.max_errors+' errores admitidos')+'</p>');
     var fill=$("cq-fill");
     reloj=setInterval(function(){
       var r=fin-Date.now(), p=Math.max(0,r/q.limit);
       fill.style.transform="scaleX("+p+")"; $("cq-seg").textContent=Math.max(0,Math.ceil(r/1000))+" s";
-      if(r<=0)responde(q,-1);
+      if(r<=0)responde(q,escrita(q)?{v:$("cq-v")?$("cq-v").value:"",t:$("cq-t")?$("cq-t").value:""}:-1);
     },100);
-    var bs=panel.querySelectorAll(".rp-opt"),k;
-    for(k=0;k<bs.length;k++)bs[k].onclick=function(){responde(q,+this.getAttribute("data-k"));};
-    teclas=function(e){var k=+e.key; if(k>=1&&k<=q.o.length)responde(q,k-1);};
-    document.addEventListener("keydown",teclas);
+    if(escrita(q)){
+      $("cq-escribe").onsubmit=function(e){e.preventDefault(); var v=$("cq-v")?$("cq-v").value:"", t=$("cq-t")?$("cq-t").value:"";
+        if(!(v||t).trim())return; responde(q,{v:v,t:t});};
+      ($("cq-v")||$("cq-t")).focus();
+    }else{
+      var bs=panel.querySelectorAll(".rp-opt"),k;
+      for(k=0;k<bs.length;k++)bs[k].onclick=function(){responde(q,+this.getAttribute("data-k"));};
+      teclas=function(e){var k=+e.key; if(k>=1&&k<=q.o.length)responde(q,k-1);};
+      document.addEventListener("keydown",teclas);
+    }
   }
   function responde(q,k){
     if(espera)return; espera=true; para();
-    var bs=panel.querySelectorAll(".rp-opt"),j;
+    var bs=panel.querySelectorAll(".rp-opt, #cq-escribe input, #cq-escribe textarea, #cq-escribe button"),j, cuerpo={idx:q.idx};
     for(j=0;j<bs.length;j++)bs[j].disabled=true;
-    api("/api/contests/"+c.code+"/answer",{idx:q.idx,o:k}).then(function(r){
+    if(typeof k==="object"){cuerpo.v=k.v;cuerpo.t=k.t;k=-2;} else cuerpo.o=k;
+    api("/api/contests/"+c.code+"/answer",cuerpo).then(function(r){
       if(k>=0&&bs[k])bs[k].classList.add(r.correct?"ok":"mal");
       var m=r.me;
-      $("cq-est").textContent=(r.correct?"¡Correcto! ":r.timeout||k<0?"Se acabó el tiempo. ":"Incorrecto. ")+m.correct+" aciertos · "+m.errors+" de "+r.max_errors+" errores admitidos";
-      $("cq-est").className="fine rp-pts "+(r.correct?"ok":"bad");
-      setTimeout(function(){ if(r.finished)termina(m); else carga(); },r.correct?650:1100);
+      $("cq-est").textContent=(r.pending?"Respuesta enviada: la revisará tu docente. ":r.correct?"¡Correcto! ":r.timeout||k===-1?"Se acabó el tiempo. ":"Incorrecto. ")+m.correct+" aciertos · "+m.errors+" de "+r.max_errors+" errores admitidos";
+      $("cq-est").className="fine rp-pts "+(r.correct||r.pending?"ok":"bad");
+      setTimeout(function(){ if(r.finished)termina(m); else carga(); },r.correct||r.pending?650:1100);
     }).catch(function(e){ if(e&&e.error==="stale")carga(); else {espera=false;$("cq-est").textContent=ERR(e)+" Reintentando…";setTimeout(carga,1500);} });
   }
   function termina(m){

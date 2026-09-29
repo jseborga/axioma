@@ -315,6 +315,7 @@ GUIAS.aula=[
    ["Prepara un banco de preguntas","Cada banco es de una materia. Sube un Excel o CSV, o pega filas o texto con opciones A) B) C); antes de guardar ves cada pregunta revisada. Los docentes de esa materia pueden usarlo, pero solo tú y la administración lo editan."],
    ["Inscribe a tus estudiantes","Con el código del curso, o de golpe con «Alta masiva desde Excel» (nombre, correo y registro). Puedes dividir el curso en grupos."],
    ["Crea exámenes y prácticas","Examen: un solo intento y nota al cierre. Práctica: intentos ilimitados con corrección al momento. Para todo el curso o para un grupo."],
+   ["Tipos de pregunta","Opción múltiple (con imágenes si quieres), verdadero o falso, numérica con tolerancia y texto libre. Cada una puede llevar imagen y su desarrollo. El texto libre lo calificas en «Por revisar»."],
    ["Sigue la libreta","Cada estudiante con sus notas y su mejor intento en las prácticas, el promedio y la descarga en Excel. En cada cuestionario, además, la estadística por pregunta."]],
    "Cada estudiante recibe su propia selección al azar: si el banco tiene más preguntas de las que pides, pueden tocarle preguntas distintas, siempre en otro orden y con las opciones barajadas. Con preguntas generales, el número se redondea a 10, 20, 30, 50 o 100.");}},
 {t:"Si administras una institución",d:"",
