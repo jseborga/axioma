@@ -546,7 +546,7 @@ function setMode(m){
   newBoard();
   if(window.AxTutorial)AxTutorial.primeraVez();   /* la guía de Axioma, la primera vez que se entra */
 }
-var MODOS={inicio:"Inicio",aula:"Aula",empresas:"Empresas",marca:"Marca",juegos:"Más juegos",pantalla:"Proyector",day:"Axioma",flash:"Axioma flash",free:"Axioma libre",sud:"Sudoku",concurso:"Concursos",rapido:"Rápidos",reto:"Retos",pareja:"En pareja"};
+var MODOS={inicio:"Inicio",aula:"Educativo",empresas:"Empresas",marca:"Marca",juegos:"Más juegos",pantalla:"Proyector",day:"Axioma",flash:"Axioma flash",free:"Axioma libre",sud:"Sudoku",concurso:"Concursos",rapido:"Rápidos",reto:"Retos",pareja:"En pareja"};
 var menu=$("mode-menu"), mbtn=$("mode-btn");
 function abreMenu(v){
   menu.hidden=!v; mbtn.setAttribute("aria-expanded",v?"true":"false");

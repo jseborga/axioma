@@ -1,6 +1,6 @@
 /* ===========================================================
    THE FINAL TEST · portada
-   Lo que hay en la plataforma: el aula (instituciones, cursos y
+   Lo que hay en la plataforma: la sección Educativo (instituciones, cursos y
    cuestionarios), los concursos, los juegos de lógica —Axioma entre
    ellos— y los retos con amigos. Con un código se entra directo a
    un curso o a un concurso.
@@ -40,7 +40,7 @@ function abrir(){
     '<form class="rt-join ini-codigo" id="ini-form"><input id="ini-code" placeholder="Código de curso, concurso o sala" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Entrar</button></form>'+
     '<p class="msg" id="ini-msg"></p></div>'+
     '<div class="ini-grid">'+
-      tarjeta("aula","aula","Aula","Instituciones, cursos por paralelo, bancos de preguntas y cuestionarios de parcial con registros y Excel.",'<span id="ini-aula">'+(u&&!u.guest?"Tus cursos…":"Para universidades e institutos")+'</span>',"grande")+
+      tarjeta("aula","aula","Educativo","Instituciones, cursos por paralelo, bancos de preguntas y cuestionarios de parcial con registros y Excel.",'<span id="ini-aula">'+(u&&!u.guest?"Tus cursos…":"Para universidades e institutos")+'</span>',"grande")+
       tarjeta("empresas","empresa","Empresas y eventos","Tu marca, convocatorias con premio que se abren con un QR y se juegan sin trámites, y métricas.",'<span id="ini-emp">Cargando…</span>',"grande")+
       tarjeta("concurso","concurso","Concursos de trivia","Te inscribes, juegas una sola vez y al cierre se publica el ranking y el ganador.",'<span id="ini-conc">Cargando…</span>',"grande")+
     '</div>'+

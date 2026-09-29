@@ -1,4 +1,7 @@
-# Aula · instituciones, cursos y cuestionarios
+# Educativo · instituciones, cursos y cuestionarios
+
+> La sección se llamaba «Aula». Por dentro (modo `aula`, archivos `aula.js`,
+> tablas) conserva ese nombre, así que los enlaces antiguos siguen funcionando.
 
 El aula es la parte de **The Final Test** pensada para universidades e institutos:
 cada institución organiza su estructura, sus docentes crean cursos y bancos de
@@ -36,7 +39,7 @@ primera vez y de nuevo cuando una acción lo exige.
 
 ## Institución
 
-1. **Aula → Registrar una institución.** Nombre, tipo, dominio de correo opcional
+1. **Educativo → Registrar una institución.** Nombre, tipo, dominio de correo opcional
    y estructura.
 2. Si hay `PLATFORM_ADMINS`, la institución queda **pendiente** hasta que la
    plataforma la apruebe. Mientras tanto se puede preparar la estructura, pero no

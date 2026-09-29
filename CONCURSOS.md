@@ -153,7 +153,7 @@ en [SETUP.md](SETUP.md). Mientras falten, todo funciona como antes, pero:
 
 ## Concursos y cuestionarios de curso
 
-El mismo motor sirve a los **cuestionarios** del aula ([AULA.md](AULA.md)): se
+El mismo motor sirve a los **cuestionarios** de la sección Educativo ([AULA.md](AULA.md)): se
 crean desde un curso, solo los ven sus miembros, pueden sacar las preguntas de un
 banco del docente y, al cierre, cada estudiante ve su resultado y su corrección,
 sin ranking público ni ganador. Quien gestiona un concurso o cuestionario tiene

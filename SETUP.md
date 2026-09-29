@@ -175,7 +175,7 @@ las pistas usadas.
    | --- | --- | --- |
    | `GOOGLE_CLIENT_ID` | Secret | El ID de cliente de la parte 3 |
    | `SESSION_SECRET` | Secret | La clave que acabas de generar |
-   | `PLATFORM_ADMINS` | Secret | Tu correo de Google (o varios, separados por comas): quién aprueba las instituciones nuevas del aula |
+   | `PLATFORM_ADMINS` | Secret | Tu correo de Google (o varios, separados por comas): quién aprueba las instituciones nuevas (Educativo y Empresas) |
 
    **Añádelas como Secret, no como texto plano.** Los secretos sobreviven a
    todos los despliegues, mientras que las variables de texto pueden quedar
@@ -393,7 +393,7 @@ ORDER BY e.correct DESC, e.errors ASC, e.total_ms ASC, e.started_at ASC;
 La segunda consulta incluye el correo del ganador, que la app no muestra, por si
 hace falta contactarle para entregar el premio.
 
-### Añadir las tablas del aula
+### Añadir las tablas de la sección Educativo
 
 El aula (instituciones, cursos, bancos de preguntas y cuestionarios, ver
 [AULA.md](AULA.md)) y el registro con consentimiento usan nueve tablas más:
@@ -408,7 +408,7 @@ o pégalo en la consola de D1 (**Workers & Pages → D1 → axioma → Console**
 usa `CREATE … IF NOT EXISTS`, así que se puede ejecutar las veces que haga falta.
 
 Después añade el secreto **`PLATFORM_ADMINS`** con tu correo (parte 4). Con él,
-cada institución nueva queda pendiente hasta que la apruebes en **Aula →
+cada institución nueva queda pendiente hasta que la apruebes en **Educativo →
 Administración de la plataforma**. Sin él, las instituciones se activan al
 registrarse, lo que solo conviene para pruebas.
 
@@ -597,7 +597,7 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
 | `src/api.js` | La API: sesión, puntuaciones y ranking |
 | `src/retos.js` | La API de retos y salas en pareja |
-| `src/aula.js` | La API del aula: perfiles, instituciones, cursos y bancos |
+| `src/aula.js` | La API de la sección Educativo: perfiles, instituciones, cursos y bancos |
 | `src/invitados.js` | La API de invitados verificados con código |
 | `src/marcas.js` | La API de marcas, convocatorias, métricas y participantes |
 | `src/plataforma.js` | La API de administración de la plataforma |

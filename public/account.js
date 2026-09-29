@@ -59,7 +59,7 @@ function renderPanel(){
   var p=$("acct-panel"); if(p.hidden)return;
   if(user&&user.guest){
     p.innerHTML='<div class="acct-me"><div><b>'+esc(user.name)+'</b><small>Invitado'+(user.email?' · '+esc(user.email):'')+'</small></div></div>'+
-      '<p>Participas como invitado, verificado con un código, en las convocatorias que lo admiten. Para crear retos, usar el aula o entrar en otros concursos, entra con Google.</p>'+
+      '<p>Participas como invitado, verificado con un código, en las convocatorias que lo admiten. Para crear retos, usar la sección Educativo o entrar en otros concursos, entra con Google.</p>'+
       '<div class="actions"><button class="ghost" id="acct-out">Salir</button></div>'+
       '<button class="close" id="acct-close" aria-label="Cerrar">×</button>';
     $("acct-out").onclick=logout;

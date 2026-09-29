@@ -42,7 +42,7 @@ function enlace(p,c){return location.origin+location.pathname+"?"+p+"="+c;}
 function copia(t,b){var o=b.textContent;
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent=o;},1400);});
   else prompt("Copia el enlace:",t);}
-function ERR(e){return {not_configured:"Faltan las tablas del aula en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
+function ERR(e){return {not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
@@ -67,7 +67,7 @@ function ligaTabs(f){var bs=panel.querySelectorAll(".au-tabs [data-tab]"),i;for(
 function chipEstado(s){return '<span class="chip '+(s==="activa"?"activo":s==="pendiente"?"pronto":"terminado")+'">'+
   ({activa:"Activa",pendiente:"Pendiente",suspendida:"Suspendida"}[s]||s)+'</span>';}
 function aConcurso(code){ if(window.AxApp)AxApp.setMode("concurso"); if(window.AxConcursos)AxConcursos.ficha(code); }
-function nombreSeccion(){return seccion==="empresas"?"Empresas":"Aula";}
+function nombreSeccion(){return seccion==="empresas"?"Empresas":"Educativo";}
 /* en empresas, el rol «docente» es quien crea retos, convocatorias y premios */
 function nombreRol(r,kind){return r==="docente"&&kind&&!academica(kind)?"Creador de retos":(ROLES[r]||r);}
 
@@ -83,18 +83,18 @@ document.addEventListener("ax-perfil",function(){ if(activo&&vista&&vista.render
 /* ===================== INICIO DEL AULA ===================== */
 function inicio(){
   if(seccion==="empresas")return inicioEmpresas();
-  vista={render:inicio}; $("hdr").textContent="Aula";
+  vista={render:inicio}; $("hdr").textContent="Educativo";
   var u=user();
-  if(u&&u.guest){pinta('<h3>Aula</h3><p>'+esc(ERR({error:"google_required"}))+' Ahora participas como invitado.</p>');return;}
+  if(u&&u.guest){pinta('<h3>Educativo</h3><p>'+esc(ERR({error:"google_required"}))+' Ahora participas como invitado.</p>');return;}
   if(!u){
-    pinta('<h3>Aula</h3><p>Cuestionarios de clase con registros para el docente: la institución organiza su estructura (facultades, carreras, materias…), cada docente crea sus cursos y bancos de preguntas, y los estudiantes entran con el enlace de su curso.</p>'+
+    pinta('<h3>Educativo</h3><p>Cuestionarios de clase con registros para el docente: la institución organiza su estructura (facultades, carreras, materias…), cada docente crea sus cursos y bancos de preguntas, y los estudiantes entran con el enlace de su curso.</p>'+
       (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="au-login">Entrar con Google</button></div>':'<p class="fine">El inicio de sesión no está configurado.</p>'));
     if($("au-login"))$("au-login").onclick=function(){AxAccount.abrirCuenta();};
     return;
   }
-  pinta('<h3>Aula</h3><p class="fine">Cargando…</p>');
+  pinta('<h3>Educativo</h3><p class="fine">Cargando…</p>');
   api("/api/orgs").then(function(r){
-    var h='<h3>Aula</h3>'+
+    var h='<h3>Educativo</h3>'+
       '<form class="rt-join" id="au-join"><input id="au-code" placeholder="Código de curso o de docente" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Unirme</button></form>'+
       '<p class="msg" id="au-msg"></p>';
     var cursos=r.courses.filter(function(c){return !c.archived;});
@@ -127,12 +127,12 @@ function inicio(){
     };
   }).catch(function(e){
     if(e&&e.error==="profile_required"){
-      pinta('<h3>Aula</h3><p>Para usar el aula primero completa tu registro: fecha de nacimiento y aceptación de términos y privacidad.</p>'+
+      pinta('<h3>Educativo</h3><p>Para usar la sección Educativo primero completa tu registro: fecha de nacimiento y aceptación de términos y privacidad.</p>'+
         '<div class="actions"><button class="primary" id="au-reg">Completar mi registro</button></div>');
       $("au-reg").onclick=function(){AxRegistro.asegura().then(function(ok){if(ok)inicio();});};
       return;
     }
-    pinta('<h3>Aula</h3><p class="fine bad">'+esc(ERR(e))+'</p>');
+    pinta('<h3>Educativo</h3><p class="fine bad">'+esc(ERR(e))+'</p>');
   });
 }
 function uneDocente(code){
@@ -208,7 +208,7 @@ function org(id,tab,nota){
     ligaTabs(function(t){org(id,t);});
     ({cursos:tabCursos,convocatorias:tabConvocatorias,bancos:tabBancos,registros:tabRegistros,metricas:tabMetricas,estructura:tabEstructura,
       miembros:tabMiembros,ajustes:tabAjustes})[tab](o);
-  }).catch(function(e){pinta(atras("Aula")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+  }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
 }
 function opcionesUnidades(o,soloHojas,sel){
   var niv=o.levels, porPadre={};
@@ -394,7 +394,7 @@ function curso(code,nota,tab){
   pinta('<p class="fine">Cargando…</p>');
   api("/api/courses/"+code).then(function(c){
     $("hdr").textContent=c.code;
-    var cab=atras("Aula")+'<div class="rt-head"><h3>'+esc(c.name)+'</h3>'+(c.archived?'<span class="chip terminado">Archivado</span>':'')+'</div>'+
+    var cab=atras("Educativo")+'<div class="rt-head"><h3>'+esc(c.name)+'</h3>'+(c.archived?'<span class="chip terminado">Archivado</span>':'')+'</div>'+
       '<p class="rt-meta">'+esc(c.org_name)+(c.unit_name?' · '+esc(c.unit_name):'')+(c.term?' · '+esc(c.term):'')+' · docente: '+esc(c.teacher_name)+'</p>'+
       (nota?'<p class="fine ok">'+esc(nota)+'</p>':'');
     var u=user(), m=c.member;
@@ -433,7 +433,7 @@ function curso(code,nota,tab){
       ligaCuestionarios();
     }else if(tab==="alumnos")tabAlumnos(c,t);
     else tabAjustesCurso(c,t);
-  }).catch(function(e){pinta(atras("Aula")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+  }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
 }
 function listaCuestionarios(c,gestor){
   if(!c.quizzes||!c.quizzes.length)return '<p class="fine">'+(gestor?'Todavía no hay cuestionarios. Crea el primero a partir de un banco de preguntas.':'Todavía no hay cuestionarios en este curso.')+'</p>';
@@ -610,7 +610,7 @@ function banco(id,nota,filtro){
       api("/api/banks/"+id+"/questions/"+this.getAttribute("data-borra"),{remove:true}).then(function(){banco(id,null,filtro);}); };
     s=panel.querySelectorAll("[data-edita]");
     for(i=0;i<s.length;i++)s[i].onclick=function(){var qid=+this.getAttribute("data-edita");editor(b,b.questions.filter(function(q){return q.id===qid;})[0]);};
-  }).catch(function(e){pinta(atras("Aula")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+  }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
 }
 function editor(b,q){
   var z=$("bk-zona"), o=q?q.opts.slice():["","","",""];

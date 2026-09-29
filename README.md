@@ -3,7 +3,7 @@
 Aprende, compite y demuéstralo: cuestionarios de clase con registros para el
 docente, concursos de trivia con premio y juegos de lógica, en una sola app.
 
-- **Aula**: instituciones con estructura configurable (facultad, carrera,
+- **Educativo** (antes «Aula»): instituciones con estructura configurable (facultad, carrera,
   materia…), docentes, cursos por paralelo a los que se entra con código o enlace,
   bancos de preguntas importados desde Excel o texto con revisión previa,
   cuestionarios de parcial y registros por estudiante y por pregunta, descargables
@@ -26,7 +26,7 @@ docente, concursos de trivia con premio y juegos de lógica, en una sola app.
 - **Más juegos**: trece juegos en salas con código y QR, con vista de proyector y los teléfonos como mando. Estrategia contra el bot (Gomoku, Hex, tres en raya cuántico), juegos de mesa en grupo (Dudo, La sexta carta, Dos verdades y una mentira), dinámicas en vivo para eventos (trivia en vivo, botón del hype, carrera matemática), sorteo gamificado, subasta inversa y juegos solo para adultos con la edad verificada (Paranoia, Yo nunca). Ver [JUEGOS.md](JUEGOS.md).
 - **Sudoku en pareja**: dos personas resuelven el mismo tablero a la vez, cada una desde su móvil, con el tiempo cronometrado por el servidor.
 - PWA: funciona sin conexión y se puede instalar en el móvil.
-- **Cuenta con Google** para el aula, los concursos, los retos y los rankings. Los juegos de lógica funcionan sin cuenta.
+- **Cuenta con Google** para la sección Educativo, los concursos, los retos y los rankings. Los juegos de lógica funcionan sin cuenta.
 
 ## Ejecutar en local
 
@@ -48,7 +48,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `public/axioma.css` | Estilos (tema claro y oscuro) |
 | `public/app.js` | Modos, portada y juego de Axioma (generador y verificador) |
 | `public/inicio.js` | Portada de The Final Test |
-| `public/aula.js` | Pantallas del aula: instituciones, cursos, bancos, cuestionarios y registros |
+| `public/aula.js` | Pantallas de la sección Educativo: instituciones, cursos, bancos, cuestionarios y registros |
 | `public/marca.js` | Página pública de una marca (`?marca=`) y directorio |
 | `public/invitado.js` | Participar como invitado: datos, código y verificación |
 | `public/qr.js`, `public/vendor/qrcode.js` | QR y cartel PNG (librería qrcode-generator, MIT) |
@@ -71,7 +71,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `src/index.js` | Punto de entrada del Worker: reparte entre la API y los archivos |
 | `src/api.js` | API: sesión, puntuaciones y rankings (axioma y sudoku) |
 | `src/retos.js` | API de retos y salas en pareja |
-| `src/aula.js` | API del aula: perfiles, instituciones, cursos, bancos y administración |
+| `src/aula.js` | API de la sección Educativo: perfiles, instituciones, cursos, bancos y administración |
 | `src/invitados.js` | API de invitados: códigos de verificación, límites y sesión |
 | `src/marcas.js` | API de marcas, convocatorias de institución, métricas y participantes |
 | `src/plataforma.js` | API de administración de la plataforma: resumen, usuarios, bloqueo y altas |
@@ -130,7 +130,7 @@ wrangler deploy
 
 ## Cuenta con Google y base de datos
 
-Los juegos de lógica no exigen cuenta; el aula, los concursos y los retos sí. Si
+Los juegos de lógica no exigen cuenta; la sección Educativo, los concursos y los retos sí. Si
 activas esta parte, aparece un botón **Entrar** en la cabecera. Hacen
 falta tres cosas: un cliente OAuth de Google, una base de datos D1 y dos variables
 de entorno.
@@ -151,4 +151,4 @@ Se conserva el mejor resultado de cada día por jugador. La racha personal vive
 
 Si tu base de datos es anterior a alguna sección, hay que crear sus tablas una
 sola vez: lo explican los apartados «Añadir las tablas…» de [SETUP.md](SETUP.md),
-el último de ellos para el aula.
+el último de ellos para la sección Educativo.

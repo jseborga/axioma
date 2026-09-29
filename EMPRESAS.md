@@ -6,7 +6,7 @@ y color, publican convocatorias de trivia con premio y las comparten con un QR. 
 gente participa sin trámites, con su cuenta de Google o como **invitado**, con un
 teléfono o correo que se verifica con un código.
 
-Las instituciones educativas del [Aula](AULA.md) también pueden usar convocatorias,
+Las instituciones educativas de la sección [Educativo](AULA.md) también pueden usar convocatorias,
 marca y métricas.
 
 ## Cómo empieza una empresa
@@ -76,7 +76,7 @@ que lo contacten, y lo descarga en Excel.
 - **Bloqueo**: la plataforma puede bloquear un usuario o contacto; su sesión deja
   de valer y no puede pedir otro código.
 - Los invitados **solo** entran en convocatorias que los admiten: no crean
-  concursos, no usan el aula ni los retos entre amigos.
+  concursos, no usan la sección Educativo ni los retos entre amigos.
 - **Menores de 18**: dan los datos de su tutor y no entran en convocatorias con
   premio sin su consentimiento.
 
@@ -108,7 +108,7 @@ En **Métricas** (administración de la empresa o de la plataforma):
 
 ## Administración de la plataforma
 
-**Aula** o **Empresas → Administración de la plataforma** (solo para los correos de
+**Educativo** o **Empresas → Administración de la plataforma** (solo para los correos de
 `PLATFORM_ADMINS`):
 
 - **Resumen**: cuentas de Google, invitados (y cuántos con código de prueba),
