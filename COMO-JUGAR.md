@@ -159,7 +159,7 @@ los errores admitidos, y al cierre se publica el ranking con el ganador. Lo
 explica [CONCURSOS.md](CONCURSOS.md).
 
 **Juegos rápidos.** Trivia, memoria, cálculo, reflejos y del 1 al 25: cinco
-juegos de un minuto para practicar sueltos (sin cuenta, con mejor marca en el
+juegos cortos (de 30 s a 2 min) para practicar sueltos (sin cuenta, con mejor marca en el
 dispositivo) o para retos.
 
 **Retos.** Un concurso con código: quien organiza elige el juego (sudoku o uno

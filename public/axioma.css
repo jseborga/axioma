@@ -767,13 +767,12 @@ body[data-game=inicio] #retos-panel,body[data-game=aula] #retos-panel,
 body[data-game=inicio] #rapido-panel,body[data-game=aula] #rapido-panel,
 body[data-game=inicio] #concurso-panel,body[data-game=aula] #concurso-panel,
 body[data-game=inicio] .how-btn,body[data-game=aula] .how-btn,
-body[data-game=inicio] [data-tut],body[data-game=aula] [data-tut],
-body[data-game=concurso] [data-tut],body[data-game=concurso] .how-btn,
+body[data-game=concurso] .how-btn,
 body[data-game=inicio] #pie-juego,body[data-game=aula] #pie-juego,body[data-game=concurso] #pie-juego{display:none!important}
 body[data-game=marca] #rules,body[data-game=marca] .board-panel,body[data-game=marca] #ax-acts,body[data-game=marca] #result,
 body[data-game=marca] #ranking,body[data-game=marca] #diff,body[data-game=marca] #sud-panel,body[data-game=marca] #sud-acts,
 body[data-game=marca] #sud-diff,body[data-game=marca] #sud-result,body[data-game=marca] #sud-ranking,body[data-game=marca] #retos-panel,
-body[data-game=marca] #rapido-panel,body[data-game=marca] #concurso-panel,body[data-game=marca] .how-btn,body[data-game=marca] [data-tut],
+body[data-game=marca] #rapido-panel,body[data-game=marca] #concurso-panel,body[data-game=marca] .how-btn,
 body[data-game=marca] #pie-juego{display:none!important}
 body:not([data-game=inicio]) #inicio-panel,
 body:not([data-game=aula]) #aula-panel,
@@ -781,7 +780,7 @@ body:not([data-game=marca]) #marca-panel{display:none!important}
 body[data-game=juegos] #rules,body[data-game=juegos] .board-panel,body[data-game=juegos] #ax-acts,body[data-game=juegos] #result,
 body[data-game=juegos] #ranking,body[data-game=juegos] #diff,body[data-game=juegos] #sud-panel,body[data-game=juegos] #sud-acts,
 body[data-game=juegos] #sud-diff,body[data-game=juegos] #sud-result,body[data-game=juegos] #sud-ranking,body[data-game=juegos] #retos-panel,
-body[data-game=juegos] #rapido-panel,body[data-game=juegos] #concurso-panel,body[data-game=juegos] .how-btn,body[data-game=juegos] [data-tut],
+body[data-game=juegos] #rapido-panel,body[data-game=juegos] #concurso-panel,body[data-game=juegos] .how-btn,
 body[data-game=juegos] #pie-juego,
 body:not([data-game=juegos]) #juegos-panel{display:none!important}
 @media (min-width:900px){
@@ -1372,3 +1371,15 @@ body:not([data-proyector]) .vv-patro:not(.grande){background:var(--inset);color:
 .vv-dato b{color:var(--accent);margin-right:4px}
 .jg-proy .vv-dato.grande{font-size:clamp(16px,1.8vw,36px);padding:1.2vh 1.4vw}
 .ar-chip input:disabled+span{opacity:.4;cursor:default}
+
+/* ---------- guías de cada sección ---------- */
+.tut-ico{font-size:56px;text-align:center;line-height:1;margin:6px 0 4px}
+.tut-pasos{list-style:none;counter-reset:paso;margin:0;padding:0;display:grid;gap:8px;text-align:left}
+.tut-pasos li{counter-increment:paso;position:relative;background:var(--inset);border-radius:14px;padding:10px 12px 10px 44px;display:flex;flex-direction:column;gap:2px}
+.tut-pasos li::before{content:counter(paso);position:absolute;left:12px;top:10px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12.5px;font-weight:700;display:grid;place-items:center}
+.tut-pasos b{font-size:14.5px;letter-spacing:-.01em}
+.tut-pasos span{font-size:12.5px;color:var(--ink-2);line-height:1.35}
+.tut-niv div:nth-child(5):last-child{grid-column:1/-1}
+.tut-niv div:nth-child(3):last-child{grid-column:1/-1}
+.guia-btn{display:inline-flex;align-items:center;gap:6px}
+.guia-link{color:var(--accent);font-weight:600;text-decoration:none;white-space:nowrap}

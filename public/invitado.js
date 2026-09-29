@@ -45,7 +45,7 @@ function marco(cuerpo,nav){
 function formulario(){
   var o=datos.o, org=o.org_name||"quien organiza", hoy=new Date().toISOString().slice(0,10), tel=datos.channel!=="email";
   marco('<h2>Participar sin cuenta</h2>'+
-    '<p>Te enviaremos un código para comprobar que eres tú. Con cada teléfono o correo se participa una sola vez.</p>'+
+    '<p>Te daremos un código para comprobar que eres tú. Con cada teléfono o correo se participa una sola vez.</p>'+
     '<form class="rt-form" id="inv-form">'+
     '<label>Tu nombre<input id="inv-n" maxlength="60" autocomplete="name" required value="'+esc(datos.name||"")+'"></label>'+
     '<div class="seg" role="radiogroup" aria-label="Verificar con"><button type="button" role="radio" data-c="sms" aria-checked="'+tel+'">Teléfono</button>'+
@@ -53,7 +53,7 @@ function formulario(){
     '<label>'+(tel?'Teléfono (con código de país)':'Correo')+'<input id="inv-c" '+(tel?'type="tel" inputmode="tel" autocomplete="tel" placeholder="+591 70012345"':'type="email" autocomplete="email" placeholder="nombre@correo.com"')+
       ' maxlength="80" required value="'+esc(datos.contact||"")+'"></label>'+
     '<label>Fecha de nacimiento<input type="date" id="inv-f" max="'+hoy+'" min="1910-01-01" required value="'+esc(datos.birthdate||"")+'"></label>'+
-    '<div id="inv-menor" hidden><p class="reg-aviso">Tienes menos de 18 años: indica los datos de tu madre, padre o tutor. Sin su consentimiento no se puede participar en convocatorias con premio.</p>'+
+    '<div id="inv-menor" hidden><p class="reg-aviso">Tienes menos de 18 años: indica los datos de tu madre, padre o tutor. Para participar en convocatorias con premio hace falta que la institución organizadora confirme el consentimiento de tu tutor.</p>'+
     '<label>Nombre de tu madre, padre o tutor<input id="inv-gn" maxlength="80" value="'+esc(datos.guardian_name||"")+'"></label>'+
     '<label>Su correo<input type="email" id="inv-ge" maxlength="120" value="'+esc(datos.guardian_email||"")+'"></label></div>'+
     '<label class="rt-check"><input type="checkbox" id="inv-ok"'+(datos.accept?' checked':'')+'> <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener">Términos</a> y la <a href="privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>.</span></label>'+

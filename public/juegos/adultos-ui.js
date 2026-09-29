@@ -46,7 +46,7 @@ function paranoiaVista(g,ctx,grande){
 S.registra("paranoia",{
   icono:"🫣",
   desc:"«¿Quién de la mesa…?»: alguien recibe una pregunta en secreto y señala a otro. La moneda decide si todos se enteran de la pregunta.",
-  reglas:["Solo para mayores de 18 con la edad verificada. Pensado para jugar en persona, con amigos.","Por turnos, a alguien le llega en secreto una pregunta del tipo «¿Quién de la mesa…?» y elige a una persona.",
+  reglas:["Solo para mayores de 18 (según la fecha de nacimiento de su registro). Pensado para jugar en persona, con amigos.","Por turnos, a alguien le llega en secreto una pregunta del tipo «¿Quién de la mesa…?» y elige a una persona.",
     "Todos ven a quién eligió, pero no la pregunta. La persona señalada lanza la moneda: si sale cara, la pregunta se revela; si sale cruz, queda en secreto.",
     "Nadie gana ni pierde: al final se ve a quién señalaron más veces. Tono suave o picante, a elegir."],
   opciones:function(o){o=o||{};
@@ -79,7 +79,7 @@ function revelaHtml(g,ctx){
 S.registra("yonunca",{
   icono:"☝️",
   desc:"Sale una frase «Yo nunca…»: si tú sí lo has hecho, pierdes un dedo. Con modo anónimo y categorías. Sin alcohol: se juega con vidas.",
-  reglas:["Solo para mayores de 18 con la edad verificada.","Sale una frase en la pantalla y en los teléfonos. Si tú SÍ lo has hecho, tócalo: pierdes una vida (un dedo).",
+  reglas:["Solo para mayores de 18 (según la fecha de nacimiento de su registro).","Sale una frase en la pantalla y en los teléfonos. Si tú SÍ lo has hecho, tócalo: pierdes una vida (un dedo).",
     "Después se ve cuántas personas lo han hecho (y quiénes, si no es anónimo).","Quien se queda sin vidas queda fuera; gana quien conserve más al final."],
   opciones:function(o){o=o||{}; var cats=o.categorias||["divertidas","viajes","estudios"];
     function ck(c,t){return '<label class="rt-check"><input type="checkbox" name="'+c+'"'+(cats.indexOf(c)>=0?' checked':'')+'> <span>'+t+'</span></label>';}

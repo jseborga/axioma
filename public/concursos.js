@@ -48,7 +48,7 @@ function ERR(e){if(e&&e.error==="few_questions")return "En esas áreas hay "+e.a
   org_pending:"La institución todavía no está aprobada.",
   google_required:"Esta convocatoria es para cuentas de Google: sal de la sesión de invitado y entra con Google.",
   guests_not_allowed:"Esta convocatoria no admite invitados."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
-function errTxt(n){return n===0?"Sin errores: el primer fallo termina la partida":n===1?"1 error admitido":n+" errores admitidos";}
+function errTxt(n,max){return max&&n>=max?"Sin límite de errores: se responden todas":n===0?"Sin errores: el primer fallo termina la partida":n===1?"1 error admitido":n+" errores admitidos";}
 function chip(c){
   var t=c.state==="pronto"?"Empieza en "+dura(c.starts_at-ahora()):c.state==="abierto"?"Termina en "+dura(c.ends_at-ahora()):"Terminado";
   return '<span class="chip '+(c.state==="abierto"?"activo":c.state)+'">'+t+'</span>';
@@ -69,9 +69,9 @@ function inicio(){ colorMarca(null);
   para(); vista={}; cab();
   var u=user(), conCuenta=window.AxAccount&&AxAccount.configurado&&AxAccount.configurado();
   pinta('<h3>Concursos de trivia</h3>'+
-    '<p class="fine">Preguntas de cultura general y de cálculo. Te inscribes, juegas <b>una sola vez</b> hasta pasarte de los errores admitidos, y cuando se cierra el concurso se publica el ranking: quien más acierta se lleva el premio.</p>'+
+    '<p class="fine">Preguntas de cultura general y de cálculo. Te inscribes, juegas <b>una sola vez</b> hasta pasarte de los errores admitidos, y cuando se cierra el concurso se publica el ranking: quien más acierta se lleva el premio. <a href="#" data-guia="concurso">¿Cómo funciona?</a></p>'+
     (u?'<div class="actions"><button class="primary" id="cq-crear">Crear un concurso</button></div>'
-      :conCuenta?'<div class="actions"><button class="primary" id="cq-login">Entrar con Google para participar</button></div>':'')+
+      :conCuenta?'<div class="actions"><button class="primary" id="cq-login">Entrar con Google</button></div>':'')+
     '<form class="rt-join" id="cq-join"><input id="cq-code" placeholder="Código del concurso" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="ghost">Ver</button></form>'+
     '<div id="cq-listas"><p class="fine">Cargando…</p></div>');
   if($("cq-crear"))$("cq-crear").onclick=crear;
@@ -147,7 +147,7 @@ function crearForm(){
     $("c-resumen").textContent=isNaN(f.ini)||isNaN(f.fin)?"":
       "Se podrá jugar del "+fecha(f.ini)+" al "+fecha(f.fin)+". Cada persona juega una vez; "+
       (e===0?"el primer fallo termina su partida":"con el fallo número "+(e+1)+" termina su partida")+
-      ". Al cierre se publica el ranking: más aciertos, luego menos errores y luego menos tiempo.";
+      ". Al cierre se publica el ranking: más aciertos, luego menos errores, luego menos tiempo y, si aún hay empate, quien empezó antes.";
   }
   if(window.AxAreas)AxAreas.pinta($("c-areas"),[]);
   ["c-ini","c-dur","c-err","c-ini-f","c-fin-f"].forEach(function(id){$(id).onchange=resumen;});
@@ -188,7 +188,7 @@ function ficha(code,recien){
       (c.description?'<p>'+esc(c.description)+'</p>':'')+
       '<div class="cq-reglas">'+
         '<div><small>Dificultad</small><b>'+NIVELES[c.level]+'</b></div>'+
-        '<div><small>Errores</small><b>'+(c.max_errors===0?"Ninguno":c.max_errors)+'</b></div>'+
+        '<div><small>Errores</small><b>'+(c.max_errors>=c.max_questions?"Sin límite":c.max_errors===0?"Ninguno":c.max_errors)+'</b></div>'+
         '<div><small>Preguntas</small><b>'+(c.max_questions===100?"Hasta 100":c.max_questions)+'</b></div>'+
         '<div><small>Por pregunta</small><b>'+c.seconds_per_q+' s</b></div>'+
       '</div>'+
@@ -210,7 +210,7 @@ function ficha(code,recien){
     }else if(!u&&c.guests){
       h+='<div class="actions"><button class="primary" id="cq-inv">Participar con mi teléfono o correo</button></div>'+
          (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="ghost" id="cq-login">o entra con Google</button></div>':'')+
-         '<p class="fine">Sin cuenta: te enviamos un código para comprobar que eres tú. Con cada teléfono o correo se participa una sola vez.</p>';
+         '<p class="fine">Sin cuenta: te damos un código para comprobar que eres tú. Con cada teléfono o correo se participa una sola vez.</p>';
     }else if(!u){
       h+=(window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="cq-login">Entrar con Google para inscribirte</button></div>':
          '<p class="fine">El inicio de sesión no está configurado en esta instalación.</p>');
@@ -362,7 +362,7 @@ function resultado(c){
     h+='</ol>';
     if(c.my_rank)h+='<p class="fine">Tu puesto: <b>#'+c.my_rank+'</b>.</p>';
   }
-  h+='<p class="fine">Orden: más aciertos; a igualdad, menos errores; y luego menos tiempo respondiendo.</p>';
+  h+='<p class="fine">Orden: más aciertos; a igualdad, menos errores; luego menos tiempo respondiendo y, si aún empatan, quien empezó antes.</p>';
   if(c.review&&c.review.length){
     h+='<details class="cq-review"><summary>Tus respuestas ('+c.review.filter(function(x){return x.ok;}).length+' de '+c.review.length+')</summary><ol>';
     c.review.forEach(function(x){
@@ -387,6 +387,7 @@ function juego(c){
       $("cq-volver").onclick=function(){ficha(c.code);};});
   }
   function vidas(q){
+    if(q.max_errors>=q.max)return '';                /* sin límite de errores */
     var tot=q.max_errors+1, h='';
     for(var i=0;i<tot;i++)h+='<i class="'+(i<q.errors?"gastada":"")+'"></i>';
     return '<span class="cq-vidas" title="'+esc(errTxt(q.max_errors))+'">'+h+'</span>';
@@ -399,7 +400,7 @@ function juego(c){
       '<p class="cq-cat">'+esc(q.cat)+' · <span id="cq-seg">'+Math.ceil(q.ms/1000)+' s</span></p>'+
       '<p class="rp-q">'+esc(q.q)+'</p>'+
       '<div class="rp-opts">'+q.o.map(function(o,k){return '<button type="button" class="rp-opt" data-k="'+k+'">'+esc(o)+'</button>';}).join("")+'</div>'+
-      '<p class="fine rp-pts" id="cq-est">'+q.correct+' aciertos · '+q.errors+' de '+q.max_errors+' errores admitidos</p>');
+      '<p class="fine rp-pts" id="cq-est">'+q.correct+' aciertos · '+(q.max_errors>=q.max?q.errors+(q.errors===1?' fallo':' fallos'):q.errors+' de '+q.max_errors+' errores admitidos')+'</p>');
     var fill=$("cq-fill");
     reloj=setInterval(function(){
       var r=fin-Date.now(), p=Math.max(0,r/q.limit);
@@ -408,7 +409,7 @@ function juego(c){
     },100);
     var bs=panel.querySelectorAll(".rp-opt"),k;
     for(k=0;k<bs.length;k++)bs[k].onclick=function(){responde(q,+this.getAttribute("data-k"));};
-    teclas=function(e){if(e.key>="1"&&e.key<="4")responde(q,+e.key-1);};
+    teclas=function(e){var k=+e.key; if(k>=1&&k<=q.o.length)responde(q,k-1);};
     document.addEventListener("keydown",teclas);
   }
   function responde(q,k){

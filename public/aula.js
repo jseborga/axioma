@@ -69,7 +69,7 @@ function chipEstado(s){return '<span class="chip '+(s==="activa"?"activo":s==="p
 function aConcurso(code){ if(window.AxApp)AxApp.setMode("concurso"); if(window.AxConcursos)AxConcursos.ficha(code); }
 function nombreSeccion(){return seccion==="empresas"?"Empresas":"Educativo";}
 /* en empresas, el rol «docente» es quien crea retos, convocatorias y premios */
-function nombreRol(r,kind){return r==="docente"&&kind&&!academica(kind)?"Creador de retos":(ROLES[r]||r);}
+function nombreRol(r,kind){return r==="docente"&&kind&&!academica(kind)?"Organizador":(ROLES[r]||r);}
 
 /* ---------- entrada ---------- */
 function abrir(m){ activo=true; panel.hidden=false; var p=pendiente; pendiente=null;
@@ -87,14 +87,14 @@ function inicio(){
   var u=user();
   if(u&&u.guest){pinta('<h3>Educativo</h3><p>'+esc(ERR({error:"google_required"}))+' Ahora participas como invitado.</p>');return;}
   if(!u){
-    pinta('<h3>Educativo</h3><p>Cuestionarios de clase con registros para el docente: la institución organiza su estructura (facultades, carreras, materias…), cada docente crea sus cursos y bancos de preguntas, y los estudiantes entran con el enlace de su curso.</p>'+
+    pinta('<h3>Educativo</h3><p>Cuestionarios de clase con registros para el docente: la institución organiza su estructura (facultades, carreras, materias…), cada docente crea sus cursos y bancos de preguntas, y los estudiantes entran con el enlace de su curso. <a href="#" class="guia-link" data-guia="aula">¿Cómo funciona?</a></p>'+
       (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="au-login">Entrar con Google</button></div>':'<p class="fine">El inicio de sesión no está configurado.</p>'));
     if($("au-login"))$("au-login").onclick=function(){AxAccount.abrirCuenta();};
     return;
   }
   pinta('<h3>Educativo</h3><p class="fine">Cargando…</p>');
   api("/api/orgs").then(function(r){
-    var h='<h3>Educativo</h3>'+
+    var h='<h3>Educativo</h3><p class="fine">Cursos, bancos de preguntas y cuestionarios de clase. <a href="#" class="guia-link" data-guia="aula">¿Cómo funciona?</a></p>'+
       '<form class="rt-join" id="au-join"><input id="au-code" placeholder="Código de curso o de docente" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Unirme</button></form>'+
       '<p class="msg" id="au-msg"></p>';
     var cursos=r.courses.filter(function(c){return !c.archived;});
@@ -108,7 +108,7 @@ function inicio(){
     h+='<h4>Tus instituciones</h4>';
     h+=mias.length?mias.map(function(o){
       return '<button type="button" class="rt-card" data-org="'+o.id+'"><span class="rt-card-top"><b>'+esc(o.name)+'</b>'+chipEstado(o.status)+'</span>'+
-        '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+esc(ROLES[o.role]||o.role)+(o.email_domain?' · @'+esc(o.email_domain):'')+'</small></button>';
+        '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+esc(nombreRol(o.role,o.kind))+(o.email_domain?' · @'+esc(o.email_domain):'')+'</small></button>';
     }).join(""):'<p class="fine">No perteneces a ninguna institución.</p>';
     h+='<div class="actions"><button class="ghost" id="au-nueva">Registrar una institución</button></div>'+
       (r.orgs.length>mias.length?'<p class="fine">Tus empresas y comunidades están en <a href="#" id="au-emp">Empresas y eventos</a>.</p>':'');
@@ -197,8 +197,8 @@ function org(id,tab,nota){
     if(!lista.length)lista.push(["cursos","Cursos"]);
     if(!tab||!lista.some(function(t){return t[0]===tab;}))tab=lista[0][0];
     pinta(atras(nombreSeccion())+'<div class="rt-head"><h3>'+esc(o.name)+'</h3>'+chipEstado(o.status)+'</div>'+
-      '<p class="rt-meta">'+esc(TIPOS[o.kind]||o.kind)+' · tu rol: '+esc(ROLES[o.role]||o.role||"—")+(o.email_domain?' · solo @'+esc(o.email_domain):'')+
-        ' · '+Object.keys(o.counts).map(function(k){return o.counts[k]+' '+(ROLES[k]||k).toLowerCase();}).join(", ")+'</p>'+
+      '<p class="rt-meta">'+esc(TIPOS[o.kind]||o.kind)+' · tu rol: '+esc(o.role?nombreRol(o.role,o.kind):"—")+(o.email_domain?' · solo @'+esc(o.email_domain):'')+
+        ' · '+Object.keys(o.counts).map(function(k){return o.counts[k]+' '+nombreRol(k,o.kind).toLowerCase();}).join(", ")+'</p>'+
       (o.status==="pendiente"?'<p class="rt-hoy">Pendiente de aprobación por la administración de la plataforma. Puedes preparar la estructura y los miembros; los cursos se abren al aprobarla.</p>':'')+
       (o.status==="suspendida"?'<p class="rt-hoy">Institución suspendida por la administración de la plataforma.</p>':'')+
       (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
@@ -344,15 +344,15 @@ function tabMiembros(o){
       '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Miembro</th><th>Registro</th><th>Rol</th><th>Consentimiento</th><th></th></tr></thead><tbody>'+
       r.members.map(function(m){
         return '<tr><td>'+esc(m.name)+(m.me?' <em>(tú)</em>':'')+'<small>'+esc(m.email||(m.guest?"invitado":""))+'</small></td><td>'+esc(m.student_code||"—")+'</td>'+
-          '<td><select data-rol="'+m.id+'">'+Object.keys(ROLES).map(function(k){return '<option value="'+k+'"'+(k===m.role?' selected':'')+'>'+ROLES[k]+'</option>';}).join("")+'</select></td>'+
+          '<td><select data-rol="'+m.id+'">'+Object.keys(ROLES).filter(function(k){return k!=="auspiciador"||k===m.role;}).map(function(k){return '<option value="'+k+'"'+(k===m.role?' selected':'')+'>'+nombreRol(k,o.kind)+'</option>';}).join("")+'</select></td>'+
           '<td>'+(m.minor?'<label class="au-cons"><input type="checkbox" data-cons="'+m.id+'"'+(m.consent_ok?' checked':'')+'> Menor: la institución tiene el consentimiento</label>':'<small>Mayor de edad</small>')+'</td>'+
           '<td>'+(m.me?'':'<button type="button" class="ghost au-mini" data-quita="'+m.id+'">Quitar</button>')+'</td></tr>';
       }).join("")+'</tbody></table></div><p class="msg" id="m-msg"></p>'+
       '<h4>Dar de alta por correo</h4><form class="rt-join au-invita" id="m-inv"><input id="m-email" type="email" placeholder="correo@ejemplo.com" autocomplete="off">'+
-      '<select id="m-rol"><option value="admin">Administración</option><option value="docente">'+(academica(o.kind)?'Docente':'Creador de retos')+'</option></select>'+
+      '<select id="m-rol"><option value="admin">Administración</option><option value="docente">'+(academica(o.kind)?'Docente':'Organizador')+'</option></select>'+
       '<button type="submit" class="primary">Dar de alta</button></form>'+
       '<p class="fine">Si ya tiene cuenta queda dada de alta al momento; si no, en cuanto entre con Google con ese correo.</p>'+
-      (r.invites&&r.invites.length?'<ul class="au-inv">'+r.invites.map(function(i){return '<li><span>'+esc(i.email)+' · '+esc(ROLES[i.role]||i.role)+' · pendiente</span>'+
+      (r.invites&&r.invites.length?'<ul class="au-inv">'+r.invites.map(function(i){return '<li><span>'+esc(i.email)+' · '+esc(nombreRol(i.role,o.kind))+' · pendiente</span>'+
         '<button type="button" class="ghost au-mini" data-desinv="'+esc(i.email)+'">Quitar</button></li>';}).join("")+'</ul>':'');
     t.innerHTML=h;
     $("m-inv").onsubmit=function(e){e.preventDefault();
@@ -558,7 +558,7 @@ function crearCuestionario(c){
     '<label>Nombre<input id="q-name" maxlength="60" required placeholder="Parcial 1 · Derivadas"></label>'+
     '<label>Parcial<input id="q-par" maxlength="40" list="q-pars" placeholder="Primer parcial"><datalist id="q-pars">'+PARCIALES.map(function(p){return '<option value="'+p+'">';}).join("")+'</datalist></label>'+
     camposPreguntas(c.banks||[],100)+
-    '<p class="fine">Cada estudiante recibe las preguntas en otro orden y con las opciones barajadas, una sola vez. Las respuestas correctas se muestran al cierre.</p>'+
+    '<p class="fine">Cada estudiante responde una sola vez y recibe su propia selección al azar: si el banco tiene más preguntas de las que pides, a cada uno le pueden tocar preguntas distintas, siempre en otro orden y con las opciones barajadas. Las respuestas correctas se muestran al cierre.</p>'+
     '<div class="actions"><button class="primary" type="submit" id="q-go">Crear cuestionario</button></div><p class="msg" id="q-msg"></p></form>');
   $("au-back").onclick=function(){curso(c.code);};
   var lee=ligaPreguntas();
@@ -690,7 +690,7 @@ function inicioEmpresas(){
   vista={render:inicioEmpresas}; $("hdr").textContent="Empresas";
   var u=user();
   var cab='<h3>Empresas y eventos</h3><p>Para empresas, marcas, comunidades y eventos: tu página con logo y color, convocatorias de trivia con premio que la gente abre desde un QR '+
-    'y juega sin trámites (con Google o con su teléfono o correo verificado), bancos de preguntas propios y métricas de participación.</p>';
+    'y juega sin trámites (con Google o con su teléfono o correo verificado), bancos de preguntas propios y métricas de participación. <a href="#" class="guia-link" data-guia="empresas">¿Cómo funciona?</a></p>';
   function directorio(){
     api("/api/brands").then(function(r){
       var d=$("em-dir"); if(!d)return;
@@ -715,7 +715,7 @@ function inicioEmpresas(){
     var h=cab+'<h4>Tus empresas y comunidades</h4>'+
       (mias.length?mias.map(function(o){
         return '<button type="button" class="rt-card" data-org="'+o.id+'"><span class="rt-card-top"><b>'+esc(o.name)+'</b>'+chipEstado(o.status)+'</span>'+
-          '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+esc(ROLES[o.role]||o.role)+'</small></button>';}).join(""):
+          '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+esc(nombreRol(o.role,o.kind))+'</small></button>';}).join(""):
         '<p class="fine">Todavía no administras ninguna. Regístrala o pide a la administración de la plataforma que te dé de alta.</p>')+
       '<div class="actions"><button class="ghost" id="em-nueva">Registrar una empresa o comunidad</button></div>'+
       (r.platform_admin?'<div class="actions"><button class="ghost" id="au-plat">Administración de la plataforma'+(r.pending_orgs?' · '+r.pending_orgs+' pendiente'+(r.pending_orgs>1?'s':''):'')+'</button></div>':'')+
@@ -759,7 +759,7 @@ function tabConvocatorias(o){
     t.innerHTML=h;
     if($("cv-nueva"))$("cv-nueva").onclick=function(){crearConvocatoria(o);};
     if($("cv-ver"))$("cv-ver").onclick=function(){AxMarca.ver(o.brand.slug);};
-    if($("cv-qrp"))$("cv-qrp").onclick=function(){AxQR.abre({url:enlaceMarca(o.brand.slug),titulo:o.name,subtitulo:"Retos y convocatorias",marca:o.name,color:o.brand.color,logo:o.brand.logo});};
+    if($("cv-qrp"))$("cv-qrp").onclick=function(){AxQR.abre({url:enlaceMarca(o.brand.slug),titulo:o.name,subtitulo:"Convocatorias",marca:o.name,color:o.brand.color,logo:o.brand.logo});};
     if($("cv-marca"))$("cv-marca").onclick=function(e){e.preventDefault();org(o.id,"ajustes");};
     var bs=t.querySelectorAll("[data-conv]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){aConcurso(this.getAttribute("data-conv"));};
     bs=t.querySelectorAll("[data-qr]"); for(i=0;i<bs.length;i++)bs[i].onclick=function(){var k=this.getAttribute("data-qr");qrConvocatoria(o,r.contests.filter(function(c){return c.code===k;})[0]);};
@@ -779,7 +779,7 @@ function crearConvocatoria(o){
       '<label>Quién puede participar<select id="q-aud"><option value="publico">Cualquiera: aparece en tu página y en Concursos</option>'+
         '<option value="enlace">Solo quien tenga el enlace o el QR</option><option value="org">Solo los miembros de '+esc(o.name)+'</option></select></label>'+
       '<label class="rt-check"><input type="checkbox" id="q-inv" checked> <span>Admitir invitados: participan sin cuenta, con su teléfono o correo verificado por código</span></label>'+
-      '<p class="fine">Una sola participación por persona (por cuenta de Google o por teléfono o correo verificado). Los menores de 18 años no entran en convocatorias con premio sin el consentimiento de su tutor.</p>'+
+      '<p class="fine">Una sola participación por persona (por cuenta de Google o por teléfono o correo verificado). Los menores de 18 años solo entran en convocatorias con premio si la institución confirma, en Miembros, el consentimiento de su tutor.</p>'+
       '<div class="actions"><button class="primary" type="submit" id="q-go">Publicar convocatoria</button></div><p class="msg" id="q-msg"></p></form>');
     $("au-back").onclick=function(){org(o.id,"convocatorias");};
     $("q-aud").onchange=function(){$("q-inv").disabled=this.value==="org";if(this.value==="org")$("q-inv").checked=false;};
@@ -827,7 +827,7 @@ function tabMetricas(o){
         m.top.map(function(c){return '<tr class="clic" data-quiz="'+c.code+'"><td><b>'+esc(c.name)+'</b></td><td>'+(c.kind==="cuestionario"?"Cuestionario":"Convocatoria")+'</td>'+
           '<td>'+({pronto:"Próxima",abierto:"Abierta",terminado:"Cerrada"}[c.state])+'</td><td>'+c.registered+'</td><td>'+c.played+'</td></tr>';}).join("")+'</tbody></table></div>';
     }
-    h+='<p class="fine">Miembros: '+Object.keys(m.members).map(function(k){return m.members[k]+' '+(ROLES[k]||k).toLowerCase();}).join(", ")+
+    h+='<p class="fine">Miembros: '+Object.keys(m.members).map(function(k){return m.members[k]+' '+nombreRol(k,o.kind).toLowerCase();}).join(", ")+
       (academica(o.kind)?' · cursos: '+m.active_courses+' activos de '+m.courses:'')+'.</p>'+
       '<div class="actions"><button class="ghost" id="mt-xlsx">Exportar participantes a Excel</button></div><p class="msg" id="mt-msg"></p>';
     t.innerHTML=h;
@@ -934,7 +934,7 @@ function platOrgs(t,r){
         (o.admins?'':' <span class="chip pronto">Sin administración</span>')+
         '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+o.members+' miembro'+(o.members===1?'':'s')+' · '+o.admins+' admin. · '+o.contests+' convocatorias y cuestionarios · '+
           o.people+' participante'+(o.people===1?'':'s')+(o.last_activity?' · última actividad '+fecha(o.last_activity):'')+(o.slug?' · ?marca='+esc(o.slug):'')+'</small>'+
-        (o.invites.length?'<small>Altas pendientes: '+o.invites.map(function(i){return esc(i.email)+' ('+esc(ROLES[i.role]||i.role)+')';}).join(", ")+'</small>':'')+'</div>'+
+        (o.invites.length?'<small>Altas pendientes: '+o.invites.map(function(i){return esc(i.email)+' ('+esc(nombreRol(i.role,o.kind))+')';}).join(", ")+'</small>':'')+'</div>'+
         (o.status!=="activa"?'<button type="button" class="primary au-mini" data-est="activa" data-id="'+o.id+'">Aprobar</button>':'')+
         (o.status!=="suspendida"?'<button type="button" class="ghost au-mini" data-est="suspendida" data-id="'+o.id+'">Suspender</button>':'')+
         '<button type="button" class="primary au-mini" data-adm="'+o.id+'" aria-expanded="false">Administración</button>'+
@@ -1009,7 +1009,7 @@ function platUsuarios(t,r,f){
             '<button type="button" class="ghost au-mini" data-bl="'+esc(x.id)+'" data-v="'+(x.blocked?0:1)+'">'+(x.blocked?"Desbloquear":"Bloquear")+'</button></td></tr>'+
           (x.type==="google"&&x.email?'<tr class="po-dg" hidden data-dgf="'+esc(x.email)+'"><td colspan="6"><form class="rt-join au-invita"><span class="po-dg-t">Designar a '+esc(x.name)+' en</span>'+
             '<select aria-label="Institución">'+r.orgs.map(function(o){return '<option value="'+o.id+'" data-k="'+o.kind+'">'+esc(o.name)+'</option>';}).join("")+'</select>'+
-            '<select aria-label="Rol"><option value="admin">Administración</option><option value="docente">Creador de retos o docente</option></select>'+
+            '<select aria-label="Rol"><option value="admin">Administración</option><option value="docente">Docente u organizador</option></select>'+
             '<button type="submit" class="primary">Designar</button></form></td></tr>':'');}).join("")+
         '</tbody></table></div>';
       if(u.total>u.offset+u.users.length)h+='<div class="actions"><button class="ghost" id="pu-mas">Siguientes</button></div>';

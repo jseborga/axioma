@@ -390,7 +390,7 @@ async function responde(req,env,user,code,json){
   var now=Date.now(), lim=c.seconds_per_q*1000, pasado=now-e.q_sent_at;
   var q=preguntas(c,user.id,await leeFichas(env,c,user.id))[e.idx], o=parseInt(b.o,10);
   var aTiempo=pasado<=lim+GRACIA, ok=aTiempo&&o===q.c;
-  var e2=await registra(env,c,e,aTiempo&&o>=0&&o<4?o:-1,ok,Math.min(pasado,lim),now);
+  var e2=await registra(env,c,e,aTiempo&&o>=0&&o<q.o.length?o:-1,ok,Math.min(pasado,lim),now);
   if(!e2)return json({error:"stale",idx:e.idx},null,409);
   var mv=marcaVista(env,user.id,q,now); if(mv)try{await mv.run();}catch(x){}
   return json({ok:true,correct:ok,timeout:!aTiempo,finished:!!e2.finished_at,me:resumen(e2),max_errors:c.max_errors});

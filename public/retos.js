@@ -75,7 +75,7 @@ function puerta(){
   if(!user()){
     pinta('<h3>'+(sub==="reto"?"Retos":"Sudoku en pareja")+'</h3>'+
       '<p>'+(sub==="reto"
-        ? 'Concursos entre amigos: un código, un sudoku igual para todos cada día, una clasificación y un premio. Para participar hace falta entrar con Google, así cada resultado tiene nombre.'
+        ? 'Concursos entre amigos: un código, el mismo juego para todos (un sudoku por día o rondas de un juego rápido), una clasificación, un premio y una penitencia. Para participar hace falta entrar con Google, así cada resultado tiene nombre.'
         : 'Dos personas resuelven el mismo tablero a la vez, cada una desde su móvil, y el tiempo es de la pareja. Para jugar hace falta entrar con Google.')+'</p>'+
       '<div class="actions"><button class="primary" id="rt-login">Entrar con Google</button></div>');
     $("rt-login").onclick=function(){AxAccount.abrirCuenta();};
@@ -90,7 +90,7 @@ function verLista(){
   vista=verLista; fichaCode=null; cab(); paraSondeo(); ocultaJuego();
   if(!puerta())return;
   pinta('<h3>Retos</h3>'+
-    '<p class="fine">Concursos entre amigos: un código, un sudoku igual para todos cada día y una clasificación. Quien organiza pone el premio.</p>'+
+    '<p class="fine">Concursos entre amigos: un código, el mismo juego para todos (un sudoku por día o rondas de un juego rápido) y una clasificación. Quien organiza pone el premio y la penitencia. <a href="#" data-guia="reto">¿Cómo funciona?</a></p>'+
     '<div class="actions"><button class="primary" id="rt-crear">Crear un reto</button></div>'+
     '<form class="rt-join" id="rt-join"><input id="rt-code" placeholder="Código del reto" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="ghost">Unirme</button></form>'+
     '<h4>Tus retos</h4><div id="rt-lista"><p class="fine">Cargando…</p></div>');
@@ -115,7 +115,7 @@ function verLista(){
 function verCrear(){
   vista=verCrear; if(!puerta())return;
   var hoy=dia(), niv="",l, jgs='<option value="sudoku">Sudoku</option>';
-  for(l=1;l<=5;l++)niv+='<option value="'+l+'">'+NIVELES[l].nom+' · '+NIVELES[l].pistas+' pistas'+(l===5?" · sin ayudas":"")+'</option>';
+  for(l=1;l<=5;l++)niv+='<option value="'+l+'">'+NIVELES[l].nom+' · unas '+NIVELES[l].pistas+' casillas dadas'+(l===5?" · sin ayudas":"")+'</option>';
   Object.keys(R.JUEGOS).forEach(function(k){jgs+='<option value="'+k+'">'+R.JUEGOS[k].icono+' '+R.JUEGOS[k].nom+' · '+R.JUEGOS[k].dur+'</option>';});
   pinta('<button type="button" class="rt-back" id="rt-back">‹ Tus retos</button><h3>Crear un reto</h3>'+
     '<form class="rt-form" id="rt-form">'+
@@ -201,11 +201,11 @@ function verFicha(code,recien){
       if(todas){
         h+='<p class="rt-hoy ok">Has jugado las '+f.rounds+' rondas. Mira cómo queda la clasificación.</p>';
       }else if(f.my_today){
-        h+='<p class="rt-hoy ok">Hoy ya jugaste: <b>'+esc(marca(f,f.my_today))+'</b>'+(f.my_today.errors?" · "+f.my_today.errors+" fallos":"")+(f.my_today.hints?" · "+f.my_today.hints+" pistas":"")+'. Mañana habrá otro tablero.</p>';
+        h+='<p class="rt-hoy ok">Hoy ya jugaste: <b>'+esc(marca(f,f.my_today))+'</b>'+(f.my_today.errors?" · "+f.my_today.errors+" fallos":"")+(f.my_today.hints?" · "+f.my_today.hints+" pistas":"")+(f.today_round<f.rounds?'. Mañana habrá otro tablero.':'. Era la última ronda: mira la clasificación.')+'</p>';
       }else if(f.mode==="pareja"){
         h+='<div class="actions"><button class="primary" id="rt-sala">Crear sala para la ronda de hoy</button></div>'+
            '<form class="rt-join" id="rt-join-sala"><input id="rt-sala-code" placeholder="Código de la sala de tu pareja" maxlength="6" autocapitalize="characters" autocomplete="off"><button type="submit" class="ghost">Entrar</button></form>'+
-           '<p class="fine">Una persona crea la sala y le pasa el código a su pareja. Cuando estéis las dos, a jugar: el tiempo cuenta para el reto.</p><p class="msg" id="rt-msg"></p>';
+           '<p class="fine">Una persona crea la sala y le pasa el código a su pareja. Cuando estéis las dos, a jugar: el tiempo cuenta para el reto. La ronda solo cuenta si la resolvéis los dos en la misma sala.</p><p class="msg" id="rt-msg"></p>';
       }else{
         h+='<div class="actions"><button class="primary" id="rt-jugar">Jugar la ronda '+f.today_round+(seguido?" de "+f.rounds:" de hoy")+'</button></div>'+
            '<p class="fine">'+(f.game==="sudoku"?"El tiempo empieza a contar en cuanto abras el tablero y solo vale el primer intento.":"Solo vale el primer intento de cada ronda.")+'</p>';
@@ -343,7 +343,7 @@ function verInicioPareja(){
   if(!puerta())return;
   var niv="",l; for(l=1;l<=4;l++)niv+='<option value="'+l+'">'+NIVELES[l].nom+'</option>';
   pinta('<h3>Sudoku en pareja</h3>'+
-    '<p class="fine">Dos personas, un tablero, cada una desde su móvil. Las cifras que pone una las ve la otra al instante y el tiempo es de las dos. Solo entra la cifra correcta; dos fallos no cuestan, desde el tercero suman 30 s. Sin pistas.</p>'+
+    '<p class="fine">Dos personas, un tablero, cada una desde su móvil. Las cifras que pone una las ve la otra al instante y el tiempo es de las dos. Solo entra la cifra correcta; dos fallos no cuestan, desde el tercero suman 30 s. Sin pistas. <a href="#" class="guia-link" data-guia="pareja">¿Cómo funciona?</a></p>'+
     '<form class="rt-form" id="pj-crear"><label>Nivel<select id="pj-level">'+niv+'</select></label>'+
     '<div class="actions"><button class="primary" type="submit">Crear sala</button></div></form>'+
     '<form class="rt-join" id="pj-join"><input id="pj-code" placeholder="Código de la sala" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="ghost">Entrar</button></form>'+
@@ -400,7 +400,7 @@ function pintaSala(s,fin){
     (dos?'':'<span class="rt-pj-m falta">Tu pareja…</span>')+'</div>';
   if(!dos&&!fin)h+='<div class="rt-code"><span>Código</span><b>'+s.code+'</b><button type="button" class="ghost" id="rt-copy">Copiar enlace</button>'+
       (navigator.share?'<button type="button" class="ghost" id="rt-share">Invitar</button>':'')+'</div>'+
-      '<p class="fine">Pásale el código a tu pareja. Podéis empezar ya; el reloj arranca con la primera cifra.</p>';
+      '<p class="fine">Pásale el código a tu pareja. Podéis empezar ya; el reloj arranca con la primera cifra.'+(f?' En un reto, la ronda solo cuenta si la resolvéis los dos: espera a tu pareja.':'')+'</p>';
   if(fin&&s.seconds!=null)h+='<p class="rt-hoy ok">Resuelto en <b>'+reloj(s.seconds)+'</b>'+(s.errors?' · '+s.errors+' fallos':'')+(f?'. El tiempo ya cuenta en el reto.':'')+'</p>';
   pinta(h);
   $("rt-back").onclick=function(){paraSondeo();if(f)verFicha(f);else verInicioPareja();};

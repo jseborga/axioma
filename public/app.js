@@ -265,9 +265,12 @@ function newBoard(){
   var combos=B.scopes.length*B.shapes.length;
   $("hdr").textContent = mode==="day"?("Nº "+dayNumber()) : mode==="flash"?(B.n+"×"+B.n) : (DIFF[freeLevel]||"Libre");
   $("status-cap").textContent = mode==="day"?"Reto diario" : mode==="flash"?"Partida rápida" : "Modo libre";
-  $("brief").innerHTML = combos===1
+  /* si un eje tiene una sola regla, se oculta, pero se dice cuál es */
+  var fija=(B.scopes.length===1?" El alcance es siempre <strong>"+SNAME[B.scopes[0]][0]+"</strong>.":"")+
+           (B.shapes.length===1?" La forma es siempre <strong>"+HNAME[B.shapes[0]][0]+"</strong>.":"");
+  $("brief").innerHTML = (combos===1
     ? ("Marca las <strong>"+B.k+" celdas llenas</strong> que cumplen todas las pistas.")
-    : ("Marca <strong>"+B.k+" celdas llenas</strong> y descubre cuál de las <strong>"+combos+" combinaciones</strong> de reglas es la única posible.");
+    : ("Marca <strong>"+B.k+" celdas llenas</strong> y descubre cuál de las <strong>"+combos+" combinaciones</strong> de reglas es la única posible."))+fija;
   $("b-new").textContent = "Otro tablero";
   /* si el reto de hoy ya se resolvió, se recupera tal como quedó */
   var rec=(mode==="day")?registroDia():null;
@@ -419,7 +422,7 @@ function check(){
   guardaRegistro();
   if(mode==="day"){recordStreak();renderStreak();
     if(window.AxAccount)AxAccount.onDailySolved({day:dayNumber(),moves:moves,hints:hintsUsed,seconds:Math.round(transcurrido()/1000)});}
-  if(mode==="free")$("b-new").textContent="Siguiente nivel";
+  if(mode==="free"&&freeLevel<5)$("b-new").textContent="Siguiente nivel";
   buildShare(perfect);
   render();
   $("result").scrollIntoView({behavior:"smooth",block:"nearest"});
@@ -436,7 +439,7 @@ function buildShare(perfect){
   var opt=optimum(), extra=moves-opt;
   var bar=""; for(var i=0;i<Math.min(opt,10);i++)bar+="■";
   for(i=0;i<Math.min(Math.max(extra,0),6);i++)bar+="□";
-  var head=mode==="day"?("Axioma nº "+dayNumber()):(mode==="flash"?"Axioma Flash":"Axioma libre · nivel "+freeLevel);
+  var head=mode==="day"?("Axioma nº "+dayNumber()):(mode==="flash"?"Axioma Flash":"Axioma libre · "+(DIFF[freeLevel]||"Fácil"));
   var txt=head+"\n"+bar+"\n"+moves+" movidas · "+reloj(transcurrido())+" · mínimo "+opt+
           (perfect?" · perfecta":"")+(hintsUsed?" · "+hintsUsed+" pista"+(hintsUsed>1?"s":""):"")+
           (streak?"\nRacha: "+streak+(streak===1?" día":" días"):"");
@@ -477,6 +480,7 @@ function setMode(m){
     $("t-"+x).setAttribute("aria-checked",x===m?"true":"false");
   });
   $("mode-label").textContent=MODOS[m];
+  document.body.setAttribute("data-mode",m);          /* la ayuda «?» abre la guía de esta sección */
   if(window.AxRetos&&m!=="reto"&&m!=="pareja")AxRetos.cerrar();
   if(window.AxRapidosUI&&m!=="rapido"&&m!=="reto")AxRapidosUI.cerrar();
   if(window.AxConcursos&&m!=="concurso")AxConcursos.cerrar();
@@ -537,6 +541,7 @@ function setMode(m){
     $("sud-panel").hidden=false; $("sud-acts").hidden=false;
     $("status-cap").textContent="Sudoku";
     if(window.AxSudoku){AxSudoku.abrir();$("hdr").textContent=AxSudoku.nombreNivel();}
+    if(window.AxTutorial&&AxTutorial.primeraVezSudoku)AxTutorial.primeraVezSudoku();
     return;
   }
   document.body.setAttribute("data-game","axioma");
@@ -584,6 +589,10 @@ pintaDificultad();
 $("b-check").onclick=check;
 $("b-hint").onclick=hint;
 $("b-reset").onclick=function(){
+  /* en el reto diario, empezar de nuevo no pone a cero las movidas ni el tiempo (cuentan para el ranking) */
+  if(mode==="day"){ if(solved)return; marks={};beam=null;
+    scope=B.scopes.length===1?B.scopes[0]:null; shape=B.shapes.length===1?B.shapes[0]:null;
+    say("Tablero limpio. Las movidas y el tiempo siguen contando.");renderChips();render();return; }
   marks={};moves=0;solved=false;beam=null;ceroReloj();
   scope=B.scopes.length===1?B.scopes[0]:null;
   shape=B.shapes.length===1?B.shapes[0]:null;
@@ -592,6 +601,8 @@ $("b-reset").onclick=function(){
   say("");renderChips();render();};
 $("b-new").onclick=function(){
   if(mode==="day"){say("El tablero diario es el mismo para todo el mundo. Prueba Libre o Flash.");return;}
+  /* tras resolver en Libre, «Siguiente nivel» sube de Fácil a Medio y de Medio a Difícil */
+  if(mode==="free"&&solved&&freeLevel<5){freeLevel+=2; try{store("level",String(freeLevel));}catch(e){} if(typeof pintaDificultad==="function")pintaDificultad();}
   newBoard();};
 $("b-share").onclick=function(){
   var txt=$("share-text").textContent+"\n"+location.href;

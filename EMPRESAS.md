@@ -23,7 +23,7 @@ Hay dos caminos:
    pendiente hasta que la aprueben.
 
 Su administración puede dar de alta a más personas por correo en **Miembros**,
-como administración o como *creador de retos* (puede crear bancos y convocatorias).
+como administración o como *organizador* (puede crear bancos y convocatorias).
 
 ## Marca y página pública
 
@@ -131,7 +131,7 @@ En **Métricas** (administración de la empresa o de la plataforma):
 | Rol | Puede |
 | --- | --- |
 | Administración | Todo en su institución: marca y página, miembros y roles, bancos, convocatorias con premio, cuestionarios y cursos, métricas y exportaciones |
-| Creador de retos (Docente en educación) | Sus bancos de preguntas, convocatorias con premio y QR, y en educación sus cursos y cuestionarios, con sus registros |
+| Organizador (Docente en educación) | Sus bancos de preguntas, convocatorias con premio y QR, y en educación sus cursos y cuestionarios, con sus registros |
 | Estudiante o participante | Participar |
 
 ## Lo que viene después

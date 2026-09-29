@@ -35,8 +35,8 @@ S.registra("dudo",{
   icono:"🎲",
   desc:"Dados mentirosos: apuesta cuántos dados de una cara hay en la mesa o grita «¡Dudo!».",
   reglas:["Cada jugador tiene cinco dados que solo ve él.","Por turnos se apuesta cuántos dados de una cara hay en TODA la mesa (por ejemplo «cuatro cincos»), siempre subiendo: más dados, o los mismos con una cara más alta.",
-    "Los unos son comodines y cuentan como cualquier cara. Para pasar a apostar unos basta la mitad de dados; para volver de los unos, el doble más uno.",
-    "Quien no se lo crea dice «¡Dudo!»: se levantan los dados. Si hay al menos los apostados, pierde un dado quien dudó; si no, quien apostó.","Gana el último que conserve dados."],
+    "Si la sala tiene comodines (se elige en las opciones), los unos cuentan como cualquier cara. Para pasar a apostar unos basta la mitad de dados; para volver de los unos, el doble más uno.",
+    "Quien no se lo crea dice «¡Dudo!»: se levantan los dados. Si hay al menos los apostados, pierde un dado quien dudó; si no, quien apostó. Quien pierde el dado empieza la ronda siguiente.","Si se te acaba el tiempo del turno, se juega automáticamente por ti.","Gana el último que conserve dados."],
   opciones:function(o){return '<label>Tiempo por turno<select name="tiempo"><option value="20">20 s</option><option value="45" selected>45 s</option><option value="90">90 s</option></select></label>'+
     '<label class="rt-check"><input type="checkbox" name="comodines" checked> <span>Los unos son comodines</span></label>';},
   leeOpciones:function(f){return {tiempo:+f.querySelector("[name=tiempo]").value,comodines:f.querySelector("[name=comodines]").checked};},
@@ -92,7 +92,7 @@ S.registra("sexta",{
   desc:"Todos eligen carta a la vez; quien coloca la sexta de una fila se la lleva. Gana quien menos cabezas junte.",
   reglas:["Cada uno recibe 10 cartas del 1 al 104. En la mesa hay cuatro filas.","En cada turno todos eligen en secreto una carta. Se revelan a la vez y se colocan de la más baja a la más alta.",
     "Cada carta va a la fila cuyo último número es el más alto por debajo de ella.","Quien pone la sexta carta de una fila se lleva las cinco anteriores; su carta empieza la fila.",
-    "Si tu carta es más baja que todos los finales, eliges qué fila te llevas.","Cada carta tiene cabezas ▼ en contra (de 1 a 7). Gana quien menos cabezas acumule."],
+    "Si tu carta es más baja que todos los finales, eliges qué fila te llevas.","Cada carta tiene cabezas ▼ en contra (de 1 a 7). Gana quien menos cabezas acumule.","Si no eliges a tiempo, se juega tu carta más baja; si no eliges fila, te llevas la de menos cabezas."],
   opciones:function(){return '<label>Tiempo para elegir<select name="tiempo"><option value="20">20 s</option><option value="30" selected>30 s</option><option value="60">60 s</option></select></label>'+
     '<label>Rondas de 10 cartas<select name="rondas"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select></label>';},
   leeOpciones:function(f){return {tiempo:+f.querySelector("[name=tiempo]").value,rondas:+f.querySelector("[name=rondas]").value};},

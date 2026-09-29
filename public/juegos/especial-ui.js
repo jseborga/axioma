@@ -109,7 +109,7 @@ S.registra("sorteo",{
   icono:"🎟️",
   desc:"Sorteo para eventos: más boletos por participar en los juegos de la institución y por la palabra secreta. El proyector lo desvela con una lluvia de esferas.",
   reglas:["Quien organiza abre la sala y la proyecta; el público se une con el QR (hace falta verificar el teléfono, el correo o entrar con Google).",
-    "Todos empiezan con 1 boleto. Participar en convocatorias y juegos de la institución da hasta 5 más; la palabra secreta que se diga en el evento, 2 más (máximo 10).",
+    "Todos empiezan con 1 boleto. Si la sala es de una institución o empresa, haber participado en sus convocatorias y juegos da hasta 5 más; la palabra secreta que se diga en el evento, 2 más (máximo 10).",
     "El ganador se elige en el servidor con azar criptográfico ponderado por boletos. La animación solo lo desvela.",
     "Las bases y la entrega del premio son responsabilidad de quien organiza."],
   opciones:function(o){o=o||{};
@@ -180,7 +180,7 @@ function cierreHtml(g,ctx,grande){
 S.registra("subasta",{
   icono:"🔻",
   desc:"Gana quien hace la oferta más baja que nadie más repita. Pujas gratis, un reloj y un mapa de pistas para quien visite al patrocinador.",
-  reglas:["Durante unos minutos cada participante hace sus pujas (gratis) por el premio, con céntimos.","Gana la oferta MÁS BAJA que sea ÚNICA: si otra persona puja lo mismo, esa cantidad ya no vale.",
+  reglas:["Durante unos minutos cada participante hace sus pujas (gratis) por el premio, con centavos.","Gana la oferta MÁS BAJA que sea ÚNICA: si otra persona puja lo mismo, esa cantidad ya no vale.",
     "Tras cada puja sabes si es única y la más baja por ahora, única pero no la más baja, o repetida.","Visitar la web del patrocinador da 2 pujas más y un mapa de pistas con dónde hay ofertas repetidas.",
     "No hay dinero de por medio. Las bases y la entrega del premio son responsabilidad de quien organiza."],
   opciones:function(o){o=o||{};

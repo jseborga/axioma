@@ -36,7 +36,7 @@ function abrir(){
   var u=user();
   panel.innerHTML=
     '<div class="ini-hero"><h2>Aprende, compite y demuéstralo.</h2>'+
-    '<p>Cuestionarios de clase con registros para el docente, concursos de trivia con premio y juegos de lógica, en un mismo lugar.</p>'+
+    '<p>Cuestionarios de clase con registros para el docente, concursos de trivia con premio y juegos de lógica, en un mismo lugar. <a href="#" class="guia-link" data-guia="inicio">¿Cómo funciona?</a></p>'+
     '<form class="rt-join ini-codigo" id="ini-form"><input id="ini-code" placeholder="Código de curso, concurso o sala" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Entrar</button></form>'+
     '<p class="msg" id="ini-msg"></p></div>'+
     '<div class="ini-grid">'+

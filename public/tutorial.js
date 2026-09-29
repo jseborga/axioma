@@ -61,7 +61,7 @@ var SIMPLE=[
 },
 {
   t:"Cómo se cruzan las reglas",
-  d:"«Alrededor» no significa lo mismo en todos los tableros. Hay tres maneras de mirar y tres maneras de agruparse, y se cruzan como una tabla. De las nueve casillas de esa tabla, solo una tiene solución: esa es la que buscas.",
+  d:"«Alrededor» no significa lo mismo en todos los tableros. Hay tres maneras de mirar y tres maneras de agruparse, y se cruzan como una tabla. En el reto diario, de las nueve combinaciones solo una tiene solución: esa es la que buscas. En Flash y en Libre hay menos en juego; la frase bajo el tablero te dice cuántas.",
   a:function(){
     var alc=["Orto","Rey","Rayo"], frm=["Cadena","Aislado","Parejas"], buena=[0,1];
     var h='<div class="tut-matrix"><div></div>';
@@ -77,7 +77,7 @@ var SIMPLE=[
 },
 {
   t:"Para empezar",
-  d:"Elige una regla de cada eje, toca las casillas y fíjate en los colores. Verde quiere decir que esa pista ya está cumplida; rojo, que con esas reglas es imposible. Si se te pone todo rojo, cambia de combinación antes de borrar nada.",
+  d:"Elige una regla en cada eje que aparezca (si un eje no sale, su regla es fija y la frase del tablero te la dice), toca las casillas y fíjate en los colores. Verde quiere decir que esa pista ya está cumplida; rojo, que con esas reglas es imposible. Si se te pone todo rojo, cambia de combinación antes de borrar nada.",
   a:function(){return trio([
       [["#"],["Un toque","llena"],40],
       [["x"],["Dos toques","descartada"],40],
@@ -162,24 +162,20 @@ var SUDOKU=[
 },
 {
   t:"Niveles y ranking por tiempo",
-  d:"Hay cinco niveles y cada uno tiene su propio sudoku del día, igual para todo el mundo. En Ultra no hay ayudas: entra cualquier cifra, nada se marca, no hay pistas y solo se comprueba al completar la rejilla. El cronómetro corre desde tu primera jugada y las penalizaciones por fallos y pistas ya van dentro, así que el ranking por tiempo es justo. Al terminar puedes entrar con Google para aparecer en el de ese día y ese nivel. Otro tablero te da uno de práctica que no cuenta.",
+  d:"Hay cinco niveles y cada uno tiene su propio sudoku del día, igual para todo el mundo. En Ultra no hay ayudas: entra cualquier cifra, nada se marca, no hay pistas y solo se comprueba al completar la rejilla. El cronómetro corre desde tu primera jugada (en un reto, desde que abres el tablero) y las penalizaciones por fallos y pistas ya van dentro, así que el ranking por tiempo es justo. Al terminar puedes entrar con Google para aparecer en el de ese día y ese nivel. Otro tablero te da uno de práctica que no cuenta.",
   a:function(){return '<div class="tut-niv">'+
-      '<div><b>Fácil</b><span>42 pistas</span></div>'+
-      '<div><b>Medio</b><span>34 pistas</span></div>'+
-      '<div><b>Difícil</b><span>28 pistas</span></div>'+
-      '<div><b>Experto</b><span>24 pistas</span></div>'+
-      '<div><b>Ultra</b><span>22 pistas · sin ayudas ni pistas, solo se comprueba al final</span></div>'+
+      '<div><b>Fácil</b><span>unas 42 casillas dadas</span></div>'+
+      '<div><b>Medio</b><span>unas 34 dadas</span></div>'+
+      '<div><b>Difícil</b><span>unas 28 dadas</span></div>'+
+      '<div><b>Experto</b><span>unas 24 dadas</span></div>'+
+      '<div><b>Ultra</b><span>unas 22 dadas · sin ayudas ni pistas, solo se comprueba al final</span></div>'+
       '</div><p class="tut-note">Nunca hace falta adivinar: todos los tableros tienen una sola solución.</p>';}
 },
 {
-  t:"Con amigos: retos y pareja",
-  d:"En el menú hay más modos. Concursos de trivia: convocatorias con premio en las que juegas una sola vez hasta pasarte de los errores admitidos. Juegos rápidos: trivia, memoria, cálculo, reflejos y del 1 al 25, de un minuto cada uno. Retos: un concurso con código, premio para el primero y penitencia para el último, con sudoku o con un juego rápido, individual, por equipos o por parejas. En pareja: dos personas resuelven el mismo sudoku a la vez desde sus móviles.",
-  a:function(){return '<div class="tut-niv">'+
-      '<div><b>Concursos de trivia</b><span>Te inscribes, juegas una vez y al cierre se publica el ranking y el ganador.</span></div>'+
-      '<div><b>Juegos rápidos</b><span>Cinco juegos de un minuto; practica y guarda tu mejor marca.</span></div>'+
-      '<div><b>Retos</b><span>Código, clasificación, premio y penitencia. Todos juegan lo mismo.</span></div>'+
-      '<div><b>En pareja</b><span>Un sudoku a cuatro manos; tus cifras en azul, las de tu pareja en morado.</span></div>'+
-      '</div><p class="tut-note">Concursos, retos y pareja piden entrar con Google.</p>';}
+  t:"Botones y atajos",
+  d:"Deshacer quita tu última cifra y Borrar vacía la casilla elegida (las dadas no se tocan). Notas cambia entre cifra definitiva y apunte a lápiz. Con teclado: las cifras del 1 al 9, la N para Notas, las flechas para moverte y Retroceso para borrar.",
+  a:function(){return tarjetas([["Deshacer","la última cifra"],["Borrar","la casilla elegida"],["Notas · N","apuntes a lápiz"],["Teclado","1-9, flechas y Retroceso"]],
+    'Para jugar con amigos, mira <a href="#" data-guia="reto">Retos</a> y <a href="#" data-guia="pareja">En pareja</a>.');}
 }];
 
 /* ---------- guía detallada ---------- */
@@ -223,8 +219,13 @@ var TECNICA=[
 },
 {
   t:"Descubre cuál es el axioma",
-  d:"Solo una combinación de alcance y forma tiene una única solución posible. Elígela arriba, marca las celdas y pulsa Comprobar. Si te atascas, el botón Pista te echa una mano.",
+  d:"Solo una combinación de alcance y forma tiene una única solución posible. Elígela arriba, marca las celdas y pulsa Comprobar. Si te atascas, el botón Pista te echa una mano, pero suma 3 movidas.",
   a:function(){return '<div class="tut-art">'+grid(["2..#.",".#..1","..o..","1.#.o","..1.#"],34)+'</div>';}
+},
+{
+  t:"Movidas y ranking",
+  d:"Cada toque en una casilla y cada cambio de regla cuenta como una movida; una pista suma 3. El mínimo posible es una movida por cada celda llena, más una por cada eje con opciones. En el reto diario, el ranking ordena por menos movidas y, a igualdad, por menos pistas; empezar de nuevo limpia el tablero, pero no pone a cero las movidas ni el tiempo.",
+  a:function(){return tarjetas([["Toque o cambio de regla","+1 movida"],["Pista","+3 movidas"],["Ranking diario","menos movidas, luego menos pistas"]]);}
 },
 {
   t:"Para ganar la partida",
@@ -272,6 +273,125 @@ function playStep(){
   pinta();
 }
 
+
+/* ===========================================================
+   Guías «Cómo funciona» de cada sección
+   Se abren con el «?» de la cabecera (la guía de la sección en la que
+   estés) o con cualquier elemento data-guia="nombre".
+   =========================================================== */
+function ico(e){return '<div class="tut-ico" aria-hidden="true">'+e+'</div>';}
+function tarjetas(items,nota){
+  return '<div class="tut-niv">'+items.map(function(x){return '<div><b>'+x[0]+'</b><span>'+x[1]+'</span></div>';}).join("")+'</div>'+
+    (nota?'<p class="tut-note">'+nota+'</p>':'');
+}
+function pasos(items,nota){
+  return '<ol class="tut-pasos">'+items.map(function(x){return '<li><b>'+x[0]+'</b><span>'+x[1]+'</span></li>';}).join("")+'</ol>'+
+    (nota?'<p class="tut-note">'+nota+'</p>':'');
+}
+var GUIAS={};
+GUIAS.inicio=[
+{t:"Qué hay en The Final Test",d:"Aprende, compite y demuéstralo. Cambia de sección con el menú de arriba; el botón «?» abre siempre la ayuda de la sección en la que estás.",
+ a:function(){return tarjetas([["Educativo","Cursos, bancos de preguntas y cuestionarios de clase con registros."],["Empresas y eventos","Tu marca, convocatorias con premio y QR, y métricas."],
+   ["Concursos","Trivia con premio: te inscribes, juegas una vez y gana quien más acierta."],["Juegos","Axioma, Sudoku, Juegos rápidos y Más juegos en sala."],["Con amigos","Retos con código, premio y penitencia, y el sudoku en pareja."]]);}},
+{t:"Entrar con un código",d:"El cuadro de la portada acepta los códigos de seis caracteres de un curso, de un concurso o convocatoria y de una sala de juego. Los códigos de un reto o de un sudoku en pareja se escriben en su sección (Retos o En pareja). También puedes abrir el enlace o escanear el QR que te pasen.",
+ a:function(){return ico("🔑")+'<p class="tut-note">Ejemplo: <b>K7M2QX</b>. Da igual si lo escribes en minúsculas.</p>';}},
+{t:"¿Hace falta cuenta?",d:"Depende de lo que quieras hacer.",
+ a:function(){return tarjetas([["Sin cuenta","Axioma, Sudoku, Juegos rápidos de práctica y salas de juego que admiten apodo."],
+   ["Con Google","Educativo, concursos, retos, rankings y crear salas de juego."],
+   ["Como invitado","En las convocatorias de empresas y salas que lo permiten: nombre, teléfono o correo y un código de verificación."]],
+   "La primera vez se pide la fecha de nacimiento y aceptar los términos. Los menores de 18 no participan en concursos abiertos con premio salvo que su institución confirme el consentimiento de su tutor.");}}
+];
+GUIAS.aula=[
+{t:"Qué es la sección Educativo",d:"Cuestionarios de clase con registros para el docente. Cada institución organiza su estructura (facultades, carreras, materias…), cada docente crea sus cursos y bancos de preguntas, y los estudiantes responden desde el móvil.",
+ a:function(){return tarjetas([["Estudiante","Entra en el curso con su código y responde los cuestionarios."],["Docente","Crea cursos, bancos y cuestionarios y ve los registros."],["Administración","Registra la institución, su estructura y a sus docentes."]]);}},
+{t:"Si eres estudiante",d:"",
+ a:function(){return pasos([["Pide el código del curso","Seis caracteres; también sirve el enlace o el QR que comparta tu docente."],
+   ["Entra en el curso","En Educativo o en el cuadro de la portada. La primera vez escribe tu registro universitario. Si el curso pide aprobación, espera a que el docente te acepte."],
+   ["Responde los cuestionarios abiertos","Una sola vez cada uno, con tiempo por pregunta. Si recargas, sigues en la misma pregunta con el mismo reloj."],
+   ["Mira tu corrección al cierre","Ves tus respuestas y las correctas. No hay ranking público: la nota es solo para ti y tu docente."]]);}},
+{t:"Si eres docente",d:"",
+ a:function(){return pasos([["Crea un curso","Nombre (por ejemplo, «Cálculo I · Paralelo A») y gestión. Comparte su código o QR con tus estudiantes."],
+   ["Prepara un banco de preguntas","Sube un Excel o CSV, o pega filas o texto con opciones A) B) C); antes de guardar ves cada pregunta revisada."],
+   ["Crea un cuestionario","Del banco (filtrado por tema y nivel) o de cultura general de la plataforma (eligiendo áreas). Número de preguntas, tiempo, errores admitidos, apertura y cierre."],
+   ["Revisa los registros","Quién participó, aciertos, estadística por pregunta y descarga en Excel."]],
+   "Cada estudiante recibe su propia selección al azar: si el banco tiene más preguntas de las que pides, pueden tocarle preguntas distintas, siempre en otro orden y con las opciones barajadas. Con preguntas generales, el número se redondea a 10, 20, 30, 50 o 100.");}},
+{t:"Si administras una institución",d:"",
+ a:function(){return pasos([["Registra la institución","Nombre, tipo y, si quieres, el dominio de correo. Queda pendiente hasta que la plataforma la aprueba."],
+   ["Define la estructura","Facultades, carreras, materias… los niveles que necesites."],
+   ["Suma docentes","Con el enlace para docentes o dándolos de alta por correo. También puedes nombrar auxiliares en cada curso."],
+   ["Sigue las métricas","Participación, cuestionarios y cursos activos de toda la institución."]]);}}
+];
+GUIAS.empresas=[
+{t:"Empresas y eventos",d:"Para empresas e instituciones que quieren promocionar un evento o una marca con juegos: una página propia con logo y color, convocatorias con premio que se abren con un QR, y métricas de participación.",
+ a:function(){return ico("🏢");}},
+{t:"De cero a tu primera convocatoria",d:"",
+ a:function(){return pasos([["Registra tu empresa","Queda pendiente hasta que la plataforma la aprueba."],
+   ["Personaliza tu marca","Logo, color, lema y la dirección de tu página (?marca=…)."],
+   ["Crea una convocatoria","Una trivia con premio, fechas, dificultad y áreas temáticas. Decide si admite invitados sin cuenta de Google."],
+   ["Compártela","Con el enlace, el QR o el cartel listo para imprimir."],
+   ["Mide el resultado","Métricas por día, participantes y quién acepta que la marca lo contacte, con descarga en Excel."]]);}},
+{t:"Cómo participa la gente",d:"Quien escanea el QR entra directo a la convocatoria. Puede hacerlo con Google o como invitado: nombre, teléfono o correo, fecha de nacimiento y un código de verificación. Cada persona participa una sola vez, y el mismo teléfono o correo es siempre la misma persona.",
+ a:function(){return ico("📱")+'<p class="tut-note">Mientras la plataforma esté en <b>modo de pruebas</b>, el código de verificación se muestra en pantalla en lugar de enviarse por SMS o correo.</p>';}},
+{t:"Equipo y juegos en vivo",d:"La administración de la empresa gestiona la marca, los miembros y las métricas; los organizadores crean convocatorias. Para un evento presencial, en Más juegos puedes abrir en nombre de la empresa una trivia en vivo con proyector, el botón del hype, un sorteo o una subasta inversa.",
+ a:function(){return tarjetas([["Administración","Marca, miembros, convocatorias y métricas."],["Organizador","Crea y gestiona convocatorias."]],
+   "En convocatorias abiertas con premio, los menores de 18 solo participan si la institución confirma el consentimiento de su tutor.");}}
+];
+GUIAS.marca=GUIAS.empresas;
+GUIAS.concurso=[
+{t:"Concursos de trivia",d:"Te inscribes, juegas una sola vez cuando quieras mientras esté abierto y, al cierre, se publica el ranking con el ganador.",
+ a:function(){return ico("🏆");}},
+{t:"Cómo se juega",d:"",
+ a:function(){return pasos([["Una pregunta cada vez","Con sus opciones y su tiempo. Si se agota, cuenta como fallo."],
+   ["Errores admitidos","Cada concurso admite unos cuantos; con el siguiente fallo tu partida termina."],
+   ["Sin segunda oportunidad","La partida empieza con la primera pregunta. Si cierras o recargas, vuelves a la misma pregunta con el mismo reloj."]],
+   "La respuesta correcta no llega a tu teléfono hasta el cierre, así que nadie puede mirarla antes.");}},
+{t:"Quién gana",d:"Más aciertos; a igualdad, menos errores; luego menos tiempo respondiendo y, si aún empatan, quien empezó antes. Si nadie acierta ninguna, no hay ganador. Al cierre ves tus respuestas, las correctas y un «¿Sabías que…?» de cada pregunta.",
+ a:function(){return ico("🥇");}},
+{t:"Crear un concurso",d:"Pon nombre y premio, elige dificultad (Progresiva: 8 fáciles, luego 10 medias y después difíciles), número de preguntas, tiempo, si incluye cálculo y de qué áreas temáticas salen. Cada jugador recibe su propia secuencia al azar y no se le repiten preguntas que haya visto en los últimos 60 días.",
+ a:function(){return ico("✍️")+'<p class="tut-note">Para un premio importante, usa un tiempo por pregunta corto y, si puedes, que todos jueguen a la vez en el mismo sitio.</p>';}}
+];
+GUIAS.reto=[
+{t:"Retos entre amigos",d:"Un concurso privado con código: todos juegan lo mismo, hay clasificación, un premio para el primero y una penitencia para el último (o la ruleta de penitencias).",
+ a:function(){return ico("🎯");}},
+{t:"Qué se juega",d:"",
+ a:function(){return tarjetas([["Sudoku","Un tablero por día durante los días que elijas, el mismo para todos. Gana quien completa más rondas y, a igualdad, quien suma menos tiempo."],
+   ["Juego rápido","De 1 a 10 rondas seguidas de Trivia, Memoria, Cálculo, Reflejos o Del 1 al 25, durante un día, tres o una semana."]],
+   "En el sudoku de un reto, el tiempo cuenta desde que abres el tablero.");}},
+{t:"Modalidades",d:"",
+ a:function(){return tarjetas([["Individual","Cada uno por su cuenta."],["Por equipos","El equipo completa una ronda cuando la juegan todos; cuenta la media de sus marcas."],
+   ["Por parejas","Cada ronda de sudoku se juega a cuatro manos. Solo cuenta si la resolvéis los dos."]]);}},
+{t:"Detalles importantes",d:"En los retos de sudoku, una ronda que no juegas ese día se pierde, y quien se une tarde no recupera las anteriores. Los días cambian a medianoche UTC, es decir, a las 20:00 en Bolivia. Si al final hay empate en todo, se ordena por nombre.",
+ a:function(){return pasos([["Crear","Retos → Crear un reto; te da un código."],["Unirse","Retos → escribe el código → Unirme (con Google)."]],
+   '<a href="#" data-guia="sudoku">Cómo se juega el sudoku</a> · <a href="#" data-guia="rapido">Los juegos rápidos</a>');}}
+];
+GUIAS.pareja=[
+{t:"Sudoku en pareja",d:"Dos personas resuelven el mismo tablero a la vez, cada una desde su móvil. El tiempo es de la pareja.",
+ a:function(){return pasos([["Crea la sala","Elige el nivel (de Fácil a Experto) y comparte el código."],["Tu pareja entra","En En pareja, con ese código."],
+   ["Jugad a la vez","Tus cifras salen en azul y las de tu pareja en morado. Solo entra la cifra correcta; dos fallos no cuestan y desde el tercero suman 30 s. No hay pistas."]],
+   'Hace falta entrar con Google. <a href="#" data-guia="sudoku">Reglas del sudoku</a>');}}
+];
+GUIAS.rapido=[
+{t:"Juegos rápidos",d:"Cinco juegos cortos, de 30 segundos a 2 minutos. Practica cuando quieras: tu mejor marca se guarda en este teléfono. Para competir con amigos, crea un reto con uno de ellos.",
+ a:function(){var R=window.AxRapidos; if(!R)return "";
+   return tarjetas(Object.keys(R.JUEGOS).map(function(k){var j=R.JUEGOS[k];return [j.icono+" "+j.nom+" · "+j.dur,j.desc];}));}},
+{t:"Detalles",d:"En la Trivia de práctica no se repiten preguntas que ya viste en los últimos 60 días en este teléfono. En Memoria no hay reloj: cada acierto añade una casilla más, hasta 14. En un reto solo vale el primer intento de cada ronda.",
+ a:function(){return ico("⚡");}}
+];
+GUIAS.juegos=[
+{t:"Más juegos",d:"Juegos en sala con código: estrategia 1 contra 1, juegos de mesa en grupo, dinámicas en vivo para eventos, sorteos y subastas, y juegos solo para adultos. Cada juego explica sus reglas en su ficha.",
+ a:function(){return tarjetas([["Estrategia","Gomoku, Hex, tres en raya cuántico: contra el bot sin conexión, a dos en un teléfono o en línea."],
+   ["En grupo","Dudo, La sexta carta, Dos verdades y una mentira."],["En vivo","Trivia con proyector, botón del hype, carrera matemática."],
+   ["Sorteos y subastas","Para eventos, con bases y premio."],["Solo adultos","Paranoia y Yo nunca, para mayores de 18 según su fecha de nacimiento."]]);}},
+{t:"Crear una sala",d:"",
+ a:function(){return pasos([["Elige el juego y sus opciones","Hace falta entrar con Google para crear."],
+   ["Decide quién puede unirse","Con un apodo, con Google o con teléfono o correo verificado, o solo con Google. Si hay premio, siempre hay que identificarse."],
+   ["Comparte el código o el QR","La sala de espera muestra los dos. Puedes añadir bots en los juegos que los tienen."],
+   ["Empieza la partida","Solo el anfitrión empieza. Al terminar, «Otra partida» vuelve a la sala de espera."]]);}},
+{t:"Unirse y proyectar",d:"Para unirte, escribe el código en Más juegos o en la portada, o escanea el QR. Para eventos, pulsa «Abrir en el proyector» y abre ese enlace en el ordenador conectado a la pantalla grande, a pantalla completa (F11): muestra el QR, el juego en grande y los resultados, y tú lo controlas desde el teléfono.",
+ a:function(){return ico("📽️")+'<p class="tut-note">Si se corta la conexión, la sala vuelve a conectarse sola y sigues donde estabas.</p>';}}
+];
+GUIAS.pantalla=GUIAS.juegos;
+
 /* ---------- navegación ---------- */
 var STEPS=SIMPLE, i=0, primera=false;
 function render(){
@@ -281,13 +401,12 @@ function render(){
     '<div class="tut-card'+(primera?' entra':'')+'" role="dialog" aria-modal="true" aria-label="Cómo se juega">'+
       '<button class="close" id="tut-x" aria-label="Cerrar">×</button>'+
       '<div class="tut-body">'+
-        s.a()+
-        '<h2>'+s.t+'</h2><p>'+s.d+'</p>'+
+        (s.d?s.a()+'<h2>'+s.t+'</h2><p>'+s.d+'</p>':'<h2>'+s.t+'</h2>'+s.a())+   /* los pasos numerados, con el título arriba */
       '</div>'+
       '<div class="tut-dots">'+puntos+'</div>'+
       '<div class="tut-nav">'+
         (i>0?'<button class="ghost" id="tut-prev">Atrás</button>':'<button class="ghost" id="tut-skip">Saltar</button>')+
-        '<button class="primary" id="tut-next">'+(i===STEPS.length-1?"Empezar a jugar":"Siguiente")+'</button>'+
+        '<button class="primary" id="tut-next">'+(i===STEPS.length-1?(STEPS===SIMPLE||STEPS===TECNICA||STEPS===SUDOKU||STEPS===GUIAS.rapido?"Empezar a jugar":"Entendido"):"Siguiente")+'</button>'+
       '</div>'+
     '</div>';
   if(s.after)s.after();
@@ -306,8 +425,11 @@ function cerrar(){
 document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&host.classList.contains("on"))cerrar(); });
 host.addEventListener("click",function(e){ if(e.target===host)cerrar(); });
 
-/* "Cómo se juega" abre la guía sencilla; el interrogante, la detallada */
-function enSudoku(){return document.body.getAttribute("data-game")==="sudoku";}
+/* "Cómo se juega" abre la guía sencilla; el interrogante, la detallada.
+   En cada sección, las dos abren la guía de esa sección. */
+function enSudoku(){return document.body.getAttribute("data-game")==="sudoku"&&document.body.getAttribute("data-mode")==="sud";}
+function seccion(){var m=document.body.getAttribute("data-mode")||"";return GUIAS[m]?m:null;}
+function guia(detallada){var g=seccion(); if(g)return GUIAS[g]; return enSudoku()?SUDOKU:(detallada?TECNICA:SIMPLE);}
 function liga(sel,cual){
   var bs=document.querySelectorAll(sel),j;
   for(j=0;j<bs.length;j++)(function(b){
@@ -315,8 +437,15 @@ function liga(sel,cual){
   })(bs[j]);
 }
 /* con el sudoku abierto, las dos ayudas explican el sudoku */
-liga("[data-how]",function(){return enSudoku()?SUDOKU:SIMPLE;});
-liga("[data-tut]",function(){return enSudoku()?SUDOKU:TECNICA;});
+liga("[data-how]",function(){return guia(false);});
+liga("[data-tut]",function(){return guia(true);});
+/* enlaces a una guía concreta: data-guia="sudoku", "axioma", "tecnica", "rapido", "reto"… */
+var POR_NOMBRE=function(n){return n==="sudoku"?SUDOKU:n==="axioma"?SIMPLE:n==="tecnica"?TECNICA:GUIAS[n];};
+document.addEventListener("click",function(ev){
+  var b=ev.target.closest&&ev.target.closest("[data-guia]"); if(!b)return;
+  var g=POR_NOMBRE(b.getAttribute("data-guia")); if(!g)return;
+  ev.preventDefault(); abrir(g);
+});
 /* el enlace del último paso sencillo se crea al vuelo, así que se enlaza al pintar */
 var _render=render;
 render=function(){_render();liga(".tut-card [data-tut]",TECNICA);};
@@ -325,5 +454,10 @@ render=function(){_render();liga(".tut-card [data-tut]",TECNICA);};
    aparece la primera vez que alguien entra en Axioma */
 window.AxTutorial={primeraVez:function(){
   try{ if(!localStorage.getItem("ax_tut")) setTimeout(function(){abrir(SIMPLE);},300); }catch(e){}
-}};
+},
+/* la guía del sudoku, la primera vez que se abre el sudoku */
+primeraVezSudoku:function(){
+  try{ if(!localStorage.getItem("ax_tut_sud")){localStorage.setItem("ax_tut_sud","1");setTimeout(function(){abrir(SUDOKU);},300);} }catch(e){}
+},
+abre:function(n){var g=POR_NOMBRE(n); if(g)abrir(g);}};
 })();

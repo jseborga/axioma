@@ -73,7 +73,7 @@ function pinta(){
     panel.innerHTML=h;
     var bs=panel.querySelectorAll("[data-code]"),i;
     for(i=0;i<bs.length;i++)bs[i].onclick=function(){var c=this.getAttribute("data-code");AxApp.setMode("concurso");AxConcursos.ficha(c);};
-    $("mc-qr").onclick=function(){AxQR.abre({url:enlace(b.slug),titulo:b.name,subtitulo:b.tagline||"Retos y convocatorias",marca:b.name,lema:b.tagline,color:b.color,logo:b.logo});};
+    $("mc-qr").onclick=function(){AxQR.abre({url:enlace(b.slug),titulo:b.name,subtitulo:b.tagline||"Convocatorias",marca:b.name,lema:b.tagline,color:b.color,logo:b.logo});};
     if($("mc-gest"))$("mc-gest").onclick=function(){AxApp.setMode("empresas");AxAula.org(b.org_id,"convocatorias");};
   }).catch(function(){
     color(null);

@@ -328,7 +328,12 @@ async function resultadoReto(req,env,user,code,ctx){
     if(ev.game==="numeros"){
       if(res.score-(parseInt(b.envio.f,10)||0)*1000 < realMs-TOL-margen)return ctx.json({error:"bad_time"},null,400);
     }else if(ev.game==="calculo"){
-      if(realMs<45000-TOL)return ctx.json({error:"bad_time"},null,400);
+      /* dura 45 s menos 3 por cada fallo; quien responde todas las cuentas antes
+         acaba antes, pero nunca en menos de 20 s (nadie resuelve 40 cuentas más rápido) */
+      var resp=Array.isArray(b.envio.r)?b.envio.r:[], fallos=0, todas=resp.length>=datos.p.length;
+      resp.forEach(function(v,k){if(v!=null&&datos.p[k]&&+v!==datos.p[k].r)fallos++;});
+      var minimo=todas?20000:Math.max(0,45000-3000*fallos);
+      if(realMs<minimo-TOL)return ctx.json({error:"bad_time"},null,400);
     }else if(declarado<realMs-TOL-margen)return ctx.json({error:"bad_time"},null,400);
     seconds=res.seconds; score=res.score;
   }

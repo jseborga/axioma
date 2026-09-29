@@ -30,7 +30,7 @@ S.registra("gomoku",{
   fin:tableroFinal("gomoku"),
   icono:"⚫",local:true,niveles:NIV,
   desc:"Cinco en línea en un tablero de 15×15: el primero que alinea cinco piezas gana.",
-  reglas:["Se juega por turnos: negras y blancas colocan una pieza en cualquier casilla libre.","Gana quien alinee cinco o más seguidas en horizontal, vertical o diagonal.","Si se llena el tablero sin cinco en línea, es empate."],
+  reglas:["Se juega por turnos: negras y blancas colocan una pieza en cualquier casilla libre.","Gana quien alinee cinco o más seguidas en horizontal, vertical o diagonal.","Si se llena el tablero sin cinco en línea, es empate.","Si la sala tiene tiempo por jugada y se te acaba, pierdes la partida."],
   opciones:function(){return TIEMPOS;}, leeOpciones:leeTiempo,
   botLocal:function(E,id){var g=E.g;return {c:J.def("gomoku").mejor(g.t,g.n,g.turno+1,E.nivel,Math.random)};},
   jugador:function(el,g,ctx){
@@ -87,7 +87,7 @@ S.registra("hex",{
   fin:tableroFinal("hex"),
   icono:"⬢",local:true,niveles:NIV,
   desc:"Une tus dos bordes del tablero antes que el rival. Sin capturas ni empates.",
-  reglas:["Rojo empieza y une el borde de arriba con el de abajo; azul, el de la izquierda con el de la derecha.","Por turnos, cada uno pinta una casilla libre.","Gana quien forme un camino continuo entre sus dos bordes. En Hex nunca hay empate."],
+  reglas:["Rojo empieza y une el borde de arriba con el de abajo; azul, el de la izquierda con el de la derecha.","Por turnos, cada uno pinta una casilla libre.","Gana quien forme un camino continuo entre sus dos bordes. En Hex nunca hay empate.","Si la sala tiene tiempo por jugada y se te acaba, pierdes la partida."],
   opciones:function(o){return '<label>Tamaño<select name="tam"><option value="7">7×7 · rápido</option><option value="9" selected>9×9</option><option value="11">11×11 · clásico</option></select></label>'+TIEMPOS;},
   leeOpciones:function(f){var o=leeTiempo(f);o.tam=+f.querySelector("[name=tam]").value;return o;},
   botLocal:hexBot,
@@ -116,7 +116,7 @@ S.registra("cuantico",{
   fin:tableroFinal("cuantico"),
   icono:"⚛️",local:true,niveles:["Fácil","Medio"],
   desc:"Cada jugada está en dos casillas a la vez hasta que el tablero se mide.",
-  reglas:["En tu turno eliges DOS casillas: tu marca queda en superposición en ambas (por ejemplo X₁ en dos sitios).","Las marcas enlazan casillas. Cuando un enlace cierra un ciclo, el tablero se mide: el rival de quien lo cerró elige en cuál de sus dos casillas se queda esa marca, y las demás marcas del ciclo caen en cascada.","Las marcas medidas son definitivas. Gana quien forme tres en raya con marcas medidas.","Si los dos forman línea en la misma medición, gana la línea cuya marca más reciente es más antigua; el otro se lleva medio punto."],
+  reglas:["En tu turno eliges DOS casillas: tu marca queda en superposición en ambas (por ejemplo X₁ en dos sitios).","Las marcas enlazan casillas. Cuando un enlace cierra un ciclo, el tablero se mide: el rival de quien lo cerró elige en cuál de sus dos casillas se queda esa marca, y las demás marcas del ciclo caen en cascada.","Las marcas medidas son definitivas. Gana quien forme tres en raya con marcas medidas.","Si los dos forman línea en la misma medición, gana la línea cuya marca más reciente es más antigua; el otro se lleva medio punto.","Si se llena el tablero sin tres en raya, es empate. Si la sala tiene tiempo por jugada y se te acaba, pierdes."],
   opciones:function(){return TIEMPOS;}, leeOpciones:leeTiempo,
   jugador:function(el,g,ctx){
     var yo=g.orden.indexOf(ctx.yo.id), mio=!g.fin&&g.turno===ctx.yo.id, lib=[], i, cl={};

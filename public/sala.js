@@ -36,7 +36,7 @@ function guarda(k,v){try{if(v===undefined)return localStorage.getItem("tft_"+k);
 function enlace(p,c){return location.origin+location.pathname+"?"+p+"="+c;}
 function hdr(t){var h=$("hdr");if(h)h.textContent=t;}
 var ERR={not_found:"No hay ninguna sala con ese código.",login_required:"Esta sala pide identificarse: entra con Google o verifica tu teléfono o correo.",
-  unauthorized:"Esta sala es solo para cuentas de Google.",google_required:"Para esto hace falta entrar con Google.",adults_only:"Este juego es solo para mayores de 18 años con la edad verificada.",
+  unauthorized:"Esta sala es solo para cuentas de Google.",google_required:"Para esto hace falta entrar con Google.",adults_only:"Este juego es solo para mayores de 18 años (según la fecha de nacimiento de tu registro).",
   profile_required:"Primero completa tu registro.",need_players:"Faltan jugadores para empezar.",not_your_turn:"No es tu turno.",bad_move:"Esa jugada no vale.",
   kicked:"El anfitrión te sacó de la sala.",too_many:"Tienes demasiadas salas abiertas.",live_unavailable:"Las salas en vivo no están activadas en este servidor.",
   not_configured:"Faltan las tablas de salas en la base de datos (ver SETUP.md).",bad_name:"Escribe un apodo de al menos 2 letras.",forbidden:"No tienes permiso para esto.",
@@ -65,7 +65,7 @@ function sal(){ intencional=true; if(ws)try{ws.close();}catch(e){} ws=null; codi
 
 function catalogo(){
   sal(); hdr("Juegos"); vista="catalogo";
-  var h='<div class="panel retos"><h3>Más juegos</h3><p>Estrategia contra el bot o contra un amigo, juegos de mesa en grupo y dinámicas en vivo para eventos, con la pantalla grande como tablero y los teléfonos como mando.</p>'+
+  var h='<div class="panel retos"><h3>Más juegos</h3><p>Estrategia contra el bot o contra un amigo, juegos de mesa en grupo y dinámicas en vivo para eventos, con la pantalla grande como tablero y los teléfonos como mando. <a href="#" class="guia-link" data-guia="juegos">¿Cómo funciona?</a></p>'+
     '<form class="rt-join" id="jg-join"><input id="jg-code" placeholder="Código de sala" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Entrar</button></form><p class="msg" id="jg-msg"></p>';
   J.GRUPOS.forEach(function(gr){
     var lista=Object.keys(J.REG).map(function(k){return J.REG[k];}).filter(function(d){return d.grupo===gr[0]&&UI[d.tipo];});
@@ -92,7 +92,7 @@ function fichaJuego(tipo){
   if(u.local)h+='<h4>Sin conexión</h4><div class="actions"><button class="primary" id="jg-bot">Contra el bot</button>'+(d.dosLocal!==false?'<button class="ghost" id="jg-dos">Dos en este teléfono</button>':'')+'</div>'+
     (u.niveles?'<div class="seg jg-nivel" role="radiogroup" aria-label="Nivel del bot">'+u.niveles.map(function(n,i){return '<button type="button" role="radio" data-nv="'+i+'" aria-checked="'+(i===1)+'">'+n+'</button>';}).join("")+'</div>':'');
   h+='<h4>'+(u.local?'En línea con amigos':'Crear una sala')+'</h4>';
-  if(!yo||yo.guest)h+='<p class="fine">Para crear una sala entra con Google. Quien se una puede hacerlo'+(d.adultos?' con su cuenta o su teléfono verificado.':' solo con un apodo.')+'</p>'+
+  if(!yo||yo.guest)h+='<p class="fine">Para crear una sala entra con Google. Quien se una puede hacerlo'+(d.adultos?' con su cuenta o su teléfono o correo verificado.':(d.acceso==="libre"?' solo con un apodo, si así lo eliges.':' con Google o con su teléfono o correo verificado, o solo con un apodo si así lo eliges.'))+'</p>'+
     (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="ghost" id="jg-login">Entrar con Google</button></div>':'');
   else{
     h+='<form class="rt-form" id="jg-form">'+(u.opciones?u.opciones(d.opciones||{}):'')+
@@ -101,7 +101,7 @@ function fichaJuego(tipo){
         '<label class="rt-check"><input type="checkbox" id="jg-legal"> <span>Organizo este '+(d.tipo==="sorteo"?'sorteo':'juego')+' bajo mi responsabilidad y cuento con las autorizaciones que exija la ley (en Bolivia, la de la AJ para sorteos promocionales).</span></label>':'')+
       '<label>Quién puede unirse<select id="jg-acc">'+(d.adultos?'':'<option value="libre"'+(d.acceso==="libre"?' selected':'')+'>Cualquiera con el enlace, con un apodo</option>')+
         '<option value="invitados"'+(d.acceso!=="libre"||d.adultos?' selected':'')+'>Con Google o con teléfono o correo verificado</option><option value="cuenta">Solo con cuenta de Google</option></select></label>'+
-      '<p class="fine">Si pones un premio, hará falta identificarse (Google o teléfono o correo verificado) para evitar trampas.</p>'+
+      '<p class="fine">Si pones un premio, hará falta identificarse (Google o teléfono o correo verificado), para que cada persona participe una sola vez.</p>'+
       '<div id="jg-org"></div>'+
       '<div class="actions"><button class="primary" type="submit" id="jg-crear">Crear sala</button></div><p class="msg" id="jg-cmsg"></p></form>';
   }
@@ -178,7 +178,7 @@ function pideApodo(info){
 function identificate(info){
   colorMarca(info.marca);
   panel.innerHTML='<div class="panel retos">'+cabSala(info)+
-    '<p>'+(info.adultos?'Este juego es solo para mayores de 18: hace falta una edad verificada.':'Para participar necesitas identificarte.')+'</p>'+
+    '<p>'+(info.adultos?'Este juego es solo para mayores de 18: se comprueba con la fecha de nacimiento de tu registro.':'Para participar necesitas identificarte.')+'</p>'+
     (info.acceso==="invitados"&&window.AxInvitado?'<div class="actions"><button class="primary" id="jg-inv">Con mi teléfono o correo</button></div>':'')+
     (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="ghost" id="jg-g">Entrar con Google</button></div>':'')+'</div>';
   $("jg-back").onclick=catalogo;
@@ -260,7 +260,8 @@ function espera(el,s,host,d,u){
       '<div class="jg-pjs">'+lista+'</div>';
   }else{
     h='<div class="jg-espera"><div class="jg-qr">'+qr+'</div><div class="jg-esp-t"><p>Que se unan con el código <b class="jg-code">'+esc(s.code)+'</b> o escaneando el QR.</p>'+
-      '<div class="actions"><button type="button" class="ghost au-mini" id="jg-copia">Copiar enlace</button>'+(host?'<a class="ghost au-mini" id="jg-proy" href="'+esc(enlace("pantalla",s.code))+'" target="_blank" rel="noopener">Abrir en el proyector</a>':'')+'</div></div></div>'+
+      '<div class="actions"><button type="button" class="ghost au-mini" id="jg-copia">Copiar enlace</button>'+(host?'<a class="ghost au-mini" id="jg-proy" href="'+esc(enlace("pantalla",s.code))+'" target="_blank" rel="noopener">Abrir en el proyector</a>':'')+'</div>'+
+      (host?'<p class="fine">Para la pantalla grande, abre «Abrir en el proyector» en el ordenador conectado al proyector, a pantalla completa (F11). Tú controlas la partida desde este teléfono.</p>':'')+'</div></div>'+
       '<h4>'+s.total+(s.total===1?' jugador':' jugadores')+' · de '+s.min+(s.max<1000?' a '+s.max:' en adelante')+'</h4><div class="jg-pjs">'+lista+'</div>';
     if(host){
       h+=(u.opciones&&u.leeOpciones?'<details class="au-nuevo"><summary>Opciones</summary><form class="rt-form" id="jg-op">'+u.opciones(s.opciones||{})+

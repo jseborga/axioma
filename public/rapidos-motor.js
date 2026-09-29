@@ -1,6 +1,6 @@
 /* ===========================================================
    AXIOMA · Juegos rápidos · motor
-   Cinco juegos de un minuto para retos entre amigos: trivia,
+   Cinco juegos cortos para retos entre amigos: trivia,
    memoria, cálculo, reflejos y del 1 al 25. Este archivo lo usan
    por igual el navegador y el Worker: cada ronda se genera a partir
    de una semilla, así el servidor puede reconstruirla y puntuar lo
@@ -24,7 +24,7 @@ function entre(r,a,b){return a+Math.floor(r()*(b-a+1));}
 /* ---------- los juegos ---------- */
 var JUEGOS={
   trivia:  {nom:"Trivia",     icono:"❓", orden:"puntos", desc:"Diez preguntas, doce segundos cada una. Cuanto antes aciertes, más puntos.", dur:"2 min"},
-  memoria: {nom:"Memoria",    icono:"🧠", orden:"puntos", desc:"Mira qué casillas se encienden y repítelas en orden. Cada vez una más.", dur:"1 min"},
+  memoria: {nom:"Memoria",    icono:"🧠", orden:"puntos", desc:"Mira qué casillas se encienden y repítelas en orden. Cada vez una más, hasta 14. Sin reloj.", dur:"sin reloj"},
   calculo: {nom:"Cálculo",    icono:"➕", orden:"puntos", desc:"Cuarenta y cinco segundos de cuentas mentales. Cada fallo te quita tres segundos.", dur:"45 s"},
   reflejos:{nom:"Reflejos",   icono:"⚡", orden:"menos",  desc:"Toca en cuanto la pantalla se ponga verde. Cinco veces; cuenta la media.", dur:"30 s"},
   numeros: {nom:"Del 1 al 25",icono:"🔢", orden:"menos",  desc:"Toca los números en orden lo más rápido que puedas. Cada fallo suma un segundo.", dur:"30 s"}

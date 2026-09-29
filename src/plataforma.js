@@ -93,7 +93,7 @@ async function usuarios(env,url,json){
     "SELECT u.id,u.name,u.email,u.created_at,u.last_seen,g.channel,g.contact,g.verified_by,bl.reason AS bloqueo,"+
     " (SELECT COUNT(*) FROM contest_entries e WHERE e.user_id=u.id) AS participaciones,"+
     " (SELECT group_concat(o.name||' · '||CASE m.role WHEN 'admin' THEN 'administración' WHEN 'docente' THEN "+
-    "CASE WHEN o.kind IN ('universidad','instituto','colegio') THEN 'docente' ELSE 'creador de retos' END ELSE m.role END,', ') "+
+    "CASE WHEN o.kind IN ('universidad','instituto','colegio') THEN 'docente' ELSE 'organizador' END ELSE m.role END,', ') "+
     "FROM org_members m JOIN orgs o ON o.id=m.org_id WHERE m.user_id=u.id) AS instituciones"+
     base+" ORDER BY u.last_seen DESC LIMIT 100 OFFSET ?");
   var r=await st2.bind.apply(st2,args.concat([off])).all();

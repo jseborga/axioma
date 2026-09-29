@@ -154,7 +154,7 @@ function pistas(g,ctx,max){
 S.registra("carrera",{
   icono:"🏎️",
   desc:"Resuelve operaciones en tu teléfono para que tu coche avance en la pantalla grande. Con bots de tres niveles.",
-  reglas:["Cada uno ve en su teléfono operaciones distintas; cada acierto hace avanzar su coche.","Un fallo te frena un segundo.","Llega primero quien resuelve todas. Los bots corren a ritmo fijo: fácil, medio o difícil."],
+  reglas:["Cada uno ve en su teléfono operaciones distintas; cada acierto hace avanzar su coche.","Un fallo te frena un segundo.","Llega primero quien resuelve todas; la carrera dura como mucho 4 minutos.","Los bots responden a su ritmo (cada 5, 3 o 1,5 segundos) y también fallan a veces, salvo el difícil."],
   opciones:function(){return '<div class="rt-2"><label>Operaciones hasta la meta<select name="meta"><option value="10">10</option><option value="15" selected>15</option><option value="20">20</option><option value="30">30</option></select></label>'+
     '<label>Dificultad<select name="nivel"><option value="1" selected>Fácil</option><option value="2">Media</option><option value="3">Difícil</option></select></label></div>'+
     '<label>Nivel de los bots<select name="bots"><option value="0">Fácil (una cada 5 s)</option><option value="1" selected>Medio (cada 3 s)</option><option value="2">Difícil (cada 1,5 s)</option></select></label>';},

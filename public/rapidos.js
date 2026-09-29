@@ -39,7 +39,7 @@ function anotaVistas(ronda){
 function practica(){
   limpia();
   var h='<h3>Juegos rápidos</h3>'+
-    '<p class="fine">Cinco juegos de un minuto. Practica aquí cuando quieras; para competir con premio, crea un reto con uno de ellos.</p>';
+    '<p class="fine">Cinco juegos cortos, de 30 segundos a 2 minutos. Practica aquí cuando quieras; para competir con premio, crea un reto con uno de ellos. <a href="#" data-guia="rapido">¿Cómo funciona?</a></p>';
   Object.keys(R.JUEGOS).forEach(function(k){
     var j=R.JUEGOS[k], b=guarda("best_"+k);
     h+='<button type="button" class="rt-card rp-card" data-j="'+k+'"><span class="rt-card-top"><b>'+j.icono+' '+esc(j.nom)+'</b><span class="chip">'+j.dur+'</span></span>'+

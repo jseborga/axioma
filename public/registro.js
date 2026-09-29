@@ -51,7 +51,7 @@ function abre(obligado){
       '<p>'+(obligado?'Para seguir necesitamos dos datos. ':'')+'Antes de unirte a una institución, un curso o un concurso, confirma tu fecha de nacimiento y acepta cómo tratamos tus datos.</p>'+
       '<form class="rt-form" id="reg-form">'+
       '<label>Fecha de nacimiento<input type="date" id="reg-f" max="'+hoy+'" min="1910-01-01" required value="'+esc(p.birthdate||"")+'"></label>'+
-      '<div id="reg-menor" hidden><p class="reg-aviso">Tienes menos de 18 años. Indica los datos de tu madre, padre o tutor. Podrás usar los cursos de tu institución; para los concursos abiertos con premio hará falta su consentimiento o el de tu institución.</p>'+
+      '<div id="reg-menor" hidden><p class="reg-aviso">Tienes menos de 18 años. Indica los datos de tu madre, padre o tutor. Podrás usar los cursos de tu institución; para los concursos abiertos con premio hará falta que tu institución confirme el consentimiento de tu tutor.</p>'+
       '<label>Nombre de tu madre, padre o tutor<input id="reg-gn" maxlength="80" value="'+esc(p.guardian_name||"")+'"></label>'+
       '<label>Su correo<input type="email" id="reg-ge" maxlength="120" value="'+esc(p.guardian_email||"")+'"></label></div>'+
       '<label class="rt-check"><input type="checkbox" id="reg-ok"> <span>He leído y acepto los <a href="terminos.html" target="_blank" rel="noopener">Términos</a> y la <a href="privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>.</span></label>'+
