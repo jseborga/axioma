@@ -716,7 +716,7 @@ async function cambiaPregunta(env,user,bid,qid,b,json){
   if(qid!=="nueva"){
     var q=await env.DB.prepare("SELECT * FROM bank_questions WHERE id=? AND bank_id=?").bind(+qid,bid).first();
     if(!q)return json({error:"not_found"},null,404);
-    if(b.remove){await env.DB.prepare("DELETE FROM bank_questions WHERE id=?").bind(+qid).run();return json({ok:true});}
+    if(b.remove){await env.DB.prepare("DELETE FROM bank_questions WHERE id=?").bind(+qid).run();await olvidaExplicacion(env,qid);return json({ok:true});}
   }
   var ya=await clavesBanco(env,bid);
   if(qid!=="nueva"){ delete ya.claves[B.clave(q.q)]; }
@@ -729,7 +729,12 @@ async function cambiaPregunta(env,user,bid,qid,b,json){
     return json({ok:true,id:r.meta&&r.meta.last_row_id});
   }
   await env.DB.prepare("UPDATE bank_questions SET level=?,topic=?,q=?,opts=?,answer=0 WHERE id=?").bind(v.level,v.topic||null,v.q,JSON.stringify(v.opts),+qid).run();
+  await olvidaExplicacion(env,qid);
   return json({ok:true});
+}
+/* la explicación con IA guardada deja de valer si la pregunta cambia */
+async function olvidaExplicacion(env,qid){
+  try{await env.DB.prepare("DELETE FROM ia_explicaciones WHERE clave=?").bind("b"+(+qid)).run();}catch(e){}
 }
 
 /* ---------- registros: cuestionarios de la institución con filtros ---------- */
