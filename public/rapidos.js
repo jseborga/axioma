@@ -45,9 +45,12 @@ function practica(){
     h+='<button type="button" class="rt-card rp-card" data-j="'+k+'"><span class="rt-card-top"><b>'+j.icono+' '+esc(j.nom)+'</b><span class="chip">'+j.dur+'</span></span>'+
        '<small>'+esc(j.desc)+(b?' · <b>Mejor: '+esc(R.formato(k,b.score,b.seconds))+'</b>':'')+'</small></button>';
   });
+  if(window.AxFiesta)h+=AxFiesta.tarjetas();          /* juegos en grupo con un solo teléfono */
   pinta(h);
-  var bs=panel.querySelectorAll(".rp-card"),i;
+  var bs=panel.querySelectorAll(".rp-card[data-j]"),i;
   for(i=0;i<bs.length;i++)bs[i].onclick=function(){intro(this.getAttribute("data-j"),null);};
+  var fs=panel.querySelectorAll("[data-fiesta]");
+  for(i=0;i<fs.length;i++)fs[i].onclick=function(){AxFiesta.abre(this.getAttribute("data-fiesta"),practica);};
 }
 
 /* ---------- pantalla previa: instrucciones y Empezar ---------- */
@@ -243,6 +246,6 @@ window.AxRapidosUI={
   practica:practica,
   /* cfg: {juego, sub, titulo, pedirDatos():Promise<datos>, alTerminar(envio,res), error(e)} */
   jugar:function(cfg){panel.hidden=false;intro(cfg.juego,cfg);},
-  cerrar:function(){limpia();panel.innerHTML="";panel.hidden=true;}
+  cerrar:function(){limpia();if(window.AxFiesta)AxFiesta.para();panel.innerHTML="";panel.hidden=true;}
 };
 })();

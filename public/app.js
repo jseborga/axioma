@@ -481,6 +481,7 @@ function setMode(m){
   });
   $("mode-label").textContent=MODOS[m];
   document.body.setAttribute("data-mode",m);          /* la ayuda «?» abre la guía de esta sección */
+  var nb=$("nav-back"); if(nb)nb.hidden=(m==="inicio"||m==="pantalla");
   if(window.AxRetos&&m!=="reto"&&m!=="pareja")AxRetos.cerrar();
   if(window.AxRapidosUI&&m!=="rapido"&&m!=="reto")AxRapidosUI.cerrar();
   if(window.AxConcursos&&m!=="concurso")AxConcursos.cerrar();
@@ -654,4 +655,40 @@ var esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 if(esIOS)
   pinta('<div class="install-txt"><b>Añadir a la pantalla de inicio</b>'+
         '<small>Toca el botón Compartir del navegador y elige «Añadir a pantalla de inicio».</small></div>');
+})();
+
+/* ===========================================================
+   Volver atrás dentro de la app
+   El botón «atrás» del teléfono o del navegador (y la flecha de la
+   cabecera) cierran primero una ventana abierta; si no hay, pulsan el
+   «‹ volver» de la pantalla; si tampoco hay, llevan a Inicio. Solo en
+   Inicio se sale de la app, y pidiendo pulsar dos veces.
+   =========================================================== */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function visible(el){return !!(el&&el.offsetParent!==null);}
+  function atras(){
+    var modal=document.querySelector(".tut.on");
+    if(modal){var x=modal.querySelector(".close,#tut-x,#reg-x,[data-cierra]"); if(x){x.click();return true;}
+      modal.classList.remove("on"); modal.innerHTML=""; document.body.style.overflow=""; return true;}
+    var ap=$("acct-panel"); if(ap&&!ap.hidden){ap.hidden=true;return true;}
+    var mm=$("mode-menu"); if(mm&&!mm.hidden){$("mode-btn").click();return true;}
+    var bs=document.querySelectorAll(".rt-back"), i;
+    for(i=0;i<bs.length;i++)if(visible(bs[i])){bs[i].click();return true;}
+    if(document.body.getAttribute("data-mode")!=="inicio"&&window.AxApp){AxApp.setMode("inicio");return true;}
+    return false;
+  }
+  window.AxNav={atras:atras};
+  var nb=$("nav-back"); if(nb)nb.onclick=function(){atras();};
+  if(!window.history||!history.pushState)return;
+  try{history.replaceState({ax:"base"},""); history.pushState({ax:"app"},"");}catch(e){return;}
+  var avisado=0;
+  window.addEventListener("popstate",function(){
+    if(atras()){avisado=0; history.pushState({ax:"app"},""); return;}
+    /* en Inicio: la primera vez avisa; la segunda, sale */
+    if(Date.now()-avisado<2500){history.back();return;}
+    avisado=Date.now(); history.pushState({ax:"app"},"");
+    var m=$("msg-salir"); if(!m){m=document.createElement("div");m.id="msg-salir";m.className="nav-aviso";document.body.appendChild(m);}
+    m.textContent="Pulsa atrás otra vez para salir"; m.classList.add("on"); setTimeout(function(){m.classList.remove("on");},2200);
+  });
 })();

@@ -375,7 +375,10 @@ GUIAS.rapido=[
  a:function(){var R=window.AxRapidos; if(!R)return "";
    return tarjetas(Object.keys(R.JUEGOS).map(function(k){var j=R.JUEGOS[k];return [j.icono+" "+j.nom+" · "+j.dur,j.desc];}));}},
 {t:"Detalles",d:"En la Trivia de práctica no se repiten preguntas que ya viste en los últimos 60 días en este teléfono. En Memoria no hay reloj: cada acierto añade una casilla más, hasta 14. En un reto solo vale el primer intento de cada ronda.",
- a:function(){return ico("⚡");}}
+ a:function(){return ico("⚡");}},
+{t:"En grupo, con un solo teléfono",d:"Para jugar en persona pasándoos el teléfono (o en la pantalla grande), sin cuentas ni conexión. Cada juego explica sus reglas antes de empezar y recuerda los nombres de los equipos o jugadores.",
+ a:function(){var F=window.AxFiesta; if(!F)return "";
+   return tarjetas(Object.keys(F.JUEGOS).map(function(k){var j=F.JUEGOS[k];return [j.icono+" "+j.nom,j.gente];}));}}
 ];
 GUIAS.juegos=[
 {t:"Más juegos",d:"Juegos en sala con código: estrategia 1 contra 1, juegos de mesa en grupo, dinámicas en vivo para eventos, sorteos y subastas, y juegos solo para adultos. Cada juego explica sus reglas en su ficha.",
