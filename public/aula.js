@@ -42,10 +42,10 @@ function enlace(p,c){return location.origin+location.pathname+"?"+p+"="+c;}
 function copia(t,b){var o=b.textContent;
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent=o;},1400);});
   else prompt("Copia el enlace:",t);}
-function ERR(e){if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
+function ERR(e){if(e&&e.error==="few_questions"&&e.needed!==5)return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
   return {pro_required:"Las ayudas con IA son del plan Pro. Pide a la administración de la plataforma que lo active para tu institución.",
   ia_not_configured:"La IA no está configurada en esta instalación (falta la clave ANTHROPIC_API_KEY).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
-  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
+  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",bad_code:"Ese código no es válido.",code_used:"Ese código ya se usó.",code_expired:"Ese código ya venció.",few_questions:"El banco necesita al menos 5 preguntas que no sean de texto libre.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
@@ -91,8 +91,9 @@ function inicio(){
   if(u&&u.guest){pinta('<h3>Educativo</h3><p>'+esc(ERR({error:"google_required"}))+' Ahora participas como invitado.</p>');return;}
   if(!u){
     pinta('<h3>Educativo</h3><p>Cuestionarios de clase con registros para el docente: la institución organiza su estructura (facultades, carreras, materias…), cada docente crea sus cursos y bancos de preguntas, y los estudiantes entran con el enlace de su curso. <a href="#" class="guia-link" data-guia="aula">¿Cómo funciona?</a></p>'+
-      (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="au-login">Entrar con Google</button></div>':'<p class="fine">El inicio de sesión no está configurado.</p>'));
+      (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="au-login">Entrar con Google</button></div>':'<p class="fine">El inicio de sesión no está configurado.</p>')+tarjetaRepaso());
     if($("au-login"))$("au-login").onclick=function(){AxAccount.abrirCuenta();};
+    $("au-rep").onclick=function(){repasos();};
     return;
   }
   pinta('<h3>Educativo</h3><p class="fine">Cargando…</p>');
@@ -101,6 +102,7 @@ function inicio(){
       '<form class="rt-join" id="au-join"><input id="au-code" placeholder="Código de curso o de docente" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Unirme</button></form>'+
       '<p class="msg" id="au-msg"></p>';
     var cursos=r.courses.filter(function(c){return !c.archived;});
+    h+=tarjetaRepaso();
     h+='<h4>Tus cursos</h4>';
     h+=cursos.length?cursos.map(function(c){
       return '<button type="button" class="rt-card" data-curso="'+c.code+'"><span class="rt-card-top"><b>'+esc(c.name)+'</b>'+
@@ -119,6 +121,7 @@ function inicio(){
     pinta(h);
     var bs=panel.querySelectorAll("[data-curso]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){curso(this.getAttribute("data-curso"));};
     bs=panel.querySelectorAll("[data-org]"); for(i=0;i<bs.length;i++)bs[i].onclick=function(){org(this.getAttribute("data-org"));};
+    $("au-rep").onclick=function(){repasos();};
     $("au-nueva").onclick=crearOrg;
     if($("au-emp"))$("au-emp").onclick=function(e){e.preventDefault();AxApp.setMode("empresas");};
     if($("au-plat"))$("au-plat").onclick=function(){plataforma();};
@@ -197,7 +200,7 @@ function org(id,tab,nota){
     if(o.can.teach)lista.push(["bancos","Bancos"]);
     if(o.can.teach&&acad)lista.push(["registros","Registros"]);
     if(o.can.admin||o.platform_admin)lista.push(["metricas","Métricas"]);
-    if(o.can.admin&&acad)lista.push(["estructura","Estructura"]);
+    if(o.can.admin&&acad)lista.push(["estructura","Estructura"],["repaso","Repaso"]);
     if(o.can.admin)lista.push(["miembros","Miembros"],["ajustes",acad?"Ajustes":"Marca y ajustes"]);
     if(!lista.length)lista.push(["cursos","Cursos"]);
     if(!tab||!lista.some(function(t){return t[0]===tab;}))tab=lista[0][0];
@@ -212,7 +215,7 @@ function org(id,tab,nota){
     $("au-back").onclick=inicio;
     ligaTabs(function(t){org(id,t);});
     ({cursos:tabCursos,convocatorias:tabConvocatorias,bancos:tabBancos,registros:tabRegistros,metricas:tabMetricas,estructura:tabEstructura,
-      miembros:tabMiembros,ajustes:tabAjustes})[tab](o);
+      miembros:tabMiembros,ajustes:tabAjustes,repaso:function(o){adminRepaso($("au-tab"),o);}})[tab](o);
   }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
 }
 function opcionesUnidades(o,soloHojas,sel){
@@ -1212,16 +1215,146 @@ function editorMarca(o){
   }).catch(function(e){z.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
 }
 
+/* ===================== REPASO PÚBLICO =====================
+   Bancos que universidades, institutos, colegios o la plataforma publican
+   para practicar el ingreso o la nivelación. Practicar es gratis; con un
+   código de acceso se ven el desarrollo y la calificación. */
+function tarjetaRepaso(){
+  return '<button type="button" class="rt-card au-rep" id="au-rep"><span class="rt-card-top"><b>📚 Repaso de ingreso y nivelación</b><span class="chip activo">Abierto</span></span>'+
+    '<small>Exámenes de práctica publicados por universidades, institutos y la plataforma. Gratis para practicar; con código, desarrollo y calificación.</small></button>';
+}
+function fechaCorta(ms){return new Date(ms).toLocaleDateString("es",{day:"numeric",month:"short",year:"numeric"});}
+function repasos(nota){
+  vista={render:function(){repasos();}}; $("hdr").textContent="Repaso";
+  pinta('<p class="fine">Cargando…</p>');
+  api("/api/repasos").then(function(r){
+    var u=user(), h=atras("Educativo")+'<h3>Repaso de ingreso y nivelación</h3>'+
+      '<p class="fine">Practica con exámenes de repaso: cada intento trae preguntas al azar y te dice al momento si acertaste. Con un <b>código de acceso</b> ves además el <b>desarrollo</b> de cada pregunta y tu <b>calificación</b> (nota, temas a reforzar e historial).</p>'+
+      (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
+      (u&&!u.guest?'<form class="rt-join" id="rp-can"><input id="rp-cod" placeholder="Código de acceso" maxlength="14" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="ghost">Canjear</button></form><p class="msg" id="rp-msg"></p>':
+        '<p class="rt-hoy">Para practicar, entra con Google.</p>');
+    h+=r.repasos.length?r.repasos.map(function(x){
+      var acc=x.acceso==="miembro"?"Acceso completo (tu institución)":x.acceso?"Acceso completo hasta el "+fechaCorta(x.acceso):"Gratis · desarrollo y calificación con código";
+      return '<button type="button" class="rt-card" data-rep="'+x.id+'"><span class="rt-card-top"><b>'+esc(x.titulo)+'</b><span class="chip'+(x.acceso?' activo':'')+'">'+x.n+' preguntas</span></span>'+
+        '<small>'+esc(x.org_name)+' · '+x.preguntas+' en el banco · '+acc+'</small>'+(x.descripcion?'<small>'+esc(x.descripcion)+'</small>':'')+'</button>';}).join(""):
+      '<p class="fine">Todavía no hay repasos publicados.</p>';
+    pinta(h);
+    $("au-back").onclick=inicio;
+    if($("rp-can"))$("rp-can").onsubmit=function(e){e.preventDefault();
+      api("/api/repasos/canjear",{codigo:$("rp-cod").value}).then(function(x){repasos("¡Listo! Acceso completo a "+x.para+" hasta el "+fechaCorta(x.hasta)+".");})
+        .catch(function(er){aviso("rp-msg",ERR(er),true);});};
+    panel.querySelectorAll("[data-rep]").forEach(function(b){b.onclick=function(){
+      if(!u||u.guest){if(window.AxAccount)AxAccount.abrirCuenta();return;}
+      var x=r.repasos.filter(function(y){return y.id===+b.getAttribute("data-rep");})[0]; repasoJuego(x);};});
+  }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+}
+function repasoJuego(x){
+  vista={render:function(){repasos();}};
+  pinta('<p class="fine">Preparando el intento…</p>');
+  var fn=function(){return api("/api/repasos/"+x.id+"/empezar",{});};
+  fn().catch(function(er){if(er&&er.error==="profile_required"&&window.AxRegistro)return AxRegistro.asegura().then(function(ok){if(ok)return fn();throw er;});throw er;}).then(function(r){
+    var i=0, bien=0, n=r.questions.length;
+    function una(){
+      var q=r.questions[i], conImg=q.oimg&&q.oimg.some(Boolean);
+      pinta('<button type="button" class="rt-back" id="au-back">‹ Salir del repaso</button>'+
+        '<div class="rt-head"><h3>Pregunta '+(i+1)+' <small>de '+n+'</small></h3><span class="chip activo">'+bien+' ✓</span></div>'+
+        (q.tema?'<p class="cq-cat">'+esc(q.tema)+'</p>':'')+'<p class="rp-q">'+esc(q.q)+'</p>'+(q.img?'<img class="cq-img" src="'+esc(q.img)+'" alt="">':'')+
+        (q.tipo==="numerica"?'<form class="cq-escribe" id="rp-f"><input id="rp-v" inputmode="decimal" autocomplete="off" maxlength="40" placeholder="Tu respuesta (un número)"><button class="primary" type="submit">Responder</button></form>':
+          '<div class="rp-opts'+(conImg?' con-img':'')+'">'+q.o.map(function(o,k){var im=q.oimg&&q.oimg[k];return '<button type="button" class="rp-opt" data-k="'+k+'">'+(im?'<img src="'+esc(im)+'" alt="">':'')+esc(o)+'</button>';}).join("")+'</div>')+
+        '<div id="rp-fb"></div>');
+      $("au-back").onclick=function(){if(i===0||confirm("¿Salir? Este intento queda a medias."))repasos();};
+      function envia(cuerpo,btn){
+        panel.querySelectorAll(".rp-opt, #rp-f input, #rp-f button").forEach(function(b){b.disabled=true;});
+        api("/api/repasos/intentos/"+r.intento+"/responder",Object.assign({qid:q.qid},cuerpo)).then(function(a){
+          if(a.correct)bien++;
+          if(btn){btn.classList.add(a.correct?"ok":"mal"); if(!a.correct)panel.querySelectorAll(".rp-opt").forEach(function(b){if(b.textContent===a.answer)b.classList.add("ok");});}
+          $("rp-fb").innerHTML='<div class="vv-res '+(a.correct?'bien':'mal')+'"><b>'+(a.correct?'¡Correcto!':'Incorrecto')+'</b>'+(a.correct?'':'<span>La correcta: '+esc(a.answer)+'</span>')+'</div>'+
+            (a.desarrollo?'<div class="vv-dato"><b>💡 Desarrollo</b> '+esc(a.desarrollo).replace(/\n/g,"<br>")+'</div>':a.locked?'<p class="fine rp-lock">🔒 Esta pregunta tiene su desarrollo paso a paso: se ve con un código de acceso.</p>':'')+
+            '<div class="actions"><button class="primary" id="rp-sig">'+(i+1<n?'Siguiente':'Ver mi resultado')+'</button></div>';
+          $("rp-sig").onclick=function(){i++; if(i<n)una(); else fin();}; $("rp-sig").focus();
+        }).catch(function(e){aviso("rp-fb",ERR(e),true);});
+      }
+      if(q.tipo==="numerica")$("rp-f").onsubmit=function(e){e.preventDefault(); if($("rp-v").value.trim())envia({v:$("rp-v").value});};
+      else panel.querySelectorAll(".rp-opt").forEach(function(b){b.onclick=function(){envia({o:+this.getAttribute("data-k")},this);};});
+    }
+    function fin(){
+      pinta('<p class="fine">Calculando…</p>');
+      api("/api/repasos/intentos/"+r.intento+"/terminar",{}).then(function(t){
+        var h='<button type="button" class="rt-back" id="au-back">‹ Repasos</button><h3>'+esc(t.titulo)+'</h3>'+
+          '<div class="cq-mio"><small>Resultado del intento</small><b>'+t.aciertos+' de '+t.total+'</b>'+(t.nota!==undefined?'<span>Nota: '+t.nota+' / 100</span>':'')+'</div>';
+        if(t.acceso){
+          h+='<h4>Por tema</h4><ul class="rp-temas">'+t.temas.map(function(g){return '<li><span>'+esc(g.tema)+'</span><b>'+g.aciertos+' / '+g.total+'</b><i style="--p:'+g.pct+'%"></i></li>';}).join("")+'</ul>'+
+            (t.temas.length&&t.temas[0].pct<60?'<p class="fine">Para reforzar: <b>'+esc(t.temas[0].tema)+'</b>.</p>':'')+
+            '<h4>Tus intentos</h4><p class="fine">'+t.historial.map(function(x){return x.nota;}).reverse().join(" → ")+'</p>';
+        }else h+='<div class="au-caja"><h4>🔒 Calificación y desarrollo</h4><p class="fine">Con un código de acceso ves tu nota sobre 100, los temas que te conviene reforzar, tu historial de intentos y el desarrollo paso a paso de cada pregunta. Los códigos los dan las instituciones que publican el repaso o la plataforma.</p></div>';
+        h+='<div class="actions"><button class="primary" id="rp-otra">Otro intento</button></div>';
+        pinta(h); $("au-back").onclick=function(){repasos();}; $("rp-otra").onclick=function(){repasoJuego(x);};
+      }).catch(function(e){pinta('<p class="fine bad">'+esc(ERR(e))+'</p>');});
+    }
+    una();
+  }).catch(function(e){pinta(atras("Repasos")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=function(){repasos();};});
+}
+/* administración del repaso: una institución (o la plataforma, con org=null) */
+function adminRepaso(t,o){
+  var orgId=o?o.id:null;
+  t.innerHTML='<p class="fine">Cargando…</p>';
+  Promise.all([api("/api/repasos/admin"+(orgId?"?org="+orgId:"")),orgId?api("/api/orgs/"+orgId+"/banks"):Promise.resolve({banks:[]})]).then(function(res){
+    var r=res[0], bancos=res[1].banks, h='';
+    h+='<p class="fine">Publica un banco como <b>repaso abierto</b>: cualquiera con cuenta lo practica gratis y ve si acierta. El <b>desarrollo</b> de cada pregunta y la <b>calificación</b> se desbloquean con un código de acceso que tú generas (por ejemplo, para una promoción o un curso de nivelación). '+
+      (orgId?'Los miembros de la institución tienen acceso sin código. ':'')+'Las preguntas de texto libre no se usan en el repaso.</p>';
+    if(orgId)h+='<details class="au-nuevo"'+(r.repasos.length?'':' open')+'><summary>Publicar un repaso</summary><form class="rt-form" id="rp-pub">'+
+      '<label>Banco<select id="rp-bank" required><option value="">Elige un banco…</option>'+bancos.map(function(b){return '<option value="'+b.id+'">'+esc(b.name)+(b.unit_name?' · '+esc(b.unit_name):'')+' ('+b.questions+')</option>';}).join("")+'</select></label>'+
+      '<label>Título<input id="rp-tit" maxlength="80" required placeholder="Ingreso 2027 · Matemática"></label>'+
+      '<label>Descripción (opcional)<input id="rp-des" maxlength="300" placeholder="Temario del examen de ingreso de la facultad"></label>'+
+      '<label>Preguntas por intento<select id="rp-n"><option>5</option><option selected>10</option><option>15</option><option>20</option><option>30</option><option>50</option></select></label>'+
+      '<div class="actions"><button class="primary" type="submit">Publicar</button></div><p class="msg" id="rp-pmsg"></p></form></details>';
+    h+='<h4>Repasos publicados</h4>'+(r.repasos.length?r.repasos.map(function(x){
+      return '<div class="au-fila"><div><b>'+esc(x.titulo)+'</b> <span class="chip'+(x.activo?' activo':'')+'">'+(x.activo?'Publicado':'Oculto')+'</span>'+
+        '<small>'+(orgId?'':esc(x.org_name)+' · ')+esc(x.bank_name)+' · '+x.n+' por intento · '+x.intentos+' intentos de '+x.personas+' personas</small></div>'+
+        '<button type="button" class="ghost au-mini" data-act="'+x.id+'" data-v="'+(x.activo?0:1)+'">'+(x.activo?'Ocultar':'Publicar')+'</button></div>';}).join(""):'<p class="fine">Todavía no hay ninguno.</p>');
+    h+='<h4>Códigos de acceso</h4><form class="rt-form" id="rp-gen"><div class="rt-2">'+
+      '<label>Para<select id="rp-para">'+(orgId?'<option value="org">Todos los repasos de la institución</option>':'<option value="todo">Todos los repasos de la plataforma</option>')+
+        r.repasos.map(function(x){return '<option value="'+x.id+'">'+esc(x.titulo)+'</option>';}).join("")+'</select></label>'+
+      '<label>Cantidad<input id="rp-cant" type="number" min="1" max="200" value="10"></label></div><div class="rt-2">'+
+      '<label>Días de acceso<select id="rp-dias"><option value="7">7 días</option><option value="30" selected>30 días</option><option value="90">90 días</option><option value="180">6 meses</option><option value="365">1 año</option></select></label>'+
+      '<label>Usos por código<input id="rp-usos" type="number" min="1" max="1000" value="1"></label></div>'+
+      '<label>Nota (promoción, curso…)<input id="rp-nota" maxlength="80" placeholder="Promoción feria 2026"></label>'+
+      '<div class="actions"><button class="primary" type="submit">Generar códigos</button></div><p class="msg" id="rp-gmsg"></p><div id="rp-nuevos"></div></form>';
+    if(r.codigos.length){
+      var tit={}; r.repasos.forEach(function(x){tit[x.id]=x.titulo;});
+      h+='<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Código</th><th>Para</th><th>Días</th><th>Usos</th><th>Nota</th></tr></thead><tbody>'+
+        r.codigos.map(function(c){return '<tr><td><code>'+c.codigo.slice(0,5)+'-'+c.codigo.slice(5)+'</code></td><td>'+esc(c.repaso_id?tit[c.repaso_id]||"Un repaso":c.todo?"Todos":"Institución")+'</td><td>'+c.dias+'</td><td>'+c.usos+' / '+c.usos_max+'</td><td>'+esc(c.nota)+'</td></tr>';}).join("")+
+        '</tbody></table></div><div class="actions"><button type="button" class="ghost" id="rp-xls">Descargar códigos en Excel</button></div>';
+    }
+    t.innerHTML=h;
+    var recarga=function(){adminRepaso(t,o);};
+    if($("rp-pub"))$("rp-pub").onsubmit=function(e){e.preventDefault();
+      api("/api/repasos",{bank_id:+$("rp-bank").value,titulo:$("rp-tit").value,descripcion:$("rp-des").value,n:+$("rp-n").value}).then(recarga).catch(function(er){aviso("rp-pmsg",ERR(er),true);});};
+    t.querySelectorAll("[data-act]").forEach(function(b){b.onclick=function(){api("/api/repasos/"+this.getAttribute("data-act"),{activo:this.getAttribute("data-v")==="1"}).then(recarga).catch(function(er){alert(ERR(er));});};});
+    $("rp-gen").onsubmit=function(e){e.preventDefault(); var p=$("rp-para").value, cuerpo={cantidad:+$("rp-cant").value,dias:+$("rp-dias").value,usos:+$("rp-usos").value,nota:$("rp-nota").value};
+      if(p==="org")cuerpo.org_id=orgId; else if(p==="todo")cuerpo.todo=true; else cuerpo.repaso_id=+p;
+      api("/api/repasos/codigos",cuerpo).then(function(x){
+        $("rp-nuevos").innerHTML='<p class="fine ok">'+x.codigos.length+' códigos de '+x.dias+' días. Cópialos o descárgalos:</p><textarea readonly rows="4" class="rp-lista">'+x.codigos.map(function(c){return c.slice(0,5)+"-"+c.slice(5);}).join("\n")+'</textarea>'+
+          '<div class="actions"><button type="button" class="ghost" id="rp-ver">Actualizar la lista</button></div>';
+        $("rp-ver").onclick=recarga;}).catch(function(er){aviso("rp-gmsg",ERR(er),true);});};
+    if($("rp-xls"))$("rp-xls").onclick=function(){
+      var tit={}; r.repasos.forEach(function(x){tit[x.id]=x.titulo;});
+      var filas=[["Código","Para","Días de acceso","Usos","Máximo","Nota"]].concat(r.codigos.map(function(c){return [c.codigo.slice(0,5)+"-"+c.codigo.slice(5),c.repaso_id?tit[c.repaso_id]||"":c.todo?"Todos":"Institución",c.dias,c.usos,c.usos_max,c.nota];}));
+      XL.descarga(XL.escribir([{nombre:"Códigos",filas:filas,anchos:[16,30,12,8,8,24]}]),"codigos-repaso.xlsx");};
+  }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+
 /* ===================== PLATAFORMA =====================
    Resumen con métricas globales, instituciones (aprobar, suspender, dar
    de alta con su administración) y usuarios (buscar, filtrar, bloquear). */
 function plataforma(tab,filtro){
   tab=tab||"resumen"; filtro=filtro||{};
   vista={render:function(){plataforma(tab,filtro);}};
-  pinta(atras(nombreSeccion())+'<h3>Administración de la plataforma</h3>'+tabs([["resumen","Resumen"],["orgs","Instituciones"],["usuarios","Usuarios"]],tab)+'<div id="au-tab"><p class="fine">Cargando…</p></div>');
+  pinta(atras(nombreSeccion())+'<h3>Administración de la plataforma</h3>'+tabs([["resumen","Resumen"],["orgs","Instituciones"],["usuarios","Usuarios"],["repaso","Repaso"]],tab)+'<div id="au-tab"><p class="fine">Cargando…</p></div>');
   $("au-back").onclick=inicio;
   ligaTabs(function(t){plataforma(t);});
   var t=$("au-tab");
+  if(tab==="repaso"){adminRepaso(t,null);return;}
   api("/api/admin/summary").then(function(r){
     if(tab==="resumen")platResumen(t,r);
     else if(tab==="orgs")platOrgs(t,r);
@@ -1376,7 +1509,7 @@ function platUsuarios(t,r,f){
 }
 
 /* se publica antes de atender el enlace: si la sesión ya se conoce, el cambio de modo es inmediato */
-window.AxAula={abrir:abrir,cerrar:cerrar,curso:function(code){activo=true;panel.hidden=false;curso(code);},
+window.AxAula={abrir:abrir,cerrar:cerrar,repasos:function(){activo=true;panel.hidden=false;repasos();},curso:function(code){activo=true;panel.hidden=false;curso(code);},
   org:function(id,tab){activo=true;panel.hidden=false;org(id,tab);}};
 
 /* ---------- enlaces: ?curso=CÓDIGO y ?docente=CÓDIGO ---------- */

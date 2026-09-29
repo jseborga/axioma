@@ -293,3 +293,32 @@ verdadero o falso.
 
 Tablas: `bank_question_extra`, `preguntas_imagenes` y `contest_textos` (ver
 SETUP.md).
+
+## Repaso de ingreso y nivelación (público)
+
+Un banco de preguntas puede publicarse como **repaso abierto**, pensado para
+estudiantes que preparan el examen de ingreso a la universidad o un curso de
+nivelación, aunque no sean de la institución.
+
+- **Quién publica**: la administración de una universidad, instituto o colegio
+  (pestaña **Repaso** de la institución) y la administración de la plataforma
+  (**Administración de la plataforma → Repaso**).
+- **Catálogo**: en Educativo, **📚 Repaso de ingreso y nivelación**. Se ve sin
+  sesión; para practicar hace falta entrar con Google y completar el registro.
+- **Gratis**: cada intento trae preguntas al azar del banco (opción múltiple,
+  verdadero o falso y numéricas; el texto libre no se usa). El servidor corrige
+  cada respuesta y dice al momento si acertó y cuál era la correcta.
+- **Con código de acceso**: además se ve el **desarrollo** paso a paso de cada
+  pregunta y la **calificación**: nota sobre 100, aciertos por tema (con el tema a
+  reforzar) e historial de intentos.
+- **Códigos**: quien publica genera códigos de 10 caracteres (se escriben con o
+  sin guion) para un repaso o para todos los de la institución; la plataforma,
+  también para todos los repasos. Se eligen los días de acceso (7 días a 1 año),
+  cuántas veces se puede usar cada código y una nota (p. ej. «Promoción feria
+  2026»). La lista se descarga en Excel para venderlos o repartirlos por fuera de
+  la app (QR, transferencia, inscripción al curso de nivelación). Al canjear, los
+  días se suman a los que ya tenga.
+- **Miembros** de la institución que publica: acceso completo sin código.
+
+Tablas: `repasos`, `repaso_codigos`, `repaso_accesos` y `repaso_intentos` (ver
+SETUP.md).

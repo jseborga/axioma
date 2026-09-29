@@ -576,6 +576,20 @@ CREATE TABLE IF NOT EXISTS contest_textos (code TEXT NOT NULL, user_id TEXT NOT 
 Mientras falten, las preguntas de opción múltiple funcionan como siempre; guardar
 una de otro tipo o con imagen avisa de que faltan las tablas.
 
+### Añadir las tablas del repaso público
+
+Para el repaso de ingreso y nivelación con códigos de acceso (ver
+[AULA.md](AULA.md)), pega esto en la consola de D1 (también está en
+`instalar.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS repasos (id INTEGER PRIMARY KEY AUTOINCREMENT, bank_id INTEGER NOT NULL, org_id TEXT, titulo TEXT NOT NULL, descripcion TEXT, n INTEGER NOT NULL DEFAULT 10, origen TEXT NOT NULL DEFAULT 'institucion', publicado_por TEXT NOT NULL, activo INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS repaso_codigos (codigo TEXT PRIMARY KEY, repaso_id INTEGER, org_id TEXT, dias INTEGER NOT NULL, usos_max INTEGER NOT NULL DEFAULT 1, usos INTEGER NOT NULL DEFAULT 0, nota TEXT, creado_por TEXT NOT NULL, vence INTEGER, created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS repaso_accesos (user_id TEXT NOT NULL, alcance TEXT NOT NULL, hasta INTEGER NOT NULL, codigo TEXT, created_at INTEGER NOT NULL, PRIMARY KEY (user_id, alcance));
+CREATE TABLE IF NOT EXISTS repaso_intentos (id INTEGER PRIMARY KEY AUTOINCREMENT, repaso_id INTEGER NOT NULL, user_id TEXT NOT NULL, plan TEXT NOT NULL, respuestas TEXT NOT NULL DEFAULT '{}', aciertos INTEGER NOT NULL DEFAULT 0, total INTEGER NOT NULL, created_at INTEGER NOT NULL, terminado_at INTEGER);
+CREATE INDEX IF NOT EXISTS repaso_intentos_user ON repaso_intentos(user_id, repaso_id, created_at);
+```
+
 ### Activar las ayudas con IA (plan Pro)
 
 Las ayudas con IA para bancos y prácticas (ver [AULA.md](AULA.md)) necesitan

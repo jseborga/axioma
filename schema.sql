@@ -553,3 +553,51 @@ CREATE TABLE IF NOT EXISTS contest_textos (
   created_at   INTEGER NOT NULL,
   PRIMARY KEY (code, user_id, idx)
 );
+
+-- =========================================================
+-- Repaso público (ingreso, nivelación) con códigos de acceso
+-- =========================================================
+CREATE TABLE IF NOT EXISTS repasos (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  bank_id       INTEGER NOT NULL,
+  org_id        TEXT,
+  titulo        TEXT NOT NULL,
+  descripcion   TEXT,
+  n             INTEGER NOT NULL DEFAULT 10,   -- preguntas por intento
+  origen        TEXT NOT NULL DEFAULT 'institucion', -- institucion | plataforma
+  publicado_por TEXT NOT NULL,
+  activo        INTEGER NOT NULL DEFAULT 1,
+  created_at    INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS repaso_codigos (
+  codigo     TEXT PRIMARY KEY,                 -- 10 caracteres
+  repaso_id  INTEGER,                          -- un repaso, o
+  org_id     TEXT,                             -- todos los de una institución (ambos nulos: todos)
+  dias       INTEGER NOT NULL,                 -- días de acceso que da
+  usos_max   INTEGER NOT NULL DEFAULT 1,
+  usos       INTEGER NOT NULL DEFAULT 0,
+  nota       TEXT,                             -- p. ej. «Promoción feria 2026»
+  creado_por TEXT NOT NULL,
+  vence      INTEGER,                          -- hasta cuándo se puede canjear
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS repaso_accesos (
+  user_id    TEXT NOT NULL,
+  alcance    TEXT NOT NULL,                    -- r<repaso> | o<institución> | todo
+  hasta      INTEGER NOT NULL,
+  codigo     TEXT,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, alcance)
+);
+CREATE TABLE IF NOT EXISTS repaso_intentos (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  repaso_id    INTEGER NOT NULL,
+  user_id      TEXT NOT NULL,
+  plan         TEXT NOT NULL,                  -- JSON [{id, orden}]
+  respuestas   TEXT NOT NULL DEFAULT '{}',     -- JSON {qid: {ok, tema}}
+  aciertos     INTEGER NOT NULL DEFAULT 0,
+  total        INTEGER NOT NULL,
+  created_at   INTEGER NOT NULL,
+  terminado_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS repaso_intentos_user ON repaso_intentos(user_id, repaso_id, created_at);

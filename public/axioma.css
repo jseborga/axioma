@@ -1532,3 +1532,11 @@ body[data-proyector] #nav-back{display:none}
 .ed-opt>label:first-child{flex:1 1 200px}
 .ed-oimg img,.ed-img img{max-height:70px;max-width:120px;border-radius:8px;object-fit:contain;display:block}
 .ed-img{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0}
+
+/* ---------- repaso público ---------- */
+.au-rep{border:1.5px solid var(--accent-tint)}
+.rp-temas{list-style:none;padding:0;margin:8px 0;display:grid;gap:8px}
+.rp-temas li{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;font-size:.95rem}
+.rp-temas li i{grid-column:1/-1;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--accent) var(--p),var(--inset-2) var(--p))}
+.rp-lock{margin:8px 0}
+.rp-lista{width:100%;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;border-radius:10px;border:1px solid var(--hair);padding:8px;background:var(--card);color:var(--ink)}
