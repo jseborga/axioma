@@ -42,7 +42,7 @@ function enlace(p,c){return location.origin+location.pathname+"?"+p+"="+c;}
 function copia(t,b){var o=b.textContent;
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent=o;},1400);});
   else prompt("Copia el enlace:",t);}
-function ERR(e){return {not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
+function ERR(e){return {bad_group:"Ese grupo no existe en el curso.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
@@ -415,13 +415,14 @@ function curso(code,nota,tab){
           .catch(function(er){$("cu-go").disabled=false;aviso("cu-msg",ERR(er),true);});};
       return;
     }
-    if(!c.manage){ pinta(cab+listaCuestionarios(c,false)); $("au-back").onclick=inicio; ligaCuestionarios(); return; }
+    if(!c.manage){ pinta(cab+listaCuestionarios(c,false)+(c.extras?'<h4>Mi avance</h4><div id="au-avance"><p class="fine">Cargando…</p></div>':''));
+      $("au-back").onclick=inicio; ligaCuestionarios(); if(c.extras)miAvance(c); return; }
     /* vista de quien gestiona el curso */
     var pend=(c.members||[]).filter(function(x){return x.status==="pendiente";}).length;
     tab=tab||"cuest";
     pinta(cab+'<div class="rt-code"><span>Código del curso</span><b>'+c.code+'</b><button type="button" class="ghost" id="cu-copy">Copiar enlace</button>'+
         (navigator.share?'<button type="button" class="ghost" id="cu-share">Invitar</button>':'')+'</div>'+
-      tabs([["cuest","Cuestionarios"],["alumnos","Estudiantes"+(pend?" ("+pend+")":"")],["ajustes","Ajustes"]],tab)+'<div id="au-tab"></div>');
+      tabs([["cuest","Cuestionarios"]].concat(c.extras?[["libreta","Libreta"]]:[]).concat([["alumnos","Estudiantes"+(pend?" ("+pend+")":"")],["ajustes","Ajustes"]]),tab)+'<div id="au-tab"></div>');
     $("au-back").onclick=inicio;
     $("cu-copy").onclick=function(){copia(enlace("curso",c.code),this);};
     if($("cu-share"))$("cu-share").onclick=function(){navigator.share({text:"Únete a «"+c.name+"» en The Final Test: "+enlace("curso",c.code)}).catch(function(){});};
@@ -431,9 +432,54 @@ function curso(code,nota,tab){
       t.innerHTML=(c.archived?'':'<div class="actions"><button class="primary" id="cu-nuevo">Nuevo cuestionario</button></div>')+listaCuestionarios(c,true);
       if($("cu-nuevo"))$("cu-nuevo").onclick=function(){crearCuestionario(c);};
       ligaCuestionarios();
-    }else if(tab==="alumnos")tabAlumnos(c,t);
+    }else if(tab==="libreta")tabLibreta(c,t);
+    else if(tab==="alumnos")tabAlumnos(c,t);
     else tabAjustesCurso(c,t);
   }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+}
+/* ---------- libreta de notas ---------- */
+function celda(q,x){
+  if(x&&x.na)return '<td class="na" title="No es de su grupo">·</td>';
+  if(!x)return '<td class="vacia">—</td>';
+  if(q.modo==="practica")return '<td title="'+x.attempts+' intentos">'+x.best+' %<small>'+x.attempts+'×</small></td>';
+  return '<td class="'+(x.nota>=51?'ok':'mal')+'" title="'+x.correct+' aciertos · '+x.errors+' errores">'+x.nota+'</td>';
+}
+function textoCelda(q,x){if(x&&x.na)return "";if(!x)return "";return q.modo==="practica"?x.best+"% ("+x.attempts+")":x.nota;}
+function tabLibreta(c,t){
+  t.innerHTML='<p class="fine">Cargando…</p>';
+  api("/api/courses/"+c.code+"/libreta").then(function(L){
+    if(!L.columns.length){t.innerHTML='<p class="fine">Todavía no hay cuestionarios en este curso.</p>';return;}
+    var grupos={}; L.rows.forEach(function(r){if(r.group)grupos[r.group]=1;});
+    var filtro='<div class="rt-form"><div class="rt-2"><label>Grupo<select id="lb-g"><option value="">Todos</option>'+Object.keys(grupos).sort().map(function(g){return '<option>'+esc(g)+'</option>';}).join("")+'</select></label>'+
+      '<div class="actions" style="align-self:end"><button type="button" class="ghost" id="lb-xls">Descargar Excel</button></div></div></div>';
+    function tabla(g){
+      var rows=L.rows.filter(function(r){return !g||r.group===g;});
+      return '<div class="tabla-wrap"><table class="tabla au-libreta"><thead><tr><th>Estudiante</th><th>Registro</th>'+(Object.keys(grupos).length?'<th>Grupo</th>':'')+
+        L.columns.map(function(q){return '<th title="'+esc(q.name)+'">'+esc(q.name.length>18?q.name.slice(0,17)+"…":q.name)+'<small>'+(q.modo==="practica"?'práctica':'examen')+(q.group_name?' · '+esc(q.group_name):'')+'</small></th>';}).join("")+
+        '<th>Promedio<small>exámenes</small></th></tr></thead><tbody>'+
+        rows.map(function(r){return '<tr><td>'+esc(r.name)+'<small>'+esc(r.email)+'</small></td><td>'+esc(r.student_code||"—")+'</td>'+(Object.keys(grupos).length?'<td>'+esc(r.group||"—")+'</td>':'')+
+          L.columns.map(function(q,i){return celda(q,r.notas[i]);}).join("")+'<td class="prom">'+(r.promedio==null?'—':r.promedio)+'</td></tr>';}).join("")+
+        '</tbody></table></div>'+(rows.length?'':'<p class="fine">Nadie en este grupo.</p>');
+    }
+    t.innerHTML=filtro+'<div id="lb-t">'+tabla("")+'</div><p class="fine">Exámenes: nota de 0 a 100 según los aciertos sobre el total de preguntas (un examen cerrado sin responder cuenta 0 en el promedio). Prácticas: el mejor intento y cuántos hizo. «·»: no es de su grupo.</p>';
+    $("lb-g").onchange=function(){$("lb-t").innerHTML=tabla(this.value);};
+    $("lb-xls").onclick=function(){
+      var g=$("lb-g").value, cab=["Estudiante","Correo","Registro","Grupo"].concat(L.columns.map(function(q){return q.name+(q.modo==="practica"?" (práctica)":"");})).concat(["Promedio exámenes"]);
+      var filas=[cab].concat(L.rows.filter(function(r){return !g||r.group===g;}).map(function(r){
+        return [r.name,r.email,r.student_code,r.group].concat(L.columns.map(function(q,i){return textoCelda(q,r.notas[i]);})).concat([r.promedio==null?"":r.promedio]);}));
+      AxExcel.descarga(AxExcel.escribir([{nombre:"Libreta",filas:filas,anchos:[28,30,14,14].concat(L.columns.map(function(){return 16;})).concat([12])}]),
+        ("Libreta - "+c.name+(g?" - "+g:"")).replace(/[\\/:*?"<>|]+/g," ").trim()+".xlsx");
+    };
+  }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+function miAvance(c){
+  api("/api/courses/"+c.code+"/libreta").then(function(L){
+    var r=L.rows[0], el=$("au-avance"); if(!el)return;
+    if(!r||!L.columns.length){el.innerHTML='<p class="fine">Aquí verás tus notas y tus prácticas.</p>';return;}
+    el.innerHTML=(r.promedio!=null?'<div class="cq-mio"><small>Promedio de exámenes</small><b>'+r.promedio+'</b><span>sobre 100</span></div>':'')+
+      '<ul class="au-avance">'+L.columns.map(function(q,i){var x=r.notas[i]; if(x&&x.na)return "";
+        return '<li><span>'+esc(q.name)+'<small>'+(q.modo==="practica"?'Práctica':'Examen')+'</small></span><b>'+(!x?'—':q.modo==="practica"?x.best+' % · '+x.attempts+(x.attempts===1?' intento':' intentos'):x.nota)+'</b></li>';}).join("")+'</ul>';
+  }).catch(function(){var el=$("au-avance"); if(el)el.innerHTML='';});
 }
 function listaCuestionarios(c,gestor){
   if(!c.quizzes||!c.quizzes.length)return '<p class="fine">'+(gestor?'Todavía no hay cuestionarios. Crea el primero a partir de un banco de preguntas.':'Todavía no hay cuestionarios en este curso.')+'</p>';
@@ -443,11 +489,14 @@ function listaCuestionarios(c,gestor){
   [["abierto","Abiertos"],["pronto","Próximos"],["terminado","Cerrados"]].forEach(function(g){
     if(!grupos[g[0]].length)return;
     h+='<h4>'+g[1]+'</h4>'+grupos[g[0]].map(function(q){
-      var yo=q.me?(q.me.finished?'Tu resultado: '+q.me.correct+' ✓ · '+q.me.errors+' ✗':'A medias'):(q.state==="abierto"&&!gestor?'Sin responder':'');
+      var pr=q.modo==="practica";
+      var yo=pr?(q.me?'Tu mejor intento: '+q.me.best+' % ('+q.me.attempts+')':(q.state==="abierto"&&!gestor?'Sin practicar':''))
+        :q.me?(q.me.finished?'Tu resultado: '+q.me.correct+' ✓ · '+q.me.errors+' ✗':'A medias'):(q.state==="abierto"&&!gestor?'Sin responder':'');
       return '<button type="button" class="rt-card" data-quiz="'+q.code+'"><span class="rt-card-top"><b>'+esc(q.name)+'</b>'+
-        (q.partial?'<span class="chip">'+esc(q.partial)+'</span>':'')+'</span>'+
+        '<span class="au-chips">'+(pr?'<span class="chip activo">Práctica</span>':'<span class="chip">Examen</span>')+(q.group_name?'<span class="chip">'+esc(q.group_name)+'</span>':'')+
+        (q.partial&&q.partial!=="Práctica"?'<span class="chip">'+esc(q.partial)+'</span>':'')+'</span></span>'+
         '<small>'+(q.state==="pronto"?'Se abre el '+fecha(q.starts_at):q.state==="abierto"?'Cierra el '+fecha(q.ends_at):'Cerró el '+fecha(q.ends_at))+
-        ' · '+q.max_questions+' preguntas · '+q.seconds_per_q+' s'+(gestor?' · '+q.played+' respondieron':'')+(yo?' · <b>'+yo+'</b>':'')+'</small></button>';
+        ' · '+q.max_questions+' preguntas · '+q.seconds_per_q+' s'+(gestor?' · '+q.played+(pr?' practicaron':' respondieron'):'')+(yo?' · <b>'+yo+'</b>':'')+'</small></button>';
     }).join("");
   });
   return h;
@@ -456,20 +505,85 @@ function ligaCuestionarios(){var bs=panel.querySelectorAll("[data-quiz]"),i;for(
 
 function tabAlumnos(c,t){
   var pend=c.members.filter(function(x){return x.status==="pendiente";}), act=c.members.filter(function(x){return x.status==="activo";});
+  var G=c.groups||[], hayG=c.extras;
+  function selGrupo(m){return '<select data-grp="'+m.id+'"><option value="">—</option>'+G.map(function(g){return '<option value="'+g.id+'"'+(g.id===m.group_id?' selected':'')+'>'+esc(g.name)+'</option>';}).join("")+'</select>';}
   var h="";
   if(pend.length)h+='<h4>Por aprobar</h4>'+pend.map(function(m){return '<div class="au-fila"><div><b>'+esc(m.name)+'</b><small>'+esc(m.email)+' · registro '+esc(m.student_code||"—")+'</small></div>'+
     '<button type="button" class="primary au-mini" data-apr="'+m.id+'">Aprobar</button><button type="button" class="ghost au-mini" data-quita="'+m.id+'">Rechazar</button></div>';}).join("");
   h+='<h4>En el curso ('+act.length+')</h4>'+
-    '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Nombre</th><th>Registro</th><th>Rol</th><th></th></tr></thead><tbody>'+
+    '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Nombre</th><th>Registro</th>'+(hayG&&G.length?'<th>Grupo</th>':'')+'<th>Rol</th><th></th></tr></thead><tbody>'+
     act.map(function(m){return '<tr><td>'+esc(m.name)+(m.me?' <em>(tú)</em>':'')+'<small>'+esc(m.email)+'</small></td><td>'+esc(m.student_code||"—")+'</td>'+
+      (hayG&&G.length?'<td>'+(m.owner||m.role!=="estudiante"?'':selGrupo(m))+'</td>':'')+
       '<td>'+(m.owner?'Docente':'<select data-rol="'+m.id+'"><option value="estudiante"'+(m.role==="estudiante"?' selected':'')+'>Estudiante</option><option value="auxiliar"'+(m.role==="auxiliar"?' selected':'')+'>Auxiliar</option></select>')+'</td>'+
       '<td>'+(m.owner||m.me?'':'<button type="button" class="ghost au-mini" data-quita="'+m.id+'">Quitar</button>')+'</td></tr>';}).join("")+
     '</tbody></table></div><p class="fine">Los auxiliares pueden crear cuestionarios en este curso y ver sus registros.</p><p class="msg" id="al-msg"></p>';
+  if(hayG){
+    /* grupos del curso */
+    h+='<h4>Grupos</h4><p class="fine">Divide el curso en grupos (laboratorio, turno…) para dar prácticas o exámenes solo a uno de ellos. Cada estudiante va en un grupo como mucho.</p>'+
+      (G.length?'<ul class="au-grupos">'+G.map(function(g){return '<li><b>'+esc(g.name)+'</b><small>'+g.n+(g.n===1?' estudiante':' estudiantes')+'</small>'+
+        '<button type="button" class="ghost au-mini" data-gren="'+g.id+'" data-nom="'+esc(g.name)+'">Renombrar</button><button type="button" class="ghost au-mini" data-gdel="'+g.id+'">Borrar</button></li>';}).join("")+'</ul>':'')+
+      '<form class="rt-join" id="gr-f"><input id="gr-n" maxlength="40" placeholder="Nombre del grupo" style="text-transform:none;letter-spacing:0"><button type="submit" class="ghost">Crear grupo</button></form>';
+    /* alta masiva */
+    h+='<details class="au-nuevo" id="am-d"><summary>Alta masiva desde Excel</summary><div class="au-caja">'+
+      '<p class="fine">Sube un Excel (.xlsx) o CSV con las columnas <b>nombre</b>, <b>correo</b> y <b>registro</b>, o pega las filas copiadas de Excel. Quien ya tiene cuenta queda inscrito al momento; el resto, en cuanto entre con Google con ese correo.</p>'+
+      '<div class="actions au-acciones"><label class="ghost au-archivo">Elegir archivo<input type="file" id="am-f" accept=".xlsx,.csv,.txt" hidden></label></div>'+
+      '<textarea id="am-t" rows="5" placeholder="Ana Pérez&#9;ana@correo.com&#9;2024-001&#10;Luis Rojas&#9;luis@correo.com&#9;2024-002"></textarea>'+
+      (G.length?'<label>Añadirlos al grupo<select id="am-g"><option value="">Ninguno</option>'+G.map(function(g){return '<option value="'+g.id+'">'+esc(g.name)+'</option>';}).join("")+'</select></label>':'')+
+      '<div id="am-prev"></div><div class="actions"><button type="button" class="ghost" id="am-ver">Revisar</button><button type="button" class="primary" id="am-go" disabled>Dar de alta</button></div><p class="msg" id="am-msg"></p></div></details>';
+    if(c.invites&&c.invites.length)h+='<h4>Altas pendientes ('+c.invites.length+')</h4><p class="fine">Entrarán en el curso en cuanto usen la app con ese correo.</p><ul class="au-inv">'+
+      c.invites.map(function(x){return '<li><span>'+esc(x.name||"")+' · '+esc(x.email)+(x.student_code?' · '+esc(x.student_code):'')+'</span><button type="button" class="ghost au-mini" data-desinv="'+esc(x.email)+'">Quitar</button></li>';}).join("")+'</ul>';
+  }
   t.innerHTML=h;
-  function hace(uid,d){api("/api/courses/"+c.code+"/members/"+encodeURIComponent(uid),d).then(function(){curso(c.code,null,"alumnos");}).catch(function(er){aviso("al-msg",ERR(er),true);});}
+  function recarga(){curso(c.code,null,"alumnos");}
+  function hace(uid,d){api("/api/courses/"+c.code+"/members/"+encodeURIComponent(uid),d).then(recarga).catch(function(er){aviso("al-msg",ERR(er),true);});}
   var s=t.querySelectorAll("[data-apr]"),i; for(i=0;i<s.length;i++)s[i].onclick=function(){hace(this.getAttribute("data-apr"),{status:"activo"});};
   s=t.querySelectorAll("[data-quita]"); for(i=0;i<s.length;i++)s[i].onclick=function(){if(confirm("¿Quitar del curso?"))hace(this.getAttribute("data-quita"),{remove:true});};
   s=t.querySelectorAll("[data-rol]"); for(i=0;i<s.length;i++)s[i].onchange=function(){hace(this.getAttribute("data-rol"),{role:this.value});};
+  s=t.querySelectorAll("[data-grp]"); for(i=0;i<s.length;i++)s[i].onchange=function(){hace(this.getAttribute("data-grp"),{group_id:this.value||null});};
+  if(!hayG)return;
+  $("gr-f").onsubmit=function(e){e.preventDefault(); var n=$("gr-n").value.trim(); if(!n)return;
+    api("/api/courses/"+c.code+"/groups",{name:n}).then(recarga).catch(function(er){aviso("al-msg",ERR(er),true);});};
+  s=t.querySelectorAll("[data-gren]"); for(i=0;i<s.length;i++)s[i].onclick=function(){var n=prompt("Nuevo nombre del grupo",this.getAttribute("data-nom")); if(!n)return;
+    api("/api/courses/"+c.code+"/groups/"+this.getAttribute("data-gren"),{name:n}).then(recarga).catch(function(er){aviso("al-msg",ERR(er),true);});};
+  s=t.querySelectorAll("[data-gdel]"); for(i=0;i<s.length;i++)s[i].onclick=function(){if(!confirm("¿Borrar el grupo? Sus estudiantes siguen en el curso."))return;
+    api("/api/courses/"+c.code+"/groups/"+this.getAttribute("data-gdel"),{remove:true}).then(recarga).catch(function(er){aviso("al-msg",ERR(er),true);});};
+  s=t.querySelectorAll("[data-desinv]"); for(i=0;i<s.length;i++)s[i].onclick=function(){api("/api/courses/"+c.code+"/alta",{remove:this.getAttribute("data-desinv")}).then(recarga);};
+  /* alta masiva: se leen las filas, se reconocen las columnas y se revisan antes de enviar */
+  var filas=[];
+  function interpreta(tabla){
+    tabla=tabla.filter(function(r){return r&&r.some(function(x){return String(x==null?"":x).trim();});});
+    if(!tabla.length)return [];
+    var cab=tabla[0].map(function(x){return String(x||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();});
+    var iN=-1,iC=-1,iR=-1;
+    cab.forEach(function(h,k){if(iC<0&&/correo|e-?mail|mail/.test(h))iC=k; else if(iN<0&&/nombre|estudiante|alumno|apellido/.test(h))iN=k; else if(iR<0&&/registro|codigo|matricula|carnet|ci\b/.test(h))iR=k;});
+    var conCab=iC>=0; if(!conCab){ /* sin cabecera: se busca la columna que parece correo */
+      var ej=tabla[0]; ej.forEach(function(x,k){if(iC<0&&/@/.test(String(x)))iC=k;});
+      iN=iC===0?1:0; iR=[0,1,2].filter(function(k){return k!==iC&&k!==iN;})[0];
+    }
+    return tabla.slice(conCab?1:0).map(function(r){return {nombre:String(r[iN]==null?"":r[iN]).trim(),correo:String(r[iC]==null?"":r[iC]).trim(),registro:iR>=0?String(r[iR]==null?"":r[iR]).trim():""};});
+  }
+  function muestra(){
+    var ok=filas.filter(function(f){return /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(f.correo);});
+    $("am-prev").innerHTML=filas.length?'<p class="fine">'+ok.length+' de '+filas.length+' filas con un correo válido.'+(ok.length<filas.length?' Las demás se ignorarán.':'')+'</p>'+
+      '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Nombre</th><th>Correo</th><th>Registro</th></tr></thead><tbody>'+
+      filas.slice(0,8).map(function(f){var v=/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(f.correo);return '<tr class="'+(v?'':'mal')+'"><td>'+esc(f.nombre)+'</td><td>'+esc(f.correo)+'</td><td>'+esc(f.registro)+'</td></tr>';}).join("")+
+      '</tbody></table></div>'+(filas.length>8?'<p class="fine">… y '+(filas.length-8)+' más.</p>':''):'<p class="fine bad">No se encontraron filas.</p>';
+    $("am-go").disabled=!ok.length; $("am-go").textContent="Dar de alta ("+ok.length+")";
+  }
+  $("am-ver").onclick=function(){
+    var txt=$("am-t").value; filas=interpreta(txt.split(/\r?\n/).map(function(l){return l.split(/\t|;|,(?=[^@]*@)|,/);})); muestra();};
+  $("am-f").onchange=function(){
+    var f=this.files[0]; if(!f)return;
+    var r=new FileReader();
+    if(/\.xlsx$/i.test(f.name)){r.onload=function(){AxExcel.leer(r.result).then(function(t){filas=interpreta(t);muestra();}).catch(function(){aviso("am-msg","No se pudo leer el Excel.",true);});}; r.readAsArrayBuffer(f);}
+    else{r.onload=function(){filas=interpreta(String(r.result).split(/\r?\n/).map(function(l){return l.split(/\t|;|,/);}));muestra();}; r.readAsText(f);}
+  };
+  $("am-go").onclick=function(){
+    var b=this; b.disabled=true;
+    api("/api/courses/"+c.code+"/alta",{filas:filas,group_id:$("am-g")?$("am-g").value||null:null}).then(function(r){
+      recarga(); setTimeout(function(){aviso("al-msg",r.inscritos+" inscritos al momento · "+r.invitados+" entrarán al usar la app"+(r.errores.length?" · "+r.errores.length+" filas con errores":"")+".",false);},400);
+    }).catch(function(er){b.disabled=false;aviso("am-msg",ERR(er),true);});
+  };
 }
 function tabAjustesCurso(c,t){
   t.innerHTML='<form class="rt-form" id="ca-form"><label>Nombre<input id="ca-name" maxlength="90" value="'+esc(c.name)+'"></label>'+
@@ -505,6 +619,7 @@ function ligaPreguntas(){
   var info=null;
   function local(ms){var d=new Date(ms-new Date(ms).getTimezoneOffset()*60000);return d.toISOString().slice(0,16);}
   function niveles(){
+    if(!$("q-bank"))return;                  /* ya se salió del formulario */
     var b=+$("q-bank").value, sel=$("q-level"), prev=sel.value;
     sel.innerHTML=b?'<option value="5">Mixta (todas)</option><option value="1">Solo fáciles</option><option value="2">Solo medias</option><option value="3">Solo difíciles</option><option value="4">Progresiva (de fácil a difícil)</option>':
       '<option value="1">Fácil</option><option value="2" selected>Medio</option><option value="3">Difícil</option><option value="4">Progresiva</option>';
@@ -524,6 +639,7 @@ function ligaPreguntas(){
     if($("q-areas-b")){$("q-areas-b").hidden=!!b; if(!b&&!$("q-areas").querySelector("[data-area]"))AxAreas.pinta($("q-areas"),[]);}
     if(!b){niveles();return;}
     api("/api/banks/"+b).then(function(r){
+      if(!$("q-tema"))return;
       info=r; var temas={};
       r.questions.forEach(function(q){if(q.topic)temas[q.topic]=(temas[q.topic]||0)+1;});
       $("q-tema").innerHTML='<option value="">Todos</option>'+Object.keys(temas).sort().map(function(t){return '<option value="'+esc(t)+'">'+esc(t)+' ('+temas[t]+')</option>';}).join("");
@@ -557,16 +673,22 @@ function crearCuestionario(c){
     '<form class="rt-form" id="q-form">'+
     '<label>Nombre<input id="q-name" maxlength="60" required placeholder="Parcial 1 · Derivadas"></label>'+
     '<label>Parcial<input id="q-par" maxlength="40" list="q-pars" placeholder="Primer parcial"><datalist id="q-pars">'+PARCIALES.map(function(p){return '<option value="'+p+'">';}).join("")+'</datalist></label>'+
+    '<label>Tipo<select id="q-modo"><option value="examen">Examen: un solo intento y nota al cierre</option><option value="practica">Práctica: intentos ilimitados y corrección al momento</option></select></label>'+
+    ((c.groups||[]).length?'<label>Para<select id="q-grupo"><option value="">Todo el curso</option>'+c.groups.map(function(g){return '<option value="'+g.id+'">Grupo '+esc(g.name)+' ('+g.n+')</option>';}).join("")+'</select></label>':'')+
     camposPreguntas(c.banks||[],100)+
-    '<p class="fine">Cada estudiante responde una sola vez y recibe su propia selección al azar: si el banco tiene más preguntas de las que pides, a cada uno le pueden tocar preguntas distintas, siempre en otro orden y con las opciones barajadas. Las respuestas correctas se muestran al cierre.</p>'+
+    '<p class="fine" id="q-practica" hidden>En una práctica cada estudiante la repite las veces que quiera mientras esté abierta: cada intento trae preguntas al azar, ve al momento si acertó y la respuesta correcta, y en la libreta cuenta su mejor intento. No hay límite de errores.</p>'+
+    '<p class="fine" id="q-examen">Cada estudiante responde una sola vez y recibe su propia selección al azar: si el banco tiene más preguntas de las que pides, a cada uno le pueden tocar preguntas distintas, siempre en otro orden y con las opciones barajadas. Las respuestas correctas se muestran al cierre.</p>'+
     '<div class="actions"><button class="primary" type="submit" id="q-go">Crear cuestionario</button></div><p class="msg" id="q-msg"></p></form>');
   $("au-back").onclick=function(){curso(c.code);};
   var lee=ligaPreguntas();
+  $("q-modo").onchange=function(){var pr=this.value==="practica"; $("q-practica").hidden=!pr; $("q-examen").hidden=pr;
+    var le=$("q-err").closest("label"); if(le)le.hidden=pr; if(pr&&!$("q-par").value)$("q-par").value="Práctica";};
   $("q-form").onsubmit=function(e){
     e.preventDefault();
     var v=lee(); if(!v){aviso("q-msg","Revisa las fechas.",true);return;}
     $("q-go").disabled=true;
-    api("/api/contests",Object.assign(v,{name:$("q-name").value,kind:"cuestionario",audience:"curso",course_code:c.code,partial:$("q-par").value}))
+    api("/api/contests",Object.assign(v,{name:$("q-name").value,kind:"cuestionario",audience:"curso",course_code:c.code,partial:$("q-par").value,
+      modo:$("q-modo").value,group_id:$("q-grupo")?$("q-grupo").value||null:null}))
       .then(function(r){aConcurso(r.code);})
       .catch(function(er){$("q-go").disabled=false;aviso("q-msg",ERR(er),true);});
   };

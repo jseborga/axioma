@@ -517,6 +517,26 @@ Para limpiar de vez en cuando lo que ya no hace falta:
 DELETE FROM preguntas_vistas WHERE visto_at < (strftime('%s','now')-60*86400)*1000;
 ```
 
+### Añadir las tablas de prácticas, grupos y alta masiva
+
+Para las prácticas, la libreta, los grupos de curso y el alta masiva de
+estudiantes (ver [AULA.md](AULA.md)), pega esto en la consola de D1. Se puede
+ejecutar las veces que haga falta:
+
+```sql
+CREATE TABLE IF NOT EXISTS cuestionario_opciones (code TEXT PRIMARY KEY, modo TEXT NOT NULL DEFAULT 'examen', grupo_id INTEGER, explica INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS practica_intentos (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL, user_id TEXT NOT NULL, aciertos INTEGER NOT NULL, total INTEGER NOT NULL, ms INTEGER NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS practica_intentos_user ON practica_intentos(code, user_id);
+CREATE TABLE IF NOT EXISTS course_groups (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL, name TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS course_groups_code ON course_groups(code);
+CREATE TABLE IF NOT EXISTS course_group_members (code TEXT NOT NULL, user_id TEXT NOT NULL, group_id INTEGER NOT NULL, PRIMARY KEY (code, user_id));
+CREATE TABLE IF NOT EXISTS course_invites (code TEXT NOT NULL, email TEXT NOT NULL, name TEXT, student_code TEXT, invited_by TEXT, created_at INTEGER NOT NULL, PRIMARY KEY (code, email));
+CREATE INDEX IF NOT EXISTS course_invites_email ON course_invites(email);
+```
+
+Mientras falten, los cursos funcionan como antes, pero no aparecen la pestaña
+Libreta, los grupos ni el alta masiva.
+
 ### Ajustes de la plataforma
 
 Lo que se configura sin tocar código está en la sección `[vars]` de

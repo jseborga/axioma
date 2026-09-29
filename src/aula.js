@@ -69,6 +69,7 @@ function correoOk(e){return /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e);}
 /* altas por correo pendientes: se aplican cuando esa persona entra con Google */
 export async function aceptaInvitaciones(env,user){
   if(!user||esInvitado(user)||!user.email)return;
+  await aceptaCursos(env,user);
   var r;
   try{r=await env.DB.prepare("SELECT org_id,role FROM org_invites WHERE email=?").bind(String(user.email).toLowerCase()).all();}catch(e){return;}
   var inv=r.results||[]; if(!inv.length)return;
@@ -77,6 +78,21 @@ export async function aceptaInvitaciones(env,user){
     ops.push(env.DB.prepare("INSERT INTO org_members(org_id,user_id,role,joined_at) VALUES(?,?,?,?) ON CONFLICT(org_id,user_id) DO UPDATE SET role=CASE WHEN excluded.role='admin' THEN 'admin' ELSE org_members.role END")
       .bind(i.org_id,user.id,i.role,now));
     ops.push(env.DB.prepare("DELETE FROM org_invites WHERE org_id=? AND email=?").bind(i.org_id,String(user.email).toLowerCase()));
+  });
+  await env.DB.batch(ops);
+}
+/* alta masiva: quien fue dado de alta por correo en un curso entra en él (y en su institución) al llegar */
+async function aceptaCursos(env,user){
+  var email=String(user.email).toLowerCase(), r;
+  try{r=await env.DB.prepare("SELECT ci.code,ci.student_code,c.org_id FROM course_invites ci JOIN courses c ON c.code=ci.code WHERE ci.email=?").bind(email).all();}catch(e){return;}
+  var inv=r.results||[]; if(!inv.length)return;
+  var now=Date.now(), ops=[];
+  inv.forEach(function(i){
+    ops.push(env.DB.prepare("INSERT INTO org_members(org_id,user_id,role,student_code,joined_at) VALUES(?,?,'estudiante',?,?) ON CONFLICT(org_id,user_id) DO UPDATE SET student_code=COALESCE(org_members.student_code,excluded.student_code)")
+      .bind(i.org_id,user.id,i.student_code||null,now));
+    ops.push(env.DB.prepare("INSERT INTO course_members(code,user_id,role,status,joined_at) VALUES(?,?,'estudiante','activo',?) ON CONFLICT(code,user_id) DO UPDATE SET status='activo'")
+      .bind(i.code,user.id,now));
+    ops.push(env.DB.prepare("DELETE FROM course_invites WHERE code=? AND email=?").bind(i.code,email));
   });
   await env.DB.batch(ops);
 }
@@ -164,6 +180,10 @@ export async function handleAula(req,env,url,path,ctx){
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/join$/))&&req.method==="POST")return await uneCurso(env,user,m[1],body,json);
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/settings$/))&&req.method==="POST")return await ajustesCurso(env,user,m[1],body,json);
     if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/members\/([^/]+)$/))&&req.method==="POST")return await cambiaAlumno(env,user,m[1],decodeURIComponent(m[2]),body,json);
+    if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/groups$/))&&req.method==="POST")return await creaGrupo(env,user,m[1],body,json);
+    if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/groups\/(\d+)$/))&&req.method==="POST")return await cambiaGrupo(env,user,m[1],+m[2],body,json);
+    if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/alta$/))&&req.method==="POST")return await altaMasiva(env,user,m[1],body,json);
+    if((m=path.match(/^\/courses\/([A-Z0-9]{6})\/libreta$/))&&req.method==="GET")return await libreta(env,user,m[1],json);
     if((m=path.match(/^\/banks\/(\d+)$/))&&req.method==="GET")return await verBanco(env,user,+m[1],json);
     if((m=path.match(/^\/banks\/(\d+)\/import$/))&&req.method==="POST")return await importa(env,user,+m[1],body,json);
     if((m=path.match(/^\/banks\/(\d+)\/questions\/(\d+|nueva)$/))&&req.method==="POST")return await cambiaPregunta(env,user,+m[1],m[2],body,json);
@@ -422,19 +442,45 @@ async function fichaCurso(env,user,code,json){
   out.org_role=a.rolOrg; out.org_active=o.status==="activa";
   /* lo demás, solo para miembros activos o quien gestiona */
   if(!a.gestiona&&!(a.miembro&&a.miembro.status==="activo"))return json(out);
-  var now=Date.now();
-  var qz=await env.DB.prepare(
-    "SELECT x.code,x.name,x.starts_at,x.ends_at,x.max_questions,x.max_errors,x.seconds_per_q,s.partial,s.kind,"+
-    " (SELECT COUNT(*) FROM contest_entries e WHERE e.code=x.code AND e.started_at IS NOT NULL) AS jugaron,"+
-    " e2.correct AS my_correct,e2.errors AS my_errors,e2.finished_at AS my_finished,e2.started_at AS my_started "+
-    "FROM contest_scope s JOIN contests x ON x.code=s.code LEFT JOIN contest_entries e2 ON e2.code=x.code AND e2.user_id=? "+
-    "WHERE s.course_code=? ORDER BY x.starts_at DESC"
-  ).bind(user?user.id:"",code).all();
-  out.quizzes=(qz.results||[]).map(function(x){
+  var now=Date.now(), uid=user?user.id:"";
+  var qz, extra=true;
+  try{
+    qz=await env.DB.prepare(
+      "SELECT x.code,x.name,x.starts_at,x.ends_at,x.max_questions,x.max_errors,x.seconds_per_q,s.partial,s.kind,op.modo,op.grupo_id,"+
+      " (SELECT COUNT(*) FROM contest_entries e WHERE e.code=x.code AND e.started_at IS NOT NULL) AS jugaron,"+
+      " (SELECT COUNT(DISTINCT pi.user_id) FROM practica_intentos pi WHERE pi.code=x.code) AS practicaron,"+
+      " (SELECT MAX(pi.aciertos*100/pi.total) FROM practica_intentos pi WHERE pi.code=x.code AND pi.user_id=?) AS my_best,"+
+      " (SELECT COUNT(*) FROM practica_intentos pi WHERE pi.code=x.code AND pi.user_id=?) AS my_intentos,"+
+      " e2.correct AS my_correct,e2.errors AS my_errors,e2.finished_at AS my_finished,e2.started_at AS my_started "+
+      "FROM contest_scope s JOIN contests x ON x.code=s.code LEFT JOIN cuestionario_opciones op ON op.code=x.code "+
+      "LEFT JOIN contest_entries e2 ON e2.code=x.code AND e2.user_id=? WHERE s.course_code=? ORDER BY x.starts_at DESC"
+    ).bind(uid,uid,uid,code).all();
+  }catch(er){   /* sin las tablas de prácticas y grupos: como antes */
+    extra=false;
+    qz=await env.DB.prepare(
+      "SELECT x.code,x.name,x.starts_at,x.ends_at,x.max_questions,x.max_errors,x.seconds_per_q,s.partial,s.kind,"+
+      " (SELECT COUNT(*) FROM contest_entries e WHERE e.code=x.code AND e.started_at IS NOT NULL) AS jugaron,"+
+      " e2.correct AS my_correct,e2.errors AS my_errors,e2.finished_at AS my_finished,e2.started_at AS my_started "+
+      "FROM contest_scope s JOIN contests x ON x.code=s.code LEFT JOIN contest_entries e2 ON e2.code=x.code AND e2.user_id=? "+
+      "WHERE s.course_code=? ORDER BY x.starts_at DESC"
+    ).bind(uid,code).all();
+  }
+  /* grupos del curso y el mío */
+  var grupos=[], miGrupo=null;
+  if(extra){
+    grupos=((await env.DB.prepare("SELECT g.id,g.name,(SELECT COUNT(*) FROM course_group_members gm WHERE gm.group_id=g.id) AS n FROM course_groups g WHERE g.code=? ORDER BY g.name").bind(code).all()).results)||[];
+    var mg=uid?await env.DB.prepare("SELECT group_id FROM course_group_members WHERE code=? AND user_id=?").bind(code,uid).first():null;
+    miGrupo=mg?mg.group_id:null;
+  }
+  out.groups=grupos; out.my_group=miGrupo; out.extras=extra;
+  out.quizzes=(qz.results||[]).filter(function(x){return a.gestiona||!x.grupo_id||x.grupo_id===miGrupo;}).map(function(x){
+    var g=x.grupo_id?grupos.filter(function(y){return y.id===x.grupo_id;})[0]:null;
     return {code:x.code,name:x.name,partial:x.partial,kind:x.kind,starts_at:x.starts_at,ends_at:x.ends_at,
             state:now<x.starts_at?"pronto":now<x.ends_at?"abierto":"terminado",max_questions:x.max_questions,
-            max_errors:x.max_errors,seconds_per_q:x.seconds_per_q,played:x.jugaron,
-            me:x.my_started?{correct:x.my_correct,errors:x.my_errors,finished:!!x.my_finished}:null};
+            max_errors:x.max_errors,seconds_per_q:x.seconds_per_q,played:x.modo==="practica"?(x.practicaron||0):x.jugaron,
+            modo:x.modo||"examen",group_id:x.grupo_id||null,group_name:g?g.name:"",
+            me:x.modo==="practica"?(x.my_intentos?{best:x.my_best,attempts:x.my_intentos}:null)
+              :(x.my_started?{correct:x.my_correct,errors:x.my_errors,finished:!!x.my_finished}:null)};
   });
   out.now=now;
   if(a.gestiona){
@@ -442,8 +488,11 @@ async function fichaCurso(env,user,code,json){
       "SELECT u.id,u.name,u.email,u.picture,cm.role,cm.status,cm.joined_at,om.student_code FROM course_members cm JOIN users u ON u.id=cm.user_id "+
       "LEFT JOIN org_members om ON om.org_id=? AND om.user_id=cm.user_id WHERE cm.code=? ORDER BY cm.status DESC,cm.role,u.name"
     ).bind(c.org_id,code).all();
+    var enGrupo={};
+    if(extra)(((await env.DB.prepare("SELECT user_id,group_id FROM course_group_members WHERE code=?").bind(code).all()).results)||[]).forEach(function(x){enGrupo[x.user_id]=x.group_id;});
     out.members=(mem.results||[]).map(function(x){return {id:x.id,name:x.name,email:x.email,picture:x.picture,role:x.role,status:x.status,
-      student_code:x.student_code,me:x.id===user.id,owner:x.id===c.owner_id};});
+      student_code:x.student_code,me:x.id===user.id,owner:x.id===c.owner_id,group_id:enGrupo[x.id]||null};});
+    try{out.invites=((await env.DB.prepare("SELECT email,name,student_code,created_at FROM course_invites WHERE code=? ORDER BY created_at DESC").bind(code).all()).results)||[];}catch(er){out.invites=[];}
     var bancos=await env.DB.prepare(
       "SELECT b.id,b.name,(SELECT COUNT(*) FROM bank_questions q WHERE q.bank_id=b.id) AS n FROM banks b WHERE b.org_id=? AND (b.owner_id=? OR ?='admin') ORDER BY b.name"
     ).bind(c.org_id,user.id,a.rolOrg||"").all();
@@ -487,11 +536,118 @@ async function cambiaAlumno(env,user,code,uid,b,json){
   if(uid===a.curso.owner_id)return json({error:"owner"},null,400);
   var m=await env.DB.prepare("SELECT * FROM course_members WHERE code=? AND user_id=?").bind(code,uid).first();
   if(!m)return json({error:"not_found"},null,404);
-  if(b.remove){await env.DB.prepare("DELETE FROM course_members WHERE code=? AND user_id=?").bind(code,uid).run();return json({ok:true});}
+  if(b.remove){await env.DB.batch([env.DB.prepare("DELETE FROM course_members WHERE code=? AND user_id=?").bind(code,uid),
+    env.DB.prepare("DELETE FROM course_group_members WHERE code=? AND user_id=?").bind(code,uid)]).catch(function(){return env.DB.prepare("DELETE FROM course_members WHERE code=? AND user_id=?").bind(code,uid).run();});return json({ok:true});}
+  if(b.group_id!==undefined){
+    var gid=b.group_id?+b.group_id:null;
+    if(gid){var g=await env.DB.prepare("SELECT 1 FROM course_groups WHERE id=? AND code=?").bind(gid,code).first(); if(!g)return json({error:"bad_group"},null,400);
+      await env.DB.prepare("INSERT INTO course_group_members(code,user_id,group_id) VALUES(?,?,?) ON CONFLICT(code,user_id) DO UPDATE SET group_id=excluded.group_id").bind(code,uid,gid).run();}
+    else await env.DB.prepare("DELETE FROM course_group_members WHERE code=? AND user_id=?").bind(code,uid).run();
+    return json({ok:true});
+  }
   var role=b.role||m.role, status=b.status||m.status;
   if(["auxiliar","estudiante"].indexOf(role)<0||["activo","pendiente"].indexOf(status)<0)return json({error:"bad_role"},null,400);
   await env.DB.prepare("UPDATE course_members SET role=?,status=? WHERE code=? AND user_id=?").bind(role,status,code,uid).run();
   return json({ok:true});
+}
+
+/* ---------- grupos del curso ---------- */
+async function gestorCurso(env,user,code){var a=await accesoCurso(env,code,user.id); return a&&a.gestiona?a:null;}
+async function creaGrupo(env,user,code,b,json){
+  if(!(await gestorCurso(env,user,code)))return json({error:"forbidden"},null,403);
+  var name=limpia(b.name,40); if(name.length<1)return json({error:"bad_name"},null,400);
+  var n=await env.DB.prepare("SELECT COUNT(*) AS n FROM course_groups WHERE code=?").bind(code).first();
+  if(n.n>=30)return json({error:"too_many"},null,400);
+  var r=await env.DB.prepare("INSERT INTO course_groups(code,name,created_at) VALUES(?,?,?)").bind(code,name,Date.now()).run();
+  return json({ok:true,id:r.meta&&r.meta.last_row_id});
+}
+async function cambiaGrupo(env,user,code,id,b,json){
+  if(!(await gestorCurso(env,user,code)))return json({error:"forbidden"},null,403);
+  var g=await env.DB.prepare("SELECT * FROM course_groups WHERE id=? AND code=?").bind(id,code).first();
+  if(!g)return json({error:"not_found"},null,404);
+  if(b.remove){
+    await env.DB.batch([env.DB.prepare("DELETE FROM course_group_members WHERE group_id=?").bind(id),env.DB.prepare("DELETE FROM course_groups WHERE id=?").bind(id)]);
+    return json({ok:true});
+  }
+  var name=limpia(b.name,40); if(name.length<1)return json({error:"bad_name"},null,400);
+  await env.DB.prepare("UPDATE course_groups SET name=? WHERE id=?").bind(name,id).run();
+  return json({ok:true});
+}
+/* ---------- alta masiva de estudiantes ----------
+   filas: [{nombre, correo, registro}] (desde Excel o pegadas). Quien ya
+   tiene cuenta queda inscrito al momento; el resto, al entrar con Google
+   con ese correo. { remove: correo } quita un alta pendiente. */
+async function altaMasiva(env,user,code,b,json){
+  var a=await gestorCurso(env,user,code);
+  if(!a)return json({error:"forbidden"},null,403);
+  if(b.remove){await env.DB.prepare("DELETE FROM course_invites WHERE code=? AND email=?").bind(code,String(b.remove).toLowerCase()).run();return json({ok:true});}
+  var filas=Array.isArray(b.filas)?b.filas.slice(0,500):[], now=Date.now(), ops=[], errores=[], inscritos=0, invitados=0, vistos={};
+  var grupo=b.group_id?+b.group_id:null;
+  if(grupo){var g=await env.DB.prepare("SELECT 1 FROM course_groups WHERE id=? AND code=?").bind(grupo,code).first(); if(!g)grupo=null;}
+  for(var i=0;i<filas.length;i++){
+    var f=filas[i]||{}, email=String(f.correo||"").trim().toLowerCase(), sc=limpia(f.registro,30), nom=limpia(f.nombre,80);
+    if(!correoOk(email)){errores.push({fila:i+1,error:"bad_email",valor:String(f.correo||"").slice(0,80)});continue;}
+    if(vistos[email])continue; vistos[email]=1;
+    if(a.curso.org_id&&!dominioOk(await cargaOrg(env,a.curso.org_id),{email:email})){errores.push({fila:i+1,error:"domain",valor:email});continue;}
+    var u=await env.DB.prepare("SELECT id FROM users WHERE lower(email)=? AND substr(id,1,2)<>'g_'").bind(email).first();
+    if(u){
+      ops.push(env.DB.prepare("INSERT INTO org_members(org_id,user_id,role,student_code,joined_at) VALUES(?,?,'estudiante',?,?) ON CONFLICT(org_id,user_id) DO UPDATE SET student_code=COALESCE(org_members.student_code,excluded.student_code)")
+        .bind(a.curso.org_id,u.id,sc||null,now));
+      ops.push(env.DB.prepare("INSERT INTO course_members(code,user_id,role,status,joined_at) VALUES(?,?,'estudiante','activo',?) ON CONFLICT(code,user_id) DO UPDATE SET status='activo'").bind(code,u.id,now));
+      if(grupo)ops.push(env.DB.prepare("INSERT INTO course_group_members(code,user_id,group_id) VALUES(?,?,?) ON CONFLICT(code,user_id) DO UPDATE SET group_id=excluded.group_id").bind(code,u.id,grupo));
+      inscritos++;
+    }else{
+      ops.push(env.DB.prepare("INSERT INTO course_invites(code,email,name,student_code,invited_by,created_at) VALUES(?,?,?,?,?,?) ON CONFLICT(code,email) DO UPDATE SET name=excluded.name,student_code=excluded.student_code")
+        .bind(code,email,nom||null,sc||null,user.id,now));
+      invitados++;
+    }
+  }
+  for(var k=0;k<ops.length;k+=50)await env.DB.batch(ops.slice(k,k+50));
+  return json({ok:true,inscritos:inscritos,invitados:invitados,errores:errores});
+}
+/* ---------- libreta de notas ----------
+   Exámenes: aciertos sobre el total de preguntas, en una nota de 0 a 100.
+   Prácticas: el mejor intento (en %) y cuántos intentos. Quien gestiona ve
+   a todo el curso; cada estudiante, solo su fila («Mi avance»). */
+async function libreta(env,user,code,json){
+  var a=await accesoCurso(env,code,user.id);
+  if(!a||!(a.gestiona||a.estudiante))return json({error:"forbidden"},null,403);
+  var qs=((await env.DB.prepare(
+    "SELECT x.code,x.name,x.max_questions,x.starts_at,x.ends_at,s.partial,op.modo,op.grupo_id FROM contest_scope s JOIN contests x ON x.code=s.code "+
+    "LEFT JOIN cuestionario_opciones op ON op.code=x.code WHERE s.course_code=? ORDER BY x.starts_at").bind(code).all()).results)||[];
+  var al;
+  var st=env.DB.prepare(
+    "SELECT u.id,u.name,u.email,om.student_code,gm.group_id FROM course_members cm JOIN users u ON u.id=cm.user_id "+
+    "LEFT JOIN org_members om ON om.org_id=? AND om.user_id=cm.user_id LEFT JOIN course_group_members gm ON gm.code=cm.code AND gm.user_id=cm.user_id "+
+    "WHERE cm.code=? AND cm.role='estudiante' AND cm.status='activo'"+(a.gestiona?"":" AND cm.user_id=?")+" ORDER BY u.name");
+  al=((a.gestiona?await st.bind(a.curso.org_id,code).all():await st.bind(a.curso.org_id,code,user.id).all()).results)||[];
+  var ex=((await env.DB.prepare(
+    "SELECT e.code,e.user_id,e.correct,e.errors,e.started_at,e.finished_at FROM contest_entries e JOIN contest_scope s ON s.code=e.code "+
+    "WHERE s.course_code=? AND e.started_at IS NOT NULL").bind(code).all()).results)||[];
+  var pr=((await env.DB.prepare(
+    "SELECT p.code,p.user_id,MAX(p.aciertos*100/p.total) AS mejor,COUNT(*) AS n FROM practica_intentos p JOIN contest_scope s ON s.code=p.code "+
+    "WHERE s.course_code=? GROUP BY p.code,p.user_id").bind(code).all()).results)||[];
+  var grupos=((await env.DB.prepare("SELECT id,name FROM course_groups WHERE code=?").bind(code).all()).results)||[];
+  var nomG={}; grupos.forEach(function(g){nomG[g.id]=g.name;});
+  var celdas={};
+  ex.forEach(function(e){celdas[e.user_id+"|"+e.code]={correct:e.correct,errors:e.errors,finished:!!e.finished_at};});
+  pr.forEach(function(p){celdas[p.user_id+"|"+p.code]={best:p.mejor,attempts:p.n};});
+  var cols=qs.map(function(q){return {code:q.code,name:q.name,partial:q.partial||"",modo:q.modo||"examen",group_id:q.grupo_id||null,
+    group_name:q.grupo_id?nomG[q.grupo_id]||"":"",max_questions:q.max_questions,ends_at:q.ends_at};});
+  var filas=al.map(function(u){
+    var notas=[], suma=0, n=0;
+    cols.forEach(function(q){
+      var c=celdas[u.id+"|"+q.code]||null, asignado=!q.group_id||q.group_id===u.group_id;
+      if(!asignado){notas.push({na:true});return;}
+      if(q.modo==="practica"){notas.push(c?{best:c.best,attempts:c.attempts}:null);return;}
+      var nota=c?Math.round(100*c.correct/q.max_questions):null;
+      if(nota!==null||Date.now()>q.ends_at){suma+=nota||0;n++;}          /* cerrado sin responder cuenta como 0 */
+      notas.push(c?{nota:nota,correct:c.correct,errors:c.errors,finished:c.finished}:null);
+    });
+    return {id:u.id,name:u.name,email:a.gestiona?u.email:"",student_code:u.student_code||"",group:u.group_id?nomG[u.group_id]||"":"",
+      notas:notas,promedio:n?Math.round(suma/n):null};
+  });
+  return json({course:{code:code,name:a.curso.name,term:a.curso.term||""},columns:cols,rows:filas,manage:a.gestiona});
 }
 
 /* ---------- bancos de preguntas ---------- */

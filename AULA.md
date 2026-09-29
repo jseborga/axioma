@@ -168,3 +168,36 @@ público ni ganador.
 - **Asistente con IA** para docentes: generar y revisar preguntas a partir de un
   tema o un documento (complemento de pago).
 - **Auspiciadores**: patrocinio de concursos por institución.
+
+
+## Prácticas, exámenes, libreta, grupos y alta masiva
+
+- **Examen o práctica.** Al crear un cuestionario se elige el tipo:
+  - **Examen**: un solo intento, con tiempo por pregunta y errores admitidos.
+    Las respuestas correctas se ven al cierre.
+  - **Práctica**: intentos ilimitados mientras esté abierta, sin límite de
+    errores. Cada intento trae preguntas al azar. Tras cada respuesta se ve si
+    fue correcta, cuál era la correcta y, si la hay, una explicación. Cuenta el
+    mejor intento (hasta 60 intentos al día por estudiante).
+- **Grupos.** En *Estudiantes → Grupos* el curso se divide en grupos
+  (laboratorio, turno…). Cada estudiante va en uno como mucho. Un examen o una
+  práctica se puede dirigir a un grupo: el resto del curso no lo ve ni puede
+  hacerlo.
+- **Alta masiva.** En *Estudiantes → Alta masiva desde Excel*:
+  - Se sube un Excel o CSV con las columnas *nombre*, *correo* y *registro*, o
+    se pegan las filas.
+  - Antes de enviar se revisan: las filas sin un correo válido se ignoran.
+  - Quien ya tiene cuenta queda inscrito al momento (y, si se elige, en un
+    grupo). El resto queda como *alta pendiente* y entra en el curso la primera
+    vez que usa la app con ese correo.
+- **Libreta.** En la pestaña *Libreta* se ven todos los estudiantes del curso
+  con una columna por cuestionario:
+  - Exámenes: nota de 0 a 100, según los aciertos sobre el total de preguntas.
+  - Prácticas: el mejor intento, en %, y cuántos intentos hizo.
+  - Promedio de los exámenes: un examen cerrado sin responder cuenta 0.
+  - Se puede filtrar por grupo y descargar en Excel.
+- **Mi avance.** Cada estudiante ve en su curso sus notas, su promedio y su
+  mejor intento en cada práctica. Nunca ve lo de los demás.
+
+Tablas: `cuestionario_opciones`, `practica_intentos`, `course_groups`,
+`course_group_members` y `course_invites` (ver SETUP.md).

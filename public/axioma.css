@@ -1463,3 +1463,22 @@ body:not([data-proyector]) .vv-patro:not(.grande){background:var(--inset);color:
 .nav-aviso{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--fill);color:var(--fill-ink);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:90}
 .nav-aviso.on{opacity:1;transform:translate(-50%,0)}
 body[data-proyector] #nav-back{display:none}
+
+/* ---------- Educativo: libreta, avance, grupos ---------- */
+.au-chips{display:inline-flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.au-libreta th small,.au-libreta td small{display:block;font-size:10.5px;color:var(--ink-3);font-weight:500}
+.au-libreta td{text-align:center;font-variant-numeric:tabular-nums}
+.au-libreta td:first-child{text-align:left}
+.au-libreta td.ok{color:var(--ok);font-weight:700}.au-libreta td.mal{color:var(--bad);font-weight:700}
+.au-libreta td.na,.au-libreta td.vacia{color:var(--ink-3)}
+.au-libreta td.prom{font-weight:800}
+.au-avance{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.au-avance li{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--inset);border-radius:12px;padding:10px 12px}
+.au-avance li small{display:block;font-size:12px;color:var(--ink-2)}
+.au-avance li b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.au-grupos{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:6px}
+.au-grupos li{display:flex;align-items:center;gap:8px;background:var(--inset);border-radius:12px;padding:8px 10px}
+.au-grupos li b{flex:1}.au-grupos li small{color:var(--ink-2)}
+.tabla tr.mal td{color:var(--bad)}
+.rp-opt.ok:disabled,.rp-opt.ok[disabled]{background:var(--ok-tint);color:var(--ok);opacity:1}
+.rp-opt.mal:disabled,.rp-opt.mal[disabled]{background:var(--bad-tint);color:var(--bad);opacity:1}

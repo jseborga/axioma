@@ -37,7 +37,7 @@ function dura(ms){
 function tiempo(ms){var s=Math.round(ms/1000),m=Math.floor(s/60),g=s%60;return m+":"+(g<10?"0":"")+g;}
 function avatar(u){return u.picture?'<img class="av" src="'+esc(u.picture)+'" alt="" referrerpolicy="no-referrer">':'<span class="av noimg"></span>';}
 function enlace(code){return location.origin+location.pathname+"?concurso="+code;}
-function ERR(e){if(e&&e.error==="few_questions")return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";
+function ERR(e){if(e&&e.error==="practice_mode")return "Esta es una práctica: entra desde su ficha con «Empezar la práctica».";if(e&&e.error==="few_questions")return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";
   return {not_configured:"Faltan las tablas de concursos en la base de datos. Hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",not_found:"No existe ningún concurso con ese código.",finished:"Ese concurso ya terminó.",
   not_registered:"Primero tienes que inscribirte.",not_started:"El concurso todavía no ha empezado.",bad_name:"Ponle un nombre.",
@@ -201,7 +201,9 @@ function ficha(code,recien){
       (navigator.share?'<button type="button" class="ghost" id="cq-share">Invitar</button>':'')+'</div>';
     if(recien)h+='<p class="fine ok">Concurso publicado. Comparte el código o el enlace para que la gente se inscriba.</p>';
 
-    if(c.state==="terminado"&&cuest){
+    if(c.modo==="practica"){
+      h+=practicaFicha(c,u);
+    }else if(c.state==="terminado"&&cuest){
       h+=(me&&me.started?'<div class="cq-mio"><small>Tu resultado</small><b>'+me.correct+' aciertos · '+me.errors+(me.errors===1?" error":" errores")+'</b>'+
           '<span>'+motivo(me.reason)+' · '+tiempo(me.total_ms)+' respondiendo</span></div>':'<p class="rt-hoy">No participaste en este cuestionario.</p>')+
          revisionHtml(c.review);
@@ -243,6 +245,7 @@ function ficha(code,recien){
       if(c.brand&&window.AxMarca){AxMarca.ver(c.brand.slug);return;}
       if(c.course_code&&window.AxAula){AxApp.setMode("aula");AxAula.curso(c.course_code);} else inicio(); };
     if($("cq-registros"))$("cq-registros").onclick=function(){registros(c);};
+    if($("cq-practica"))$("cq-practica").onclick=function(){practicar(c);};
     if($("cq-copy"))$("cq-copy").onclick=function(){var b=this,t=enlace(c.code);
       if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent="Copiar enlace";},1400);});
       else prompt("Copia el enlace:",t);};
@@ -281,6 +284,53 @@ function ficha(code,recien){
     pinta('<button type="button" class="rt-back" id="cq-back">‹ Concursos</button><p class="fine bad">'+esc(ERR(e))+'</p>');
     $("cq-back").onclick=inicio;
   });
+}
+/* ---------- prácticas: intentos ilimitados y corrección al momento ---------- */
+function practicaFicha(c,u){
+  var p=c.practica||{}, h='<div class="cq-mio"><small>Práctica · intentos ilimitados</small><b>'+(p.attempts?'Tu mejor intento: '+p.best+' %':'Todavía no la has hecho')+'</b>'+
+    '<span>'+(p.attempts?p.attempts+(p.attempts===1?' intento':' intentos'):'Se corrige al momento y cuenta tu mejor intento')+'</span></div>';
+  if(c.state==="abierto"&&u)h+='<div class="actions"><button class="primary" id="cq-practica">'+(p.attempts?'Practicar otra vez':'Empezar la práctica')+'</button></div>'+
+    '<p class="fine">Cada intento trae preguntas al azar. Tras cada respuesta ves si acertaste, la correcta y, si la hay, una explicación. Tu docente ve tu mejor intento en la libreta.</p>';
+  else if(c.state==="pronto")h+='<p class="rt-hoy">Se abre el '+fecha(c.starts_at)+'.</p>';
+  else if(c.state==="terminado")h+='<p class="rt-hoy">La práctica está cerrada.</p>';
+  else h+='<p class="fine">Entra con tu cuenta para practicar.</p>';
+  return h;
+}
+function practicar(c){
+  para(); vista={code:c.code};
+  pinta('<p class="fine">Preparando la práctica…</p>');
+  api("/api/contests/"+c.code+"/practica").then(function(r){
+    var i=0, bien=0, t0=Date.now(), n=r.questions.length;
+    function salir(){$("cq-back").onclick=function(){if(i===0||confirm("¿Dejar la práctica? Este intento no se guardará."))ficha(c.code);};}
+    function una(){
+      var q=r.questions[i];
+      pinta('<button type="button" class="rt-back" id="cq-back">‹ Salir de la práctica</button>'+
+        '<div class="rt-head"><h3>Pregunta '+(i+1)+' <small>de '+n+'</small></h3><span class="chip activo">'+bien+' ✓</span></div>'+
+        (q.cat?'<p class="cq-cat">'+esc(q.cat)+'</p>':'')+'<p class="rp-q">'+esc(q.q)+'</p>'+
+        '<div class="rp-opts">'+q.o.map(function(o,k){return '<button type="button" class="rp-opt" data-k="'+k+'">'+esc(o)+'</button>';}).join("")+'</div><div id="pr-fb"></div>');
+      salir();
+      var bs=panel.querySelectorAll(".rp-opt"),j;
+      for(j=0;j<bs.length;j++)bs[j].onclick=function(){
+        var k=+this.getAttribute("data-k"), ok=k===q.c; if(ok)bien++;
+        for(var x=0;x<bs.length;x++){bs[x].disabled=true; if(x===q.c)bs[x].classList.add("ok"); else if(x===k)bs[x].classList.add("mal");}
+        $("pr-fb").innerHTML='<div class="vv-res '+(ok?'bien':'mal')+'"><b>'+(ok?'¡Correcto!':'Incorrecto')+'</b>'+(ok?'':'<span>La correcta: '+esc(q.o[q.c])+'</span>')+'</div>'+
+          (q.dato?'<div class="vv-dato"><b>💡 ¿Sabías que…?</b> '+esc(q.dato)+'</div>':'')+
+          '<div class="actions"><button class="primary" id="pr-sig">'+(i+1<n?'Siguiente':'Ver mi resultado')+'</button></div>';
+        $("pr-sig").onclick=function(){i++; if(i<n)una(); else fin();};
+        $("pr-sig").focus();
+      };
+    }
+    function fin(){
+      pinta('<button type="button" class="rt-back" id="cq-back">‹ Volver a la práctica</button>'+
+        '<div class="cq-mio"><small>Resultado del intento</small><b>'+bien+' de '+n+'</b><span>'+Math.round(100*bien/n)+' %</span></div>'+
+        '<p class="fine" id="pr-guarda">Guardando…</p><div class="actions"><button class="primary" id="pr-otra">Otra vez</button></div>');
+      $("cq-back").onclick=function(){ficha(c.code);}; $("pr-otra").onclick=function(){practicar(c);};
+      api("/api/contests/"+c.code+"/practica",{aciertos:bien,total:n,ms:Date.now()-t0})
+        .then(function(x){$("pr-guarda").textContent="Guardado. Tu mejor intento: "+x.best+" % · "+x.attempts+(x.attempts===1?" intento.":" intentos.");})
+        .catch(function(e){var g=$("pr-guarda"); g.className="fine bad"; g.textContent=ERR(e);});
+    }
+    una();
+  }).catch(function(e){pinta('<button type="button" class="rt-back" id="cq-back">‹ Volver</button><p class="fine bad">'+esc(ERR(e))+'</p>');$("cq-back").onclick=function(){ficha(c.code);};});
 }
 function motivo(r){return r==="errores"?"Superaste los errores admitidos":r==="completo"?"Respondiste todas las preguntas":r==="tiempo"?"Se cerró el concurso":"";}
 

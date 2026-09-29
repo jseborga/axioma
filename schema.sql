@@ -411,3 +411,52 @@ CREATE TABLE IF NOT EXISTS contest_areas (
   code  TEXT PRIMARY KEY,
   areas TEXT NOT NULL                   -- JSON: ["bol", "his", …]
 );
+
+-- ============================================================
+-- The Final Test · Educativo: prácticas, grupos y alta masiva
+-- ============================================================
+-- Opciones de un cuestionario de curso: examen (un intento, nota al
+-- cierre) o práctica (intentos ilimitados, corrección al momento), y
+-- a qué grupo del curso va dirigido (NULL: a todo el curso).
+CREATE TABLE IF NOT EXISTS cuestionario_opciones (
+  code     TEXT PRIMARY KEY,
+  modo     TEXT NOT NULL DEFAULT 'examen',   -- examen | practica
+  grupo_id INTEGER,
+  explica  INTEGER NOT NULL DEFAULT 0        -- explicaciones con IA en la práctica (plan Pro)
+);
+-- Cada intento de una práctica
+CREATE TABLE IF NOT EXISTS practica_intentos (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  code       TEXT NOT NULL,
+  user_id    TEXT NOT NULL,
+  aciertos   INTEGER NOT NULL,
+  total      INTEGER NOT NULL,
+  ms         INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS practica_intentos_user ON practica_intentos(code, user_id);
+-- Grupos dentro de un curso (laboratorio, turno…); cada estudiante en uno como mucho
+CREATE TABLE IF NOT EXISTS course_groups (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  code       TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS course_groups_code ON course_groups(code);
+CREATE TABLE IF NOT EXISTS course_group_members (
+  code     TEXT NOT NULL,
+  user_id  TEXT NOT NULL,
+  group_id INTEGER NOT NULL,
+  PRIMARY KEY (code, user_id)
+);
+-- Alta masiva: estudiantes dados de alta por correo que aún no han entrado
+CREATE TABLE IF NOT EXISTS course_invites (
+  code         TEXT NOT NULL,
+  email        TEXT NOT NULL,
+  name         TEXT,
+  student_code TEXT,
+  invited_by   TEXT,
+  created_at   INTEGER NOT NULL,
+  PRIMARY KEY (code, email)
+);
+CREATE INDEX IF NOT EXISTS course_invites_email ON course_invites(email);

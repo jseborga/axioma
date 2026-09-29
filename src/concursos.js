@@ -35,6 +35,8 @@ export async function handleConcursos(req,env,url,path,ctx){
     if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/next$/))&&req.method==="POST")return await siguiente(env,user,m[1],json);
     if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/answer$/))&&req.method==="POST")return await responde(req,env,user,m[1],json);
     if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/close$/))&&req.method==="POST")return await cierra(env,user,m[1],json);
+    if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/practica$/))&&req.method==="GET")return await practica(env,user,m[1],json);
+    if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/practica$/))&&req.method==="POST")return await intentoPractica(req,env,user,m[1],json);
     if((m=path.match(/^\/contests\/([A-Z0-9]{6})\/results$/))&&req.method==="GET")return await resultados(env,user,m[1],json);
   }catch(e){
     if(/no such table/i.test(String(e&&e.message)))return json({error:"not_configured"},null,503);
@@ -56,6 +58,10 @@ async function carga(env,code){
   if(!c.kind)c.kind="concurso";
   if(!c.audience)c.audience=c.public?"publico":"enlace";
   c.poolList=c.pool?JSON.parse(c.pool):null;
+  /* práctica o examen y grupo del curso (tabla opcional) */
+  c.modo="examen"; c.grupo_id=null; c.explica=false;
+  if(c.kind==="cuestionario")try{var op=await env.DB.prepare("SELECT modo,grupo_id,explica FROM cuestionario_opciones WHERE code=?").bind(code).first();
+    if(op){c.modo=op.modo||"examen";c.grupo_id=op.grupo_id||null;c.explica=!!op.explica;}}catch(x){}
   /* áreas temáticas elegidas (tabla opcional) */
   try{var ar=await env.DB.prepare("SELECT areas FROM contest_areas WHERE code=?").bind(code).first(); c.areas=ar?JSON.parse(ar.areas):[];}catch(x){c.areas=[];}
   /* ¿admite jugadores invitados? (tabla opcional: bases anteriores a empresas no la tienen) */
@@ -73,7 +79,11 @@ async function gestiona(env,c,user){
 /* quién puede verlo y participar */
 async function accede(env,c,user){
   if(c.audience==="org")return !!(user&&await rolOrg(env,c.org_id,user.id));
-  if(c.audience==="curso"){ if(!user)return false; var a=await accesoCurso(env,c.course_code,user.id); return !!(a&&(a.gestiona||a.estudiante)); }
+  if(c.audience==="curso"){ if(!user)return false; var a=await accesoCurso(env,c.course_code,user.id); if(!a)return false; if(a.gestiona)return true;
+    if(!a.estudiante)return false;
+    /* dirigido a un grupo del curso: solo sus integrantes */
+    if(c.grupo_id){var g=await env.DB.prepare("SELECT 1 FROM course_group_members WHERE code=? AND user_id=? AND group_id=?").bind(c.course_code,user.id,c.grupo_id).first(); return !!g;}
+    return true; }
   return true;
 }
 function entrada(env,code,uid){return env.DB.prepare("SELECT * FROM contest_entries WHERE code=? AND user_id=?").bind(code,uid).first();}
@@ -112,7 +122,7 @@ function publico(c,now){
           starts_at:c.starts_at,ends_at:c.ends_at,state:estado(c,now),
           kind:c.kind||"concurso",audience:c.audience||(c.public?"publico":"enlace"),partial:c.partial||null,
           course_code:c.course_code||null,org_id:c.org_id||null,from_bank:!!c.pool,guests:!!c.guests,
-          areas:(c.areas||[]).map(function(k){return CATEGORIAS[k]||k;})};
+          areas:(c.areas||[]).map(function(k){return CATEGORIAS[k]||k;}),modo:c.modo||"examen",group_id:c.grupo_id||null};
 }
 function resumen(e){
   if(!e)return null;
@@ -205,6 +215,13 @@ async function crea(req,env,user,json){
     if(maxQ>pool.length)maxQ=pool.length;
   }
 
+  /* cuestionario de curso: examen (un intento) o práctica (intentos ilimitados), para todo el curso o un grupo */
+  var modo=kind==="cuestionario"&&b.modo==="practica"?"practica":"examen", grupo=null;
+  if(kind==="cuestionario"&&b.group_id&&curso){
+    var gg=await env.DB.prepare("SELECT id FROM course_groups WHERE id=? AND code=?").bind(+b.group_id,curso).first();
+    if(!gg)return json({error:"bad_group"},null,400); grupo=gg.id;
+  }
+  if(modo==="practica")maxErr=Math.max(maxErr,maxQ);            /* en la práctica no se elimina a nadie */
   /* áreas temáticas del banco general */
   var areas=conBanco?[]:limpiaAreas(b.areas);
   if(areas.length){
@@ -225,6 +242,7 @@ async function crea(req,env,user,json){
     "INSERT INTO contest_scope(code,kind,audience,org_id,course_code,bank_id,partial,pool,created_at) VALUES(?,?,?,?,?,?,?,?,?)"
   ).bind(code,kind,aud,orgId,curso,conBanco?bankId:null,partial||null,pool?JSON.stringify(pool):null,now));
   if(areas.length)ops.push(env.DB.prepare("INSERT INTO contest_areas(code,areas) VALUES(?,?)").bind(code,JSON.stringify(areas)));
+  if(kind==="cuestionario"&&(modo==="practica"||grupo))ops.push(env.DB.prepare("INSERT INTO cuestionario_opciones(code,modo,grupo_id,explica) VALUES(?,?,?,?)").bind(code,modo,grupo,b.explica?1:0));
   await env.DB.batch(ops);
   return json({ok:true,code:code,max_questions:maxQ,guests:invitados,areas:areas});
 }
@@ -257,6 +275,8 @@ async function ficha(env,user,code,json){
   o.registered=n.inscritos||0; o.played=n.jugaron||0; o.finished=n.terminaron||0;
   var e=user?await entrada(env,code,user.id):null;
   o.me=resumen(e);
+  if(c.modo==="practica"&&user)try{var pb=await env.DB.prepare("SELECT MAX(aciertos*100/total) AS mejor,COUNT(*) AS n FROM practica_intentos WHERE code=? AND user_id=?").bind(code,user.id).first();
+    o.practica={best:pb.mejor,attempts:pb.n};}catch(x){}
 
   /* el ranking y las respuestas correctas solo se publican al terminar;
      en un cuestionario, cada estudiante ve solo lo suyo y el docente lo ve todo en /results */
@@ -346,6 +366,7 @@ async function registra(env,c,e,chosen,ok,ms,now){
 async function siguiente(env,user,code,json){
   var c=await carga(env,code);
   if(!c)return json({error:"not_found"},null,404);
+  if(c.modo==="practica")return json({error:"practice_mode"},null,400);
   var now=Date.now(), e=await entrada(env,code,user.id);
   if(!e)return json({error:"not_registered"},null,403);
   if(e.finished_at)return json(fin(e));
@@ -394,6 +415,41 @@ async function responde(req,env,user,code,json){
   if(!e2)return json({error:"stale",idx:e.idx},null,409);
   var mv=marcaVista(env,user.id,q,now); if(mv)try{await mv.run();}catch(x){}
   return json({ok:true,correct:ok,timeout:!aTiempo,finished:!!e2.finished_at,me:resumen(e2),max_errors:c.max_errors});
+}
+
+/* ---------- prácticas ----------
+   Intentos ilimitados mientras esté abierta. Cada intento recibe una
+   selección nueva al azar CON las respuestas y el «¿Sabías que…?», para
+   corregir al momento: en una práctica no hay nada que proteger. El
+   resultado de cada intento se guarda para la libreta del curso. */
+var MAX_INTENTOS_DIA=60;
+async function practica(env,user,code,json){
+  var c=await carga(env,code);
+  if(!c)return json({error:"not_found"},null,404);
+  if(c.modo!=="practica")return json({error:"not_practice"},null,400);
+  if(!(await gestiona(env,c,user))&&!(await accede(env,c,user)))return json({error:"restricted"},null,403);
+  var now=Date.now();
+  if(estado(c,now)!=="abierto")return json({error:estado(c,now)==="pronto"?"not_started":"finished",starts_at:c.starts_at},null,400);
+  var seed=crypto.getRandomValues(new Uint32Array(1))[0], qs;
+  if(c.poolList)qs=secuenciaPool(seed,c.poolList,c.max_questions,c.level===4);
+  else qs=materializa(String(seed),fichas(seed,c.level,!!c.math,c.max_questions,{areas:c.areas}));
+  var exp={};
+  return json({code:code,name:c.name,seconds_per_q:c.seconds_per_q,
+    questions:qs.map(function(q){return {id:q.id||null,q:q.q,o:q.o,c:q.c,cat:categoria(q),dato:q.dato||exp[q.id]||""};})});
+}
+async function intentoPractica(req,env,user,code,json){
+  var c=await carga(env,code);
+  if(!c)return json({error:"not_found"},null,404);
+  if(c.modo!=="practica")return json({error:"not_practice"},null,400);
+  if(!(await accede(env,c,user)))return json({error:"restricted"},null,403);
+  var b=await req.json().catch(function(){return {};});
+  var total=parseInt(b.total,10), ac=parseInt(b.aciertos,10), ms=Math.max(0,Math.min(3600000,parseInt(b.ms,10)||0));
+  if(!(total>=1&&total<=c.max_questions&&ac>=0&&ac<=total))return json({error:"bad_result"},null,400);
+  var hoy=await env.DB.prepare("SELECT COUNT(*) AS n FROM practica_intentos WHERE code=? AND user_id=? AND created_at>?").bind(code,user.id,Date.now()-86400000).first();
+  if(hoy.n>=MAX_INTENTOS_DIA)return json({error:"too_many"},null,429);
+  await env.DB.prepare("INSERT INTO practica_intentos(code,user_id,aciertos,total,ms,created_at) VALUES(?,?,?,?,?,?)").bind(code,user.id,ac,total,ms,Date.now()).run();
+  var best=await env.DB.prepare("SELECT MAX(aciertos*100/total) AS mejor,COUNT(*) AS n FROM practica_intentos WHERE code=? AND user_id=?").bind(code,user.id).first();
+  return json({ok:true,best:best.mejor,attempts:best.n});
 }
 
 async function cierra(env,user,code,json){
