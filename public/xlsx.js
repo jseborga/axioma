@@ -147,5 +147,16 @@ function descarga(blob,nombre){
   setTimeout(function(){URL.revokeObjectURL(u);a.remove();},1500);
 }
 
-G.AxExcel={leer:leer,escribir:escribir,descarga:descarga};
+/* texto de un Word (.docx): un párrafo por línea (para generar preguntas con IA) */
+function textoDocx(buffer){
+  var b=new Uint8Array(buffer), en;
+  try{en=entradas(b);}catch(e){return Promise.reject(new Error("No es un archivo .docx válido."));}
+  if(!en["word/document.xml"])return Promise.reject(new Error("No es un archivo .docx válido."));
+  return extrae(b,en["word/document.xml"]).then(function(t){
+    var ps=xml(t).getElementsByTagName("w:p"), out=[], i;
+    for(i=0;i<ps.length;i++){var ts=ps[i].getElementsByTagName("w:t"),l="",k;for(k=0;k<ts.length;k++)l+=ts[k].textContent; if(l.trim())out.push(l);}
+    return out.join("\n");
+  });
+}
+G.AxExcel={leer:leer,escribir:escribir,descarga:descarga,textoDocx:textoDocx};
 })(typeof globalThis!=="undefined"?globalThis:this);

@@ -7,7 +7,10 @@ docente, concursos de trivia con premio y juegos de lógica, en una sola app.
   materia…), docentes, cursos por paralelo a los que se entra con código o enlace,
   bancos de preguntas importados desde Excel o texto con revisión previa,
   cuestionarios de parcial y registros por estudiante y por pregunta, descargables
-  en Excel. Registro con consentimiento y reglas para menores. Ver [AULA.md](AULA.md).
+  en Excel. Exámenes y prácticas, grupos, alta masiva de estudiantes y libreta de
+  notas. Registro con consentimiento y reglas para menores. **Plan Pro** con ayudas
+  de IA: generar preguntas desde un tema o unos apuntes, revisar el banco y explicar
+  las respuestas en las prácticas. Ver [AULA.md](AULA.md).
 - **Empresas y eventos**: página propia con logo y color, convocatorias con premio
   que se comparten con un QR y se juegan sin trámites (con Google o como invitado
   verificado por código), métricas y exportación de participantes. Ver
@@ -79,6 +82,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `src/plataforma.js` | API de administración de la plataforma: resumen, usuarios, bloqueo y altas |
 | `src/ajustes.js` | Ajustes de la plataforma: nombre, correo de contacto y remitente (variables de `wrangler.toml`) |
 | `src/concursos.js` | API de los concursos y de los cuestionarios de curso |
+| `src/ia.js` | Plan Pro: cuota mensual por institución y ayudas con IA (API de Anthropic) |
 | `src/preguntas.js` | Banco de preguntas de los concursos, áreas, secuencias sin repetir y generador de operaciones (solo en el servidor) |
 | `src/banco/*.js` | Ampliaciones del banco por áreas, con su «¿Sabías que…?» |
 | `public/areas.js` | Casillas para elegir las áreas temáticas de la trivia |

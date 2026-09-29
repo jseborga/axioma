@@ -1482,3 +1482,15 @@ body[data-proyector] #nav-back{display:none}
 .tabla tr.mal td{color:var(--bad)}
 .rp-opt.ok:disabled,.rp-opt.ok[disabled]{background:var(--ok-tint);color:var(--ok);opacity:1}
 .rp-opt.mal:disabled,.rp-opt.mal[disabled]{background:var(--bad-tint);color:var(--bad);opacity:1}
+
+/* ---------- ayudas con IA ---------- */
+.ia-acciones{margin-top:-4px!important}
+.ia-btn{border:1.5px dashed var(--accent)!important}
+.ia-lista{margin:0 0 10px;padding-left:1.2em;display:grid;gap:4px;font-size:14.5px}
+.ia-sug{background:var(--inset);border-radius:var(--r-el);padding:12px;margin:0 0 10px}
+.ia-sug.hecha{opacity:.7}
+.ia-prob{margin:0 0 8px!important;font-weight:600;color:var(--ink)!important}
+.ia-antes,.ia-despues{display:grid;gap:2px;padding:8px 10px;border-radius:10px;margin:0 0 6px}
+.ia-antes{background:var(--bad-tint)}.ia-despues{background:var(--ok-tint)}
+.ia-antes small,.ia-despues small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
+.ia-antes span,.ia-despues span{font-size:13px;color:var(--ink-2)}

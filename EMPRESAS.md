@@ -122,6 +122,9 @@ En **Métricas** (administración de la empresa o de la plataforma):
     gestionarla al momento; si no, en cuanto entre con Google con ese correo.
   - Cambiar su rol o **quitarlo** de la institución, y anular altas pendientes.
   - Las que no tienen a nadie aparecen marcadas como *Sin administración*.
+- **Plan** de cada institución: *Gratis* o *Pro (con IA)*, con los usos de IA al
+  mes y una fecha de vencimiento opcional. El chip de cada institución muestra el
+  plan y los usos gastados del mes. Ver «Ayudas con IA» en [AULA.md](AULA.md).
 - **Usuarios**: buscar por nombre, correo o teléfono; filtrar por tipo (Google,
   invitados, bloqueados) o por institución; **designar** a una persona en cualquier
   institución con el rol que corresponda; bloquear con un motivo y desbloquear.
@@ -137,5 +140,4 @@ En **Métricas** (administración de la empresa o de la plataforma):
 ## Lo que viene después
 
 - Conectar un servicio real de SMS o correo para los códigos.
-- Asistente con IA para crear preguntas (complemento de pago).
 - Auspiciadores y patrocinio de convocatorias.

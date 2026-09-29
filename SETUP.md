@@ -537,6 +537,38 @@ CREATE INDEX IF NOT EXISTS course_invites_email ON course_invites(email);
 Mientras falten, los cursos funcionan como antes, pero no aparecen la pestaña
 Libreta, los grupos ni el alta masiva.
 
+### Activar las ayudas con IA (plan Pro)
+
+Las ayudas con IA para bancos y prácticas (ver [AULA.md](AULA.md)) necesitan
+tres tablas. Pega esto en la consola de D1 (se puede ejecutar varias veces):
+
+```sql
+CREATE TABLE IF NOT EXISTS org_planes (org_id TEXT PRIMARY KEY, plan TEXT NOT NULL DEFAULT 'gratis', cuota INTEGER NOT NULL DEFAULT 0, hasta INTEGER, nota TEXT, updated_at INTEGER NOT NULL, updated_by TEXT);
+CREATE TABLE IF NOT EXISTS ia_uso (org_id TEXT NOT NULL, mes TEXT NOT NULL, usos INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (org_id, mes));
+CREATE TABLE IF NOT EXISTS ia_explicaciones (clave TEXT PRIMARY KEY, texto TEXT NOT NULL, created_at INTEGER NOT NULL);
+```
+
+Además, en el panel de Cloudflare, **Workers & Pages → axioma → Settings →
+Variables and Secrets**:
+
+1. **Secret** `ANTHROPIC_API_KEY`: la clave de la API de Anthropic, que se crea
+   en console.anthropic.com (*API Keys*). Nunca va en el código ni en
+   `wrangler.toml`.
+2. **Secret** `AI_MODEL`: el identificador del modelo de Claude que se usará,
+   copiado de la lista de modelos de la documentación de Anthropic. No es
+   sensible, pero guardado como Secret sobrevive a los despliegues (igual que
+   `GOOGLE_CLIENT_ID`) y se puede cambiar sin tocar el código.
+
+Mientras falte cualquiera de las dos, la IA queda desactivada y el panel de la
+plataforma lo avisa. Después, el plan Pro se activa por institución en
+*Administración de la plataforma → Instituciones → Plan*.
+
+**Coste.** Anthropic cobra por uso (tokens), aparte de Cloudflare. Una
+generación de 10 preguntas o una revisión del banco cuesta en torno a céntimos
+de dólar; un PDF largo, algo más. La cuota mensual de cada institución limita el
+gasto: conviene empezar con una cuota baja (por ejemplo, 100 usos) y fijar un
+límite de gasto en la consola de Anthropic.
+
 ### Ajustes de la plataforma
 
 Lo que se configura sin tocar código está en la sección `[vars]` de
@@ -551,7 +583,7 @@ Lo que se configura sin tocar código está en la sección `[vars]` de
 
 Para cambiarlos, edita `wrangler.toml` y sube el cambio: se despliegan con la app.
 Las páginas los leen de `/api/config`, así que no hay que tocar el HTML. Lo
-sensible (`PLATFORM_ADMINS` y, cuando llegue el envío de correos, la clave del
+sensible (`PLATFORM_ADMINS`, `ANTHROPIC_API_KEY` y, cuando llegue el envío de correos, la clave del
 servicio) va siempre como **Secret** en el panel, nunca en `wrangler.toml`.
 
 ### Copia de seguridad

@@ -321,7 +321,12 @@ GUIAS.aula=[
  a:function(){return pasos([["Registra la institución","Nombre, tipo y, si quieres, el dominio de correo. Queda pendiente hasta que la plataforma la aprueba."],
    ["Define la estructura","Facultades, carreras, materias… los niveles que necesites."],
    ["Suma docentes","Con el enlace para docentes o dándolos de alta por correo. También puedes nombrar auxiliares en cada curso."],
-   ["Sigue las métricas","Participación, cuestionarios y cursos activos de toda la institución."]]);}}
+   ["Sigue las métricas","Participación, cuestionarios y cursos activos de toda la institución."]]);}},
+{t:"Ayudas con IA · plan Pro",d:"",
+ a:function(){return pasos([["Genera preguntas","En el banco, «✨ Generar con IA»: desde un tema o desde tus apuntes (texto, PDF o Word). Revisas cada pregunta antes de importarla."],
+   ["Revisa tu banco","«✨ Revisar con IA» señala preguntas ambiguas o con errores y propone la corrección; aplicas solo las que te convenzan."],
+   ["Explica las prácticas","Al crear una práctica, marca «Explicación con IA» y cada estudiante verá por qué la correcta es la correcta."]],
+   "El plan Pro lo activa la plataforma para cada institución, con un número de usos al mes. Importar desde Excel es gratis para todos.");}}
 ];
 GUIAS.empresas=[
 {t:"Empresas y eventos",d:"Para empresas e instituciones que quieren promocionar un evento o una marca con juegos: una página propia con logo y color, convocatorias con premio que se abren con un QR, y métricas de participación.",

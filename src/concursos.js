@@ -14,6 +14,7 @@
      POST /api/contests/:code/answer       { idx, o } → acierto o fallo
      POST /api/contests/:code/close        quien organiza la cierra ya
    =========================================================== */
+import { explicaciones } from "./ia.js";
 import { secuencia, secuenciaPool, semilla, CATEGORIAS, fichas, materializa, limpiaAreas, disponibles, hacenFalta, cuentaAreas } from "./preguntas.js";
 import { perfil, puedePremio, rolOrg, accesoCurso, puedeUsarBanco, esInvitado } from "./aula.js";
 
@@ -433,9 +434,11 @@ async function practica(env,user,code,json){
   var seed=crypto.getRandomValues(new Uint32Array(1))[0], qs;
   if(c.poolList)qs=secuenciaPool(seed,c.poolList,c.max_questions,c.level===4);
   else qs=materializa(String(seed),fichas(seed,c.level,!!c.math,c.max_questions,{areas:c.areas}));
-  var exp={};
+  /* explicaciones con IA (plan Pro): se generan la primera vez y se guardan */
+  var clave=function(q){return q.id?(c.poolList?"b":"g")+q.id:null;}, exp={};
+  if(c.explica)exp=await explicaciones(env,c.org_id,qs.filter(function(q){return clave(q)&&!q.dato;}).map(function(q){return {clave:clave(q),q:q.q,o:q.o,c:q.c};}));
   return json({code:code,name:c.name,seconds_per_q:c.seconds_per_q,
-    questions:qs.map(function(q){return {id:q.id||null,q:q.q,o:q.o,c:q.c,cat:categoria(q),dato:q.dato||exp[q.id]||""};})});
+    questions:qs.map(function(q){return {id:q.id||null,q:q.q,o:q.o,c:q.c,cat:categoria(q),dato:q.dato||exp[clave(q)]||""};})});
 }
 async function intentoPractica(req,env,user,code,json){
   var c=await carga(env,code);

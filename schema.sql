@@ -460,3 +460,31 @@ CREATE TABLE IF NOT EXISTS course_invites (
   PRIMARY KEY (code, email)
 );
 CREATE INDEX IF NOT EXISTS course_invites_email ON course_invites(email);
+
+-- ============================================================
+-- The Final Test · plan Pro y ayudas con IA
+-- ============================================================
+-- Plan de cada institución o empresa: lo activa la administración de la
+-- plataforma (gratis | pro), con un límite mensual de usos de IA.
+CREATE TABLE IF NOT EXISTS org_planes (
+  org_id     TEXT PRIMARY KEY,
+  plan       TEXT NOT NULL DEFAULT 'gratis',
+  cuota      INTEGER NOT NULL DEFAULT 0,      -- usos de IA al mes
+  hasta      INTEGER,                         -- fin del plan (ms); NULL = sin fecha
+  nota       TEXT,
+  updated_at INTEGER NOT NULL,
+  updated_by TEXT
+);
+-- Usos de IA por institución y mes («2026-09»)
+CREATE TABLE IF NOT EXISTS ia_uso (
+  org_id TEXT NOT NULL,
+  mes    TEXT NOT NULL,
+  usos   INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (org_id, mes)
+);
+-- Explicaciones generadas para las prácticas (se reutilizan)
+CREATE TABLE IF NOT EXISTS ia_explicaciones (
+  clave      TEXT PRIMARY KEY,               -- b<id de pregunta del banco> | g<id del banco general>
+  texto      TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);

@@ -42,7 +42,10 @@ function enlace(p,c){return location.origin+location.pathname+"?"+p+"="+c;}
 function copia(t,b){var o=b.textContent;
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent=o;},1400);});
   else prompt("Copia el enlace:",t);}
-function ERR(e){return {bad_group:"Ese grupo no existe en el curso.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
+function ERR(e){if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
+  return {pro_required:"Las ayudas con IA son del plan Pro. Pide a la administración de la plataforma que lo active para tu institución.",
+  ia_not_configured:"La IA no está configurada en esta instalación (falta la clave ANTHROPIC_API_KEY).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
+  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
@@ -676,19 +679,21 @@ function crearCuestionario(c){
     '<label>Tipo<select id="q-modo"><option value="examen">Examen: un solo intento y nota al cierre</option><option value="practica">Práctica: intentos ilimitados y corrección al momento</option></select></label>'+
     ((c.groups||[]).length?'<label>Para<select id="q-grupo"><option value="">Todo el curso</option>'+c.groups.map(function(g){return '<option value="'+g.id+'">Grupo '+esc(g.name)+' ('+g.n+')</option>';}).join("")+'</select></label>':'')+
     camposPreguntas(c.banks||[],100)+
+    '<label class="rt-check" id="q-explica-l" hidden><input type="checkbox" id="q-explica" checked> <span>✨ Explicación con IA en cada pregunta (plan Pro)</span></label>'+
     '<p class="fine" id="q-practica" hidden>En una práctica cada estudiante la repite las veces que quiera mientras esté abierta: cada intento trae preguntas al azar, ve al momento si acertó y la respuesta correcta, y en la libreta cuenta su mejor intento. No hay límite de errores.</p>'+
     '<p class="fine" id="q-examen">Cada estudiante responde una sola vez y recibe su propia selección al azar: si el banco tiene más preguntas de las que pides, a cada uno le pueden tocar preguntas distintas, siempre en otro orden y con las opciones barajadas. Las respuestas correctas se muestran al cierre.</p>'+
     '<div class="actions"><button class="primary" type="submit" id="q-go">Crear cuestionario</button></div><p class="msg" id="q-msg"></p></form>');
   $("au-back").onclick=function(){curso(c.code);};
   var lee=ligaPreguntas();
-  $("q-modo").onchange=function(){var pr=this.value==="practica"; $("q-practica").hidden=!pr; $("q-examen").hidden=pr;
+  var pro=false; estadoIA(c.org_id).then(function(p){pro=!!p.pro; $("q-explica-l")&&($("q-explica-l").hidden=!(pro&&$("q-modo").value==="practica"));});
+  $("q-modo").onchange=function(){var pr=this.value==="practica"; $("q-practica").hidden=!pr; $("q-examen").hidden=pr; $("q-explica-l").hidden=!(pr&&pro);
     var le=$("q-err").closest("label"); if(le)le.hidden=pr; if(pr&&!$("q-par").value)$("q-par").value="Práctica";};
   $("q-form").onsubmit=function(e){
     e.preventDefault();
     var v=lee(); if(!v){aviso("q-msg","Revisa las fechas.",true);return;}
     $("q-go").disabled=true;
     api("/api/contests",Object.assign(v,{name:$("q-name").value,kind:"cuestionario",audience:"curso",course_code:c.code,partial:$("q-par").value,
-      modo:$("q-modo").value,group_id:$("q-grupo")?$("q-grupo").value||null:null}))
+      modo:$("q-modo").value,group_id:$("q-grupo")?$("q-grupo").value||null:null,explica:$("q-modo").value==="practica"&&pro&&$("q-explica").checked}))
       .then(function(r){aConcurso(r.code);})
       .catch(function(er){$("q-go").disabled=false;aviso("q-msg",ERR(er),true);});
   };
@@ -706,7 +711,8 @@ function banco(id,nota,filtro){
       (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
       '<div class="actions au-acciones"><button class="primary" id="bk-imp">Importar preguntas</button><button class="ghost" id="bk-una">Añadir una</button>'+
       '<button class="ghost" id="bk-plant">Plantilla Excel</button>'+(b.questions.length?'<button class="ghost" id="bk-exp">Exportar a Excel</button>':'')+'</div>'+
-      '<div id="bk-zona"></div>';
+      '<div class="actions au-acciones ia-acciones"><button class="ghost ia-btn" id="bk-ia">✨ Generar con IA</button>'+(b.questions.length?'<button class="ghost ia-btn" id="bk-iarev">✨ Revisar con IA</button>':'')+'</div>'+
+      '<p class="fine" id="bk-plan"></p><div id="bk-zona"></div>';
     if(b.questions.length){
       h+='<div class="au-filtros"><label>Tema<select id="bk-tema"><option value="">Todos ('+b.questions.length+')</option>'+
         Object.keys(temas).sort().map(function(t){return '<option'+(t===filtro?' selected':'')+'>'+esc(t)+'</option>';}).join("")+'</select></label></div>';
@@ -719,6 +725,10 @@ function banco(id,nota,filtro){
     pinta(h);
     $("au-back").onclick=function(){org(b.org_id,"bancos");};
     $("bk-imp").onclick=function(){importador(b);};
+    estadoIA(b.org_id).then(function(p){var e=$("bk-plan"); if(!e)return;
+      e.innerHTML=p.pro?'✨ Plan Pro · quedan <b>'+p.disponibles+'</b> de '+p.cuota+' usos de IA este mes.':'✨ Generar y revisar preguntas con IA es parte del <b>plan Pro</b>.';});
+    $("bk-ia").onclick=function(){iaGenera(b);};
+    if($("bk-iarev"))$("bk-iarev").onclick=function(){iaRevisa(b);};
     $("bk-una").onclick=function(){editor(b,null);};
     $("bk-plant").onclick=function(){XL.descarga(XL.escribir([{nombre:"Preguntas",filas:BF.PLANTILLA,anchos:[50,24,24,24,24,8,18]}]),"plantilla-preguntas.xlsx");};
     if($("bk-exp"))$("bk-exp").onclick=function(){
@@ -733,6 +743,87 @@ function banco(id,nota,filtro){
     s=panel.querySelectorAll("[data-edita]");
     for(i=0;i<s.length;i++)s[i].onclick=function(){var qid=+this.getAttribute("data-edita");editor(b,b.questions.filter(function(q){return q.id===qid;})[0]);};
   }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+}
+/* ===================== AYUDAS CON IA (plan Pro) ===================== */
+var planesIA={};
+function estadoIA(org){
+  if(!org)return Promise.resolve({pro:false});
+  return (planesIA[org]=planesIA[org]||api("/api/ia/estado?org="+org).catch(function(){delete planesIA[org];return {pro:false};}));
+}
+function sinPro(z){
+  z.innerHTML='<div class="au-caja"><h4>✨ Ayudas con IA · plan Pro</h4><p>Con el plan Pro, la IA te ayuda a:</p><ul class="ia-lista">'+
+    '<li><b>Generar preguntas desde un tema</b>, por ejemplo «Fotosíntesis, secundaria».</li><li><b>Generar preguntas desde tus apuntes</b>: pega un texto o sube un PDF o Word.</li>'+
+    '<li><b>Revisar tu banco</b>: detecta preguntas ambiguas o con errores y propone correcciones.</li><li><b>Explicar las respuestas</b> en las prácticas de tus estudiantes.</li></ul>'+
+    '<p class="fine">Siempre revisas lo que propone antes de guardarlo. Importar desde Excel sigue siendo gratis. Para activar el plan, escribe a la administración de la plataforma.</p>'+
+    '<div class="actions"><button type="button" class="ghost" id="ia-cierra">Cerrar</button></div></div>';
+  $("ia-cierra").onclick=function(){z.innerHTML="";};
+}
+function iaGenera(b){
+  var z=$("bk-zona");
+  estadoIA(b.org_id).then(function(p){
+    if(!p.pro){sinPro(z);return;}
+    z.innerHTML='<div class="au-caja"><h4>✨ Generar preguntas con IA</h4>'+
+      '<div class="seg" role="radiogroup" id="ia-seg"><button type="button" role="radio" aria-checked="true" data-m="tema">Desde un tema</button><button type="button" role="radio" aria-checked="false" data-m="texto">Desde un texto o archivo</button></div>'+
+      '<form class="rt-form" id="ia-f"><label id="ia-tema-l">Tema<input id="ia-tema" maxlength="300" placeholder="Fotosíntesis, nivel secundaria" style="text-transform:none;letter-spacing:0"></label>'+
+      '<div id="ia-texto-l" hidden><label>Texto o apuntes<textarea id="ia-texto" rows="6" placeholder="Pega aquí el contenido…"></textarea></label>'+
+      '<div class="actions au-acciones"><label class="ghost au-archivo">Adjuntar PDF, Word o TXT<input type="file" id="ia-file" accept=".pdf,.docx,.txt" hidden></label><span class="fine" id="ia-fn"></span></div></div>'+
+      '<div class="rt-2"><label>Cuántas'+'<select id="ia-n"><option>5</option><option selected>10</option><option>15</option><option>20</option><option>30</option></select></label>'+
+      '<label>Dificultad<select id="ia-niv"><option value="0">Variada</option><option value="1">Fácil</option><option value="2">Media</option><option value="3">Difícil</option></select></label></div>'+
+      '<p class="fine">Gasta 1 de tus '+p.disponibles+' usos de este mes. Revisarás cada pregunta antes de guardarla.</p>'+
+      '<div class="actions"><button type="button" class="ghost" id="ia-no">Cancelar</button><button type="submit" class="primary" id="ia-go">✨ Generar</button></div><p class="msg" id="ia-msg"></p></form></div>';
+    z.scrollIntoView({behavior:"smooth",block:"start"});
+    var modo="tema", pdf=null;
+    panel.querySelectorAll("#ia-seg [data-m]").forEach(function(x){x.onclick=function(){modo=this.getAttribute("data-m");
+      panel.querySelectorAll("#ia-seg [data-m]").forEach(function(y){y.setAttribute("aria-checked",String(y===x));});
+      $("ia-tema-l").hidden=modo!=="tema"; $("ia-texto-l").hidden=modo!=="texto";};});
+    $("ia-no").onclick=function(){z.innerHTML="";};
+    $("ia-file").onchange=function(){
+      var f=this.files[0]; if(!f)return; pdf=null; $("ia-fn").textContent="Leyendo «"+f.name+"»…";
+      if(/\.pdf$/i.test(f.name)){ if(f.size>12*1024*1024){aviso("ia-msg",ERR({error:"ia_file_too_big"}),true);return;}
+        var r=new FileReader(); r.onload=function(){pdf=String(r.result);$("ia-fn").textContent="PDF adjunto: "+f.name;}; r.readAsDataURL(f); }
+      else if(/\.docx$/i.test(f.name))f.arrayBuffer().then(XL.textoDocx).then(function(t){$("ia-texto").value=t;$("ia-fn").textContent="Texto leído de "+f.name;}).catch(function(er){aviso("ia-msg",er.message,true);});
+      else f.text().then(function(t){$("ia-texto").value=t;$("ia-fn").textContent="Texto leído de "+f.name;});
+    };
+    $("ia-f").onsubmit=function(e){e.preventDefault();
+      var cuerpo={org_id:b.org_id,n:+$("ia-n").value,nivel:+$("ia-niv").value};
+      if(modo==="tema")cuerpo.tema=$("ia-tema").value; else{cuerpo.texto=$("ia-texto").value; if(pdf)cuerpo.pdf=pdf;}
+      $("ia-go").disabled=true; aviso("ia-msg","Generando preguntas… puede tardar hasta un minuto.");
+      api("/api/ia/preguntas",cuerpo).then(function(r){
+        delete planesIA[b.org_id];
+        importador(b,r.items,"✨ Preguntas propuestas por la IA · revísalas antes de importar");
+        estadoIA(b.org_id).then(function(p2){var e2=$("bk-plan"); if(e2&&p2.pro)e2.innerHTML='✨ Plan Pro · quedan <b>'+p2.disponibles+'</b> de '+p2.cuota+' usos de IA este mes.';});
+      }).catch(function(er){$("ia-go").disabled=false;aviso("ia-msg",ERR(er),true);});
+    };
+  });
+}
+function iaRevisa(b){
+  var z=$("bk-zona");
+  estadoIA(b.org_id).then(function(p){
+    if(!p.pro){sinPro(z);return;}
+    if(!confirm("La IA revisará hasta 80 preguntas de este banco y propondrá correcciones. Gasta 1 de tus "+p.disponibles+" usos del mes. ¿Seguir?"))return;
+    z.innerHTML='<div class="au-caja"><h4>✨ Revisión con IA</h4><p class="fine">Revisando… puede tardar hasta un minuto.</p></div>';
+    api("/api/ia/revisar",{bank_id:b.id}).then(function(r){
+      delete planesIA[b.org_id];
+      var porId={}; b.questions.forEach(function(q){porId[q.id]=q;});
+      var sug=r.sugerencias.filter(function(x){return porId[x.id];});
+      z.innerHTML='<div class="au-caja"><h4>✨ Revisión con IA</h4><p class="fine">'+r.revisadas+' preguntas revisadas · '+(sug.length?sug.length+' con algo que mejorar.':'no encontró problemas.')+' Aplica solo lo que te convenza.</p>'+
+        sug.map(function(x,i){var q=porId[x.id], o=q.opts.slice(), c=o.splice(q.answer,1)[0];
+          var nueva={q:x.pregunta||q.q,correcta:x.correcta||c,otras:x.incorrectas||o,nivel:x.nivel||q.level,tema:x.tema||q.topic||""};
+          return '<div class="ia-sug" id="ia-s'+i+'"><p class="ia-prob">⚠ '+esc(x.problema)+'</p>'+
+            '<div class="ia-antes"><small>Ahora</small><b>'+esc(q.q)+'</b><span>✓ '+esc(c)+' · '+esc(o.join(" · "))+'</span></div>'+
+            '<div class="ia-despues"><small>Propuesta</small><b>'+esc(nueva.q)+'</b><span>✓ '+esc(nueva.correcta)+' · '+esc(nueva.otras.join(" · "))+'</span></div>'+
+            '<div class="actions"><button type="button" class="primary au-mini" data-ap="'+i+'">Aplicar</button><button type="button" class="ghost au-mini" data-desc="'+i+'">Descartar</button></div></div>';}).join("")+
+        '<div class="actions"><button type="button" class="ghost" id="ia-fin">Terminar</button></div><p class="msg" id="ia-msg"></p></div>';
+      $("ia-fin").onclick=function(){banco(b.id);};
+      panel.querySelectorAll("[data-desc]").forEach(function(x){x.onclick=function(){$("ia-s"+this.getAttribute("data-desc")).remove();};});
+      panel.querySelectorAll("[data-ap]").forEach(function(x){x.onclick=function(){
+        var i=+this.getAttribute("data-ap"), s=sug[i], q=porId[s.id], o=q.opts.slice(), c=o.splice(q.answer,1)[0], btn=this;
+        var opts=[s.correcta||c].concat(s.incorrectas||o); btn.disabled=true;
+        api("/api/banks/"+b.id+"/questions/"+s.id,{q:s.pregunta||q.q,opts:opts,answer:0,level:s.nivel||q.level,topic:s.tema||q.topic||""})
+          .then(function(){var d=$("ia-s"+i); d.classList.add("hecha"); d.querySelector(".actions").innerHTML='<p class="fine ok">Aplicada.</p>';})
+          .catch(function(er){btn.disabled=false;aviso("ia-msg",ERR(er)+(er.errores?" "+er.errores.join(" "):""),true);});};});
+    }).catch(function(er){z.innerHTML='<div class="au-caja"><p class="fine bad">'+esc(ERR(er))+'</p></div>';});
+  });
 }
 function editor(b,q){
   var z=$("bk-zona"), o=q?q.opts.slice():["","","",""];
@@ -761,20 +852,23 @@ function editor(b,q){
       .catch(function(er){$("ed-go").disabled=false;aviso("ed-msg",ERR(er),true);});
   };
 }
-function importador(b){
+function importador(b,iniciales,titulo){
   var z=$("bk-zona");
-  z.innerHTML='<div class="au-caja"><h4>Importar preguntas</h4>'+
+  z.innerHTML='<div class="au-caja"><h4>Importar preguntas</h4><div id="im-in">'+
     '<p class="fine">Sube un Excel (.xlsx) o un CSV, o pega aquí filas copiadas de Excel o texto con opciones A) B) C) y la línea ANSWER: con la letra correcta. Antes de guardar verás cada pregunta revisada.</p>'+
     '<div class="actions au-acciones"><label class="ghost au-archivo">Elegir archivo<input type="file" id="im-f" accept=".xlsx,.csv,.txt" hidden></label>'+
     '<button type="button" class="ghost au-mini" id="im-ej1">Ejemplo de texto</button><button type="button" class="ghost au-mini" id="im-ej2">Ejemplo de tabla</button></div>'+
     '<textarea id="im-t" rows="8" placeholder="¿Cuál es la derivada de x²?\nA) 2x\nB) x\nC) x²/2\nANSWER: A\nNIVEL: 2\nTEMA: Derivadas"></textarea>'+
-    '<div class="actions"><button type="button" class="ghost" id="im-no">Cancelar</button><button type="button" class="primary" id="im-rev">Revisar</button></div>'+
+    '<div class="actions"><button type="button" class="ghost" id="im-no">Cancelar</button><button type="button" class="primary" id="im-rev">Revisar</button></div></div>'+
     '<p class="msg" id="im-msg"></p><div id="im-prev"></div></div>';
   z.scrollIntoView({behavior:"smooth",block:"start"});
   $("im-no").onclick=function(){z.innerHTML="";};
   $("im-ej1").onclick=function(){$("im-t").value=BF.EJEMPLO_TEXTO;};
   $("im-ej2").onclick=function(){$("im-t").value=BF.PLANTILLA.map(function(f){return f.join("\t");}).join("\n");};
   $("im-rev").onclick=function(){revisa(BF.desdeTexto($("im-t").value));};
+  if(iniciales){ var h4=z.querySelector("h4"); if(h4&&titulo)h4.textContent=titulo; $("im-in").hidden=true;
+    $("im-prev").insertAdjacentHTML("afterend",'<div class="actions"><button type="button" class="ghost" id="im-no2">Descartar</button></div>');
+    $("im-no2").onclick=function(){z.innerHTML="";}; revisa(iniciales); }
   $("im-f").onchange=function(){
     var f=this.files[0]; if(!f)return;
     aviso("im-msg","Leyendo «"+f.name+"»…");
@@ -1052,7 +1146,7 @@ function platOrgs(t,r){
       '<p class="fine">Queda activa al momento. Si esa persona ya tiene cuenta, es administradora ya; si no, lo será en cuanto entre con Google con ese correo.</p>'+
       '<div class="actions"><button class="primary" type="submit" id="po-go">Dar de alta</button></div><p class="msg" id="po-msg"></p></form></details>'+
     (r.orgs.length?r.orgs.map(function(o){
-      return '<div class="po-bloque"><div class="au-fila po-org"><div><b>'+esc(o.name)+'</b> '+chipEstado(o.status)+
+      return '<div class="po-bloque"><div class="au-fila po-org"><div><b>'+esc(o.name)+'</b> '+chipEstado(o.status)+' <span data-planchip="'+o.id+'"></span>'+
         (o.admins?'':' <span class="chip pronto">Sin administración</span>')+
         '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+o.members+' miembro'+(o.members===1?'':'s')+' · '+o.admins+' admin. · '+o.contests+' convocatorias y cuestionarios · '+
           o.people+' participante'+(o.people===1?'':'s')+(o.last_activity?' · última actividad '+fecha(o.last_activity):'')+(o.slug?' · ?marca='+esc(o.slug):'')+'</small>'+
@@ -1061,13 +1155,33 @@ function platOrgs(t,r){
         (o.status!=="suspendida"?'<button type="button" class="ghost au-mini" data-est="suspendida" data-id="'+o.id+'">Suspender</button>':'')+
         '<button type="button" class="primary au-mini" data-adm="'+o.id+'" aria-expanded="false">Administración</button>'+
         '<button type="button" class="ghost au-mini" data-met="'+o.id+'">Métricas</button>'+
-        '<button type="button" class="ghost au-mini" data-usr="'+o.id+'">Usuarios</button></div>'+
-        '<div class="po-adm" id="po-adm-'+o.id+'" hidden></div></div>';
+        '<button type="button" class="ghost au-mini" data-usr="'+o.id+'">Usuarios</button>'+
+        '<button type="button" class="ghost au-mini" data-plan="'+o.id+'">Plan</button></div>'+
+        '<div class="po-adm" id="po-adm-'+o.id+'" hidden></div><div class="po-adm" id="po-plan-'+o.id+'" hidden></div></div>';
     }).join(""):'<p class="fine">No hay instituciones.</p>')+'<p class="msg" id="po-res"></p>';
   $("po-form").onsubmit=function(e){e.preventDefault(); $("po-go").disabled=true;
     api("/api/admin/orgs",{name:$("po-name").value,kind:$("po-kind").value,admin_email:$("po-email").value}).then(function(x){
       plataforma("orgs"); setTimeout(function(){aviso("po-res",x.admin&&x.admin.invited?"Alta hecha. La administración quedará asignada cuando esa persona entre con Google.":"Alta hecha.");},400);
     }).catch(function(er){$("po-go").disabled=false;aviso("po-msg",ERR(er),true);});};
+  /* plan Pro y cuota de IA de cada institución */
+  var PL={planes:{}};
+  function chipPlan(id){var p=PL.planes[id]; return p&&p.pro?'<span class="chip activo">Pro · '+p.usados+'/'+p.cuota+' IA</span>':'<span class="chip">Gratis</span>';}
+  api("/api/admin/planes").then(function(x){PL=x; t.querySelectorAll("[data-planchip]").forEach(function(e){e.innerHTML=chipPlan(e.getAttribute("data-planchip"));});
+    if(!x.ia)aviso("po-res","La IA no está configurada: añade en Cloudflare los Secrets ANTHROPIC_API_KEY y AI_MODEL para que funcionen las ayudas del plan Pro.",true);}).catch(function(){});
+  t.querySelectorAll("[data-plan]").forEach(function(btn){btn.onclick=function(){
+    var id=this.getAttribute("data-plan"), z=$("po-plan-"+id); z.hidden=!z.hidden; if(z.hidden)return;
+    var p=PL.planes[id]||{plan:"gratis",cuota:100,hasta:null}, hasta=p.hasta?new Date(p.hasta).toISOString().slice(0,10):"";
+    z.innerHTML='<form class="rt-form po-planf"><div class="rt-2"><label>Plan<select name="plan"><option value="gratis">Gratis</option><option value="pro"'+(p.plan==="pro"?' selected':'')+'>Pro (con IA)</option></select></label>'+
+      '<label>Usos de IA al mes<input name="cuota" type="number" min="0" max="100000" value="'+(p.cuota||100)+'"></label></div>'+
+      '<label>Válido hasta (opcional)<input name="hasta" type="date" value="'+hasta+'"></label>'+
+      '<p class="fine">Cada generación de preguntas, revisión del banco o tanda de explicaciones gasta un uso. Este mes lleva '+(p.usados||0)+'.</p>'+
+      '<div class="actions"><button class="primary" type="submit">Guardar plan</button></div><p class="msg"></p></form>';
+    z.querySelector("form").onsubmit=function(e){e.preventDefault(); var f=this, h=f.hasta.value;
+      api("/api/admin/planes/"+id,{plan:f.plan.value,cuota:+f.cuota.value,hasta:h?new Date(h+"T23:59:59").getTime():null}).then(function(r){
+        PL.planes[id]={plan:f.plan.value,cuota:+f.cuota.value,hasta:h?new Date(h+"T23:59:59").getTime():null,usados:r.plan.usados,pro:r.plan.pro};
+        t.querySelector('[data-planchip="'+id+'"]').innerHTML=chipPlan(id); f.querySelector(".msg").className="msg ok"; f.querySelector(".msg").textContent="Plan guardado.";
+      }).catch(function(er){f.querySelector(".msg").className="msg bad";f.querySelector(".msg").textContent=ERR(er);});};
+  };});
   var s=t.querySelectorAll("[data-est]"),i;
   for(i=0;i<s.length;i++)s[i].onclick=function(){
     api("/api/admin/orgs/"+this.getAttribute("data-id"),{status:this.getAttribute("data-est")}).then(function(){plataforma("orgs");}).catch(function(er){alert(ERR(er));});};

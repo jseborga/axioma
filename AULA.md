@@ -165,8 +165,6 @@ público ni ganador.
 
 ## Lo que viene después
 
-- **Asistente con IA** para docentes: generar y revisar preguntas a partir de un
-  tema o un documento (complemento de pago).
 - **Auspiciadores**: patrocinio de concursos por institución.
 
 
@@ -201,3 +199,39 @@ público ni ganador.
 
 Tablas: `cuestionario_opciones`, `practica_intentos`, `course_groups`,
 `course_group_members` y `course_invites` (ver SETUP.md).
+
+## Ayudas con IA (plan Pro)
+
+El **plan Pro** lo activa la administración de la plataforma, institución por
+institución, en *Administración de la plataforma → Instituciones → Plan*. Allí se
+fijan los **usos de IA al mes** (la cuota) y, si se quiere, una fecha de
+vencimiento; al vencer, la institución vuelve sola al plan gratuito. Importar
+desde Excel o pegando texto es **gratis para todos**.
+
+Con el plan Pro, quien administra o es docente tiene en cada banco:
+
+- **✨ Generar con IA**:
+  - **Desde un tema**, por ejemplo «Fotosíntesis, nivel secundaria».
+  - **Desde un texto o archivo**: se pegan apuntes o se adjunta un PDF (hasta
+    12 MB), un Word (.docx) o un TXT.
+  - Se elige cuántas preguntas (5 a 30) y la dificultad.
+  - Las preguntas propuestas **no se guardan solas**: pasan por la misma revisión
+    que un Excel y el docente decide si las importa.
+- **✨ Revisar con IA**: revisa hasta 80 preguntas del banco y señala las que
+  tienen un problema: respuesta dudosa, más de una opción defendible, faltas,
+  distractores que delatan la respuesta o nivel mal puesto. Muestra *Ahora* y
+  *Propuesta*, y cada corrección se **aplica** o se **descarta** una a una.
+- **Explicaciones en las prácticas**: al crear una práctica aparece la casilla
+  *Explicación con IA en cada pregunta*. Tras cada respuesta, el estudiante ve
+  por qué la correcta es la correcta. Las explicaciones se generan la primera vez
+  y se guardan, así que las siguientes veces no gastan cuota.
+
+**Cuota.** Cada generación, cada revisión y cada tanda de explicaciones nuevas
+gasta **un uso**. El banco muestra cuántos quedan este mes. Si la IA falla, el
+uso se devuelve. Sin cuota, la app lo avisa y todo lo demás sigue igual.
+
+**Configuración.** La IA es Claude, de Anthropic. En Cloudflare hacen falta los
+Secrets `ANTHROPIC_API_KEY` y `AI_MODEL` (ver SETUP.md). Sin ellos,
+los botones siguen visibles, pero avisan de que la IA no está configurada.
+
+Tablas: `org_planes`, `ia_uso` e `ia_explicaciones` (ver SETUP.md).
