@@ -488,3 +488,33 @@ CREATE TABLE IF NOT EXISTS ia_explicaciones (
   texto      TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+
+-- =========================================================
+-- Mis preguntas: bancos personales para jugar (retos y trivia en vivo)
+-- Los bancos de las instituciones educativas no se usan en juegos.
+-- =========================================================
+CREATE TABLE IF NOT EXISTS mis_bancos (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_id   TEXT NOT NULL REFERENCES users(id),
+  name       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mis_bancos_owner ON mis_bancos(owner_id);
+CREATE TABLE IF NOT EXISTS mis_preguntas (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  banco_id   INTEGER NOT NULL,
+  q          TEXT NOT NULL,
+  opts       TEXT NOT NULL,                  -- JSON; la correcta es la de answer
+  answer     INTEGER NOT NULL DEFAULT 0,
+  level      INTEGER NOT NULL DEFAULT 1,
+  topic      TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mis_preguntas_banco ON mis_preguntas(banco_id);
+-- Preguntas propias de un reto de trivia, congeladas al crearlo
+CREATE TABLE IF NOT EXISTS reto_preguntas (
+  event_code TEXT PRIMARY KEY,
+  fuente     TEXT NOT NULL,                  -- m<id> banco personal | b<id> banco de empresa
+  nombre     TEXT,
+  pool       TEXT NOT NULL                   -- JSON [[pregunta,[correcta,otra,…]],…]
+);

@@ -43,7 +43,7 @@ function ERR(e){if(e&&e.error==="practice_mode")return "Esta es una práctica: e
   not_registered:"Primero tienes que inscribirte.",not_started:"El concurso todavía no ha empezado.",bad_name:"Ponle un nombre.",
   bad_end:"El concurso tiene que durar entre 5 minutos y 31 días.",bad_start:"La fecha de inicio no es válida.",
   too_many:"Tienes demasiados concursos abiertos a la vez.",forbidden:"Solo quien lo organiza puede hacer eso.",
-  profile_required:"Antes tienes que completar tu registro.",restricted:"Es solo para los miembros de su curso o institución.",
+  profile_required:"Antes tienes que completar tu registro.",edu_no_contests:"Las instituciones educativas no organizan concursos: usa exámenes y prácticas en sus cursos.",edu_bank:"Los bancos de las instituciones educativas son solo para sus exámenes y prácticas.",restricted:"Es solo para los miembros de su curso o institución.",
   consent_required:"Tienes menos de 18 años: para los concursos abiertos con premio hace falta el consentimiento de tu tutor o de tu institución.",
   org_pending:"La institución todavía no está aprobada.",
   google_required:"Esta convocatoria es para cuentas de Google: sal de la sesión de invitado y entra con Google.",
@@ -58,14 +58,25 @@ function reglas(c){
          (c.max_errors===0?"sin errores":c.max_errors===1?"1 error admitido":c.max_errors+" errores admitidos")+(c.math?" · con cálculo":"");
 }
 function cab(){ $("hdr").textContent=vista&&vista.code?vista.code:"Trivia"; }
+/* los exámenes y prácticas de un curso se juegan aquí, pero pertenecen a Educativo:
+   la cabecera, el menú y la ayuda lo dicen, y no se mezclan con los concursos */
+function seccion(educativo){
+  var nom=educativo?"Educativo":"Concursos";
+  if($("mode-label"))$("mode-label").textContent=nom;
+  if($("status-cap"))$("status-cap").textContent=nom;
+  document.body.setAttribute("data-mode",educativo?"aula":"concurso");
+  if($("t-aula"))$("t-aula").setAttribute("aria-checked",String(!!educativo));
+  if($("t-concurso"))$("t-concurso").setAttribute("aria-checked",String(!educativo));
+}
 
 /* ---------- entrada ---------- */
-function abrir(){ activo=true; panel.hidden=false; if(vista&&vista.code)ficha(vista.code); else inicio(); }
+/* al volver a Concursos se retoma el último concurso visto, nunca un examen o una práctica (son de Educativo) */
+function abrir(){ activo=true; panel.hidden=false; if(vista&&vista.code&&!vista.cuest)ficha(vista.code); else inicio(); }
 function cerrar(){ activo=false; para(); panel.hidden=true; }
 document.addEventListener("ax-user",function(){ if(activo&&vista&&!vista.jugando)(vista.code?ficha(vista.code):inicio()); });
 
 /* ---------- inicio ---------- */
-function inicio(){ colorMarca(null);
+function inicio(){ colorMarca(null); seccion(false);
   para(); vista={}; cab();
   var u=user(), conCuenta=window.AxAccount&&AxAccount.configurado&&AxAccount.configurado();
   pinta('<h3>Concursos de trivia</h3>'+
@@ -78,6 +89,7 @@ function inicio(){ colorMarca(null);
   if($("cq-login"))$("cq-login").onclick=function(){AxAccount.abrirCuenta();};
   $("cq-join").onsubmit=function(e){e.preventDefault();var c=$("cq-code").value.trim().toUpperCase();if(c.length===6)ficha(c);};
   api("/api/contests").then(function(r){
+    if(!$("cq-listas"))return;          /* ya se abrió otra cosa (p. ej. una ficha) */
     desfase=r.now-Date.now();
     var h="";
     function tarjeta(c,extra){
@@ -95,7 +107,7 @@ function inicio(){ colorMarca(null);
     $("cq-listas").innerHTML=h;
     var bs=$("cq-listas").querySelectorAll(".rt-card"),i;
     for(i=0;i<bs.length;i++)bs[i].onclick=function(){ficha(this.getAttribute("data-code"));};
-  }).catch(function(e){$("cq-listas").innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+  }).catch(function(e){if($("cq-listas"))$("cq-listas").innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
 }
 
 /* ---------- crear ---------- */
@@ -175,6 +187,7 @@ function ficha(code,recien){
   api("/api/contests/"+code).then(function(c){
     desfase=c.now-Date.now(); colorMarca(c);
     var u=user(), me=c.me, cuest=c.kind==="cuestionario", volver=c.course_code?"‹ Volver al curso":"‹ Concursos";
+    seccion(cuest); if(vista&&vista.code===code)vista.cuest=cuest;
     if(c.brand)volver="‹ "+c.org_name;
     var h='<button type="button" class="rt-back" id="cq-back">'+esc(volver)+'</button>'+
       (c.brand?'<div class="cq-marca">'+(c.brand.logo?'<img src="'+esc(c.brand.logo)+'" alt="">':'')+'<span>Convocatoria de <b>'+esc(c.org_name)+'</b></span></div>':'')+
@@ -243,7 +256,7 @@ function ficha(code,recien){
 
     $("cq-back").onclick=function(){
       if(c.brand&&window.AxMarca){AxMarca.ver(c.brand.slug);return;}
-      if(c.course_code&&window.AxAula){AxApp.setMode("aula");AxAula.curso(c.course_code);} else inicio(); };
+      if(c.course_code&&window.AxAula){AxApp.setMode("aula");AxAula.curso(c.course_code);} else if(cuest)AxApp.setMode("aula"); else inicio(); };
     if($("cq-registros"))$("cq-registros").onclick=function(){registros(c);};
     if($("cq-practica"))$("cq-practica").onclick=function(){practicar(c);};
     if($("cq-copy"))$("cq-copy").onclick=function(){var b=this,t=enlace(c.code);
@@ -272,12 +285,13 @@ function ficha(code,recien){
     }
   }).catch(function(e){
     if(e&&e.error==="restricted"){
-      pinta('<button type="button" class="rt-back" id="cq-back">‹ Concursos</button><h3>'+esc(e.name)+'</h3>'+
+      var ec=e.kind==="cuestionario"; seccion(ec);
+      pinta('<button type="button" class="rt-back" id="cq-back">‹ '+(ec?'Educativo':'Concursos')+'</button><h3>'+esc(e.name)+'</h3>'+
         '<p>'+(e.kind==="cuestionario"?"Este cuestionario":"Este concurso")+' es solo para '+
         (e.course_name?'el curso <b>'+esc(e.course_name)+'</b>':'los miembros de <b>'+esc(e.org_name)+'</b>')+'.</p>'+
         (e.course_code?'<div class="actions"><button class="primary" id="cq-curso">Ir al curso para unirme</button></div>':'')+
         (user()?'':'<p class="fine">Si ya perteneces, entra con Google.</p>'));
-      $("cq-back").onclick=inicio;
+      $("cq-back").onclick=ec?function(){AxApp.setMode("aula");}:inicio;
       if($("cq-curso"))$("cq-curso").onclick=function(){AxApp.setMode("aula");AxAula.curso(e.course_code);};
       return;
     }

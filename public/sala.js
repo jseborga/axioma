@@ -40,7 +40,7 @@ var ERR={not_found:"No hay ninguna sala con ese código.",login_required:"Esta s
   profile_required:"Primero completa tu registro.",need_players:"Faltan jugadores para empezar.",not_your_turn:"No es tu turno.",bad_move:"Esa jugada no vale.",
   kicked:"El anfitrión te sacó de la sala.",too_many:"Tienes demasiadas salas abiertas.",live_unavailable:"Las salas en vivo no están activadas en este servidor.",
   not_configured:"Faltan las tablas de salas en la base de datos (ver SETUP.md).",bad_name:"Escribe un apodo de al menos 2 letras.",forbidden:"No tienes permiso para esto.",
-  empty_pool:"Ese banco no tiene preguntas.",forbidden_bank:"No puedes usar ese banco.",org_pending:"La institución todavía no está aprobada.",bad_game:"Juego desconocido.",
+  empty_pool:"Ese banco no tiene preguntas.",edu_no_games:"Las instituciones educativas no organizan juegos en su nombre: sus bancos y cuestionarios quedan en Educativo.",bad_source:"Elige de dónde salen las preguntas.",forbidden_bank:"No puedes usar ese banco.",org_pending:"La institución todavía no está aprobada.",bad_game:"Juego desconocido.",
   too_late:"Ya no se admite: se cerró el plazo.",already:"Eso ya está hecho.",wrong_word:"Esa no es la palabra secreta.",bad_bid:"Esa puja no es válida.",
   repeated_own:"Ya pujaste esa cantidad.",no_bids_left:"No te quedan pujas.",host_presents:"Quien presenta no participa.",out:"Te quedaste sin vidas.",
   own_statements:"No puedes votar tus propias frases.",finished:"La partida ya terminó.",wait:"Espera un momento.",bid_too_low:"Tienes que subir la apuesta."};
@@ -115,23 +115,27 @@ function fichaJuego(tipo){
   if($("jg-dos"))$("jg-dos").onclick=function(){local(tipo,{bot:false,opciones:u.leeOpciones&&$("jg-form")?u.leeOpciones($("jg-form")):{}});};
   if($("jg-login"))$("jg-login").onclick=function(){AxAccount.abrirCuenta();};
   if(!$("jg-form"))return;
-  /* salas de una institución o empresa, con su marca en la pantalla */
+  /* salas de una empresa o comunidad, con su marca en la pantalla (las instituciones
+     educativas no organizan juegos: lo suyo son los exámenes y prácticas de Educativo) */
+  var ACAD={universidad:1,instituto:1,colegio:1};
   api("/api/orgs").then(function(r){
-    var mias=r.orgs.filter(function(o){return (o.role==="admin"||o.role==="docente")&&o.status==="activa";});
-    if(mias.length&&$("jg-org"))$("jg-org").innerHTML='<label>En nombre de<select id="jg-orgsel"><option value="">Solo yo</option>'+
-      mias.map(function(o){return '<option value="'+o.id+'">'+esc(o.name)+'</option>';}).join("")+'</select></label>'+
-      (d.usaBanco?'<label id="jg-bancol" hidden>Preguntas<select id="jg-banco"></select></label>':'');
-    if($("jg-orgsel")&&d.usaBanco)$("jg-orgsel").onchange=function(){
-      var id=this.value,l=$("jg-bancol"); if(!id){l.hidden=true;return;}
-      api("/api/orgs/"+id+"/banks").then(function(b){ $("jg-banco").innerHTML='<option value="">Cultura general de la plataforma</option>'+
-        b.banks.map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+' ('+x.questions+')</option>';}).join(""); l.hidden=false; });
-    };
+    var mias=r.orgs.filter(function(o){return (o.role==="admin"||o.role==="docente")&&o.status==="activa"&&!ACAD[o.kind];});
+    if(mias.length&&$("jg-org"))$("jg-org").insertAdjacentHTML("afterbegin",'<label>En nombre de<select id="jg-orgsel"><option value="">Solo yo</option>'+
+      mias.map(function(o){return '<option value="'+o.id+'">'+esc(o.name)+'</option>';}).join("")+'</select></label>');
+  }).catch(function(){});
+  /* preguntas propias: los bancos personales («Mis preguntas») y los de tus empresas */
+  if(d.usaBanco&&$("jg-org"))api("/api/mis-bancos").then(function(r){
+    var op=function(x,t){return '<option value="'+x.fuente+'">'+esc(t)+' ('+x.questions+')</option>';};
+    $("jg-org").insertAdjacentHTML("beforeend",'<label>Preguntas<select id="jg-banco"><option value="">Cultura general de la plataforma</option>'+
+      r.bancos.map(function(x){return op(x,"Mis preguntas: "+x.name);}).join("")+
+      r.empresas.map(function(x){return op(x,x.org_name+": "+x.name);}).join("")+'</select></label>'+
+      '<p class="fine">Tus propias preguntas se crean en <b>Retos → Mis preguntas</b>.</p>');
   }).catch(function(){});
   $("jg-form").onsubmit=function(e){
     e.preventDefault(); var m=$("jg-cmsg");
     if($("jg-legal")&&!$("jg-legal").checked){m.className="msg bad";m.textContent="Confirma que cuentas con las autorizaciones.";return;}
     var op=u.leeOpciones?u.leeOpciones(this):{};
-    if($("jg-banco")&&$("jg-banco").value)op.banco=+$("jg-banco").value;
+    if($("jg-banco")&&$("jg-banco").value)op.fuente=$("jg-banco").value;
     $("jg-crear").disabled=true;
     var fn=function(){return api("/api/salas",{juego:tipo,opciones:op,acceso:$("jg-acc").value,org_id:$("jg-orgsel")?$("jg-orgsel").value||null:null,
       titulo:$("jg-tit")?$("jg-tit").value:"",premio:$("jg-pre")?$("jg-pre").value:"",bases:$("jg-bases")?$("jg-bases").value:""});};

@@ -21,7 +21,8 @@
    Del servidor: {t:"estado", yo, sala, g, ahora} o {t:"error", error}.
    =========================================================== */
 import "./juegos.js";
-import { perfil, rolOrg, esAdminPlataforma, esInvitado } from "./aula.js";
+import { perfil, rolOrg, esAdminPlataforma, esInvitado, esAcademica } from "./aula.js";
+import { preguntasDeFuente } from "./mispreguntas.js";
 var J=globalThis.AxJuegos;
 
 var ALFABETO="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -76,20 +77,21 @@ async function crea(req,env,user,json){
     orgId=String(b.org_id);
     var r=await rolOrg(env,orgId,user.id);
     if(r!=="admin"&&r!=="docente"&&!esAdminPlataforma(env,user))return json({error:"forbidden"},null,403);
-    var o=await env.DB.prepare("SELECT status FROM orgs WHERE id=?").bind(orgId).first();
+    var o=await env.DB.prepare("SELECT status,kind FROM orgs WHERE id=?").bind(orgId).first();
     if(!o||o.status!=="activa")return json({error:"org_pending"},null,403);
+    /* los juegos son de empresas, comunidades y amigos: nada en nombre de una institución educativa */
+    if(esAcademica(o.kind))return json({error:"edu_no_games"},null,403);
   }
   var now=Date.now();
   var n=await env.DB.prepare("SELECT COUNT(*) AS n FROM salas WHERE host_id=? AND estado<>'terminada' AND created_at>?").bind(user.id,now-86400000).first();
   if(n.n>=MAX_ABIERTAS)return json({error:"too_many"},null,400);
-  /* preguntas de un banco de la institución (trivia en vivo) */
-  var extra={};
-  if(d.usaBanco&&b.opciones&&b.opciones.banco){
-    var bk=await env.DB.prepare("SELECT id,org_id,owner_id FROM banks WHERE id=?").bind(parseInt(b.opciones.banco,10)||0).first();
-    if(!bk||(bk.owner_id!==user.id&&(await rolOrg(env,bk.org_id,user.id))!=="admin"))return json({error:"forbidden_bank"},null,403);
-    var qs=(await env.DB.prepare("SELECT q,opts,answer,level,topic FROM bank_questions WHERE bank_id=?").bind(bk.id).all()).results||[];
-    if(!qs.length)return json({error:"empty_pool"},null,400);
-    extra.preguntas=qs.map(function(x){return {q:x.q,o:JSON.parse(x.opts),c:x.answer,nivel:x.level,tema:x.topic||""};});
+  /* preguntas propias (trivia en vivo): un banco personal ("m<id>") o de una empresa o comunidad ("b<id>");
+     los bancos de las instituciones educativas no se usan en juegos */
+  var extra={}, fuente=b.opciones&&(b.opciones.fuente||(b.opciones.banco?"b"+(parseInt(b.opciones.banco,10)||0):""));
+  if(d.usaBanco&&fuente){
+    var pf=await preguntasDeFuente(env,user,fuente);
+    if(pf.error)return json({error:pf.error},null,pf.error==="forbidden_bank"?403:400);
+    extra.preguntas=pf.preguntas;
   }else if(d.usaBanco){
     /* banco general: se evitan las preguntas que esta institución (o esta persona) usó en los últimos 60 días */
     extra.quien=orgId?"org:"+orgId:"host:"+user.id;

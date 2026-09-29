@@ -153,10 +153,17 @@ en [SETUP.md](SETUP.md). Mientras falten, todo funciona como antes, pero:
 
 ## Concursos y cuestionarios de curso
 
-El mismo motor sirve a los **cuestionarios** de la sección Educativo ([AULA.md](AULA.md)): se
-crean desde un curso, solo los ven sus miembros, pueden sacar las preguntas de un
-banco del docente y, al cierre, cada estudiante ve su resultado y su corrección,
-sin ranking público ni ganador. Quien gestiona un concurso o cuestionario tiene
+El mismo motor sirve a los **cuestionarios** (exámenes y prácticas) de la sección
+Educativo ([AULA.md](AULA.md)), pero **no se mezclan** con los concursos:
+
+- Se crean desde un curso y solo los ven sus miembros. Nunca aparecen en la
+  lista de Concursos ni en «Tus concursos»; cada estudiante los encuentra en su
+  curso. Al abrirlos, la cabecera y la ayuda son las de Educativo.
+- Pueden sacar las preguntas de un banco del docente y, al cierre, cada
+  estudiante ve su resultado y su corrección, sin ranking público ni ganador.
+- Los colegios, institutos y universidades no abren concursos ni convocatorias,
+  y sus bancos no se usan en concursos: son solo para sus cursos. Los concursos
+  con banco propio son de empresas y comunidades. Quien gestiona un concurso o cuestionario tiene
 además **Registros y estadísticas**, con descarga en Excel.
 
 Para inscribirse en cualquier concurso hace falta el registro con consentimiento.

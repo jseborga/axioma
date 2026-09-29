@@ -87,7 +87,10 @@ Paralelo A», 2/2026).
 ## Bancos de preguntas
 
 Cada docente tiene sus bancos dentro de la institución (hasta 2000 preguntas por
-banco). Cada pregunta lleva enunciado, una respuesta correcta, de 1 a 5
+banco). En una institución educativa, los bancos son **solo para sus exámenes y
+prácticas**: no se usan en concursos, retos ni juegos, y la institución no abre
+convocatorias ni salas de juego en su nombre. Para jugar con preguntas propias,
+cada persona tiene *Retos → Mis preguntas* (ver [RETOS.md](RETOS.md)). Cada pregunta lleva enunciado, una respuesta correcta, de 1 a 5
 incorrectas, nivel (fácil, medio, difícil) y tema.
 
 ### Importar

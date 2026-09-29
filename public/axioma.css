@@ -1494,3 +1494,11 @@ body[data-proyector] #nav-back{display:none}
 .ia-antes{background:var(--bad-tint)}.ia-despues{background:var(--ok-tint)}
 .ia-antes small,.ia-despues small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
 .ia-antes span,.ia-despues span{font-size:13px;color:var(--ink-2)}
+
+/* ---------- Mis preguntas (retos) ---------- */
+.mb-prev{list-style:none;padding:0;margin:10px 0;display:grid;gap:6px;max-height:320px;overflow:auto}
+.mb-prev li{padding:8px 10px;border-radius:10px;background:var(--card);font-size:.92rem;line-height:1.35;overflow-wrap:anywhere}
+.mb-prev li small{display:block;color:var(--ink-2);margin-top:2px}
+.mb-prev li.bien{box-shadow:inset 3px 0 0 var(--ok)}
+.mb-prev li.mal{background:var(--bad-tint);box-shadow:inset 3px 0 0 var(--bad)}
+.mb-emp{margin:6px 0 0;padding-left:18px;font-size:.92rem;line-height:1.5}

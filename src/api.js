@@ -22,6 +22,7 @@
 import { handleRetos } from "./retos.js";
 import { handleConcursos } from "./concursos.js";
 import { handleIA } from "./ia.js";
+import { handleMisPreguntas } from "./mispreguntas.js";
 import { handleAula } from "./aula.js";
 import { ajustesPublicos } from "./ajustes.js";
 import { handleInvitados, esInvitado } from "./invitados.js";
@@ -60,6 +61,8 @@ export async function handleApi(req,env,url){
       return await handleInvitados(req,env,url,path,{json:json,sesion:function(sub){return abreSesion(env,sub);}});
     if(/^\/brands(\/|$)/.test(path)||/^\/orgs\/[A-Z0-9]{6}\/(brand|contests|metrics|participants)$/.test(path))
       return await handleMarcas(req,env,url,path,{json:json,user:await currentUser(req,env)});
+    if(/^\/mis-bancos(\/|$)/.test(path))
+      return await handleMisPreguntas(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/ia\//.test(path)||/^\/admin\/planes(\/|$)/.test(path))
       return await handleIA(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/admin\/(summary|users)(\/|$)/.test(path)||(path==="/admin/orgs"&&req.method==="POST")||/^\/admin\/orgs\/[A-Z0-9]{6}\/admins$/.test(path))

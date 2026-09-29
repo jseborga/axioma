@@ -39,6 +39,10 @@ descarga su QR como cartel.
 
 ## Convocatorias
 
+Las convocatorias son de **empresas y comunidades**. Los colegios, institutos y
+universidades no las tienen: trabajan con exámenes y prácticas en sus cursos
+(ver [AULA.md](AULA.md)).
+
 **Convocatorias → Nueva convocatoria**:
 
 | Campo | Qué hace |

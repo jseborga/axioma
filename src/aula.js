@@ -43,6 +43,9 @@ export var TERMS_VERSION="2026-09-28.2";   /* versión 2: empresas, invitados y 
 var KINDS={universidad:["Facultad","Carrera","Materia"],instituto:["Carrera","Materia"],colegio:["Nivel","Curso","Materia"],
            empresa:["Área","Equipo"],comunidad:["Grupo"]};
 var ROLES=["admin","docente","auxiliar","estudiante","auspiciador"];
+/* instituciones educativas: cursos, exámenes y prácticas; nada de concursos ni juegos con su marca o sus bancos */
+var ACADEMICAS={universidad:1,instituto:1,colegio:1};
+export function esAcademica(kind){return !!ACADEMICAS[kind];}
 var ALFABETO="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 var MAX_BANCO=2000, MAX_IMPORT=500, MAX_NIVELES=6;
 

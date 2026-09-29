@@ -53,7 +53,7 @@ function ERR(e){if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuo
   bad_name:"El nombre es demasiado corto.",bad_domain:"El dominio no es válido (ejemplo: umsa.bo).",levels_in_use:"No se puede quitar un nivel que tiene unidades.",
   unit_in_use:"No se puede borrar: tiene unidades, cursos o bancos asociados.",too_deep:"Ese nivel no existe en la estructura.",
   last_admin:"La institución no puede quedarse sin administración.",too_many:"Has llegado al límite.",empty_pool:"No hay preguntas con ese tema y nivel en el banco.",
-  forbidden_bank:"No puedes usar ese banco en este curso.",bank_full:"El banco está lleno (máximo "+(e&&e.max||"")+" preguntas).",
+  forbidden_bank:"No puedes usar ese banco en este curso.",edu_no_contests:"Las instituciones educativas no organizan concursos: usa exámenes y prácticas en sus cursos.",edu_bank:"Los bancos de las instituciones educativas son solo para sus exámenes y prácticas.",bank_full:"El banco está lleno (máximo "+(e&&e.max||"")+" preguntas).",
   bad_end:"Tiene que durar entre 5 minutos y 31 días.",bad_start:"La fecha de inicio no es válida.",invalid:(e&&e.errores||[]).join(" "),
   bad_slug:"La dirección de la página solo admite letras, números y guiones (de 3 a 40).",slug_taken:"Esa dirección ya la usa otra marca.",
   bad_color:"El color no es válido.",bad_logo:"El logo no es válido o es demasiado grande.",bad_website:"El sitio web tiene que empezar por https://",
@@ -192,7 +192,9 @@ function org(id,tab,nota){
     $("hdr").textContent=o.name;
     var acad=academica(o.kind), lista=[];
     if(acad)lista.push(["cursos","Cursos"]);
-    if(o.can.teach)lista.push(["convocatorias","Convocatorias"],["bancos","Bancos"]);
+    /* las convocatorias con premio son de empresas y comunidades; lo educativo se queda en cursos, exámenes y prácticas */
+    if(o.can.teach&&!acad)lista.push(["convocatorias","Convocatorias"]);
+    if(o.can.teach)lista.push(["bancos","Bancos"]);
     if(o.can.teach&&acad)lista.push(["registros","Registros"]);
     if(o.can.admin||o.platform_admin)lista.push(["metricas","Métricas"]);
     if(o.can.admin&&acad)lista.push(["estructura","Estructura"]);

@@ -18,6 +18,7 @@
    =========================================================== */
 
 import "../public/rapidos-motor.js";
+import { preguntasDeFuente } from "./mispreguntas.js";
 var R=globalThis.AxRapidos;
 
 var PEN_ERROR=30, PEN_PISTA=60, FALLOS_GRATIS=2, MAX_PISTAS=3, ULTRA=5;
@@ -111,6 +112,15 @@ async function creaReto(req,env,user,ctx){
   if(mode==="pareja"&&(game!=="sudoku"||level===ULTRA))return ctx.json({error:"bad_level"},null,400);
   if(!(rounds>=1&&rounds<=MAX_RONDAS))return ctx.json({error:"bad_rounds"},null,400);
   if(!(start>=hoy&&start<=hoy+60))return ctx.json({error:"bad_start"},null,400);
+  /* trivia con preguntas propias (banco personal o de una empresa): se congelan en el reto */
+  var propio=null;
+  if(game==="trivia"&&b.fuente){
+    var pf=await preguntasDeFuente(env,user,b.fuente);
+    if(pf.error)return ctx.json({error:pf.error},null,pf.error==="forbidden_bank"?403:400);
+    if(pf.preguntas.length<10)return ctx.json({error:"few_own",have:pf.preguntas.length,min:10},null,400);
+    propio={fuente:String(b.fuente),nombre:limpia(b.fuente_nombre,60),
+      pool:pf.preguntas.slice(0,500).map(function(x){var o=x.o.slice(),c=o.splice(x.c,1)[0];return [x.q,[c].concat(o)];})};
+  }
   var boards=Array.isArray(b.boards)?b.boards:[], i;
   if(game==="sudoku"){
     if(boards.length!==rounds)return ctx.json({error:"bad_boards"},null,400);
@@ -131,6 +141,8 @@ async function creaReto(req,env,user,ctx){
   if(game==="sudoku")for(i=0;i<rounds;i++)ops.push(env.DB.prepare(
     "INSERT INTO event_rounds(event_code,round,puzzle,solution) VALUES(?,?,?,?)"
   ).bind(code,i+1,boards[i].puzzle,boards[i].solution));
+  if(propio)ops.push(env.DB.prepare("INSERT INTO reto_preguntas(event_code,fuente,nombre,pool) VALUES(?,?,?,?)")
+    .bind(code,propio.fuente,propio.nombre||null,JSON.stringify(propio.pool)));
   ops.push(env.DB.prepare(
     "INSERT INTO event_members(event_code,user_id,team,joined_at) VALUES(?,?,?,?)"
   ).bind(code,user.id,null,now));
@@ -169,6 +181,12 @@ async function misRetos(env,user,ctx){
 async function cargaReto(env,code){
   return env.DB.prepare("SELECT * FROM events WHERE code=?").bind(code).first();
 }
+/* preguntas propias de un reto de trivia (null: las generales) */
+async function propias(env,ev){
+  if(ev.game!=="trivia")return null;
+  try{var p=await env.DB.prepare("SELECT nombre,pool FROM reto_preguntas WHERE event_code=?").bind(ev.code).first();
+    return p?{nombre:p.nombre||"",pool:JSON.parse(p.pool)}:null;}catch(e){return null;}
+}
 async function miembro(env,code,userId){
   return env.DB.prepare("SELECT team FROM event_members WHERE event_code=? AND user_id=?").bind(code,userId).first();
 }
@@ -190,7 +208,8 @@ async function fichaReto(env,user,code,ctx){
   var r=rondaPara(ev,hoy,mias);
   var clas=clasificacion(ev,mem.results||[],todos,user.id);
   var mio=todos.filter(function(x){return x.user_id===user.id&&x.round===r;})[0]||null;
-  var o=publico(ev,user);
+  var o=publico(ev,user), pr=await propias(env,ev);
+  if(pr)o.preguntas={propias:true,nombre:pr.nombre,total:pr.pool.length};
   o.owner_name=dueño?dueño.name:""; o.day=hoy; o.state=estadoReto(ev,hoy);
   o.today_round=r; o.my_played=mias.length; o.my_today=mio;
   o.member=!!yo; o.team=yo?yo.team:null; o.members=mem.results||[];
@@ -287,7 +306,8 @@ async function tableroRonda(env,user,code,r,ctx){
     if(!t)return ctx.json({error:"not_found"},null,404);
     out.puzzle=t.puzzle; out.solution=t.solution;
   }else{
-    out.datos=hecho?null:R.genera(ev.game,semillaRonda(ev,r));
+    var pr=hecho?null:await propias(env,ev);
+    out.datos=hecho?null:R.genera(ev.game,semillaRonda(ev,r),null,pr&&pr.pool);
   }
   if(!hecho)await env.DB.prepare(
     "INSERT INTO event_starts(event_code,round,user_id,started_at) VALUES(?,?,?,?) ON CONFLICT DO NOTHING"
@@ -320,7 +340,8 @@ async function resultadoReto(req,env,user,code,ctx){
     /* el tiempo lo pone el servidor: desde que se abrió el tablero, más penalizaciones */
     seconds=Math.max(1,Math.round(realMs/1000))+penalizacion(errors,hints);
   }else{
-    var datos=R.genera(ev.game,semillaRonda(ev,r));
+    var pr2=await propias(env,ev);
+    var datos=R.genera(ev.game,semillaRonda(ev,r),null,pr2&&pr2.pool);
     var res=R.evalua(ev.game,datos,b.envio);
     if(!res)return ctx.json({error:"bad_result"},null,400);
     /* lo que declara el jugador no puede ser más rápido que el reloj del servidor */

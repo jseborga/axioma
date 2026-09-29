@@ -537,6 +537,23 @@ CREATE INDEX IF NOT EXISTS course_invites_email ON course_invites(email);
 Mientras falten, los cursos funcionan como antes, pero no aparecen la pestaña
 Libreta, los grupos ni el alta masiva.
 
+### Añadir las tablas de «Mis preguntas»
+
+Para que cada persona pueda subir sus propias preguntas y jugar retos de trivia
+o una trivia en vivo con ellas (ver [RETOS.md](RETOS.md)), pega esto en la
+consola de D1. Se puede ejecutar varias veces:
+
+```sql
+CREATE TABLE IF NOT EXISTS mis_bancos (id INTEGER PRIMARY KEY AUTOINCREMENT, owner_id TEXT NOT NULL REFERENCES users(id), name TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS mis_bancos_owner ON mis_bancos(owner_id);
+CREATE TABLE IF NOT EXISTS mis_preguntas (id INTEGER PRIMARY KEY AUTOINCREMENT, banco_id INTEGER NOT NULL, q TEXT NOT NULL, opts TEXT NOT NULL, answer INTEGER NOT NULL DEFAULT 0, level INTEGER NOT NULL DEFAULT 1, topic TEXT, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS mis_preguntas_banco ON mis_preguntas(banco_id);
+CREATE TABLE IF NOT EXISTS reto_preguntas (event_code TEXT PRIMARY KEY, fuente TEXT NOT NULL, nombre TEXT, pool TEXT NOT NULL);
+```
+
+Mientras falten, los retos y la trivia en vivo funcionan como antes, con
+cultura general, y *Mis preguntas* avisa de que faltan las tablas.
+
 ### Activar las ayudas con IA (plan Pro)
 
 Las ayudas con IA para bancos y prácticas (ver [AULA.md](AULA.md)) necesitan

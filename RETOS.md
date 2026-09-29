@@ -37,6 +37,7 @@ Menú de arriba a la derecha → **Retos** → **Crear un reto**.
 | Nombre | Como se verá en la lista y en la ficha. |
 | Juego | Sudoku o uno de los cinco rápidos. |
 | Nivel | Solo para el sudoku: Fácil, Medio, Difícil, Experto o Ultra (sin ayudas). |
+| Preguntas | Solo para la trivia: cultura general de la plataforma, **tus propias preguntas** (un banco de *Mis preguntas*) o un banco de una empresa o comunidad que administras. |
 | Modalidad | **Individual**: cada uno por su cuenta. **Por equipos**: cada jugador juega su ronda y el equipo suma. **Por parejas** (solo sudoku): cada ronda se juega a cuatro manos. |
 | Empieza | Hoy, mañana, pasado o dentro de una semana. |
 | Días / Rondas | Sudoku: un tablero por día, hasta 31. Rápidos: hasta diez rondas **seguidas**, una tras otra, que se pueden jugar durante un día, tres o una semana. |
@@ -50,6 +51,28 @@ Con el sudoku, el navegador del organizador genera los tableros de todas las
 rondas (con solución única, como siempre) y los envía al servidor, que los
 guarda. Con los rápidos, el servidor guarda una semilla secreta y genera cada
 ronda cuando el jugador pulsa Empezar, así nadie puede verla antes.
+
+## Mis preguntas: trivia con tus propias preguntas
+
+En **Retos → Mis preguntas** cada persona crea sus bancos (hasta 20, de hasta 500
+preguntas cada uno) y los llena como un banco de Educativo: pegando filas
+copiadas de Excel (pregunta, correcta, incorrectas, nivel, tema), texto con
+opciones A) B) C) y la línea `ANSWER:`, o subiendo un Excel o CSV. Antes de
+guardar se ve cada pregunta revisada; las repetidas y las que no tienen al menos
+una incorrecta no se guardan.
+
+- Cada ronda de trivia usa 10 preguntas, así que el banco necesita al menos 10.
+- Al crear el reto, las preguntas se **congelan** en él: si luego cambias o
+  borras el banco, el reto sigue igual. La ficha del reto indica que usa
+  preguntas propias.
+- El servidor genera cada ronda a partir de esas preguntas con la semilla del
+  reto y puntúa igual que con las generales.
+- Tus bancos solo los ves tú. Sirven también para una **trivia en vivo** en Más
+  juegos. Los de una empresa o comunidad los puede usar quien la administra o
+  quien creó el banco.
+- Los bancos de **colegios, institutos y universidades** no se usan en retos ni
+  en juegos: son para los exámenes y prácticas de sus cursos (ver
+  [AULA.md](AULA.md)).
 
 Se obtiene un **código de seis letras** y un enlace del tipo
 `https://tu-dominio/?reto=CÓDIGO`. Con «Copiar enlace» o «Invitar» se reparte.

@@ -339,7 +339,7 @@ GUIAS.empresas=[
    ["Mide el resultado","Métricas por día, participantes y quién acepta que la marca lo contacte, con descarga en Excel."]]);}},
 {t:"Cómo participa la gente",d:"Quien escanea el QR entra directo a la convocatoria. Puede hacerlo con Google o como invitado: nombre, teléfono o correo, fecha de nacimiento y un código de verificación. Cada persona participa una sola vez, y el mismo teléfono o correo es siempre la misma persona.",
  a:function(){return ico("📱")+'<p class="tut-note">Mientras la plataforma esté en <b>modo de pruebas</b>, el código de verificación se muestra en pantalla en lugar de enviarse por SMS o correo.</p>';}},
-{t:"Equipo y juegos en vivo",d:"La administración de la empresa gestiona la marca, los miembros y las métricas; los organizadores crean convocatorias. Para un evento presencial, en Más juegos puedes abrir en nombre de la empresa una trivia en vivo con proyector, el botón del hype, un sorteo o una subasta inversa.",
+{t:"Equipo y juegos en vivo",d:"La administración de la empresa gestiona la marca, los miembros y las métricas; los organizadores crean convocatorias. Para un evento presencial, en Más juegos puedes abrir en nombre de la empresa una trivia en vivo con proyector, el botón del hype, un sorteo o una subasta inversa. Los bancos de la empresa sirven para sus convocatorias, sus trivias en vivo y los retos de quien la administra.",
  a:function(){return tarjetas([["Administración","Marca, miembros, convocatorias y métricas."],["Organizador","Crea y gestiona convocatorias."]],
    "En convocatorias abiertas con premio, los menores de 18 solo participan si la institución confirma el consentimiento de su tutor.");}}
 ];
@@ -364,6 +364,11 @@ GUIAS.reto=[
  a:function(){return tarjetas([["Sudoku","Un tablero por día durante los días que elijas, el mismo para todos. Gana quien completa más rondas y, a igualdad, quien suma menos tiempo."],
    ["Juego rápido","De 1 a 10 rondas seguidas de Trivia, Memoria, Cálculo, Reflejos o Del 1 al 25, durante un día, tres o una semana."]],
    "En el sudoku de un reto, el tiempo cuenta desde que abres el tablero.");}},
+{t:"Trivia con tus propias preguntas",d:"",
+ a:function(){return pasos([["Crea tu banco","Retos → Mis preguntas: ponle nombre y pega filas de Excel, texto con A) B) C) o sube un Excel. Antes de guardar ves cada pregunta revisada."],
+   ["Llega a 10","Una partida de trivia usa 10 preguntas: el banco necesita al menos esas."],
+   ["Elígelo en el reto","Al crear un reto de Trivia, en «Preguntas» eliges tu banco (o el de tu empresa). Se congela en el reto: si luego lo cambias, el reto no cambia."]],
+   "Tu banco solo lo ves tú. También sirve para una trivia en vivo en Más juegos. Los bancos de colegios y universidades no se usan en juegos: son para sus exámenes y prácticas.");}},
 {t:"Modalidades",d:"",
  a:function(){return tarjetas([["Individual","Cada uno por su cuenta."],["Por equipos","El equipo completa una ronda cuando la juegan todos; cuenta la media de sus marcas."],
    ["Por parejas","Cada ronda de sudoku se juega a cuatro manos. Solo cuenta si la resolvéis los dos."]]);}},

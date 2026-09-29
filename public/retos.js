@@ -39,7 +39,9 @@ function ERR(e){return {not_configured:"Faltan las tablas de retos en la base de
   already_played:"Ya jugaste esta ronda.",wrong_solution:"La rejilla no coincide con el tablero.",
   bad_time:"El tiempo no cuadra con el reloj del servidor.",use_coop:"Este reto se juega en pareja.",
   bad_level:"Nivel no válido.",bad_boards:"Los tableros no son válidos.",bad_result:"El resultado no es válido.",
-  not_started:"Primero hay que abrir la ronda."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
+  not_started:"Primero hay que abrir la ronda.",few_own:"Ese banco tiene "+(e&&e.have)+" preguntas: hacen falta al menos 10 para una partida de trivia.",
+  forbidden_bank:"No puedes usar ese banco.",empty_pool:"Ese banco no tiene preguntas.",bad_source:"Elige de dónde salen las preguntas.",google_required:"Para esto hace falta entrar con Google.",
+  bank_full:"El banco está lleno (máximo "+(e&&e.max||"")+" preguntas).",empty:"No hay preguntas válidas para importar.",too_many:"Has llegado al límite.",bad_name:"El nombre es demasiado corto."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
 function avatar(u,cls){return u.picture?'<img class="'+(cls||"av")+'" src="'+esc(u.picture)+'" alt="" referrerpolicy="no-referrer">':'<span class="'+(cls||"av")+' noimg"></span>';}
 function copia(texto,boton){
   var ok=function(){var t=boton.textContent;boton.textContent="Copiado";setTimeout(function(){boton.textContent=t;},1400);};
@@ -91,10 +93,10 @@ function verLista(){
   if(!puerta())return;
   pinta('<h3>Retos</h3>'+
     '<p class="fine">Concursos entre amigos: un código, el mismo juego para todos (un sudoku por día o rondas de un juego rápido) y una clasificación. Quien organiza pone el premio y la penitencia. <a href="#" data-guia="reto">¿Cómo funciona?</a></p>'+
-    '<div class="actions"><button class="primary" id="rt-crear">Crear un reto</button></div>'+
+    '<div class="actions"><button class="primary" id="rt-crear">Crear un reto</button><button class="ghost" id="rt-mis">Mis preguntas</button></div>'+
     '<form class="rt-join" id="rt-join"><input id="rt-code" placeholder="Código del reto" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="ghost">Unirme</button></form>'+
     '<h4>Tus retos</h4><div id="rt-lista"><p class="fine">Cargando…</p></div>');
-  $("rt-crear").onclick=verCrear;
+  $("rt-crear").onclick=verCrear; $("rt-mis").onclick=verMisBancos;
   $("rt-join").onsubmit=function(e){e.preventDefault();var c=$("rt-code").value.trim().toUpperCase();if(c.length===6)verFicha(c);};
   api("/api/events").then(function(r){
     var h="";
@@ -123,6 +125,8 @@ function verCrear(){
     '<label>Juego<select id="f-game">'+jgs+'</select></label>'+
     '<p class="fine" id="f-jdesc">Un sudoku por día, el mismo para todos. Gana quien complete más rondas y, a igualdad, quien sume menos tiempo.</p>'+
     '<label id="f-level-l">Nivel del sudoku<select id="f-level">'+niv+'</select></label>'+
+    '<div id="f-fuente-l" hidden><label>Preguntas<select id="f-fuente"><option value="">Cultura general de la plataforma</option></select></label>'+
+      '<p class="fine">También puedes jugar con <b>tus propias preguntas</b> (hacen falta al menos 10): <a href="#" id="f-mis">crear o importar mis preguntas</a>.</p></div>'+
     '<label>Modalidad<select id="f-mode"><option value="solo">Individual</option><option value="equipo">Por equipos</option><option value="pareja" id="f-mode-pareja">Por parejas (a cuatro manos)</option></select></label>'+
     '<label id="f-size-l" hidden>Jugadores por equipo<input id="f-size" type="number" min="2" max="10" value="3"></label>'+
     '<div class="rt-2"><label>Empieza<select id="f-start"><option value="0">Hoy</option><option value="1">Mañana</option><option value="2">Pasado mañana</option><option value="7">Dentro de una semana</option></select></label>'+
@@ -136,7 +140,7 @@ function verCrear(){
   $("rt-back").onclick=verLista;
   function ajusta(){
     var g=$("f-game").value, m=$("f-mode").value, sud=(g==="sudoku");
-    $("f-level-l").hidden=!sud; $("f-days-l").hidden=sud;
+    $("f-level-l").hidden=!sud; $("f-days-l").hidden=sud; $("f-fuente-l").hidden=(g!=="trivia");
     $("f-rounds-l").firstChild.textContent=sud?"Días (un tablero por día)":"Rondas (partidas seguidas)";
     $("f-rounds").max=sud?31:10; if(!sud&&+$("f-rounds").value>10)$("f-rounds").value=10;
     $("f-mode-pareja").disabled=!sud; if(!sud&&m==="pareja"){$("f-mode").value="solo";m="solo";}
@@ -149,6 +153,14 @@ function verCrear(){
       : "Cada jugador compite por su cuenta.";
   }
   $("f-game").onchange=ajusta; $("f-mode").onchange=ajusta; ajusta();
+  $("f-mis").onclick=function(e){e.preventDefault();verMisBancos();};
+  /* bancos propios: los personales y los de las empresas o comunidades que administras */
+  api("/api/mis-bancos").then(function(r){
+    var op=function(x,t){var falta=x.questions<r.min;
+      return '<option value="'+x.fuente+'" data-nom="'+esc(t)+'"'+(falta?' disabled':'')+'>'+esc(t)+' · '+x.questions+' preguntas'+(falta?' (faltan '+(r.min-x.questions)+')':'')+'</option>';};
+    $("f-fuente").insertAdjacentHTML("beforeend",r.bancos.map(function(x){return op(x,x.name);}).join("")+
+      r.empresas.map(function(x){return op(x,x.org_name+": "+x.name);}).join(""));
+  }).catch(function(){});
   $("rt-form").onsubmit=function(e){
     e.preventDefault();
     var g=$("f-game").value, sud=(g==="sudoku");
@@ -158,11 +170,90 @@ function verCrear(){
       var boards=[],i; if(sud)for(i=0;i<rounds;i++)boards.push(tablero(level));
       api("/api/events",{name:$("f-name").value,game:g,level:level,mode:mode,team_size:+$("f-size").value,
                          pace:sud?"diario":"seguido",days:+$("f-days").value,
-                         start_day:hoy+(+$("f-start").value),rounds:rounds,prize:$("f-prize").value,forfeit:$("f-forfeit").value,boards:boards})
+                         start_day:hoy+(+$("f-start").value),rounds:rounds,prize:$("f-prize").value,forfeit:$("f-forfeit").value,boards:boards,
+                         fuente:g==="trivia"?$("f-fuente").value||null:null,
+                         fuente_nombre:g==="trivia"&&$("f-fuente").value?$("f-fuente").selectedOptions[0].getAttribute("data-nom"):null})
         .then(function(r){verFicha(r.code,true);})
         .catch(function(e){go.disabled=false;msg.className="msg bad";msg.textContent=ERR(e);});
     },30);
   };
+}
+
+/* ===================== MIS PREGUNTAS =====================
+   Bancos personales para jugar retos de trivia (y trivia en vivo). Los
+   bancos de las instituciones educativas se quedan en Educativo. */
+function verMisBancos(nota){
+  vista=function(){verMisBancos();}; fichaCode=null; cab(); paraSondeo(); ocultaJuego();
+  if(!puerta())return;
+  pinta('<button type="button" class="rt-back" id="rt-back">‹ Tus retos</button><h3>Mis preguntas</h3>'+
+    '<p class="fine">Sube tus propias preguntas para jugar retos de trivia con tus amigos o una trivia en vivo. Solo las ves tú; en un reto se usan tal como estaban al crearlo. Hacen falta al menos 10 por banco.</p>'+
+    (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
+    '<form class="rt-join" id="mb-nuevo"><input id="mb-name" maxlength="60" placeholder="Nombre del banco (p. ej. «Fútbol»)" autocomplete="off"><button type="submit" class="ghost">Crear</button></form>'+
+    '<p class="msg" id="mb-msg"></p><div id="mb-lista"><p class="fine">Cargando…</p></div>');
+  $("rt-back").onclick=verLista;
+  $("mb-nuevo").onsubmit=function(e){e.preventDefault();
+    api("/api/mis-bancos",{name:$("mb-name").value}).then(function(r){verMiBanco(r.id);})
+      .catch(function(er){$("mb-msg").className="msg bad";$("mb-msg").textContent=ERR(er);});};
+  api("/api/mis-bancos").then(function(r){
+    var h=r.bancos.length?r.bancos.map(function(b){
+      return '<button type="button" class="rt-card" data-mb="'+b.id+'"><span class="rt-card-top"><b>'+esc(b.name)+'</b><span class="chip">'+b.questions+' preguntas</span></span>'+
+        '<small>'+(b.questions>=r.min?'Listo para jugar':'Faltan '+(r.min-b.questions)+' para poder jugar')+'</small></button>';}).join(""):
+      '<p class="fine">Todavía no tienes bancos. Crea uno y añade preguntas desde un Excel o pegando texto.</p>';
+    if(r.empresas.length)h+='<h4>De tus empresas</h4><p class="fine">También puedes usar en tus retos estos bancos (se editan en Empresas y eventos):</p><ul class="mb-emp">'+
+      r.empresas.map(function(b){return '<li><b>'+esc(b.name)+'</b> · '+esc(b.org_name)+' · '+b.questions+' preguntas</li>';}).join("")+'</ul>';
+    $("mb-lista").innerHTML=h;
+    var bs=$("mb-lista").querySelectorAll("[data-mb]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){verMiBanco(+this.getAttribute("data-mb"));};
+  }).catch(function(e){$("mb-lista").innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+function verMiBanco(id,nota){
+  vista=function(){verMiBanco(id);}; fichaCode=null; cab(); paraSondeo(); ocultaJuego();
+  if(!puerta())return;
+  var BF=window.AxBanco, XL=window.AxExcel;
+  api("/api/mis-bancos/"+id).then(function(b){
+    var faltan=Math.max(0,b.min-b.questions.length);
+    pinta('<button type="button" class="rt-back" id="rt-back">‹ Mis preguntas</button>'+
+      '<div class="rt-head"><h3>'+esc(b.name)+'</h3><span class="chip '+(faltan?'pronto':'activo')+'">'+b.questions.length+' preguntas</span></div>'+
+      (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
+      (faltan?'<p class="rt-hoy">Añade '+faltan+' más para poder usarlo en un reto de trivia.</p>':'<p class="fine">Listo: elígelo en «Preguntas» al crear un reto de trivia.</p>')+
+      '<div class="au-caja"><h4>Añadir preguntas</h4><p class="fine">Pega filas copiadas de Excel (pregunta, correcta, incorrectas, nivel, tema) o texto con opciones A) B) C) y la línea ANSWER: con la letra correcta, o sube un Excel.</p>'+
+        '<div class="actions au-acciones"><label class="ghost au-archivo">Subir Excel o CSV<input type="file" id="mb-f" accept=".xlsx,.csv,.txt" hidden></label>'+
+        '<button type="button" class="ghost au-mini" id="mb-ej">Ver un ejemplo</button>'+(XL&&BF?'<button type="button" class="ghost au-mini" id="mb-plant">Plantilla Excel</button>':'')+'</div>'+
+        '<textarea id="mb-t" rows="7" placeholder="¿Quién ganó el Mundial de 2022?\nA) Argentina\nB) Francia\nC) Brasil\nANSWER: A"></textarea>'+
+        '<div class="actions"><button type="button" class="primary" id="mb-rev">Revisar</button></div><p class="msg" id="mb-msg"></p><div id="mb-prev"></div></div>'+
+      (b.questions.length?'<ol class="au-preguntas">'+b.questions.map(function(q){
+        return '<li><div class="au-pq">'+(q.topic?'<small>'+esc(q.topic)+'</small>':'')+'<b>'+esc(q.q)+'</b><ul>'+q.opts.map(function(o,i){
+          return '<li class="'+(i===q.answer?"ok":"")+'">'+(i===q.answer?'✓ ':'')+esc(o)+'</li>';}).join("")+'</ul></div>'+
+          '<div class="au-pq-acc"><button type="button" class="ghost au-mini" data-borra="'+q.id+'">Borrar</button></div></li>';}).join("")+'</ol>':'')+
+      '<div class="actions"><button type="button" class="ghost" id="mb-ren">Cambiar nombre</button><button type="button" class="ghost" id="mb-del">Borrar el banco</button></div>');
+    $("rt-back").onclick=function(){verMisBancos();};
+    $("mb-ej").onclick=function(){$("mb-t").value=BF.EJEMPLO_TEXTO;};
+    if($("mb-plant"))$("mb-plant").onclick=function(){XL.descarga(XL.escribir([{nombre:"Preguntas",filas:BF.PLANTILLA,anchos:[50,24,24,24,24,8,18]}]),"plantilla-preguntas.xlsx");};
+    $("mb-rev").onclick=function(){revisa(BF.desdeTexto($("mb-t").value));};
+    $("mb-f").onchange=function(){var f=this.files[0]; if(!f)return;
+      if(/\.xlsx$/i.test(f.name)&&XL)f.arrayBuffer().then(XL.leer).then(function(filas){revisa(BF.desdeFilas(filas));}).catch(function(er){aviso(er.message||"No se pudo leer el archivo.");});
+      else f.text().then(function(t){$("mb-t").value=t;revisa(BF.desdeTexto(t));});};
+    function aviso(t,bien){$("mb-msg").className="msg "+(bien?"ok":"bad");$("mb-msg").textContent=t;}
+    function revisa(items){
+      var ya={}; b.questions.forEach(function(q){ya[BF.clave(q.q)]=1;});
+      var v=BF.valida(items,ya), buenas=v.filter(function(x){return x.ok;});
+      if(!v.length){aviso("No se encontró ninguna pregunta. Revisa el formato.");$("mb-prev").innerHTML="";return;}
+      aviso(v.length+" leídas: "+buenas.length+" válidas"+(v.length>buenas.length?", "+(v.length-buenas.length)+" con errores (no se importan)":"")+".",buenas.length>0);
+      $("mb-prev").innerHTML='<ul class="mb-prev">'+v.map(function(x){return '<li class="'+(x.ok?"bien":"mal")+'">'+(x.ok?'✓ ':'✗ ')+'<b>'+esc(x.q||"—")+'</b>'+
+          (x.ok?' <small>✓ '+esc(x.opts[0])+' · '+esc(x.opts.slice(1).join(" · "))+'</small>':' <small>'+esc(x.errores.join(" "))+'</small>')+'</li>';}).join("")+'</ul>'+
+        (buenas.length?'<div class="actions"><button type="button" class="primary" id="mb-go">Guardar '+buenas.length+' pregunta'+(buenas.length===1?'':'s')+'</button></div>':'');
+      if($("mb-go"))$("mb-go").onclick=function(){this.disabled=true;
+        api("/api/mis-bancos/"+id+"/import",{items:buenas.map(function(x){return {fila:x.fila,q:x.q,opts:x.opts,answer:0,level:x.level,topic:x.topic};})})
+          .then(function(r){verMiBanco(id,r.added+(r.added===1?" pregunta guardada.":" preguntas guardadas."));})
+          .catch(function(er){aviso(ERR(er));});};
+    }
+    var bs=panel.querySelectorAll("[data-borra]"),i;
+    for(i=0;i<bs.length;i++)bs[i].onclick=function(){
+      api("/api/mis-bancos/"+id+"/questions/"+this.getAttribute("data-borra"),{remove:true}).then(function(){verMiBanco(id);}).catch(function(er){aviso(ERR(er));});};
+    $("mb-ren").onclick=function(){var n=prompt("Nuevo nombre del banco:",b.name); if(!n)return;
+      api("/api/mis-bancos/"+id,{name:n}).then(function(){verMiBanco(id);}).catch(function(er){aviso(ERR(er));});};
+    $("mb-del").onclick=function(){ if(!confirm("¿Borrar «"+b.name+"» y sus "+b.questions.length+" preguntas? Los retos ya creados no cambian."))return;
+      api("/api/mis-bancos/"+id,{remove:true}).then(function(){verMisBancos("Banco borrado.");}).catch(function(er){aviso(ERR(er));});};
+  }).catch(function(e){pinta('<button type="button" class="rt-back" id="rt-back">‹ Mis preguntas</button><p class="fine bad">'+esc(ERR(e))+'</p>');$("rt-back").onclick=function(){verMisBancos();};});
 }
 
 var refresco=null;
@@ -179,6 +270,7 @@ function verFicha(code,recien){
         (seguido ? (f.rounds+(f.rounds===1?" ronda":" rondas seguidas")+(f.days===1?", el "+fecha(f.start_day):", del "+fecha(f.start_day)+" al "+fecha(f.start_day+f.days-1)))
                  : (f.rounds===1?"un día, el "+fecha(f.start_day):f.rounds+" días desde el "+fecha(f.start_day)))+
         ' · organiza '+esc(f.owner?"tú":f.owner_name)+'</p>'+
+      (f.preguntas?'<p class="fine">Preguntas propias'+(f.preguntas.nombre?': <b>'+esc(f.preguntas.nombre)+'</b>':'')+' · '+f.preguntas.total+' en juego</p>':'')+
       (f.prize?'<p class="rt-prize">🏆 '+esc(f.prize)+'</p>':'')+
       (f.forfeit?'<p class="rt-forfeit">😈 Penitencia para el último: '+esc(f.forfeit)+'</p>':'')+
       final(f)+

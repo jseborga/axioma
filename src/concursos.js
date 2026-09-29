@@ -16,7 +16,7 @@
    =========================================================== */
 import { explicaciones } from "./ia.js";
 import { secuencia, secuenciaPool, semilla, CATEGORIAS, fichas, materializa, limpiaAreas, disponibles, hacenFalta, cuentaAreas } from "./preguntas.js";
-import { perfil, puedePremio, rolOrg, accesoCurso, puedeUsarBanco, esInvitado } from "./aula.js";
+import { perfil, puedePremio, rolOrg, accesoCurso, puedeUsarBanco, esInvitado, esAcademica } from "./aula.js";
 
 var GRACIA=2000;               /* ms de margen por la red al responder */
 var PREGUNTAS=[10,20,30,50,100], SEGUNDOS=[10,15,20,30,45,60];
@@ -145,7 +145,7 @@ async function lista(env,user,json){
   if(user)mios=await env.DB.prepare(
     "SELECT c.*,s.kind,s.audience,s.partial,s.course_code,s.org_id,"+cuenta+","+ganador+",e.started_at AS my_started,e.finished_at AS my_finished,e.correct AS my_correct,e.errors AS my_errors "+
     "FROM contests c LEFT JOIN contest_scope s ON s.code=c.code LEFT JOIN contest_entries e ON e.code=c.code AND e.user_id=? "+
-    "WHERE c.owner_id=? OR e.user_id IS NOT NULL ORDER BY c.ends_at DESC LIMIT 30"
+    "WHERE (c.owner_id=? OR e.user_id IS NOT NULL) AND (s.kind IS NULL OR s.kind<>'cuestionario') ORDER BY c.ends_at DESC LIMIT 30"
   ).bind(user.id,user.id).all();
   function sale(c){var o=publico(c,now);o.registered=c.inscritos;if(c.ganador!==undefined&&c.kind!=="cuestionario")o.winner=c.ganador;
     if(c.my_started!==undefined){o.owner=user&&c.owner_id===user.id;o.me=c.my_started===null&&c.my_finished===null&&c.my_correct===null?null:
@@ -178,6 +178,9 @@ async function crea(req,env,user,json){
   if(ini<now)ini=now;
   if(!(fin>=ini+MIN_MS&&fin<=ini+MAX_MS))return json({error:"bad_end"},null,400);
   if(kind==="cuestionario"&&aud!=="curso"&&aud!=="org")return json({error:"bad_audience"},null,400);
+  /* los exámenes y prácticas de los cursos no se mezclan con los concursos:
+     una institución educativa solo hace cuestionarios, y sus bancos no se usan en concursos */
+  var orgKind=null;
 
   /* a quién va dirigido y con qué permiso */
   var orgId=null, curso=null;
@@ -195,9 +198,11 @@ async function crea(req,env,user,json){
   /* invitados (sin Google, con código): solo en convocatorias abiertas de una institución o empresa */
   var invitados=b.guests===true&&!!orgId&&(aud==="publico"||aud==="enlace");
   if(orgId){
-    var o=await env.DB.prepare("SELECT status FROM orgs WHERE id=?").bind(orgId).first();
+    var o=await env.DB.prepare("SELECT status,kind FROM orgs WHERE id=?").bind(orgId).first();
     if(!o||o.status!=="activa")return json({error:"org_pending"},null,403);
+    orgKind=o.kind;
   }
+  if(kind==="concurso"&&orgId&&esAcademica(orgKind))return json({error:"edu_no_contests"},null,403);
 
   /* preguntas del banco, congeladas en el momento de crear */
   var pool=null;
@@ -205,8 +210,9 @@ async function crea(req,env,user,json){
     var bk=await puedeUsarBanco(env,bankId,user.id);
     if(!bk)return json({error:"forbidden_bank"},null,403);
     if(orgId&&bk.org_id!==orgId)return json({error:"forbidden_bank"},null,403);
-    var bo=await env.DB.prepare("SELECT status FROM orgs WHERE id=?").bind(bk.org_id).first();
+    var bo=await env.DB.prepare("SELECT status,kind FROM orgs WHERE id=?").bind(bk.org_id).first();
     if(!bo||bo.status!=="activa")return json({error:"org_pending"},null,403);
+    if(kind==="concurso"&&esAcademica(bo.kind))return json({error:"edu_bank"},null,403);
     var sql="SELECT id,level,topic,q,opts,answer FROM bank_questions WHERE bank_id=?", args=[bankId];
     var tema=limpia(b.topic,60); if(tema){sql+=" AND topic=?";args.push(tema);}
     if(level>=1&&level<=3){sql+=" AND level=?";args.push(level);}
