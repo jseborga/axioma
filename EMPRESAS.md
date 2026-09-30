@@ -65,7 +65,7 @@ que lo contacten, y lo descarga en Excel.
 
 Además de las convocatorias de trivia, una empresa o comunidad puede lanzar una
 **competencia de juego rápido**: **Convocatorias → Nueva competencia de juego
-rápido**.
+rápido** (que también ofrece los juegos sin fin, más abajo).
 
 - **Juego**: trivia, memoria, cálculo, reflejos o del 1 al 25 (los mismos de los
   retos). En trivia, memoria y cálculo gana quien hace más puntos; en reflejos y
@@ -102,6 +102,40 @@ la persona ve en la ficha de la competencia. En la empresa:
 Los menores de 18 años solo juegan por premios si la empresa confirma el
 consentimiento de su tutor, como en las convocatorias con premio. Tablas:
 `campanas`, `campana_intentos` y `campana_cupones` (ver SETUP.md).
+
+### Competencias sin fin (maratón): se juega hasta perder
+
+En **Nueva competencia**, el grupo «Sin fin» del juego tiene tres opciones en las
+que no hay un final fijo: gana quien llega más lejos.
+
+- **Memoria sin fin**: la secuencia de casillas empieza con 3 y crece de una en
+  una, **sin tope**, y cada vez se enciende más rápido. Un fallo cuesta una vida
+  y repite la secuencia. La marca es la secuencia más larga repetida. Vidas: 1
+  (muerte súbita), 2 o 3. Tres minutos sin jugar cierran la partida con lo
+  conseguido.
+- **Maratón de sudoku**: sudokus seguidos, cada vez más difíciles (Fácil →
+  Medio → Difícil → Experto). Cada cifra bien puesta suma 1 a 4 puntos según el
+  nivel y cada sudoku completo, 25 a 100 más. Una cifra equivocada cuesta una
+  vida.
+- **Maratón de Axioma**: tableros de Axioma seguidos, de 4×4 con una sola regla
+  hasta 6×6 con todas. Cada tablero resuelto vale 10, 20… hasta 60 puntos.
+  Comprobar mal (las celdas o el par de reglas) cuesta una vida.
+
+En sudoku y Axioma la empresa elige también el **reloj inicial** (sudoku: 10 a
+60 min; Axioma: 3 a 30 min) y el **tiempo extra por tablero resuelto** (o
+ninguno). La partida se acaba al **quedarse sin vidas** o **sin tiempo**, y
+también al **plantarse**; siempre cuenta lo conseguido. Los premios por puesto y
+por puntaje funcionan igual (en la memoria, el umbral es en casillas).
+
+**Juego limpio.** El navegador de la empresa prepara los tableros al publicar
+(28 sudokus o 54 tableros de Axioma, con su solución) y el servidor los guarda;
+a cada jugador le llegan de uno en uno, **sin la solución**, y en su propio
+orden. El servidor comprueba cada cifra, cada tablero y cada secuencia, lleva
+las vidas y el reloj, y rechaza lo imposiblemente rápido (dos cifras en menos de
+0,3 s, un tablero de Axioma en menos de 4 s o una secuencia antes de que termine
+de verse). La partida se guarda paso a paso: quien recarga la página o sale con
+«Salir» la sigue con **Seguir mi partida** (en los maratones el reloj no se
+detiene). Tablas: `campana_maraton` y `campana_progreso` (ver SETUP.md).
 
 ## Participar como invitado
 

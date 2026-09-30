@@ -87,3 +87,6 @@ CREATE TABLE IF NOT EXISTS campana_intentos (id INTEGER PRIMARY KEY AUTOINCREMEN
 CREATE INDEX IF NOT EXISTS campana_intentos_code ON campana_intentos(code, user_id);
 CREATE TABLE IF NOT EXISTS campana_cupones (codigo TEXT PRIMARY KEY, code TEXT NOT NULL, user_id TEXT NOT NULL, tipo TEXT NOT NULL, puesto INTEGER, premio TEXT NOT NULL, created_at INTEGER NOT NULL, canjeado_at INTEGER, canjeado_por TEXT);
 CREATE INDEX IF NOT EXISTS campana_cupones_code ON campana_cupones(code, user_id);
+CREATE TABLE IF NOT EXISTS campana_maraton (code TEXT PRIMARY KEY, reglas TEXT NOT NULL, tableros TEXT);
+CREATE TABLE IF NOT EXISTS campana_progreso (intento_id INTEGER PRIMARY KEY, code TEXT NOT NULL, estado TEXT NOT NULL, vence_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS campana_progreso_code ON campana_progreso(code, vence_at);

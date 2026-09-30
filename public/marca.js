@@ -64,8 +64,8 @@ function pinta(){
         c.registered+(c.registered===1?' inscrito':' inscritos')+(c.guests?' · sin cuenta, con tu teléfono o correo':'')+'</small></button>';
     }).join(""):'<p class="fine">No hay convocatorias abiertas ahora mismo. Vuelve pronto.</p>';
     if(b.campanas&&b.campanas.length){
-      var J=window.AxRapidos&&AxRapidos.JUEGOS||{};
-      h+='<h4>Competencias</h4>'+b.campanas.map(function(c){var j=J[c.juego]||{};
+      var J=window.AxRapidos&&AxRapidos.JUEGOS||{}, MJ=window.AxMaraton&&AxMaraton.JUEGOS||{};
+      h+='<h4>Competencias</h4>'+b.campanas.map(function(c){var j=J[c.juego]||MJ[c.juego]||{};
         return '<button type="button" class="rt-card mc-conv" data-camp="'+c.code+'"><span class="rt-card-top"><b>'+esc(j.icono||"🎮")+' '+esc(c.name)+'</b>'+
           '<span class="chip '+(c.state==="abierto"?"activo":"pronto")+'">'+(c.state==="abierto"?"Abierta":"Pronto")+'</span></span>'+
           (c.premio||c.umbral_premio?'<span class="mc-premio">🏆 '+esc(c.premio||c.umbral_premio)+'</span>':'')+

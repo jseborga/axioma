@@ -217,7 +217,8 @@ var nivel=1, P=null, val=null, notas=null, sel=-1, modoNotas=false,
     errores=0, pistas=0, hechas=[], listo=false, diario=true,
     ms=0, desde=0, corriendo=false, latido=null,
     fallo={k:-1,n:0,t:null},
-    /* modo: diario | practica | reto (tablero de un concurso) | pareja (a cuatro manos) */
+    /* modo: diario | practica | reto (tablero de un concurso) | pareja (a cuatro manos)
+       | maraton (competencia sin fin: cada cifra la comprueba el servidor) */
     modo="diario", ctx=null, autor=null;
 
 /* Penalizaciones: van directas al cronómetro, así el tiempo que se
@@ -330,7 +331,9 @@ function pinta(){
   hb.hidden=sinAyuda()||pareja;
   $("sud-undo").hidden=pareja; $("sud-erase").hidden=pareja;
   $("sud-new").hidden=(modo==="reto"||pareja);
-  $("sud-rules").innerHTML = pareja
+  $("sud-rules").innerHTML = modo==="maraton"
+    ? 'Maratón: solo entra la cifra correcta y cada fallo cuesta <b>una vida</b>. Al completar el sudoku llega el siguiente, más difícil. Sin pistas.'
+    : pareja
     ? 'A cuatro manos: los dos ponéis cifras en el mismo tablero y el tiempo es de la pareja. Solo entra la cifra correcta; dos fallos no cuestan, desde el tercero suman <b>30 s</b>. Sin pistas.'
     : sinAyuda()
     ? 'Sin ayudas: entra cualquier cifra, nada se marca y no hay pistas. Solo se comprueba al completar la rejilla: borra y corrige hasta que cuadre.'
@@ -346,7 +349,8 @@ function nota(k){
 /* ---------- jugadas ---------- */
 function pon(n){
   if(listo||sel<0||P.puzzle[sel])return;
-  if(modo==="pareja"&&!modoNotas){ponPareja(n); return; }
+  if(modo==="maraton"&&val[sel])return;       /* ni notas ni cambios sobre una cifra ya aceptada */
+  if((modo==="pareja"||modo==="maraton")&&!modoNotas){ponPareja(n); return; }
   arranca();
   if(modoNotas){
     hechas.push({k:sel,v:val[sel],nt:notas[sel]});
@@ -375,8 +379,8 @@ function pon(n){
   }
   pinta(); comprueba();
 }
-/* en pareja la cifra se manda al servidor, que la comprueba y la
-   cronometra; solo se dibuja cuando vuelve aceptada */
+/* en pareja (y en el maratón) la cifra se manda al servidor, que la
+   comprueba y la cronometra; solo se dibuja cuando vuelve aceptada */
 var enviando=false;
 function ponPareja(n){
   if(enviando||val[sel]||!ctx||!ctx.jugar)return;
@@ -384,6 +388,15 @@ function ponPareja(n){
   ctx.jugar(k,n).then(function(r){
     enviando=false;
     if(!r)return;
+    if(modo==="maraton"){                     /* sin penalización de tiempo: cada fallo es una vida */
+      if(r.wrong){
+        errores++; fallo.k=k; fallo.n=n;
+        if(fallo.t)clearTimeout(fallo.t);
+        fallo.t=setTimeout(function(){fallo.k=-1;fallo.t=null;pinta();},650);
+        di("El "+n+" no va en esa casilla: pierdes una vida.","bad");
+      }else if(r.ok){ val[k]=n; notas[k]=0; di(""); if(!corriendo&&!listo)arranca(); }
+      pinta(); return;
+    }
     if(r.wrong){
       errores=r.errors; if(errores>FALLOS_GRATIS)penaliza(PEN_ERROR);
       fallo.k=k; fallo.n=n;
@@ -422,6 +435,7 @@ function terminaPareja(seg){
 }
 function borra(){
   if(listo||sel<0||P.puzzle[sel])return;
+  if(modo==="maraton"&&val[sel])return;       /* lo aceptado por el servidor ya es correcto */
   hechas.push({k:sel,v:val[sel],nt:notas[sel]});
   val[sel]=0; notas[sel]=0; pinta();
 }
@@ -430,7 +444,7 @@ function deshaz(){
   var h=hechas.pop(); val[h.k]=h.v; notas[h.k]=h.nt; sel=h.k; pinta();
 }
 function pista(){
-  if(listo||pistas>=MAX_PISTAS||sinAyuda())return;
+  if(listo||pistas>=MAX_PISTAS||sinAyuda()||modo==="maraton"||!P.solucion)return;
   var libres=[],k;
   for(k=0;k<81;k++)if(!P.puzzle[k]&&val[k]!==P.solucion[k])libres.push(k);
   if(!libres.length)return;
@@ -507,6 +521,8 @@ function cargar(cfg){
   var sol=cfg.solucion?String(cfg.solucion).split("").map(Number):null;
   P={puzzle:pz,solucion:sol,nivel:cfg.nivel};
   val=new Array(81).fill(0); notas=new Array(81).fill(0); autor=new Array(81).fill(null);
+  /* cifras ya aceptadas (al seguir una partida del maratón) */
+  if(cfg.val&&String(cfg.val).length===81)for(var q=0;q<81;q++)if(!pz[q])val[q]=+String(cfg.val)[q]||0;
   sel=-1; errores=0; pistas=0; hechas=[]; listo=false; modoNotas=false; enviando=false;
   if(fallo.t)clearTimeout(fallo.t); fallo.k=-1; fallo.t=null;
   cero(); di("");

@@ -1558,3 +1558,39 @@ body[data-proyector] #nav-back{display:none}
 .cp-valida{display:flex;gap:8px;flex-wrap:wrap}
 .cp-valida input{flex:1 1 160px;font:700 1.1rem ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.06em;padding:10px 12px;border-radius:12px;border:1.5px solid var(--hair);background:var(--card);color:var(--ink)}
 .cp-premio-fila{display:grid;grid-template-columns:70px 70px 1fr;gap:6px}
+
+/* ---------- competencias sin fin (maratón) ---------- */
+body:not([data-sub=maraton]) #mar-hud{display:none!important}
+.mar-hud{padding:10px 12px}
+.mh-top{display:flex;align-items:center;gap:8px;min-width:0}
+.mh-top b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px}
+.mh-top .rt-back{margin:0}
+.mh-top .ghost{padding:6px 10px;font-size:13px}
+.mh-stats{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin-top:8px}
+.mh-stats>div{background:var(--inset);border-radius:var(--r-el);padding:6px 4px;text-align:center;min-width:0}
+.mh-stats small{display:block;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.mh-stats b{display:block;font-size:15.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mh-stats b.ult{color:var(--bad)}
+#mh-vidas{color:var(--bad);letter-spacing:.06em}
+.mh-aviso{margin:6px 0 0;font-size:13.5px;min-height:1.2em;color:var(--ink-2)}
+.mh-aviso.good{color:var(--ok)}
+.mh-aviso.bad{color:var(--bad)}
+.mi-reglas{margin:6px 0 10px;padding-left:18px;font-size:14px;line-height:1.5}
+.mi-reglas li{margin:3px 0}
+/* en el maratón no hay pistas, ni otro tablero, ni compartir: lo lleva el marcador */
+body[data-sub=maraton] #sud-hint,
+body[data-sub=maraton] #sud-new,
+body[data-sub=maraton] #sud-result,
+body[data-sub=maraton] #sud-ranking,
+body[data-sub=maraton] .ro-pistas,
+body[data-sub=maraton] .ro-tiempo,
+body[data-sub=maraton] #b-hint,
+body[data-sub=maraton] #b-new,
+body[data-sub=maraton] #result,
+body[data-sub=maraton] #ranking,
+body[data-sub=maraton] #streak,
+body[data-sub=maraton] #diff{display:none!important}
+@media (max-width:520px){.mh-stats b{font-size:14px}}
+.cp-mar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.cp-mar{grid-template-columns:1fr}}
+body[data-sub=maraton] .readout{grid-template-columns:repeat(2,1fr)}

@@ -591,6 +591,21 @@ CREATE TABLE IF NOT EXISTS campana_cupones (codigo TEXT PRIMARY KEY, code TEXT N
 CREATE INDEX IF NOT EXISTS campana_cupones_code ON campana_cupones(code, user_id);
 ```
 
+### Añadir las tablas de las competencias sin fin (maratón)
+
+Para las competencias que se juegan hasta perder (memoria sin fin, maratón de
+sudoku y maratón de Axioma; ver [EMPRESAS.md](EMPRESAS.md)), además de las tres
+tablas anteriores pega esto en la consola de D1 (también está en `instalar.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS campana_maraton (code TEXT PRIMARY KEY, reglas TEXT NOT NULL, tableros TEXT);
+CREATE TABLE IF NOT EXISTS campana_progreso (intento_id INTEGER PRIMARY KEY, code TEXT NOT NULL, estado TEXT NOT NULL, vence_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS campana_progreso_code ON campana_progreso(code, vence_at);
+```
+
+Mientras falten, las competencias de juegos rápidos siguen funcionando; crear una
+sin fin avisa de que faltan estas tablas.
+
 ### Añadir las tablas del repaso público
 
 Para el repaso de ingreso y nivelación con códigos de acceso (ver

@@ -124,6 +124,8 @@
 
 <main class="col-center">
 
+  <section class="panel mar-hud" id="mar-hud" hidden aria-label="Marcador de la competencia"></section>
+
   <section class="panel board-panel" aria-label="Tablero">
     <p class="brief" id="brief">Deduce qué celdas están llenas y, a la vez, qué regla gobierna el tablero.</p>
     <div class="boardwrap"><div class="board" id="board"></div></div>
@@ -165,8 +167,8 @@
     <div class="readout">
       <div><small>Restantes</small><strong id="sud-left">0</strong></div>
       <div><small>Errores</small><strong id="sud-err">0</strong></div>
-      <div><small>Pistas</small><strong id="sud-hints">0</strong></div>
-      <div><small>Tiempo</small><strong id="sud-time">0:00</strong><em class="pen" id="sud-pen" aria-hidden="true"></em></div>
+      <div class="ro-pistas"><small>Pistas</small><strong id="sud-hints">0</strong></div>
+      <div class="ro-tiempo"><small>Tiempo</small><strong id="sud-time">0:00</strong><em class="pen" id="sud-pen" aria-hidden="true"></em></div>
     </div>
     <p class="fine sud-rules" id="sud-rules"></p>
     <p class="msg" id="sud-msg" role="status" aria-live="polite"></p>
@@ -233,6 +235,7 @@
 <script src="qr.js"></script>
 <script src="sudoku.js"></script>
 <script src="rapidos-motor.js"></script>
+<script src="maraton-motor.js"></script>
 <script src="app.js"></script>
 <script src="tutorial.js"></script>
 <script src="account.js"></script>
@@ -242,6 +245,7 @@
 <script src="fiesta/pruebas.js"></script>
 <script src="fiesta.js"></script>
 <script src="rapidos.js"></script>
+<script src="maraton.js"></script>
 <script src="concursos.js"></script>
 <script src="retos.js"></script>
 <script src="registro.js"></script>

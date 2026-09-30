@@ -652,3 +652,21 @@ CREATE TABLE IF NOT EXISTS campana_cupones (
   canjeado_por TEXT
 );
 CREATE INDEX IF NOT EXISTS campana_cupones_code ON campana_cupones(code, user_id);
+
+-- =========================================================
+-- Competencias sin fin (maratón): memoria sin fin, sudoku y Axioma
+-- Se juega hasta perder (sin vidas o sin reloj) y el servidor comprueba cada paso.
+-- =========================================================
+CREATE TABLE IF NOT EXISTS campana_maraton (
+  code      TEXT PRIMARY KEY,                     -- la campaña
+  reglas    TEXT NOT NULL,                        -- JSON {vidas, reloj (min), extra (s por tablero)}
+  tableros  TEXT                                  -- JSON: sudokus o tableros de Axioma, con su solución
+);
+CREATE TABLE IF NOT EXISTS campana_progreso (
+  intento_id INTEGER PRIMARY KEY,                 -- la partida en juego (campana_intentos.id)
+  code       TEXT NOT NULL,
+  estado     TEXT NOT NULL,                       -- JSON: vidas, puntos, tablero actual…
+  vence_at   INTEGER NOT NULL,                    -- cuándo se acaba sola (reloj o inactividad)
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS campana_progreso_code ON campana_progreso(code, vence_at);

@@ -43,7 +43,7 @@ function ERR(e){if(e&&e.error==="practice_mode")return "Esta es una práctica: e
   not_registered:"Primero tienes que inscribirte.",not_started:"El concurso todavía no ha empezado.",bad_name:"Ponle un nombre.",
   bad_end:"El concurso tiene que durar entre 5 minutos y 31 días.",bad_start:"La fecha de inicio no es válida.",
   too_many:"Tienes demasiados concursos abiertos a la vez.",forbidden:"Solo quien lo organiza puede hacer eso.",
-  profile_required:"Antes tienes que completar tu registro.",no_attempts:"Ya usaste todos tus intentos.",bad_result:"El resultado no es válido.",bad_time:"El tiempo no cuadra con el reloj del servidor.",busy:"Ya tienes una partida abriéndose.",already:"Esa partida ya estaba registrada.",edu_no_contests:"Las instituciones educativas no organizan concursos: usa exámenes y prácticas en sus cursos.",edu_bank:"Los bancos de las instituciones educativas son solo para sus exámenes y prácticas.",restricted:"Es solo para los miembros de su curso o institución.",
+  profile_required:"Antes tienes que completar tu registro.",no_attempts:"Ya usaste todos tus intentos.",bad_result:"El resultado no es válido.",bad_time:"El tiempo no cuadra con el reloj del servidor.",busy:"Ya tienes una partida abriéndose.",already:"Esa partida ya estaba registrada.",too_fast:"Demasiado rápido: tómate un momento.",maraton_not_configured:"Faltan las tablas de las competencias sin fin en la base de datos (ver SETUP.md).",bad_move:"Esa jugada no es válida.",edu_no_contests:"Las instituciones educativas no organizan concursos: usa exámenes y prácticas en sus cursos.",edu_bank:"Los bancos de las instituciones educativas son solo para sus exámenes y prácticas.",restricted:"Es solo para los miembros de su curso o institución.",
   consent_required:"Tienes menos de 18 años: para los concursos abiertos con premio hace falta el consentimiento de tu tutor o de tu institución.",
   org_pending:"La institución todavía no está aprobada.",
   google_required:"Esta convocatoria es para cuentas de Google: sal de la sesión de invitado y entra con Google.",
@@ -573,19 +573,26 @@ function juego(c){
    la cronometra y la puntúa. Cuenta la mejor marca; los premios por puntaje
    llegan al momento como cupón y los de puesto, al cerrar. */
 function enlaceCampana(code){return location.origin+location.pathname+"?campana="+code;}
-function umbralTxt(c){return c.umbral==null?"":(c.orden==="menos"?"con "+c.umbral+" ms o menos":"con "+c.umbral+" puntos o más");}
+function umbralTxt(c){return c.umbral==null?"":(c.orden==="menos"?"con "+c.umbral+" ms o menos":c.juego==="memoria_inf"?"con "+c.umbral+" casillas o más":"con "+c.umbral+" puntos o más");}
+/* reglas de una competencia sin fin: vidas, reloj y tiempo extra */
+function reglasMaraton(c){
+  var m=c.maraton; if(!m)return "";
+  var ex=m.extra>=60?(m.extra/60)+" min":m.extra+" s", que=c.juego==="sudoku_mar"?"sudoku":"tablero";
+  return '<div><small>Vidas</small><b>'+m.vidas+'</b></div>'+(m.reloj?'<div><small>Reloj</small><b>'+m.reloj+' min</b></div>'+
+    '<div><small>Por '+que+' resuelto</small><b>'+(m.extra?'+'+ex:'Sin extra')+'</b></div>':'<div><small>Hasta</small><b>Perder</b></div>');
+}
 function campana(code,aviso,nuevo){
   para(); vista={camp:code}; $("hdr").textContent=code; seccion(false);
   pinta('<p class="fine">Cargando…</p>');
   api("/api/campanas/"+code).then(function(c){
     colorMarca(c);
-    var u=user(), me=c.me, J=(window.AxRapidos&&AxRapidos.JUEGOS[c.juego])||{};
+    var u=user(), me=c.me, J=(window.AxRapidos&&AxRapidos.JUEGOS[c.juego])||(window.AxMaraton&&AxMaraton.JUEGOS[c.juego])||{};
     var h='<button type="button" class="rt-back" id="cq-back">‹ '+esc(c.brand?c.org_name:"Concursos")+'</button>'+
       (c.brand?'<div class="cq-marca">'+(c.brand.logo?'<img src="'+esc(c.brand.logo)+'" alt="">':'')+'<span>Competencia de <b>'+esc(c.org_name)+'</b></span></div>':'<p class="rt-meta">'+esc(c.org_name)+'</p>')+
       '<div class="rt-head"><h3>'+esc(J.icono||"🎮")+' '+esc(c.name)+'</h3><span class="chip '+(c.state==="abierto"?"activo":c.state)+'">'+({pronto:"Pronto",abierto:"Abierta",terminado:"Terminada"}[c.state])+'</span></div>'+
       (c.description?'<p>'+esc(c.description)+'</p>':'')+
       '<div class="cq-reglas"><div><small>Juego</small><b>'+esc(c.juego_nombre)+'</b></div><div><small>Intentos</small><b>'+(c.intentos?c.intentos:"Libres")+'</b></div>'+
-        '<div><small>Cuenta</small><b>Tu mejor marca</b></div><div><small>Jugadores</small><b>'+c.players+'</b></div></div>'+
+        '<div><small>Cuenta</small><b>Tu mejor marca</b></div><div><small>Jugadores</small><b>'+c.players+'</b></div>'+reglasMaraton(c)+'</div>'+
       '<p class="fine">'+(c.state==="terminado"?"Terminó el "+fecha(c.ends_at)+".":c.state==="pronto"?"Empieza el "+fecha(c.starts_at)+".":"Se puede jugar hasta el "+fecha(c.ends_at)+".")+' '+esc(J.desc||"")+'</p>';
     if(c.premios.length||c.umbral!=null){
       h+='<div class="cp-premios"><h4>Premios</h4><ul>'+c.premios.map(function(p){return '<li><b>'+(p.desde===p.hasta?p.desde+'.º':p.desde+'.º a '+p.hasta+'.º')+'</b> '+esc(p.texto)+'</li>';}).join("")+
@@ -605,6 +612,7 @@ function campana(code,aviso,nuevo){
         (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="ghost" id="cq-login">o entra con Google</button></div>':'');
       else if(!u)h+=(window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="cq-login">Entrar con Google para jugar</button></div>':'');
       else if(u.guest&&!c.guests)h+='<p class="rt-hoy">Esta competencia es solo con cuenta de Google.</p>';
+      else if(me&&me.en_juego)h+='<div class="actions"><button class="primary" id="cp-jugar">Seguir mi partida</button></div><p class="fine">Tienes una partida a medias: sigue donde la dejaste'+(c.maraton&&c.maraton.reloj?' (el reloj no se detiene).':'.')+'</p>';
       else if(!me||me.restantes===null||me.restantes>0)h+='<div class="actions"><button class="primary" id="cp-jugar">'+(me&&me.intentos?'Jugar otra vez':'Jugar')+'</button></div>';
       else h+='<p class="rt-hoy">Ya usaste tus '+c.intentos+' intentos. Cuenta tu mejor marca.</p>';
     }
@@ -625,6 +633,14 @@ function campana(code,aviso,nuevo){
   }).catch(function(e){pinta('<button type="button" class="rt-back" id="cq-back">‹ Concursos</button><p class="fine bad">'+esc(ERR(e))+'</p>');$("cq-back").onclick=inicio;});
 }
 function juegaCampana(c){
+  /* sin fin (memoria, sudoku y Axioma): paso a paso con el servidor */
+  if(window.AxMaraton&&AxMaraton.es(c.juego)&&window.AxMaratonUI){
+    panel.hidden=true;
+    AxMaratonUI.jugar(c,{api:api,conRegistro:conRegistro,ERR:ERR,esc:esc,
+      vuelve:function(aviso,nuevo){document.body.setAttribute("data-game","concurso");document.body.removeAttribute("data-sub");
+        if(window.AxRapidosUI)AxRapidosUI.cerrar();panel.hidden=false;campana(c.code,aviso,nuevo);}});
+    return;
+  }
   var RUI=window.AxRapidosUI; if(!RUI)return;
   var intento=null, vuelve=function(aviso,nuevo){document.body.setAttribute("data-game","concurso");RUI.cerrar();panel.hidden=false;campana(c.code,aviso,nuevo);};
   /* el panel de los juegos rápidos se muestra en lugar de la ficha mientras dura la partida */

@@ -407,6 +407,13 @@ function check(){
   if(solved){say("Ya está resuelto.","good");return;}
   if(!scope||!shape){say("Elige una regla de cada eje antes de comprobar.","bad");return;}
   if(filledCount()!==B.k){say("Necesitas exactamente "+B.k+" celdas llenas.","bad");return;}
+  /* maratón: la solución la tiene el servidor, que dice si está bien */
+  if(mode==="maraton"){
+    if(!marCfg||marCfg.enviando)return;
+    marCfg.enviando=true; say("Comprobando…");
+    Promise.resolve(marCfg.enviar(Object.keys(filledSet()),scope,shape)).then(function(){marCfg.enviando=false;},function(){marCfg.enviando=false;});
+    return;
+  }
   var F=filledSet(), same=Object.keys(B.sol).every(function(k){return F[k];});
   if(!same){say("Alguna celda no encaja con esas reglas.","bad");return;}
   if(scope!==B.scope||shape!==B.shape){say("El tablero es correcto, pero el par de reglas no.","bad");return;}
@@ -448,7 +455,7 @@ function buildShare(perfect){
 }
 
 function hint(){
-  if(solved)return;
+  if(solved||mode==="maraton")return;
   hintsUsed++; moves+=3; arranca();
   if(!scope||!shape){
     var dead=[],i,j;
@@ -476,6 +483,7 @@ function hint(){
 
 /* ---------- controles ---------- */
 function setMode(m){
+  if(window.AxMaratonUI&&AxMaratonUI.activo())AxMaratonUI.cerrar();   /* la partida queda guardada en el servidor */
   ["inicio","aula","empresas","day","flash","free","sud","concurso","rapido","juegos","reto","pareja"].forEach(function(x){
     $("t-"+x).setAttribute("aria-checked",x===m?"true":"false");
   });
@@ -565,7 +573,35 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape")abreMenu(fa
 ["inicio","aula","empresas","day","flash","free","sud","concurso","rapido","juegos","reto","pareja"].forEach(function(m){
   $("t-"+m).onclick=function(){abreMenu(false);setMode(m);};
 });
-window.AxApp={setMode:setMode};
+/* ---------- maratón: un tablero que llega del servidor, sin su solución ----------
+   cfg: {tablero:{n,k,clues:["f,c"…],nums:{"f,c":n},scopes,shapes}, brief, enviar(cells,scope,shape)} */
+var marCfg=null;
+function cargaMaraton(cfg){
+  var t=cfg.tablero, clues={};
+  t.clues.forEach(function(k){clues[k]=1;});
+  marCfg=cfg; mode="maraton"; detiene();
+  document.body.setAttribute("data-game","axioma");
+  B={n:t.n,k:t.k,clues:clues,nums:t.nums,scopes:t.scopes,shapes:t.shapes,scope:null,shape:null,sol:{}};
+  marks={}; beam=null; moves=0; solved=false; hintsUsed=0; wave=true; stamped=null;
+  ceroReloj(); restaurado=false;
+  $("verdict").hidden=true; $("result").classList.remove("on"); say("");
+  scope=B.scopes.length===1?B.scopes[0]:null; shape=B.shapes.length===1?B.shapes[0]:null;
+  $("ax-scope").hidden=B.scopes.length<=1; $("ax-shape").hidden=B.shapes.length<=1;
+  $("rules").hidden=B.scopes.length<=1&&B.shapes.length<=1;
+  $("help").classList.remove("on");
+  $("diff").hidden=true; $("streak").hidden=true;
+  $("brief").innerHTML=cfg.brief||"";
+  renderChips(); render(); pintaTiempo();
+}
+/* tableros para una competencia sin fin: los prepara el navegador de la empresa (con su solución) */
+function generaTablero(cfg){
+  var antes=RNG, b=null, i;
+  RNG=Math.random;
+  try{ for(i=0;i<6&&!b;i++)b=buildBoard(cfg); }finally{ RNG=antes; }
+  if(!b)return null;
+  return {n:b.n,k:b.k,clues:Object.keys(b.clues),nums:b.nums,scopes:b.scopes.slice(),shapes:b.shapes.slice(),scope:b.scope,shape:b.shape,sol:Object.keys(b.sol)};
+}
+window.AxApp={setMode:setMode,maraton:cargaMaraton,maratonAviso:function(t,k){say(t,k);},generaTablero:generaTablero};
 $("logo-inicio").onclick=function(){abreMenu(false);setMode("inicio");};
 
 /* dificultad del modo libre */
@@ -601,6 +637,7 @@ $("b-reset").onclick=function(){
   $("verdict").hidden=true;
   say("");renderChips();render();};
 $("b-new").onclick=function(){
+  if(mode==="maraton")return;
   if(mode==="day"){say("El tablero diario es el mismo para todo el mundo. Prueba Libre o Flash.");return;}
   /* tras resolver en Libre, «Siguiente nivel» sube de Fácil a Medio y de Medio a Difícil */
   if(mode==="free"&&solved&&freeLevel<5){freeLevel+=2; try{store("level",String(freeLevel));}catch(e){} if(typeof pintaDificultad==="function")pintaDificultad();}

@@ -45,7 +45,7 @@ function copia(t,b){var o=b.textContent;
 function ERR(e){if(e&&e.error==="few_questions"&&e.needed!==5)return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
   return {pro_required:"Las ayudas con IA son del plan Pro. Pide a la administración de la plataforma que lo active para tu institución.",
   ia_not_configured:"La IA no está configurada en esta instalación (falta la clave ANTHROPIC_API_KEY).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
-  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",bad_code:"Ese código no es válido.",bad_prizes:"Revisa los premios por puesto: los rangos no pueden solaparse.",bad_threshold:"Para el premio por puntaje, pon el puntaje y el premio.",bad_game:"Elige un juego.",bad_end:"La duración no es válida.",code_used:"Ese código ya se usó.",code_expired:"Ese código ya venció.",few_questions:"El banco necesita al menos 5 preguntas que no sean de texto libre.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
+  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",bad_code:"Ese código no es válido.",bad_prizes:"Revisa los premios por puesto: los rangos no pueden solaparse.",bad_threshold:"Para el premio por puntaje, pon el puntaje y el premio.",bad_game:"Elige un juego.",bad_boards:"No se pudieron preparar los tableros. Inténtalo otra vez.",maraton_not_configured:"Faltan las tablas de las competencias sin fin: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_end:"La duración no es válida.",code_used:"Ese código ya se usó.",code_expired:"Ese código ya venció.",few_questions:"El banco necesita al menos 5 preguntas que no sean de texto libre.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
@@ -1084,7 +1084,7 @@ function tabConvocatorias(o){
     if($("cv-camp"))$("cv-camp").onclick=function(){crearCampana(o);};
     if($("cv-val"))$("cv-val").onsubmit=function(e){e.preventDefault();validaCupon($("cv-cod").value,$("cv-valres"));};
     api("/api/orgs/"+o.id+"/campanas").then(function(x){
-      $("cv-camps").innerHTML=x.campanas.length?x.campanas.map(function(c){var J=window.AxRapidos&&AxRapidos.JUEGOS[c.juego]||{};
+      $("cv-camps").innerHTML=x.campanas.length?x.campanas.map(function(c){var J=window.AxRapidos&&AxRapidos.JUEGOS[c.juego]||window.AxMaraton&&AxMaraton.JUEGOS[c.juego]||{};
         return '<div class="au-conv"><button type="button" class="rt-card" data-camp="'+c.code+'"><span class="rt-card-top"><b>'+esc(J.icono||"🎮")+' '+esc(c.name)+'</b>'+
           '<span class="chip '+(c.state==="abierto"?"activo":c.state)+'">'+({pronto:"Pronto",abierto:"Abierta",terminado:"Terminada"}[c.state])+'</span></span>'+
           '<small>'+esc(c.juego_nombre)+' · '+(c.intentos?c.intentos+' intentos':'intentos libres')+' · '+c.players+' jugadores · '+c.cupones+' cupones ('+c.canjeados+' canjeados)'+
@@ -1116,12 +1116,17 @@ function validaCupon(codigo,z,alCanjear){
 }
 function crearCampana(o){
   vista={render:function(){crearCampana(o);}};
-  var J=window.AxRapidos?AxRapidos.JUEGOS:{};
-  pinta(atras(o.name)+'<h3>Nueva competencia de juego rápido</h3><p class="rt-meta">'+esc(o.name)+'</p>'+
+  var J=window.AxRapidos?AxRapidos.JUEGOS:{}, XM=window.AxMaraton, MJ=XM?XM.JUEGOS:{};
+  var opc=function(lista,v0,fmt){return lista.map(function(v){return '<option value="'+v+'"'+(v===v0?' selected':'')+'>'+fmt(v)+'</option>';}).join("");};
+  var seg=function(s){return s===0?"Sin extra":s>=60?"+"+(s/60)+" min":"+"+s+" s";};
+  pinta(atras(o.name)+'<h3>Nueva competencia</h3><p class="rt-meta">'+esc(o.name)+'</p>'+
     '<form class="rt-form" id="cp-form">'+
     '<label>Nombre<input id="cp-n" maxlength="60" required placeholder="Desafío de reflejos de aniversario"></label>'+
-    '<label>Juego<select id="cp-j">'+Object.keys(J).map(function(k){return '<option value="'+k+'">'+J[k].icono+' '+J[k].nom+' · '+J[k].dur+'</option>';}).join("")+'</select></label>'+
+    '<label>Juego<select id="cp-j"><optgroup label="Juegos rápidos">'+Object.keys(J).map(function(k){return '<option value="'+k+'">'+J[k].icono+' '+J[k].nom+' · '+J[k].dur+'</option>';}).join("")+'</optgroup>'+
+      (XM?'<optgroup label="Sin fin: se juega hasta perder">'+Object.keys(MJ).map(function(k){return '<option value="'+k+'">'+MJ[k].icono+' '+MJ[k].nom+'</option>';}).join("")+'</optgroup>':'')+'</select></label>'+
     '<p class="fine" id="cp-jd"></p>'+
+    (XM?'<div class="cp-mar" id="cp-mar" hidden><label>Vidas<select id="cp-mv"></select></label><label id="cp-mrl">Reloj inicial<select id="cp-mr"></select></label>'+
+      '<label id="cp-mxl">Por tablero resuelto<select id="cp-mx"></select></label></div>':'')+
     '<div class="rt-2"><label>Intentos por persona<select id="cp-i"><option value="1">1 (una sola vez)</option><option value="2">2</option><option value="3" selected>3</option><option value="5">5</option><option value="10">10</option><option value="0">Libres</option></select></label>'+
     '<label>Dura<select id="cp-d"><option value="60">1 hora</option><option value="240">4 horas</option><option value="1440">1 día</option><option value="4320">3 días</option><option value="10080" selected>1 semana</option><option value="20160">2 semanas</option><option value="43200">1 mes</option></select></label></div>'+
     '<label>Empieza<select id="cp-s"><option value="0">Ahora</option><option value="60">En 1 hora</option><option value="1440">Mañana a esta hora</option></select></label>'+
@@ -1135,23 +1140,56 @@ function crearCampana(o){
     '<label class="rt-check"><input type="checkbox" id="cp-pub" checked> <span>Aparece en tu página de marca</span></label>'+
     '<label class="rt-check"><input type="checkbox" id="cp-inv" checked> <span>Admitir invitados: juegan sin cuenta, con su teléfono o correo verificado</span></label>'+
     '<label class="rt-check"><input type="checkbox" id="cp-rk" checked> <span>Mostrar el ranking mientras está abierta</span></label>'+
-    '<p class="fine">El servidor genera cada partida, la cronometra y la puntúa: nadie puede enviarse una marca inventada. En la trivia, la respuesta correcta no llega al navegador. Los menores de 18 años solo juegan por premios si la empresa confirma el consentimiento de su tutor.</p>'+
+    '<p class="fine">El servidor genera cada partida, la cronometra y la puntúa: nadie puede enviarse una marca inventada. En la trivia, la respuesta correcta no llega al navegador. En los juegos sin fin comprueba cada paso y guarda la solución: al navegador solo llega el tablero. Los menores de 18 años solo juegan por premios si la empresa confirma el consentimiento de su tutor.</p>'+
     '<div class="actions"><button class="primary" type="submit" id="cp-go">Publicar competencia</button></div><p class="msg" id="cp-msg"></p></form>');
   $("au-back").onclick=function(){org(o.id,"convocatorias");};
-  function juego(){var k=$("cp-j").value, j=J[k]||{}; $("cp-jd").textContent=(j.desc||"")+(j.orden==="menos"?" Gana quien haga menos milisegundos.":" Gana quien haga más puntos.");
-    $("cp-ul").firstChild.textContent=j.orden==="menos"?"Milisegundos máximos":"Puntos mínimos"; $("cp-u").placeholder=j.orden==="menos"?"350":({trivia:"1200",memoria:"8",calculo:"20"}[k]||"100");}
+  function juego(){var k=$("cp-j").value, mar=!!MJ[k], j=J[k]||MJ[k]||{};
+    $("cp-jd").textContent=(j.desc||"")+(j.orden==="menos"?" Gana quien haga menos milisegundos.":k==="memoria_inf"?" Gana quien recuerde la secuencia más larga.":" Gana quien haga más puntos.");
+    $("cp-ul").firstChild.textContent=j.orden==="menos"?"Milisegundos máximos":k==="memoria_inf"?"Casillas mínimas":"Puntos mínimos";
+    $("cp-u").placeholder=j.orden==="menos"?"350":({trivia:"1200",memoria:"8",calculo:"20",memoria_inf:"10",sudoku_mar:"300",axioma_mar:"150"}[k]||"100");
+    if(!XM)return;
+    $("cp-mar").hidden=!mar; if(!mar)return;
+    var R=XM.REGLAS[k];
+    $("cp-mv").innerHTML=opc(R.vidas,R.vidas0,function(v){return v===1?"1 (muerte súbita)":v+" vidas";});
+    $("cp-mrl").hidden=$("cp-mxl").hidden=!R.reloj;
+    if(R.reloj){$("cp-mr").innerHTML=opc(R.reloj,R.reloj0,function(v){return v+" min";}); $("cp-mx").innerHTML=opc(R.extra,R.extra0,seg);}
+  }
   $("cp-j").onchange=juego; juego();
   $("cp-form").onsubmit=function(e){
     e.preventDefault();
     var premios=[0,1,2].map(function(i){return {desde:+$("cp-pd"+i).value,hasta:+($("cp-ph"+i).value||$("cp-pd"+i).value),texto:$("cp-pt"+i).value.trim()};}).filter(function(p){return p.texto&&p.desde>0;});
-    var ini=Date.now()+(+$("cp-s").value)*60000, fin=ini+(+$("cp-d").value)*60000;
+    var ini=Date.now()+(+$("cp-s").value)*60000, fin=ini+(+$("cp-d").value)*60000, k=$("cp-j").value;
     $("cp-go").disabled=true;
-    api("/api/campanas",{org_id:o.id,name:$("cp-n").value,juego:$("cp-j").value,intentos:+$("cp-i").value,starts_at:ini,ends_at:fin,premios:premios,
+    var datos={org_id:o.id,name:$("cp-n").value,juego:k,intentos:+$("cp-i").value,starts_at:ini,ends_at:fin,premios:premios,
       umbral:$("cp-u").value===""?null:+$("cp-u").value,umbral_premio:$("cp-up").value,description:$("cp-desc").value,
-      publico:$("cp-pub").checked,guests:$("cp-inv").checked,ranking:$("cp-rk").checked})
-      .then(function(r){gestionCampana(o,r.code,"Competencia publicada. Comparte el QR o el enlace.");})
+      publico:$("cp-pub").checked,guests:$("cp-inv").checked,ranking:$("cp-rk").checked};
+    if(MJ[k])datos.reglas={vidas:+$("cp-mv").value,reloj:+$("cp-mr").value,extra:+$("cp-mx").value};
+    /* sudoku y Axioma sin fin: los tableros (con su solución) se preparan aquí y los guarda el servidor */
+    (XM&&XM.plan(k)?preparaTableros(k,function(n,t){aviso("cp-msg","Preparando los tableros… "+n+" de "+t);}):Promise.resolve(null)).then(function(lote){
+      if(lote)datos.tableros=lote;
+      return api("/api/campanas",datos);
+    }).then(function(r){gestionCampana(o,r.code,"Competencia publicada. Comparte el QR o el enlace.");})
       .catch(function(er){$("cp-go").disabled=false;aviso("cp-msg",ERR(er),true);});
   };
+}
+/* genera, sin congelar la pantalla, el lote de tableros que pide el plan del juego */
+function preparaTableros(juego,progreso){
+  var XM=window.AxMaraton, plan=XM.plan(juego), cola=[], lote=[];
+  plan.forEach(function(p){for(var i=0;i<p.pool;i++)cola.push(p.t);});
+  return new Promise(function(ok,mal){
+    function uno(){
+      if(!cola.length){ok(lote);return;}
+      var t=cola.shift(), b=null;
+      try{
+        if(juego==="sudoku_mar"){var g=AxSudokuMotor.genera(t,Math.random); b={t:t,puzzle:g.puzzle.join(""),solution:g.solucion.join("")};}
+        else{b=AxApp.generaTablero(XM.TIPOS_AX[t]); if(b)b.t=t;}
+      }catch(e){b=null;}
+      if(!b){cola.unshift(t);}else lote.push(b);
+      progreso(lote.length,lote.length+cola.length);
+      setTimeout(uno,0);
+    }
+    uno();
+  });
 }
 function gestionCampana(o,code,nota){
   vista={render:function(){gestionCampana(o,code);}};
@@ -1159,7 +1197,8 @@ function gestionCampana(o,code,nota){
   api("/api/campanas/"+code+"/resultados").then(function(c){
     var enlace=location.origin+location.pathname+"?campana="+code;
     var h=atras(o.name)+'<div class="rt-head"><h3>'+esc(c.name)+'</h3><span class="chip '+(c.state==="abierto"?"activo":c.state)+'">'+({pronto:"Pronto",abierto:"Abierta",terminado:"Terminada"}[c.state])+'</span></div>'+
-      '<p class="rt-meta">'+esc(c.juego_nombre)+' · '+(c.intentos?c.intentos+' intentos por persona':'intentos libres')+' · hasta el '+new Date(c.ends_at).toLocaleString("es")+'</p>'+
+      '<p class="rt-meta">'+esc(c.juego_nombre)+' · '+(c.intentos?c.intentos+' intentos por persona':'intentos libres')+
+        (c.maraton?' · '+c.maraton.vidas+(c.maraton.vidas===1?' vida':' vidas')+(c.maraton.reloj?' · reloj de '+c.maraton.reloj+' min':''):'')+' · hasta el '+new Date(c.ends_at).toLocaleString("es")+'</p>'+
       (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
       '<div class="rt-code"><span>Código</span><b>'+code+'</b><button type="button" class="ghost" id="gc-copy">Copiar enlace</button><button type="button" class="ghost" id="gc-qr">QR</button><button type="button" class="ghost" id="gc-ver">Ver como jugador</button></div>'+
       '<div class="mt-kpis">'+kpi(c.rows.length,pl(c.rows.length,"jugador","jugadores"))+kpi(c.cupones.length,pl(c.cupones.length,"cupón","cupones"),c.cupones.filter(function(k){return k.canjeado_at;}).length+" canjeados")+
