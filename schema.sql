@@ -601,3 +601,54 @@ CREATE TABLE IF NOT EXISTS repaso_intentos (
   terminado_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS repaso_intentos_user ON repaso_intentos(user_id, repaso_id, created_at);
+
+-- =========================================================
+-- Competencias de juego rápido de empresas (campañas) con premios y cupones
+-- =========================================================
+CREATE TABLE IF NOT EXISTS campanas (
+  code          TEXT PRIMARY KEY,
+  org_id        TEXT NOT NULL,
+  owner_id      TEXT NOT NULL,
+  nombre        TEXT NOT NULL,
+  descripcion   TEXT,
+  juego         TEXT NOT NULL,                -- trivia | memoria | calculo | reflejos | numeros
+  intentos      INTEGER NOT NULL DEFAULT 3,   -- por persona (0 = ilimitados); cuenta el mejor
+  publico       INTEGER NOT NULL DEFAULT 1,   -- aparece en la página de la marca
+  invitados     INTEGER NOT NULL DEFAULT 1,   -- admite invitados verificados
+  ranking       INTEGER NOT NULL DEFAULT 1,   -- ranking visible mientras está abierta
+  premios       TEXT,                         -- JSON [{desde, hasta, texto}] por puesto
+  umbral        INTEGER,                      -- puntaje para el premio por puntaje
+  umbral_premio TEXT,
+  seed          INTEGER NOT NULL,
+  starts_at     INTEGER NOT NULL,
+  ends_at       INTEGER NOT NULL,
+  cerrada_at    INTEGER,
+  premiados_at  INTEGER,
+  created_at    INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS campanas_org ON campanas(org_id, ends_at);
+CREATE TABLE IF NOT EXISTS campana_intentos (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  code        TEXT NOT NULL,
+  user_id     TEXT NOT NULL,
+  n           INTEGER NOT NULL,               -- número de intento de esa persona
+  seed        INTEGER NOT NULL,
+  started_at  INTEGER NOT NULL,
+  finished_at INTEGER,
+  score       INTEGER,
+  seconds     INTEGER,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS campana_intentos_code ON campana_intentos(code, user_id);
+CREATE TABLE IF NOT EXISTS campana_cupones (
+  codigo       TEXT PRIMARY KEY,              -- 8 caracteres
+  code         TEXT NOT NULL,
+  user_id      TEXT NOT NULL,
+  tipo         TEXT NOT NULL,                 -- puesto | umbral
+  puesto       INTEGER,
+  premio       TEXT NOT NULL,
+  created_at   INTEGER NOT NULL,
+  canjeado_at  INTEGER,
+  canjeado_por TEXT
+);
+CREATE INDEX IF NOT EXISTS campana_cupones_code ON campana_cupones(code, user_id);

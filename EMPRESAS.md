@@ -61,6 +61,48 @@ Al cierre se publica el ranking y el ganador. En **Registros y estadísticas** l
 organización ve a cada participante con su contacto, si es invitado y si aceptó
 que lo contacten, y lo descarga en Excel.
 
+## Competencias de juego rápido (campañas con premios y descuentos)
+
+Además de las convocatorias de trivia, una empresa o comunidad puede lanzar una
+**competencia de juego rápido**: **Convocatorias → Nueva competencia de juego
+rápido**.
+
+- **Juego**: trivia, memoria, cálculo, reflejos o del 1 al 25 (los mismos de los
+  retos). En trivia, memoria y cálculo gana quien hace más puntos; en reflejos y
+  del 1 al 25, quien hace menos tiempo.
+- **Intentos por persona**: 1, 2, 3, 5, 10 o libres. **Cuenta la mejor marca** de
+  cada persona.
+- **Duración**: de 1 hora a 1 mes; puede empezar ahora, en una hora o mañana.
+- **Premios por puesto** (hasta tres rangos, p. ej. «1.º: una cena», «2.º a
+  10.º: 20 % de descuento»): se asignan al **cerrar** la competencia, sola al
+  vencer el plazo o con **Cerrar ahora**.
+- **Premio por puntaje** («con 1200 puntos o más: 10 % de descuento»; en los
+  juegos de tiempo, «con 350 ms o menos»): cada persona que lo logra recibe su
+  premio **al momento**, una vez por persona.
+- Opciones: aparecer en la página de la marca, admitir **invitados verificados**
+  (teléfono o correo con código) y mostrar el **ranking en vivo** (si no, se
+  publica al cerrar).
+
+**Cómo se juega.** Con el QR o el enlace `?campana=CÓDIGO` se abre la ficha con
+la marca, los premios y el ranking. **Jugar** abre la partida: el servidor la
+genera con una semilla secreta, la cronometra y la puntúa (nadie puede enviarse
+una marca inventada, y en la trivia la respuesta correcta no llega al navegador).
+Al terminar se ve la marca, el puesto y, si lo ganó, el cupón.
+
+**Cupones.** Cada premio es un **cupón único de 8 caracteres** (`XXXX-XXXX`) que
+la persona ve en la ficha de la competencia. En la empresa:
+
+- **Validar cupón** (arriba en Convocatorias, o en cada competencia): muestra de
+  quién es, qué premio da y si ya se usó; **Canjear ahora** lo marca como usado
+  (un cupón no se canjea dos veces).
+- La gestión de cada competencia muestra el ranking, quién aceptó que la empresa
+  lo contacte (con su teléfono o correo), los cupones y su estado, y lo descarga
+  en **Excel** (hojas *Ranking* y *Cupones*).
+
+Los menores de 18 años solo juegan por premios si la empresa confirma el
+consentimiento de su tutor, como en las convocatorias con premio. Tablas:
+`campanas`, `campana_intentos` y `campana_cupones` (ver SETUP.md).
+
 ## Participar como invitado
 
 1. Quien abre el QR ve la convocatoria y pulsa **Participar con mi teléfono o

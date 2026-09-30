@@ -45,7 +45,7 @@ function copia(t,b){var o=b.textContent;
 function ERR(e){if(e&&e.error==="few_questions"&&e.needed!==5)return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
   return {pro_required:"Las ayudas con IA son del plan Pro. Pide a la administración de la plataforma que lo active para tu institución.",
   ia_not_configured:"La IA no está configurada en esta instalación (falta la clave ANTHROPIC_API_KEY).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
-  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",bad_code:"Ese código no es válido.",code_used:"Ese código ya se usó.",code_expired:"Ese código ya venció.",few_questions:"El banco necesita al menos 5 preguntas que no sean de texto libre.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
+  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",bad_code:"Ese código no es válido.",bad_prizes:"Revisa los premios por puesto: los rangos no pueden solaparse.",bad_threshold:"Para el premio por puntaje, pon el puntaje y el premio.",bad_game:"Elige un juego.",bad_end:"La duración no es válida.",code_used:"Ese código ya se usó.",code_expired:"Ese código ya venció.",few_questions:"El banco necesita al menos 5 preguntas que no sean de texto libre.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
@@ -1066,7 +1066,8 @@ function tabConvocatorias(o){
   api("/api/orgs/"+o.id+"/contests").then(function(r){
     var h="";
     if(o.status!=="activa")h+='<p class="rt-hoy">Las convocatorias se abren cuando la institución esté aprobada.</p>';
-    else h+='<div class="actions"><button class="primary" id="cv-nueva">Nueva convocatoria</button></div>';
+    else h+='<div class="actions"><button class="primary" id="cv-nueva">Nueva convocatoria de trivia</button><button class="ghost" id="cv-camp">Nueva competencia de juego rápido</button></div>'+
+      '<form class="cp-valida" id="cv-val"><input id="cv-cod" maxlength="9" placeholder="Validar cupón (XXXX-XXXX)" autocomplete="off" spellcheck="false"><button class="ghost" type="submit">Validar</button></form><div id="cv-valres"></div>';
     h+=o.brand?'<div class="rt-code"><span>Tu página</span><b class="au-codigo">'+esc(o.brand.slug)+'</b><button type="button" class="ghost" id="cv-ver">Ver</button>'+
         '<button type="button" class="ghost" id="cv-qrp">QR de la página</button></div>':
       (o.can.admin?'<p class="fine">Configura tu marca en <a href="#" id="cv-marca">'+(academica(o.kind)?"Ajustes":"Marca y ajustes")+'</a> para tener página propia con tus convocatorias y su QR.</p>':'');
@@ -1077,14 +1078,120 @@ function tabConvocatorias(o){
           (c.prize?' · 🏆 '+esc(c.prize):'')+' · '+c.registered+' inscritos · '+c.played+' jugaron'+(c.mine?'':' · de '+esc(c.owner_name))+'</small></button>'+
         (c.state!=="terminado"?'<button type="button" class="ghost au-mini" data-qr="'+c.code+'">QR</button>':'')+'</div>';
     }).join(""):'<p class="fine">Todavía no hay convocatorias. Crea la primera a partir de un banco de preguntas o con las preguntas generales de la plataforma.</p>';
+    h+='<h4>Competencias de juego rápido</h4><div id="cv-camps"><p class="fine">Cargando…</p></div>';
     t.innerHTML=h;
     if($("cv-nueva"))$("cv-nueva").onclick=function(){crearConvocatoria(o);};
+    if($("cv-camp"))$("cv-camp").onclick=function(){crearCampana(o);};
+    if($("cv-val"))$("cv-val").onsubmit=function(e){e.preventDefault();validaCupon($("cv-cod").value,$("cv-valres"));};
+    api("/api/orgs/"+o.id+"/campanas").then(function(x){
+      $("cv-camps").innerHTML=x.campanas.length?x.campanas.map(function(c){var J=window.AxRapidos&&AxRapidos.JUEGOS[c.juego]||{};
+        return '<div class="au-conv"><button type="button" class="rt-card" data-camp="'+c.code+'"><span class="rt-card-top"><b>'+esc(J.icono||"🎮")+' '+esc(c.name)+'</b>'+
+          '<span class="chip '+(c.state==="abierto"?"activo":c.state)+'">'+({pronto:"Pronto",abierto:"Abierta",terminado:"Terminada"}[c.state])+'</span></span>'+
+          '<small>'+esc(c.juego_nombre)+' · '+(c.intentos?c.intentos+' intentos':'intentos libres')+' · '+c.players+' jugadores · '+c.cupones+' cupones ('+c.canjeados+' canjeados)'+
+          (c.premios.length?' · 🏆 '+esc(c.premios[0].texto):'')+'</small></button>'+
+          (c.state!=="terminado"?'<button type="button" class="ghost au-mini" data-cqr="'+c.code+'">QR</button>':'')+'</div>';}).join(""):
+        '<p class="fine">Compite con un juego rápido (trivia, memoria, cálculo, reflejos o del 1 al 25): quien más puntos haga gana, y puedes dar descuentos a quien supere un puntaje.</p>';
+      $("cv-camps").querySelectorAll("[data-camp]").forEach(function(b){b.onclick=function(){gestionCampana(o,this.getAttribute("data-camp"));};});
+      $("cv-camps").querySelectorAll("[data-cqr]").forEach(function(b){b.onclick=function(){var k=this.getAttribute("data-cqr"), c=x.campanas.filter(function(y){return y.code===k;})[0];
+        AxQR.abre({url:location.origin+location.pathname+"?campana="+k,titulo:c.name,subtitulo:c.premios.length?"Premio: "+c.premios[0].texto:c.umbral_premio,marca:o.name,
+          color:o.brand&&o.brand.color,logo:o.brand&&o.brand.logo,directo:true});};});
+    }).catch(function(e){$("cv-camps").innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
     if($("cv-ver"))$("cv-ver").onclick=function(){AxMarca.ver(o.brand.slug);};
     if($("cv-qrp"))$("cv-qrp").onclick=function(){AxQR.abre({url:enlaceMarca(o.brand.slug),titulo:o.name,subtitulo:"Convocatorias",marca:o.name,color:o.brand.color,logo:o.brand.logo});};
     if($("cv-marca"))$("cv-marca").onclick=function(e){e.preventDefault();org(o.id,"ajustes");};
     var bs=t.querySelectorAll("[data-conv]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){aConcurso(this.getAttribute("data-conv"));};
     bs=t.querySelectorAll("[data-qr]"); for(i=0;i<bs.length;i++)bs[i].onclick=function(){var k=this.getAttribute("data-qr");qrConvocatoria(o,r.contests.filter(function(c){return c.code===k;})[0]);};
   }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+/* ===================== COMPETENCIAS DE JUEGO RÁPIDO (campañas) ===================== */
+function validaCupon(codigo,z,alCanjear){
+  z.innerHTML='<p class="fine">Buscando…</p>';
+  var pinta_=function(x){
+    z.innerHTML='<div class="cp-cupon'+(x.canjeado_at?' usado':'')+'"><small>'+esc(x.campana)+' · '+esc(x.name)+'</small><b>'+esc(x.premio)+'</b><code>'+x.codigo.slice(0,4)+'-'+x.codigo.slice(4)+'</code>'+
+      '<span>'+(x.tipo==="puesto"?'Premio por el puesto '+x.puesto:'Premio por puntaje')+' · '+(x.canjeado_at?(x.recien?'✓ Canjeado ahora':'Ya se canjeó el '+new Date(x.canjeado_at).toLocaleString("es")):'Válido, sin canjear')+'</span>'+
+      (x.canjeado_at?'':'<div class="actions"><button type="button" class="primary" id="cp-canjea">Canjear ahora</button></div>')+'</div>';
+    if($("cp-canjea"))$("cp-canjea").onclick=function(){api("/api/campanas/cupones/validar",{codigo:x.codigo,canjear:true}).then(function(y){pinta_(y);if(alCanjear)alCanjear();}).catch(function(er){alert(ERR(er));});};
+  };
+  api("/api/campanas/cupones/validar",{codigo:codigo}).then(pinta_).catch(function(er){z.innerHTML='<p class="fine bad">'+esc(ERR(er))+'</p>';});
+}
+function crearCampana(o){
+  vista={render:function(){crearCampana(o);}};
+  var J=window.AxRapidos?AxRapidos.JUEGOS:{};
+  pinta(atras(o.name)+'<h3>Nueva competencia de juego rápido</h3><p class="rt-meta">'+esc(o.name)+'</p>'+
+    '<form class="rt-form" id="cp-form">'+
+    '<label>Nombre<input id="cp-n" maxlength="60" required placeholder="Desafío de reflejos de aniversario"></label>'+
+    '<label>Juego<select id="cp-j">'+Object.keys(J).map(function(k){return '<option value="'+k+'">'+J[k].icono+' '+J[k].nom+' · '+J[k].dur+'</option>';}).join("")+'</select></label>'+
+    '<p class="fine" id="cp-jd"></p>'+
+    '<div class="rt-2"><label>Intentos por persona<select id="cp-i"><option value="1">1 (una sola vez)</option><option value="2">2</option><option value="3" selected>3</option><option value="5">5</option><option value="10">10</option><option value="0">Libres</option></select></label>'+
+    '<label>Dura<select id="cp-d"><option value="60">1 hora</option><option value="240">4 horas</option><option value="1440">1 día</option><option value="4320">3 días</option><option value="10080" selected>1 semana</option><option value="20160">2 semanas</option><option value="43200">1 mes</option></select></label></div>'+
+    '<label>Empieza<select id="cp-s"><option value="0">Ahora</option><option value="60">En 1 hora</option><option value="1440">Mañana a esta hora</option></select></label>'+
+    '<h4>Premios por puesto</h4><p class="fine">Se asignan al cerrar la competencia a quienes queden en esos puestos. Déjalo vacío si no hay.</p>'+
+    [0,1,2].map(function(i){return '<div class="cp-premio-fila"><input type="number" min="1" max="1000" id="cp-pd'+i+'" placeholder="Desde" value="'+(i===0?1:"")+'" aria-label="Desde el puesto">'+
+      '<input type="number" min="1" max="1000" id="cp-ph'+i+'" placeholder="Hasta" value="'+(i===0?1:"")+'" aria-label="Hasta el puesto"><input id="cp-pt'+i+'" maxlength="120" placeholder="'+
+      ["Una cena para dos","20 % de descuento","Un postre gratis"][i]+'" aria-label="Premio"></div>';}).join("")+
+    '<h4>Premio por puntaje</h4><p class="fine">Cada persona que lo logre recibe al momento un cupón (una vez por persona). Ideal para descuentos.</p>'+
+    '<div class="rt-2"><label id="cp-ul">Puntos mínimos<input type="number" min="0" id="cp-u" placeholder="1200"></label><label>Premio<input id="cp-up" maxlength="120" placeholder="10 % de descuento en tu próxima compra"></label></div>'+
+    '<label>Bases y descripción (opcional)<input id="cp-desc" maxlength="300" placeholder="Cupones válidos hasta fin de mes en tiendas participantes"></label>'+
+    '<label class="rt-check"><input type="checkbox" id="cp-pub" checked> <span>Aparece en tu página de marca</span></label>'+
+    '<label class="rt-check"><input type="checkbox" id="cp-inv" checked> <span>Admitir invitados: juegan sin cuenta, con su teléfono o correo verificado</span></label>'+
+    '<label class="rt-check"><input type="checkbox" id="cp-rk" checked> <span>Mostrar el ranking mientras está abierta</span></label>'+
+    '<p class="fine">El servidor genera cada partida, la cronometra y la puntúa: nadie puede enviarse una marca inventada. En la trivia, la respuesta correcta no llega al navegador. Los menores de 18 años solo juegan por premios si la empresa confirma el consentimiento de su tutor.</p>'+
+    '<div class="actions"><button class="primary" type="submit" id="cp-go">Publicar competencia</button></div><p class="msg" id="cp-msg"></p></form>');
+  $("au-back").onclick=function(){org(o.id,"convocatorias");};
+  function juego(){var k=$("cp-j").value, j=J[k]||{}; $("cp-jd").textContent=(j.desc||"")+(j.orden==="menos"?" Gana quien haga menos milisegundos.":" Gana quien haga más puntos.");
+    $("cp-ul").firstChild.textContent=j.orden==="menos"?"Milisegundos máximos":"Puntos mínimos"; $("cp-u").placeholder=j.orden==="menos"?"350":({trivia:"1200",memoria:"8",calculo:"20"}[k]||"100");}
+  $("cp-j").onchange=juego; juego();
+  $("cp-form").onsubmit=function(e){
+    e.preventDefault();
+    var premios=[0,1,2].map(function(i){return {desde:+$("cp-pd"+i).value,hasta:+($("cp-ph"+i).value||$("cp-pd"+i).value),texto:$("cp-pt"+i).value.trim()};}).filter(function(p){return p.texto&&p.desde>0;});
+    var ini=Date.now()+(+$("cp-s").value)*60000, fin=ini+(+$("cp-d").value)*60000;
+    $("cp-go").disabled=true;
+    api("/api/campanas",{org_id:o.id,name:$("cp-n").value,juego:$("cp-j").value,intentos:+$("cp-i").value,starts_at:ini,ends_at:fin,premios:premios,
+      umbral:$("cp-u").value===""?null:+$("cp-u").value,umbral_premio:$("cp-up").value,description:$("cp-desc").value,
+      publico:$("cp-pub").checked,guests:$("cp-inv").checked,ranking:$("cp-rk").checked})
+      .then(function(r){gestionCampana(o,r.code,"Competencia publicada. Comparte el QR o el enlace.");})
+      .catch(function(er){$("cp-go").disabled=false;aviso("cp-msg",ERR(er),true);});
+  };
+}
+function gestionCampana(o,code,nota){
+  vista={render:function(){gestionCampana(o,code);}};
+  pinta('<p class="fine">Cargando…</p>');
+  api("/api/campanas/"+code+"/resultados").then(function(c){
+    var enlace=location.origin+location.pathname+"?campana="+code;
+    var h=atras(o.name)+'<div class="rt-head"><h3>'+esc(c.name)+'</h3><span class="chip '+(c.state==="abierto"?"activo":c.state)+'">'+({pronto:"Pronto",abierto:"Abierta",terminado:"Terminada"}[c.state])+'</span></div>'+
+      '<p class="rt-meta">'+esc(c.juego_nombre)+' · '+(c.intentos?c.intentos+' intentos por persona':'intentos libres')+' · hasta el '+new Date(c.ends_at).toLocaleString("es")+'</p>'+
+      (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
+      '<div class="rt-code"><span>Código</span><b>'+code+'</b><button type="button" class="ghost" id="gc-copy">Copiar enlace</button><button type="button" class="ghost" id="gc-qr">QR</button><button type="button" class="ghost" id="gc-ver">Ver como jugador</button></div>'+
+      '<div class="mt-kpis">'+kpi(c.rows.length,pl(c.rows.length,"jugador","jugadores"))+kpi(c.cupones.length,pl(c.cupones.length,"cupón","cupones"),c.cupones.filter(function(k){return k.canjeado_at;}).length+" canjeados")+
+        kpi(c.rows.filter(function(r){return r.marketing;}).length,"aceptan contacto")+'</div>'+
+      '<form class="cp-valida" id="gc-val"><input id="gc-cod" maxlength="9" placeholder="Validar cupón (XXXX-XXXX)" autocomplete="off" spellcheck="false"><button class="ghost" type="submit">Validar</button></form><div id="gc-valres"></div>';
+    if(c.state!=="terminado")h+='<div class="actions"><button type="button" class="ghost" id="gc-cerrar">Cerrar ahora y asignar los premios</button></div>';
+    h+='<h4>Ranking</h4>'+(c.rows.length?'<div class="tabla-wrap"><table class="tabla"><thead><tr><th>#</th><th>Nombre</th><th>Mejor marca</th><th>Intentos</th><th>Contacto</th></tr></thead><tbody>'+
+      c.rows.map(function(r){return '<tr><td>'+r.rank+'</td><td>'+esc(r.name)+(r.guest?' <small>(invitado)</small>':'')+'</td><td>'+esc(r.formato)+'</td><td>'+r.intentos+'</td><td>'+(r.marketing?esc(r.contacto):'<small>no aceptó</small>')+'</td></tr>';}).join("")+
+      '</tbody></table></div>':'<p class="fine">Todavía nadie ha jugado.</p>');
+    h+='<h4>Cupones</h4>'+(c.cupones.length?'<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Cupón</th><th>Persona</th><th>Premio</th><th>Estado</th></tr></thead><tbody>'+
+      c.cupones.map(function(k){return '<tr><td><code>'+k.codigo.slice(0,4)+'-'+k.codigo.slice(4)+'</code></td><td>'+esc(k.name)+'</td><td>'+esc(k.premio)+(k.tipo==="puesto"?' <small>('+k.puesto+'.º)</small>':'')+'</td>'+
+        '<td>'+(k.canjeado_at?'Canjeado':'<button type="button" class="ghost au-mini" data-canj="'+k.codigo+'">Canjear</button>')+'</td></tr>';}).join("")+'</tbody></table></div>':
+      '<p class="fine">'+(c.premios.length&&c.state!=="terminado"?'Los premios por puesto se asignan al cerrar. ':'')+'Aún no hay cupones.</p>');
+    h+='<div class="actions"><button type="button" class="ghost" id="gc-xls">Descargar en Excel</button></div>';
+    pinta(h);
+    $("au-back").onclick=function(){org(o.id,"convocatorias");};
+    $("gc-copy").onclick=function(){var b=this; if(navigator.clipboard)navigator.clipboard.writeText(enlace).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent="Copiar enlace";},1400);}); else prompt("Copia el enlace:",enlace);};
+    $("gc-qr").onclick=function(){AxQR.abre({url:enlace,titulo:c.name,subtitulo:c.premios.length?"Premio: "+c.premios[0].texto:c.umbral_premio,marca:o.name,color:c.brand&&c.brand.color,logo:c.brand&&c.brand.logo,directo:true});};
+    $("gc-ver").onclick=function(){AxApp.setMode("concurso");AxConcursos.campana(code);};
+    $("gc-val").onsubmit=function(e){e.preventDefault();validaCupon($("gc-cod").value,$("gc-valres"),function(){setTimeout(function(){gestionCampana(o,code);},1500);});};
+    if($("gc-cerrar"))$("gc-cerrar").onclick=function(){ if(!confirm("¿Cerrar «"+c.name+"» ahora? Nadie más podrá jugar y se asignarán los premios por puesto."))return;
+      api("/api/campanas/"+code+"/cerrar",{}).then(function(){gestionCampana(o,code,"Competencia cerrada: premios asignados.");}).catch(function(er){alert(ERR(er));});};
+    panel.querySelectorAll("[data-canj]").forEach(function(b){b.onclick=function(){api("/api/campanas/cupones/validar",{codigo:this.getAttribute("data-canj"),canjear:true})
+      .then(function(){gestionCampana(o,code);}).catch(function(er){alert(ERR(er));});};});
+    $("gc-xls").onclick=function(){
+      XL.descarga(XL.escribir([
+        {nombre:"Ranking",filas:[["Puesto","Nombre","Mejor marca","Puntaje","Intentos","Invitado","Acepta contacto","Contacto"]].concat(c.rows.map(function(r){
+          return [r.rank,r.name,r.formato,r.score,r.intentos,r.guest?"Sí":"No",r.marketing?"Sí":"No",r.contacto];})),anchos:[8,28,14,10,10,10,14,30]},
+        {nombre:"Cupones",filas:[["Cupón","Persona","Premio","Tipo","Puesto","Canjeado"]].concat(c.cupones.map(function(k){
+          return [k.codigo.slice(0,4)+"-"+k.codigo.slice(4),k.name,k.premio,k.tipo==="puesto"?"Por puesto":"Por puntaje",k.puesto||"",k.canjeado_at?new Date(k.canjeado_at).toLocaleString("es"):""];})),anchos:[12,28,34,12,8,20]}
+      ]),"competencia-"+code+".xlsx");};
+  }).catch(function(e){pinta(atras(o.name)+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=function(){org(o.id,"convocatorias");};});
 }
 function crearConvocatoria(o){
   vista={render:function(){crearConvocatoria(o);}};

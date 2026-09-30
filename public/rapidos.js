@@ -60,7 +60,7 @@ function intro(juego,cfg){
   pinta((cfg?'':'<button type="button" class="rt-back" id="rp-back">‹ Juegos rápidos</button>')+cab(juego,cfg?cfg.sub:null)+
     (cfg&&cfg.titulo?'<p class="rt-meta">'+esc(cfg.titulo)+'</p>':'')+
     '<p class="rp-desc">'+esc(j.desc)+'</p>'+
-    (cfg?'<p class="fine">El tiempo empieza a contar al pulsar Empezar y solo vale el primer intento.</p>':'')+
+    (cfg?'<p class="fine">'+esc(cfg.nota||"El tiempo empieza a contar al pulsar Empezar y solo vale el primer intento.")+'</p>':'')+
     '<div class="actions"><button class="primary" id="rp-go">Empezar</button></div><p class="msg" id="rp-msg"></p>');
   if($("rp-back"))$("rp-back").onclick=practica;
   $("rp-go").onclick=function(){
@@ -114,9 +114,11 @@ JUEGO.trivia=function(d,cfg,done){
     if(!tick)return;
     clearInterval(tick);tick=null; document.removeEventListener("keydown",teclas);teclas=null;
     var ms=Math.min(TMAX,Date.now()-t0), q=d.p[i], bs=panel.querySelectorAll(".rp-opt"),j;
-    for(j=0;j<bs.length;j++){bs[j].disabled=true; if(j===q.c)bs[j].classList.add("ok"); else if(j===k)bs[j].classList.add("mal");}
-    if(k===q.c)pts+=100+Math.floor(Math.max(0,TMAX-ms)/TMAX*60);
-    $("rp-pts").textContent=pts+" pts"+(k===q.c?" · ¡correcto!":k<0?" · sin tiempo":" · era: "+q.o[q.c]);
+    /* en una campaña con premios no llega la correcta: se marca lo elegido y puntúa el servidor */
+    var ciega=q.c===undefined;
+    for(j=0;j<bs.length;j++){bs[j].disabled=true; if(ciega){if(j===k)bs[j].classList.add("elegida");} else if(j===q.c)bs[j].classList.add("ok"); else if(j===k)bs[j].classList.add("mal");}
+    if(!ciega&&k===q.c)pts+=100+Math.floor(Math.max(0,TMAX-ms)/TMAX*60);
+    $("rp-pts").textContent=ciega?(k<0?"Sin tiempo":"Respuesta registrada")+" · los puntos se ven al terminar":pts+" pts"+(k===q.c?" · ¡correcto!":k<0?" · sin tiempo":" · era: "+q.o[q.c]);
     r.push({o:k,ms:ms}); i++;
     espera(900,pregunta);
   }

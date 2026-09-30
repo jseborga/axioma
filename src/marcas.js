@@ -89,6 +89,13 @@ async function pagina(env,user,slug,json){
   var out=marcaPublica(o,b);
   out.open=todas.filter(function(c){return c.state!=="terminado";});
   out.recent=todas.filter(function(c){return c.state==="terminado";});
+  /* competencias de juego rápido abiertas (tabla opcional) */
+  out.campanas=[];
+  try{out.campanas=((await env.DB.prepare("SELECT c.code,c.nombre,c.juego,c.intentos,c.premios,c.umbral_premio,c.starts_at,c.ends_at,c.invitados,"+
+      "(SELECT COUNT(DISTINCT user_id) FROM campana_intentos i WHERE i.code=c.code AND i.finished_at IS NOT NULL) AS jugadores "+
+      "FROM campanas c WHERE c.org_id=? AND c.publico=1 AND c.cerrada_at IS NULL AND c.ends_at>? ORDER BY c.ends_at ASC LIMIT 20").bind(o.id,now).all()).results||[])
+    .map(function(c){var p=c.premios?JSON.parse(c.premios):[];return {code:c.code,name:c.nombre,juego:c.juego,intentos:c.intentos,starts_at:c.starts_at,ends_at:c.ends_at,
+      guests:!!c.invitados,players:c.jugadores,premio:p.length?p[0].texto:"",umbral_premio:c.umbral_premio||"",state:now<c.starts_at?"pronto":"abierto"};});}catch(e){}
   out.manage=!!(user&&!esInvitado(user)&&((await rolOrg(env,o.id,user.id))==="admin"||esAdminPlataforma(env,user)));
   return json(out);
 }

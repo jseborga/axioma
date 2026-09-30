@@ -32,7 +32,7 @@ var ERR={bad_name:"Escribe tu nombre.",bad_phone:"Revisa el teléfono: con el c�
 function error(e){return (e&&ERR[e.error])||"No se pudo completar. Inténtalo otra vez.";}
 function aviso(t,mal){var m=$("inv-msg");if(m){m.className="msg"+(mal?" bad":"");m.textContent=t||"";}}
 
-/* o = { code | sala, org_name, prize } → promesa: true si quedó verificado */
+/* o = { code | sala | campana, org_name, prize } → promesa: true si quedó verificado */
 function abre(o){
   return new Promise(function(resolve){ espera=resolve; datos=datos||{channel:"sms"}; datos.o=o; formulario(); });
 }
@@ -73,7 +73,7 @@ function formulario(){
     if(!datos.accept){aviso(ERR.terms_required,true);return;}
     $("inv-si").disabled=true; aviso("Enviando…");
     api("/api/guest/start",{name:datos.name,channel:datos.channel,contact:datos.contact,birthdate:datos.birthdate,guardian_name:datos.guardian_name,
-      guardian_email:datos.guardian_email,accept:true,marketing:datos.marketing,contest:o.code||null,sala:o.sala||null})
+      guardian_email:datos.guardian_email,accept:true,marketing:datos.marketing,contest:o.code||null,sala:o.sala||null,campana:o.campana||null})
       .then(function(r){datos.id=r.id;datos.to=r.to;datos.test=r.test_code||"";datos.mode=r.mode;codigo();})
       .catch(function(er){$("inv-si").disabled=false;aviso(error(er),true);});
   };

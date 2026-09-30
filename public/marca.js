@@ -63,6 +63,15 @@ function pinta(){
         '<small>'+(c.state==="abierto"?"Hasta el "+fecha(c.ends_at):"Desde el "+fecha(c.starts_at))+' · '+c.max_questions+' preguntas · '+
         c.registered+(c.registered===1?' inscrito':' inscritos')+(c.guests?' · sin cuenta, con tu teléfono o correo':'')+'</small></button>';
     }).join(""):'<p class="fine">No hay convocatorias abiertas ahora mismo. Vuelve pronto.</p>';
+    if(b.campanas&&b.campanas.length){
+      var J=window.AxRapidos&&AxRapidos.JUEGOS||{};
+      h+='<h4>Competencias</h4>'+b.campanas.map(function(c){var j=J[c.juego]||{};
+        return '<button type="button" class="rt-card mc-conv" data-camp="'+c.code+'"><span class="rt-card-top"><b>'+esc(j.icono||"🎮")+' '+esc(c.name)+'</b>'+
+          '<span class="chip '+(c.state==="abierto"?"activo":"pronto")+'">'+(c.state==="abierto"?"Abierta":"Pronto")+'</span></span>'+
+          (c.premio||c.umbral_premio?'<span class="mc-premio">🏆 '+esc(c.premio||c.umbral_premio)+'</span>':'')+
+          '<small>'+esc(j.nom||c.juego)+' · '+(c.state==="abierto"?"hasta el "+fecha(c.ends_at):"desde el "+fecha(c.starts_at))+' · '+c.players+(c.players===1?' jugador':' jugadores')+
+          (c.guests?' · sin cuenta, con tu teléfono o correo':'')+'</small></button>';}).join("");
+    }
     if(b.recent.length){
       h+='<h4>Terminadas</h4>'+b.recent.map(function(c){
         return '<button type="button" class="rt-card" data-code="'+c.code+'"><span class="rt-card-top"><b>'+esc(c.name)+'</b><span class="chip terminado">Resultados</span></span>'+
@@ -73,6 +82,7 @@ function pinta(){
     panel.innerHTML=h;
     var bs=panel.querySelectorAll("[data-code]"),i;
     for(i=0;i<bs.length;i++)bs[i].onclick=function(){var c=this.getAttribute("data-code");AxApp.setMode("concurso");AxConcursos.ficha(c);};
+    panel.querySelectorAll("[data-camp]").forEach(function(x){x.onclick=function(){var c=this.getAttribute("data-camp");AxApp.setMode("concurso");AxConcursos.campana(c);};});
     $("mc-qr").onclick=function(){AxQR.abre({url:enlace(b.slug),titulo:b.name,subtitulo:b.tagline||"Convocatorias",marca:b.name,lema:b.tagline,color:b.color,logo:b.logo});};
     if($("mc-gest"))$("mc-gest").onclick=function(){AxApp.setMode("empresas");AxAula.org(b.org_id,"convocatorias");};
   }).catch(function(){

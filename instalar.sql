@@ -81,3 +81,9 @@ CREATE TABLE IF NOT EXISTS repaso_codigos (codigo TEXT PRIMARY KEY, repaso_id IN
 CREATE TABLE IF NOT EXISTS repaso_accesos (user_id TEXT NOT NULL, alcance TEXT NOT NULL, hasta INTEGER NOT NULL, codigo TEXT, created_at INTEGER NOT NULL, PRIMARY KEY (user_id, alcance));
 CREATE TABLE IF NOT EXISTS repaso_intentos (id INTEGER PRIMARY KEY AUTOINCREMENT, repaso_id INTEGER NOT NULL, user_id TEXT NOT NULL, plan TEXT NOT NULL, respuestas TEXT NOT NULL DEFAULT '{}', aciertos INTEGER NOT NULL DEFAULT 0, total INTEGER NOT NULL, created_at INTEGER NOT NULL, terminado_at INTEGER);
 CREATE INDEX IF NOT EXISTS repaso_intentos_user ON repaso_intentos(user_id, repaso_id, created_at);
+CREATE TABLE IF NOT EXISTS campanas (code TEXT PRIMARY KEY, org_id TEXT NOT NULL, owner_id TEXT NOT NULL, nombre TEXT NOT NULL, descripcion TEXT, juego TEXT NOT NULL, intentos INTEGER NOT NULL DEFAULT 3, publico INTEGER NOT NULL DEFAULT 1, invitados INTEGER NOT NULL DEFAULT 1, ranking INTEGER NOT NULL DEFAULT 1, premios TEXT, umbral INTEGER, umbral_premio TEXT, seed INTEGER NOT NULL, starts_at INTEGER NOT NULL, ends_at INTEGER NOT NULL, cerrada_at INTEGER, premiados_at INTEGER, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS campanas_org ON campanas(org_id, ends_at);
+CREATE TABLE IF NOT EXISTS campana_intentos (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL, user_id TEXT NOT NULL, n INTEGER NOT NULL, seed INTEGER NOT NULL, started_at INTEGER NOT NULL, finished_at INTEGER, score INTEGER, seconds INTEGER, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS campana_intentos_code ON campana_intentos(code, user_id);
+CREATE TABLE IF NOT EXISTS campana_cupones (codigo TEXT PRIMARY KEY, code TEXT NOT NULL, user_id TEXT NOT NULL, tipo TEXT NOT NULL, puesto INTEGER, premio TEXT NOT NULL, created_at INTEGER NOT NULL, canjeado_at INTEGER, canjeado_por TEXT);
+CREATE INDEX IF NOT EXISTS campana_cupones_code ON campana_cupones(code, user_id);

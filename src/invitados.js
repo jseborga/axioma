@@ -7,7 +7,7 @@
    puede participar una vez en cada convocatoria.
 
      POST /api/guest/start   { name, channel:"sms"|"email", contact, birthdate,
-                               guardian_name, guardian_email, accept, marketing, contest | sala }
+                               guardian_name, guardian_email, accept, marketing, contest | sala | campana }
                              → { id, channel, to, expires_in, mode, test_code? }
      POST /api/guest/verify  { id, code } → { user } y cookie de sesión
 
@@ -94,8 +94,14 @@ async function empieza(req,env,json){
   }
   /* solo para convocatorias abiertas que admiten invitados */
   /* para una convocatoria que admite invitados, o para una sala en vivo con ese acceso */
-  var code, sala=null;
-  if(b.sala){
+  var code, sala=null, campana=null;
+  if(b.campana){
+    /* una competencia de juego rápido de una empresa que admite invitados */
+    campana=String(b.campana).toUpperCase(); code="";
+    var cp=await env.DB.prepare("SELECT invitados,ends_at,cerrada_at FROM campanas WHERE code=?").bind(campana).first();
+    if(!cp||!cp.invitados)return json({error:"guests_not_allowed"},null,403);
+    if(cp.cerrada_at||cp.ends_at<=Date.now())return json({error:"finished"},null,400);
+  }else if(b.sala){
     sala=String(b.sala).toUpperCase(); code="";
     var sl=await env.DB.prepare("SELECT acceso,estado FROM salas WHERE code=?").bind(sala).first();
     if(!sl||sl.acceso!=="invitados")return json({error:"guests_not_allowed"},null,403);
@@ -119,7 +125,7 @@ async function empieza(req,env,json){
   if(modo==="real"&&!(await envia(env,canal,contacto,cod)))return json({error:"verify_unavailable"},null,503);
   await env.DB.prepare("INSERT INTO verify_codes(id,channel,contact,code_hash,data,ip,expires_at,created_at) VALUES(?,?,?,?,?,?,?,?)")
     .bind(id,canal,canal+":"+contacto,await hmac(env.SESSION_SECRET,"codigo:"+id+":"+cod),
-          JSON.stringify({name:nombre,birthdate:b.birthdate,gn:gn,ge:ge,marketing:b.marketing===true,contest:code,sala:sala}),ip,now+VIGENCIA,now).run();
+          JSON.stringify({name:nombre,birthdate:b.birthdate,gn:gn,ge:ge,marketing:b.marketing===true,contest:code,sala:sala,campana:campana}),ip,now+VIGENCIA,now).run();
   var out={id:id,channel:canal,to:oculta(canal,contacto),expires_in:VIGENCIA/1000,mode:modo};
   if(modo==="prueba")out.test_code=cod;
   return json(out);
@@ -160,12 +166,13 @@ async function verifica(req,env,json,sesion){
       .bind(uid,d.birthdate,TERMS_VERSION,now,d.gn,d.ge,now)
   ];
   /* consentimiento de contacto para la empresa que organiza la convocatoria */
-  var org=d.sala?await env.DB.prepare("SELECT org_id FROM salas WHERE code=?").bind(d.sala).first()
+  var org=d.campana?await env.DB.prepare("SELECT org_id FROM campanas WHERE code=?").bind(d.campana).first()
+         :d.sala?await env.DB.prepare("SELECT org_id FROM salas WHERE code=?").bind(d.sala).first()
                 :await env.DB.prepare("SELECT org_id FROM contest_scope WHERE code=?").bind(d.contest).first();
   if(org&&org.org_id)ops.push(env.DB.prepare(
     "INSERT INTO contact_consents(user_id,org_id,marketing,created_at) VALUES(?,?,?,?) ON CONFLICT(user_id,org_id) DO UPDATE SET marketing=excluded.marketing,created_at=excluded.created_at"
   ).bind(uid,org.org_id,d.marketing?1:0,now));
   await env.DB.batch(ops);
   var cookie=await sesion(uid);
-  return json({ok:true,contest:d.contest,sala:d.sala||null,user:{id:uid,name:d.name,picture:"",email:canal==="email"?contacto:"",guest:true,verified_by:modo}},{"Set-Cookie":cookie});
+  return json({ok:true,contest:d.contest,sala:d.sala||null,campana:d.campana||null,user:{id:uid,name:d.name,picture:"",email:canal==="email"?contacto:"",guest:true,verified_by:modo}},{"Set-Cookie":cookie});
 }

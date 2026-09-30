@@ -43,7 +43,7 @@ function ERR(e){if(e&&e.error==="practice_mode")return "Esta es una práctica: e
   not_registered:"Primero tienes que inscribirte.",not_started:"El concurso todavía no ha empezado.",bad_name:"Ponle un nombre.",
   bad_end:"El concurso tiene que durar entre 5 minutos y 31 días.",bad_start:"La fecha de inicio no es válida.",
   too_many:"Tienes demasiados concursos abiertos a la vez.",forbidden:"Solo quien lo organiza puede hacer eso.",
-  profile_required:"Antes tienes que completar tu registro.",edu_no_contests:"Las instituciones educativas no organizan concursos: usa exámenes y prácticas en sus cursos.",edu_bank:"Los bancos de las instituciones educativas son solo para sus exámenes y prácticas.",restricted:"Es solo para los miembros de su curso o institución.",
+  profile_required:"Antes tienes que completar tu registro.",no_attempts:"Ya usaste todos tus intentos.",bad_result:"El resultado no es válido.",bad_time:"El tiempo no cuadra con el reloj del servidor.",busy:"Ya tienes una partida abriéndose.",already:"Esa partida ya estaba registrada.",edu_no_contests:"Las instituciones educativas no organizan concursos: usa exámenes y prácticas en sus cursos.",edu_bank:"Los bancos de las instituciones educativas son solo para sus exámenes y prácticas.",restricted:"Es solo para los miembros de su curso o institución.",
   consent_required:"Tienes menos de 18 años: para los concursos abiertos con premio hace falta el consentimiento de tu tutor o de tu institución.",
   org_pending:"La institución todavía no está aprobada.",
   google_required:"Esta convocatoria es para cuentas de Google: sal de la sesión de invitado y entra con Google.",
@@ -71,9 +71,9 @@ function seccion(educativo){
 
 /* ---------- entrada ---------- */
 /* al volver a Concursos se retoma el último concurso visto, nunca un examen o una práctica (son de Educativo) */
-function abrir(){ activo=true; panel.hidden=false; if(vista&&vista.code&&!vista.cuest)ficha(vista.code); else inicio(); }
+function abrir(){ activo=true; panel.hidden=false; if(vista&&vista.camp)campana(vista.camp); else if(vista&&vista.code&&!vista.cuest)ficha(vista.code); else inicio(); }
 function cerrar(){ activo=false; para(); panel.hidden=true; }
-document.addEventListener("ax-user",function(){ if(activo&&vista&&!vista.jugando)(vista.code?ficha(vista.code):inicio()); });
+document.addEventListener("ax-user",function(){ if(activo&&vista&&!vista.jugando)(vista.camp?campana(vista.camp):vista.code?ficha(vista.code):inicio()); });
 
 /* ---------- inicio ---------- */
 function inicio(){ colorMarca(null); seccion(false);
@@ -568,16 +568,95 @@ function juego(c){
   carga();
 }
 
+/* ---------- competencias de juego rápido de empresas (campañas) ----------
+   Se juega con el motor de los juegos rápidos: el servidor da la partida,
+   la cronometra y la puntúa. Cuenta la mejor marca; los premios por puntaje
+   llegan al momento como cupón y los de puesto, al cerrar. */
+function enlaceCampana(code){return location.origin+location.pathname+"?campana="+code;}
+function umbralTxt(c){return c.umbral==null?"":(c.orden==="menos"?"con "+c.umbral+" ms o menos":"con "+c.umbral+" puntos o más");}
+function campana(code,aviso,nuevo){
+  para(); vista={camp:code}; $("hdr").textContent=code; seccion(false);
+  pinta('<p class="fine">Cargando…</p>');
+  api("/api/campanas/"+code).then(function(c){
+    colorMarca(c);
+    var u=user(), me=c.me, J=(window.AxRapidos&&AxRapidos.JUEGOS[c.juego])||{};
+    var h='<button type="button" class="rt-back" id="cq-back">‹ '+esc(c.brand?c.org_name:"Concursos")+'</button>'+
+      (c.brand?'<div class="cq-marca">'+(c.brand.logo?'<img src="'+esc(c.brand.logo)+'" alt="">':'')+'<span>Competencia de <b>'+esc(c.org_name)+'</b></span></div>':'<p class="rt-meta">'+esc(c.org_name)+'</p>')+
+      '<div class="rt-head"><h3>'+esc(J.icono||"🎮")+' '+esc(c.name)+'</h3><span class="chip '+(c.state==="abierto"?"activo":c.state)+'">'+({pronto:"Pronto",abierto:"Abierta",terminado:"Terminada"}[c.state])+'</span></div>'+
+      (c.description?'<p>'+esc(c.description)+'</p>':'')+
+      '<div class="cq-reglas"><div><small>Juego</small><b>'+esc(c.juego_nombre)+'</b></div><div><small>Intentos</small><b>'+(c.intentos?c.intentos:"Libres")+'</b></div>'+
+        '<div><small>Cuenta</small><b>Tu mejor marca</b></div><div><small>Jugadores</small><b>'+c.players+'</b></div></div>'+
+      '<p class="fine">'+(c.state==="terminado"?"Terminó el "+fecha(c.ends_at)+".":c.state==="pronto"?"Empieza el "+fecha(c.starts_at)+".":"Se puede jugar hasta el "+fecha(c.ends_at)+".")+' '+esc(J.desc||"")+'</p>';
+    if(c.premios.length||c.umbral!=null){
+      h+='<div class="cp-premios"><h4>Premios</h4><ul>'+c.premios.map(function(p){return '<li><b>'+(p.desde===p.hasta?p.desde+'.º':p.desde+'.º a '+p.hasta+'.º')+'</b> '+esc(p.texto)+'</li>';}).join("")+
+        (c.umbral!=null?'<li><b>'+esc(umbralTxt(c))+'</b> '+esc(c.umbral_premio)+' <small>(al momento, a cada persona que lo logre)</small></li>':'')+'</ul>'+
+        (c.premios.length?'<p class="fine">Los premios por puesto se asignan al cerrar la competencia. Cada premio es un cupón único que muestras en '+esc(c.org_name)+'.</p>':'')+'</div>';
+    }
+    if(aviso)h+=aviso;
+    if(me&&(me.best||me.cupones.length)){
+      h+='<div class="cq-mio"><small>Tu mejor marca</small><b>'+(me.best?esc(me.best.formato):"—")+'</b><span>'+(me.rank?'Puesto '+me.rank+' de '+c.players:'')+
+        (me.restantes!==null&&c.state==="abierto"?' · te quedan '+me.restantes+(me.restantes===1?' intento':' intentos'):'')+'</span></div>';
+      if(me.cupones.length)h+='<div class="cp-cupones">'+me.cupones.map(function(k){
+        return '<div class="cp-cupon'+(k.canjeado?' usado':'')+(k.codigo===nuevo?' nuevo':'')+'"><small>'+(k.codigo===nuevo?'¡Ganaste un premio! · ':'')+(k.tipo==="puesto"?'Premio por el puesto '+k.puesto:'Premio por tu puntaje')+'</small><b>'+esc(k.premio)+'</b>'+
+          '<code>'+k.codigo.slice(0,4)+'-'+k.codigo.slice(4)+'</code><span>'+(k.canjeado?'Canjeado':'Muéstralo en '+esc(c.org_name)+' para canjearlo')+'</span></div>';}).join("")+'</div>';
+    }
+    if(c.state==="abierto"){
+      if(!u&&c.guests)h+='<div class="actions"><button class="primary" id="cp-inv">Jugar con mi teléfono o correo</button></div>'+
+        (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="ghost" id="cq-login">o entra con Google</button></div>':'');
+      else if(!u)h+=(window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="cq-login">Entrar con Google para jugar</button></div>':'');
+      else if(u.guest&&!c.guests)h+='<p class="rt-hoy">Esta competencia es solo con cuenta de Google.</p>';
+      else if(!me||me.restantes===null||me.restantes>0)h+='<div class="actions"><button class="primary" id="cp-jugar">'+(me&&me.intentos?'Jugar otra vez':'Jugar')+'</button></div>';
+      else h+='<p class="rt-hoy">Ya usaste tus '+c.intentos+' intentos. Cuenta tu mejor marca.</p>';
+    }
+    if(c.ranking){
+      h+='<h4>Ranking'+(c.state==="terminado"?' final':'')+'</h4>'+(c.ranking.length?'<ol class="rt-rank">'+c.ranking.map(function(r){
+        return '<li'+(r.me?' class="me"':'')+'><span class="pos">'+r.rank+'</span><span class="who">'+esc(r.name)+(r.me?' <em>(tú)</em>':'')+'</span><span class="pts"><b>'+esc(r.formato)+'</b></span></li>';}).join("")+'</ol>':'<p class="fine">Todavía nadie ha jugado. ¡Sé el primero!</p>');
+    }else h+='<p class="fine">El ranking se publica al cerrar la competencia.</p>';
+    if(c.state!=="terminado")h+='<div class="rt-code"><span>Código</span><b>'+c.code+'</b><button type="button" class="ghost" id="cp-copy">Copiar enlace</button>'+(window.AxQR?'<button type="button" class="ghost" id="cp-qr">QR</button>':'')+'</div>';
+    pinta(h);
+    $("cq-back").onclick=function(){ if(c.brand&&window.AxMarca){AxMarca.ver(c.brand.slug);return;} inicio(); };
+    if($("cq-login"))$("cq-login").onclick=function(){AxAccount.abrirCuenta();};
+    if($("cp-inv"))$("cp-inv").onclick=function(){AxInvitado.abre({campana:code,org_name:c.org_name,prize:c.premios.length?c.premios[0].texto:c.umbral_premio}).then(function(ok){if(ok)campana(code);});};
+    if($("cp-jugar"))$("cp-jugar").onclick=function(){juegaCampana(c);};
+    if($("cp-copy"))$("cp-copy").onclick=function(){var b=this,t=enlaceCampana(code);
+      if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent="Copiar enlace";},1400);}); else prompt("Copia el enlace:",t);};
+    if($("cp-qr"))$("cp-qr").onclick=function(){AxQR.abre({url:enlaceCampana(code),titulo:c.name,subtitulo:c.premios.length?"Premio: "+c.premios[0].texto:c.umbral_premio,marca:c.org_name,
+      color:c.brand&&c.brand.color,logo:c.brand&&c.brand.logo,directo:true});};
+  }).catch(function(e){pinta('<button type="button" class="rt-back" id="cq-back">‹ Concursos</button><p class="fine bad">'+esc(ERR(e))+'</p>');$("cq-back").onclick=inicio;});
+}
+function juegaCampana(c){
+  var RUI=window.AxRapidosUI; if(!RUI)return;
+  var intento=null, vuelve=function(aviso,nuevo){document.body.setAttribute("data-game","concurso");RUI.cerrar();panel.hidden=false;campana(c.code,aviso,nuevo);};
+  /* el panel de los juegos rápidos se muestra en lugar de la ficha mientras dura la partida */
+  panel.hidden=true; document.body.setAttribute("data-game","rapido");
+  RUI.jugar({juego:c.juego,sub:c.intentos?"Intento "+((c.me?c.me.intentos:0)+1)+" de "+c.intentos:"Competencia",titulo:c.name+" · "+c.org_name,
+    nota:"El tiempo empieza a contar al pulsar Empezar. Cuenta tu mejor marca"+(c.intentos?" de tus "+c.intentos+" intentos.":"."),
+    pedirDatos:function(){
+      var fn=function(){return api("/api/campanas/"+c.code+"/empezar",{});};
+      return conRegistro(fn).then(function(r){intento=r.intento;return r.datos;});
+    },
+    error:function(e){if(e&&e.error==="no_attempts")setTimeout(function(){vuelve();},1200);return ERR(e);},
+    alTerminar:function(envio){
+      api("/api/campanas/"+c.code+"/intentos/"+intento,{envio:envio}).then(function(r){
+        var h='<div class="vv-res bien"><b>'+esc(r.formato)+'</b><span>'+(r.mejoro?'¡Tu mejor marca! ':'Tu mejor marca: '+esc(r.best.formato)+' · ')+'Puesto '+r.rank+' de '+r.players+'</span></div>';
+        /* el cupón nuevo se ve resaltado en «tus premios» */
+        vuelve(h,r.cupon&&r.cupon.nuevo?r.cupon.codigo:null);
+      }).catch(function(e){vuelve('<p class="rt-hoy">No se pudo registrar: '+esc(ERR(e))+'</p>');});
+    }});
+  var rp=$("rapido-panel"); if(rp)rp.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
 /* se publica antes de atender el enlace: si la sesión ya se conoce, el cambio de modo es inmediato */
-window.AxConcursos={abrir:abrir,cerrar:cerrar,ficha:function(code){activo=true;panel.hidden=false;ficha(code);}};
+window.AxConcursos={abrir:abrir,cerrar:cerrar,ficha:function(code){activo=true;panel.hidden=false;ficha(code);},
+  campana:function(code){activo=true;panel.hidden=false;campana(code);}};
 
 /* ---------- entrada por enlace: ?concurso=CÓDIGO ---------- */
 (function(){
-  var q=new URLSearchParams(location.search), code=q.get("concurso");
-  if(!code||!window.AxApp)return;
-  code=code.toUpperCase().slice(0,6);
+  var q=new URLSearchParams(location.search), code=q.get("concurso"), camp=q.get("campana");
+  if(!(code||camp)||!window.AxApp)return;
+  code=(code||camp).toUpperCase().slice(0,6);
   try{history.replaceState(null,"",location.pathname);}catch(e){}
-  var ido=false, ir=function(){ if(ido)return; ido=true; vista={code:code}; AxApp.setMode("concurso"); };
+  var ido=false, ir=function(){ if(ido)return; ido=true; vista=camp?{camp:code}:{code:code}; AxApp.setMode("concurso"); };
   if(window.AxAccount&&AxAccount.listo())ir(); else document.addEventListener("ax-user",ir);
 })();
 

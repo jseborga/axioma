@@ -1540,3 +1540,21 @@ body[data-proyector] #nav-back{display:none}
 .rp-temas li i{grid-column:1/-1;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--accent) var(--p),var(--inset-2) var(--p))}
 .rp-lock{margin:8px 0}
 .rp-lista{width:100%;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;border-radius:10px;border:1px solid var(--hair);padding:8px;background:var(--card);color:var(--ink)}
+.rp-opt.elegida,.rp-opt.elegida:disabled{background:var(--accent-tint);color:var(--accent);font-weight:600;opacity:1}
+
+/* ---------- competencias de juego rápido (campañas) ---------- */
+.cp-premios{background:var(--inset);border-radius:var(--r-el);padding:10px 12px;margin:10px 0}
+.cp-premios ul{margin:6px 0 0;padding-left:18px;line-height:1.55}
+.cp-premios small{color:var(--ink-2)}
+.cp-cupones{display:grid;gap:8px;margin:10px 0}
+.cp-cupon{border:2px dashed var(--accent);border-radius:14px;padding:12px;text-align:center;display:flex;flex-direction:column;gap:4px;background:var(--card)}
+.cp-cupon small{color:var(--ink-2);font-weight:600}
+.cp-cupon b{font-size:1.1rem}
+.cp-cupon code{font:700 1.5rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;color:var(--accent)}
+.cp-cupon span{font-size:.85rem;color:var(--ink-2)}
+.cp-cupon.nuevo{box-shadow:0 0 0 4px var(--accent-tint)}
+.cp-cupon.usado{opacity:.55;border-style:solid;border-color:var(--hair)}
+.cp-cupon.usado code{text-decoration:line-through;color:var(--ink-2)}
+.cp-valida{display:flex;gap:8px;flex-wrap:wrap}
+.cp-valida input{flex:1 1 160px;font:700 1.1rem ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.06em;padding:10px 12px;border-radius:12px;border:1.5px solid var(--hair);background:var(--card);color:var(--ink)}
+.cp-premio-fila{display:grid;grid-template-columns:70px 70px 1fr;gap:6px}

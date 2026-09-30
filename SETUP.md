@@ -576,6 +576,21 @@ CREATE TABLE IF NOT EXISTS contest_textos (code TEXT NOT NULL, user_id TEXT NOT 
 Mientras falten, las preguntas de opción múltiple funcionan como siempre; guardar
 una de otro tipo o con imagen avisa de que faltan las tablas.
 
+### Añadir las tablas de las competencias de juego rápido
+
+Para las competencias de juego rápido de las empresas, con premios y cupones
+(ver [EMPRESAS.md](EMPRESAS.md)), pega esto en la consola de D1 (también está en
+`instalar.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS campanas (code TEXT PRIMARY KEY, org_id TEXT NOT NULL, owner_id TEXT NOT NULL, nombre TEXT NOT NULL, descripcion TEXT, juego TEXT NOT NULL, intentos INTEGER NOT NULL DEFAULT 3, publico INTEGER NOT NULL DEFAULT 1, invitados INTEGER NOT NULL DEFAULT 1, ranking INTEGER NOT NULL DEFAULT 1, premios TEXT, umbral INTEGER, umbral_premio TEXT, seed INTEGER NOT NULL, starts_at INTEGER NOT NULL, ends_at INTEGER NOT NULL, cerrada_at INTEGER, premiados_at INTEGER, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS campanas_org ON campanas(org_id, ends_at);
+CREATE TABLE IF NOT EXISTS campana_intentos (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL, user_id TEXT NOT NULL, n INTEGER NOT NULL, seed INTEGER NOT NULL, started_at INTEGER NOT NULL, finished_at INTEGER, score INTEGER, seconds INTEGER, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS campana_intentos_code ON campana_intentos(code, user_id);
+CREATE TABLE IF NOT EXISTS campana_cupones (codigo TEXT PRIMARY KEY, code TEXT NOT NULL, user_id TEXT NOT NULL, tipo TEXT NOT NULL, puesto INTEGER, premio TEXT NOT NULL, created_at INTEGER NOT NULL, canjeado_at INTEGER, canjeado_por TEXT);
+CREATE INDEX IF NOT EXISTS campana_cupones_code ON campana_cupones(code, user_id);
+```
+
 ### Añadir las tablas del repaso público
 
 Para el repaso de ingreso y nivelación con códigos de acceso (ver

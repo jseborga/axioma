@@ -85,6 +85,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `src/plataforma.js` | API de administración de la plataforma: resumen, usuarios, bloqueo y altas |
 | `src/ajustes.js` | Ajustes de la plataforma: nombre, correo de contacto y remitente (variables de `wrangler.toml`) |
 | `src/concursos.js` | API de los concursos y de los cuestionarios de curso |
+| `src/campanas.js` | Competencias de juego rápido de empresas: partidas puntuadas en el servidor, ranking, premios por puesto y por puntaje con cupones |
 | `src/repaso.js` | Repaso público de ingreso y nivelación: catálogo, intentos corregidos en el servidor y códigos de acceso |
 | `src/mispreguntas.js` | Mis preguntas: bancos personales para jugar retos y trivia en vivo (los educativos no se usan en juegos) |
 | `src/ia.js` | Plan Pro: cuota mensual por institución y ayudas con IA (API de Anthropic) |
