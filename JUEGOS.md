@@ -1,6 +1,6 @@
 # Más juegos: salas en vivo, proyector y eventos
 
-La sección **Más juegos** reúne trece juegos que se juegan en una **sala** con
+La sección **Más juegos** reúne catorce juegos que se juegan en una **sala** con
 código de seis caracteres. Se entra con el código, con el enlace `?sala=CÓDIGO` o
 escaneando el QR de la sala de espera. Quien crea la sala es el **anfitrión**: elige
 las opciones, añade bots si el juego los tiene y empieza la partida.
@@ -20,6 +20,7 @@ teléfonos hacen de mando.
 | En grupo | **Dudo** (dados mentirosos) | 2–6 | Sí | Los unos son comodines (opcional). Los dados de cada uno no salen del servidor hasta que se levantan |
 | | **La sexta carta** | 2–10 | Sí | 104 cartas con cabezas de penalización; gana quien menos junta |
 | | **Dos verdades y una mentira** | 3–30 | No | Se escriben en secreto y se votan una a una |
+| | **Carrera de caballos** | 1–4 | Sí (3 niveles) | Carrera de preguntas: cada ronda eliges la dificultad (Fácil +1/−1, Media +2/−1, Difícil +3/−2). Zanahorias, barro, galope extra al más rápido y un comodín 50:50. «Jugar ya contra 3 bots» crea la sala y arranca sola |
 | En vivo para eventos | **Trivia en vivo** | hasta 2000 | No | El anfitrión presenta y marca el ritmo. Puntúan acertar y la rapidez, medida en el servidor. Preguntas generales (se eligen las áreas), de tus bancos personales (*Mis preguntas*) o de un banco de la empresa. Con «¿Sabías que…?» al revelar la respuesta; la misma institución no repite preguntas en 60 días |
 | | **Botón del hype** | hasta 2000 | No | 2 o 3 equipos inflan su objeto pulsando. Cupón opcional que solo ve el equipo ganador |
 | | **Carrera matemática** | hasta 2000 | Sí (3 niveles) | Cada uno resuelve operaciones distintas para avanzar su coche |
@@ -27,6 +28,42 @@ teléfonos hacen de mando.
 | | **Subasta inversa** | hasta 2000 | No | Gana la oferta más baja que nadie repita; pujas gratis |
 | Solo adultos (+18) | **Paranoia** | 3–12 | No | «¿Quién de la mesa…?»: la moneda decide si la pregunta se revela |
 | | **Yo nunca** | 3–30 | No | Sin alcohol: se pierden vidas (dedos). Modo anónimo y categorías |
+
+## Carrera de caballos
+
+Hasta **cuatro jinetes** corren en un hipódromo que se ve en el teléfono y, en
+grande, en el proyector. Los asientos libres se llenan con **bots**.
+
+1. **Elige a cuánto te la juegas** (9 s): 🐢 **Fácil** (acierto +1, fallo −1),
+   🐎 **Media** (+2 / −1) o 🔥 **Difícil** (+3 / −2). Si no eliges, vas en Fácil.
+2. **Responde** una pregunta de esa dificultad. Salen del **banco general de la
+   plataforma** (más de mil preguntas en 19 áreas, por niveles; se pueden elegir
+   las áreas y no se repiten en 60 días para quien organiza) o de tus propias
+   preguntas (*Mis preguntas* o un banco de la empresa, por su nivel).
+3. **Galopa**: los caballos avanzan o retroceden según el acierto. El acierto
+   **más rápido** de la ronda suma ⚡ una casilla más. Caer en una 🥕
+   **zanahoria** suma 2; en un 💧 **charco de barro**, resta 1.
+
+Cada jinete tiene un **comodín 50:50** por carrera, que tacha dos respuestas
+falsas. Gana quien cruza primero la meta (12, 16, 20 o 25 casillas); si cruzan
+varios en la misma ronda, quien llegó más lejos. Tras 40 rondas gana quien vaya
+delante.
+
+**Bots** (el nivel se elige en las opciones):
+
+| Nivel | Cómo eligen | Aciertan (fácil / media / difícil) |
+| --- | --- | --- |
+| Fácil | Casi siempre Fácil | 72 % / 50 % / 30 % |
+| Medio | Sobre todo Media | 88 % / 70 % / 50 % |
+| Difícil | Arriesgan con Difícil | 96 % / 86 % / 72 % |
+
+Todos arriesgan más cuando van tres casillas o más por detrás del líder, y no
+arriesgan a una casilla de la meta. Con el botón **Jugar ya contra 3 bots** se
+crea la sala, se llena con bots del nivel elegido y la carrera empieza sola; para
+jugar con amigos, se crea la sala, se comparte el código y se completan los
+asientos libres con «+ Añadir bot». El servidor elige las preguntas, guarda las
+respuestas correctas y mueve los caballos: el navegador nunca ve la solución
+antes de responder.
 
 En el catálogo, «Dudo» es el juego de dados mentirosos. En Bolivia se suele
 llamar **Cacho** al juego de dados tipo generala, que es otro distinto, y por

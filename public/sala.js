@@ -23,7 +23,7 @@ var $=function(id){return document.getElementById(id)};
 var panel=$("juegos-panel"); if(!panel)return;
 var J=window.AxJuegos, UI={};
 var ws=null, estado=null, desfase=0, codigoSala=null, esPantalla=false, intencional=false, reintento=0, tReconecta=null,
-    tLatido=null, activo=false, localE=null, vista=null, ultimoRender="";
+    tLatido=null, activo=false, localE=null, vista=null, ultimoRender="", autoBots=null;
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function api(path,body){
@@ -43,7 +43,7 @@ var ERR={not_found:"No hay ninguna sala con ese código.",login_required:"Esta s
   empty_pool:"Ese banco no tiene preguntas.",edu_no_games:"Las instituciones educativas no organizan juegos en su nombre: sus bancos y cuestionarios quedan en Educativo.",bad_source:"Elige de dónde salen las preguntas.",forbidden_bank:"No puedes usar ese banco.",org_pending:"La institución todavía no está aprobada.",bad_game:"Juego desconocido.",
   too_late:"Ya no se admite: se cerró el plazo.",already:"Eso ya está hecho.",wrong_word:"Esa no es la palabra secreta.",bad_bid:"Esa puja no es válida.",
   repeated_own:"Ya pujaste esa cantidad.",no_bids_left:"No te quedan pujas.",host_presents:"Quien presenta no participa.",out:"Te quedaste sin vidas.",
-  own_statements:"No puedes votar tus propias frases.",finished:"La partida ya terminó.",wait:"Espera un momento.",bid_too_low:"Tienes que subir la apuesta."};
+  own_statements:"No puedes votar tus propias frases.",not_player:"No estás en esta partida.",finished:"La partida ya terminó.",wait:"Espera un momento.",bid_too_low:"Tienes que subir la apuesta."};
 function error(e){return (e&&ERR[e.error||e])||(e&&e.error)||"No se pudo completar.";}
 
 function registra(tipo,ui){UI[tipo]=ui;}
@@ -72,7 +72,7 @@ function catalogo(){
     if(!lista.length)return;
     h+='<h4>'+esc(gr[1])+'</h4><div class="jg-grid">'+lista.map(function(d){var u=UI[d.tipo];
       return '<button type="button" class="jg-card" data-juego="'+d.tipo+'"><span class="jg-ico">'+(u.icono||"🎲")+'</span><span class="jg-t"><b>'+esc(d.nombre)+'</b>'+
-        '<small>'+esc(u.desc||"")+'</small><em>'+(d.min===d.max?d.min:d.min+"–"+d.max)+' jugadores'+(u.local?' · contra el bot':'')+(d.adultos?' · +18':'')+'</em></span></button>';}).join("")+'</div>';
+        '<small>'+esc(u.desc||"")+'</small><em>'+(d.min===d.max?d.min:d.min+"–"+d.max)+' jugadores'+(u.local?' · contra el bot':u.contraBots?' · con bots':'')+(d.adultos?' · +18':'')+'</em></span></button>';}).join("")+'</div>';
   });
   h+='</div>';
   panel.innerHTML=h;
@@ -95,6 +95,9 @@ function fichaJuego(tipo){
   if(!yo||yo.guest)h+='<p class="fine">Para crear una sala entra con Google. Quien se una puede hacerlo'+(d.adultos?' con su cuenta o su teléfono o correo verificado.':(d.acceso==="libre"?' solo con un apodo, si así lo eliges.':' con Google o con su teléfono o correo verificado, o solo con un apodo si así lo eliges.'))+'</p>'+
     (window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="ghost" id="jg-login">Entrar con Google</button></div>':'');
   else{
+    /* partida al momento contra bots: se crea la sala, se llenan los asientos y arranca sola */
+    if(u.contraBots)h+='<div class="actions"><button class="primary" id="jg-rapida">'+(u.icono||"")+' Jugar ya contra '+(d.max-1)+' bots</button></div>'+
+      '<p class="fine">Con las opciones de abajo. O crea una sala e invita a '+(d.max-1)+' amigos; los asientos libres se pueden llenar con bots.</p>';
     h+='<form class="rt-form" id="jg-form">'+(u.opciones?u.opciones(d.opciones||{}):'')+
       (vivo?'<label>Título (opcional)<input id="jg-tit" maxlength="60" placeholder="'+esc(d.nombre)+' · Evento"></label><label>Premio (opcional)<input id="jg-pre" maxlength="120" placeholder="Cupón de descuento para el ganador"></label>':'')+
       (d.tipo==="sorteo"||d.tipo==="subasta"?'<label>Bases (se muestran a todos)<textarea id="jg-bases" maxlength="600" rows="3" placeholder="Quién puede participar, cómo se elige al ganador, cómo se entrega el premio…"></textarea></label>'+
@@ -131,6 +134,13 @@ function fichaJuego(tipo){
       r.empresas.map(function(x){return op(x,x.org_name+": "+x.name);}).join("")+'</select></label>'+
       '<p class="fine">Tus propias preguntas se crean en <b>Retos → Mis preguntas</b>.</p>');
   }).catch(function(){});
+  if($("jg-rapida"))$("jg-rapida").onclick=function(){
+    var b=this, m=$("jg-cmsg"), op=u.leeOpciones?u.leeOpciones($("jg-form")):{}; b.disabled=true;
+    var fn=function(){return api("/api/salas",{juego:tipo,opciones:op,acceso:"libre"});};
+    fn().catch(function(er){ if(er&&er.error==="profile_required"&&window.AxRegistro)return AxRegistro.asegura().then(function(ok){if(ok)return fn();throw er;}); throw er; })
+      .then(function(r){autoBots={code:r.code,pedidos:-1}; entra(r.code,false);})
+      .catch(function(er){b.disabled=false;m.className="msg bad";m.textContent=error(er);});
+  };
   $("jg-form").onsubmit=function(e){
     e.preventDefault(); var m=$("jg-cmsg");
     if($("jg-legal")&&!$("jg-legal").checked){m.className="msg bad";m.textContent="Confirma que cuentas con las autorizaciones.";return;}
@@ -254,6 +264,11 @@ function pinta(){
   else cuerpo.innerHTML='<p class="rt-hoy">La sala está cerrada.</p>';
 }
 function espera(el,s,host,d,u){
+  /* «Jugar ya contra bots»: un bot cada vez (cuando llega el estado con el anterior) y, lleno, a correr */
+  if(host&&!esPantalla&&autoBots&&autoBots.code===s.code){
+    if(s.jugadores.length<s.max){ if(autoBots.pedidos!==s.jugadores.length){autoBots.pedidos=s.jugadores.length; envia({t:"bot"});} }
+    else{autoBots=null; envia({t:"empezar"});}
+  }
   var link=enlace("sala",s.code), qr=window.AxQR?AxQR.svg(link):"";
   var lista=s.jugadores.map(function(j){return '<span class="jg-pj'+(j.bot?' bot':'')+(j.conectado?'':' off')+'">'+(j.bot?'🤖 ':'')+esc(j.nombre)+
     (j.id===s.host?' <small>anfitrión</small>':'')+(host&&j.id!==s.host&&!esPantalla?'<button type="button" class="jg-x" data-quita="'+esc(j.id)+'" aria-label="Quitar">×</button>':'')+'</span>';}).join("");

@@ -409,7 +409,7 @@ GUIAS.rapido=[
 GUIAS.juegos=[
 {t:"Más juegos",d:"Juegos en sala con código: estrategia 1 contra 1, juegos de mesa en grupo, dinámicas en vivo para eventos, sorteos y subastas, y juegos solo para adultos. Cada juego explica sus reglas en su ficha.",
  a:function(){return tarjetas([["Estrategia","Gomoku, Hex, tres en raya cuántico: contra el bot sin conexión, a dos en un teléfono o en línea."],
-   ["En grupo","Dudo, La sexta carta, Dos verdades y una mentira."],["En vivo","Trivia con proyector, botón del hype, carrera matemática."],
+   ["En grupo","Dudo, La sexta carta, Dos verdades y una mentira y la carrera de caballos de preguntas (hasta 4, con bots)."],["En vivo","Trivia con proyector, botón del hype, carrera matemática."],
    ["Sorteos y subastas","Para eventos, con bases y premio."],["Solo adultos","Paranoia y Yo nunca, para mayores de 18 según su fecha de nacimiento."]]);}},
 {t:"Crear una sala",d:"",
  a:function(){return pasos([["Elige el juego y sus opciones","Hace falta entrar con Google para crear."],

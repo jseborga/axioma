@@ -13,6 +13,7 @@ import "../public/juegos/verdades.js";
 import "../public/juegos/trivia.js";
 import "../public/juegos/hype.js";
 import "../public/juegos/carrera.js";
+import "../public/juegos/caballos.js";
 import "../public/juegos/sorteo.js";
 import "../public/juegos/subasta.js";
 import "../public/juegos/paranoia.js";
@@ -27,3 +28,8 @@ globalThis.AxJuegos.preguntasGenerales=function(n,nivel,seed,areas,evita){
   return materializa(seed,f).map(function(q){return {id:q.id||null,q:q.q,o:q.o,c:q.c,tema:CATEGORIAS[q.cat]||"",dato:q.dato||""};});
 };
 globalThis.AxJuegos.operacion=function(nivel,r){var q=matematica(nivel,r);return {q:q.q.replace(/^¿Cuánto es /,"").replace(/\?$/,""),res:Number(q.o[q.c])};};
+/* preguntas de un solo nivel (1 fácil, 2 media, 3 difícil), para la carrera de caballos */
+globalThis.AxJuegos.preguntasNivel=function(n,nivel,seed,areas,evita){
+  var f=fichas(seed,nivel,false,n,{areas:limpiaAreas(areas||[]),evita:evita||[],fijo:true});
+  return materializa(seed,f).map(function(q){return {id:q.id||null,q:q.q,o:q.o,c:q.c,nivel:q.nivel||nivel,tema:CATEGORIAS[q.cat]||"",dato:q.dato||""};});
+};

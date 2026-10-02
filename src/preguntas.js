@@ -389,7 +389,8 @@ export function disponibles(areas){
   if(!areas||!areas.length)return BANCO.length;
   return BANCO.filter(function(b){return areas.indexOf(b[1])>=0;}).length;
 }
-/* opts: {areas:[…], evita:[qid…] de la más antigua a la más reciente} */
+/* opts: {areas:[…], evita:[qid…] de la más antigua a la más reciente,
+          fijo:true → todas del nivel dif (1, 2 o 3), salvo que se acaben} */
 export function fichas(seed,dif,conMates,n,opts){
   opts=opts||{};
   var r=rng(seed), areas=opts.areas&&opts.areas.length?opts.areas:null, visto={}, out=[], i, lv;
@@ -404,7 +405,7 @@ export function fichas(seed,dif,conMates,n,opts){
     vistas[lv].sort(function(a,b){return visto[a]-visto[b];});   /* si no queda otra, las vistas hace más tiempo */
   }
   for(i=0;i<n;i++){
-    var l=nivelEn(dif,i,r), f=null;
+    var l=opts.fijo?dif:nivelEn(dif,i,r), f=null;
     if(!(conMates&&i%4===3)){
       var orden=l===1?[1,2,3]:l===2?[2,1,3]:[3,2,1];
       for(var k=0;k<3&&!f;k++){lv=orden[k]; if(ptr[lv]<nuevas[lv].length)f="q"+nuevas[lv][ptr[lv]++];}
