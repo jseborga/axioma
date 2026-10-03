@@ -15,6 +15,7 @@ import "../public/juegos/hype.js";
 import "../public/juegos/carrera.js";
 import "../public/juegos/caballos.js";
 import "../public/juegos/sorteo.js";
+import "../public/juegos/bingo.js";
 import "../public/juegos/subasta.js";
 import "../public/juegos/paranoia.js";
 import "../public/juegos/yonunca.js";

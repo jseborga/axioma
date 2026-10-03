@@ -1,6 +1,6 @@
 # Más juegos: salas en vivo, proyector y eventos
 
-La sección **Más juegos** reúne catorce juegos que se juegan en una **sala** con
+La sección **Más juegos** reúne quince juegos que se juegan en una **sala** con
 código de seis caracteres. Se entra con el código, con el enlace `?sala=CÓDIGO` o
 escaneando el QR de la sala de espera. Quien crea la sala es el **anfitrión**: elige
 las opciones, añade bots si el juego los tiene y empieza la partida.
@@ -26,6 +26,7 @@ teléfonos hacen de mando.
 | | **Carrera matemática** | hasta 2000 | Sí (3 niveles) | Cada uno resuelve operaciones distintas para avanzar su coche |
 | Sorteos y subastas | **Sorteo gamificado** | hasta 2000 | No | Boletos extra por participar con la institución y por la palabra secreta; «lluvia de esferas» en el proyector |
 | | **Subasta inversa** | hasta 2000 | No | Gana la oferta más baja que nadie repita; pujas gratis |
+| | **Bingo** | hasta 2000 | Solo sin premio | 75 bolas. Rápido (gana la primera línea) o largo (línea y cartón lleno, con dos premios). Bolas cada 3–12 s o a mano; premio automático o cantado; el proyector canta las bolas |
 | Solo adultos (+18) | **Paranoia** | 3–12 | No | «¿Quién de la mesa…?»: la moneda decide si la pregunta se revela |
 | | **Yo nunca** | 3–30 | No | Sin alcohol: se pierden vidas (dedos). Modo anónimo y categorías |
 
@@ -64,6 +65,45 @@ jugar con amigos, se crea la sala, se comparte el código y se completan los
 asientos libres con «+ Añadir bot». El servidor elige las preguntas, guarda las
 respuestas correctas y mueve los caballos: el navegador nunca ve la solución
 antes de responder.
+
+## Bingo
+
+Bingo de **75 bolas** para sortear premios en eventos. Cada participante recibe
+de 1 a 3 cartones de 5×5 (B 1–15, I 16–30, N 31–45, G 46–60, O 61–75; el centro
+es libre). Los números se marcan solos en cuanto sale cada bola.
+
+- **Bingo rápido**: gana la **primera línea** (fila, columna o diagonal). Con
+  20 jugadores suele salir hacia la bola 20 y con 200, hacia la 15: uno o dos
+  minutos a 5 s por bola.
+- **Bingo largo**: primero se juega la **línea** (con su premio, que se escribe
+  en las opciones) y después el **cartón lleno**, que se lleva el premio de la
+  sala. Suele terminar entre las bolas 60 y 70: unos 5 minutos a 5 s por bola o
+  9 a 8 s.
+
+**Las bolas** las baraja el servidor con azar criptográfico al empezar. Salen
+solas cada 3, 5, 8 o 12 s (quien organiza puede **pausar y reanudar**) o cuando
+pulsa **Sacar bola**. Los cartones salen de la semilla de la partida y de cada
+persona: nadie elige el suyo.
+
+**Cómo se gana**:
+- **Automático**: el servidor detecta a quien completa con cada bola. Si son
+  varios con la misma bola, comparten el premio.
+- **Cantado**: hay que pulsar **¡Línea!** o **¡Bingo!**. Quien canta primero
+  abre 4 s para que canten quienes también lo tengan (empate). Cantar en falso
+  bloquea el botón 10 s.
+
+**El proyector** muestra la bola en grande, el tablero de las 75 con las que ya
+salieron, cuántas personas están a una bola (🔥) y, al haber ganador, su
+**cartón** para comprobarlo delante de todos. Con **Activar voz**, el proyector
+canta cada bola («B 12»).
+
+Como el sorteo y la subasta, al crearlo hay que marcar la casilla de
+responsabilidad legal y se pueden escribir las **bases**. Con **premio** hace
+falta identificarse (Google, o teléfono o correo verificado) y **no se admiten
+bots**, para que nunca se lleve un premio un bot. Sin premio, para jugar en
+familia, se pueden añadir bots (cantan solos en el modo cantado), y quien
+organiza puede jugar con su propio cartón. Una vez empezado, no se puede unir
+nadie más.
 
 En el catálogo, «Dudo» es el juego de dados mentirosos. En Bolivia se suele
 llamar **Cacho** al juego de dados tipo generala, que es otro distinto, y por

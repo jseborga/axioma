@@ -43,7 +43,7 @@ var ERR={not_found:"No hay ninguna sala con ese código.",login_required:"Esta s
   empty_pool:"Ese banco no tiene preguntas.",edu_no_games:"Las instituciones educativas no organizan juegos en su nombre: sus bancos y cuestionarios quedan en Educativo.",bad_source:"Elige de dónde salen las preguntas.",forbidden_bank:"No puedes usar ese banco.",org_pending:"La institución todavía no está aprobada.",bad_game:"Juego desconocido.",
   too_late:"Ya no se admite: se cerró el plazo.",already:"Eso ya está hecho.",wrong_word:"Esa no es la palabra secreta.",bad_bid:"Esa puja no es válida.",
   repeated_own:"Ya pujaste esa cantidad.",no_bids_left:"No te quedan pujas.",host_presents:"Quien presenta no participa.",out:"Te quedaste sin vidas.",
-  own_statements:"No puedes votar tus propias frases.",not_player:"No estás en esta partida.",finished:"La partida ya terminó.",wait:"Espera un momento.",bid_too_low:"Tienes que subir la apuesta."};
+  own_statements:"No puedes votar tus propias frases.",not_player:"No estás en esta partida.",no_bots_prize:"Con premio no hay bots: un bot no puede llevarse un premio de verdad.",bad_claim:"¡Todavía no! Revisa tu cartón: no puedes cantar durante 10 s.",blocked:"Cantaste en falso: espera unos segundos.",finished:"La partida ya terminó.",wait:"Espera un momento.",bid_too_low:"Tienes que subir la apuesta."};
 function error(e){return (e&&ERR[e.error||e])||(e&&e.error)||"No se pudo completar.";}
 
 function registra(tipo,ui){UI[tipo]=ui;}
@@ -100,8 +100,8 @@ function fichaJuego(tipo){
       '<p class="fine">Con las opciones de abajo. O crea una sala e invita a '+(d.max-1)+' amigos; los asientos libres se pueden llenar con bots.</p>';
     h+='<form class="rt-form" id="jg-form">'+(u.opciones?u.opciones(d.opciones||{}):'')+
       (vivo?'<label>Título (opcional)<input id="jg-tit" maxlength="60" placeholder="'+esc(d.nombre)+' · Evento"></label><label>Premio (opcional)<input id="jg-pre" maxlength="120" placeholder="Cupón de descuento para el ganador"></label>':'')+
-      (d.tipo==="sorteo"||d.tipo==="subasta"?'<label>Bases (se muestran a todos)<textarea id="jg-bases" maxlength="600" rows="3" placeholder="Quién puede participar, cómo se elige al ganador, cómo se entrega el premio…"></textarea></label>'+
-        '<label class="rt-check"><input type="checkbox" id="jg-legal"> <span>Organizo este '+(d.tipo==="sorteo"?'sorteo':'juego')+' bajo mi responsabilidad y cuento con las autorizaciones que exija la ley (en Bolivia, la de la AJ para sorteos promocionales).</span></label>':'')+
+      (d.tipo==="sorteo"||d.tipo==="subasta"||d.tipo==="bingo"?'<label>Bases (se muestran a todos)<textarea id="jg-bases" maxlength="600" rows="3" placeholder="Quién puede participar, cómo se elige al ganador, cómo se entrega el premio…"></textarea></label>'+
+        '<label class="rt-check"><input type="checkbox" id="jg-legal"> <span>Organizo este '+(d.tipo==="sorteo"?'sorteo':d.tipo==="bingo"?'bingo':'juego')+' bajo mi responsabilidad y cuento con las autorizaciones que exija la ley (en Bolivia, la de la AJ para sorteos promocionales).</span></label>':'')+
       '<label>Quién puede unirse<select id="jg-acc">'+(d.adultos?'':'<option value="libre"'+(d.acceso==="libre"?' selected':'')+'>Cualquiera con el enlace, con un apodo</option>')+
         '<option value="invitados"'+(d.acceso!=="libre"||d.adultos?' selected':'')+'>Con Google o con teléfono o correo verificado</option><option value="cuenta">Solo con cuenta de Google</option></select></label>'+
       '<p class="fine">Si pones un premio, hará falta identificarse (Google o teléfono o correo verificado), para que cada persona participe una sola vez.</p>'+

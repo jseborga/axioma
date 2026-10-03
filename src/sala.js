@@ -229,6 +229,7 @@ export class Sala{
       else{E.fase="juego";E.inicio=ahora;d.inicia(E,r,ahora);this.tras(ahora);}
     }else if(host&&m.t==="bot"){
       if(!d.bots||E.fase!=="espera"||E.jugadores.length>=d.max)err="no_bots";
+      else if(d.sinBotsConPremio&&E.premio)err="no_bots_prize";        /* un bot no puede llevarse un premio de verdad */
       else{var nb=E.jugadores.filter(function(j){return j.bot;}).length;
         E.jugadores.push({id:"b_"+nb+"_"+ahora%10000,nombre:"Bot "+NOMBRES_BOT[nb%NOMBRES_BOT.length],bot:true,conectado:true});this.cambio();}
     }else if(host&&m.t==="quitar"){
@@ -323,7 +324,7 @@ export class Sala{
     var quien=yo.rol==="pantalla"?"pantalla":yo.id, total=0;
     var lista=E.jugadores.filter(function(j){if(!j.bot)total++;return true;});
     var sala={code:E.code,juego:E.juego,titulo:E.titulo,premio:E.premio,fase:E.fase,host:E.host,hostNombre:E.hostNombre,acceso:E.acceso,
-      opciones:E.opciones,marca:E.marca,bases:E.bases,total:total,min:d.min,max:d.max,bots:!!d.bots,
+      opciones:E.opciones,marca:E.marca,bases:E.bases,total:total,min:d.min,max:d.max,bots:!!d.bots&&!(d.sinBotsConPremio&&E.premio),
       jugadores:lista.slice(E.fase==="espera"?-LISTA_MAX:-LISTA_JUEGO).map(function(j){return {id:j.id,nombre:j.nombre,bot:!!j.bot,conectado:j.bot||!!j.conectado,equipo:j.equipo};}),
       resultados:E.fase==="fin"?E.resultados:null};
     var g=(E.fase==="juego"||E.fase==="fin")&&E.g?d.vista(E,quien):null;
