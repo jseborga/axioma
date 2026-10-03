@@ -109,6 +109,10 @@ vive en tu propia cuenta.
    mismo `schema.sql` con una sentencia por línea y sin comentarios. Se puede
    ejecutar las veces que haga falta: solo crea lo que falta y no borra ni cambia
    datos. Si la app dice que «faltan las tablas», esto lo resuelve de una vez.
+   Si la consola responde «Requests without any query are not supported», es que
+   le llegó texto sin sentencias (líneas de comentario `--` o una selección
+   vacía): pega solo líneas que empiecen por `CREATE`. Si te da otro error por el
+   tamaño, pégalo en dos o tres partes; da igual el orden y repetir líneas.
 
 Esto crea dos tablas. La de usuarios guarda una fila por jugador que entre con
 Google. La de puntuaciones guarda una fila por jugador y día, con las movidas y
