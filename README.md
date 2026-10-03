@@ -90,7 +90,8 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | `src/campanas.js` | Competencias de juego rápido y sin fin (maratón) de empresas: partidas puntuadas en el servidor paso a paso, ranking, premios por puesto y por puntaje con cupones |
 | `src/repaso.js` | Repaso público de ingreso y nivelación: catálogo, intentos corregidos en el servidor y códigos de acceso |
 | `src/mispreguntas.js` | Mis preguntas: bancos personales para jugar retos y trivia en vivo (los educativos no se usan en juegos) |
-| `src/ia.js` | Plan Pro: cuota mensual por institución y ayudas con IA (API de Anthropic) |
+| `src/ia.js` | Plan Pro: cuota mensual por institución y ayudas con IA |
+| `src/ia-proveedores.js` | Proveedores de IA (Gemini de Google AI Studio por defecto, OpenRouter, OpenAI, Anthropic y APIs compatibles con OpenAI) con respuestas en JSON |
 | `src/preguntas.js` | Banco de preguntas de los concursos, áreas, secuencias sin repetir y generador de operaciones (solo en el servidor) |
 | `src/banco/*.js` | Ampliaciones del banco por áreas, con su «¿Sabías que…?» |
 | `public/areas.js` | Casillas para elegir las áreas temáticas de la trivia |

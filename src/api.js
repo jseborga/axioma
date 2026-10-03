@@ -69,7 +69,7 @@ export async function handleApi(req,env,url){
       return await handleRepaso(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/mis-bancos(\/|$)/.test(path))
       return await handleMisPreguntas(req,env,url,path,{json:json,user:await currentUser(req,env)});
-    if(/^\/ia\//.test(path)||/^\/admin\/planes(\/|$)/.test(path))
+    if(/^\/ia\//.test(path)||/^\/admin\/(planes|ia)(\/|$)/.test(path))
       return await handleIA(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/admin\/(summary|users)(\/|$)/.test(path)||(path==="/admin/orgs"&&req.method==="POST")||/^\/admin\/orgs\/[A-Z0-9]{6}\/admins$/.test(path))
       return await handlePlataforma(req,env,url,path,{json:json,user:await currentUser(req,env)});

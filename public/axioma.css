@@ -1718,3 +1718,11 @@ body[data-sub=maraton] .readout{grid-template-columns:repeat(2,1fr)}
 .bg-tn.u{box-shadow:0 0 0 4px #ff9800;transform:scale(1.15)}
 @media (max-width:760px){.bg-proy{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.bg-bola.nueva,.bg-carton.casi,.bg-casi,.bg-gana{animation:none}}
+
+/* ---------- proveedor de IA (panel de la plataforma) ---------- */
+.ia-prov{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:14px;background:var(--inset);border:2px solid transparent;text-transform:none!important;letter-spacing:0!important;font-weight:400!important;color:var(--ink)!important}
+.ia-prov.sel{border-color:var(--accent)}
+.ia-cab{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:15px}
+.ia-cab input[type=radio]{flex:none;width:18px;height:18px;margin:0;padding:0;appearance:auto;-webkit-appearance:radio;box-shadow:none;border:0;background:none;accent-color:var(--accent)}
+.ia-prov small{color:var(--ink-2);font-size:12.5px}
+.ia-prov .ia-mod{font-family:ui-monospace,Menlo,monospace;font-size:13.5px}

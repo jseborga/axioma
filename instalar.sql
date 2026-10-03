@@ -90,3 +90,4 @@ CREATE INDEX IF NOT EXISTS campana_cupones_code ON campana_cupones(code, user_id
 CREATE TABLE IF NOT EXISTS campana_maraton (code TEXT PRIMARY KEY, reglas TEXT NOT NULL, tableros TEXT);
 CREATE TABLE IF NOT EXISTS campana_progreso (intento_id INTEGER PRIMARY KEY, code TEXT NOT NULL, estado TEXT NOT NULL, vence_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS campana_progreso_code ON campana_progreso(code, vence_at);
+CREATE TABLE IF NOT EXISTS ajustes_plataforma (clave TEXT PRIMARY KEY, valor TEXT NOT NULL, updated_at INTEGER NOT NULL, updated_by TEXT);

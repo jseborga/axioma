@@ -631,26 +631,49 @@ CREATE TABLE IF NOT EXISTS ia_uso (org_id TEXT NOT NULL, mes TEXT NOT NULL, usos
 CREATE TABLE IF NOT EXISTS ia_explicaciones (clave TEXT PRIMARY KEY, texto TEXT NOT NULL, created_at INTEGER NOT NULL);
 ```
 
-Además, en el panel de Cloudflare, **Workers & Pages → axioma → Settings →
-Variables and Secrets**:
+**Elige un proveedor de IA y añade su clave.** Las claves van siempre como
+**Secret** en el panel de Cloudflare (**Workers & Pages → axioma → Settings →
+Variables and Secrets**), nunca en el código ni en `wrangler.toml`:
 
-1. **Secret** `ANTHROPIC_API_KEY`: la clave de la API de Anthropic, que se crea
-   en console.anthropic.com (*API Keys*). Nunca va en el código ni en
-   `wrangler.toml`.
-2. **Secret** `AI_MODEL`: el identificador del modelo de Claude que se usará,
-   copiado de la lista de modelos de la documentación de Anthropic. No es
-   sensible, pero guardado como Secret sobrevive a los despliegues (igual que
-   `GOOGLE_CLIENT_ID`) y se puede cambiar sin tocar el código.
+| Proveedor | Secret con la clave | Dónde se saca | Modelo por defecto |
+| --- | --- | --- | --- |
+| **Google AI Studio (Gemini)** · por defecto | `GEMINI_API_KEY` (o `GOOGLE_AI_API_KEY`) | aistudio.google.com → *Get API key* | `gemini-flash-latest` |
+| OpenRouter | `OPENROUTER_API_KEY` | openrouter.ai → *Keys* | `openrouter/auto` |
+| OpenAI | `OPENAI_API_KEY` | platform.openai.com → *API keys* | `gpt-4o-mini` |
+| Anthropic (Claude) | `ANTHROPIC_API_KEY` | console.anthropic.com → *API Keys* | — (hay que escribirlo) |
+| Otra API compatible con OpenAI (Groq, DeepSeek, Mistral, Together, Ollama…) | `AI_API_KEY` y `AI_BASE_URL` (p. ej. `https://api.groq.com/openai/v1`) | la de ese proveedor | — (hay que escribirlo) |
 
-Mientras falte cualquiera de las dos, la IA queda desactivada y el panel de la
-plataforma lo avisa. Después, el plan Pro se activa por institución en
-*Administración de la plataforma → Instituciones → Plan*.
+Con la clave de Gemini puesta no hace falta nada más: es el proveedor por
+defecto. Para cambiar de proveedor o de modelo, entra en **Administración de la
+plataforma → IA**: muestra qué claves están puestas, deja elegir el proveedor y
+escribir el modelo (con sugerencias) y tiene un botón **Probar conexión** que hace
+una llamada mínima y enseña el error del proveedor si algo falla (por ejemplo, un
+modelo que no existe). Esa elección se guarda en una tabla pequeña:
 
-**Coste.** Anthropic cobra por uso (tokens), aparte de Cloudflare. Una
-generación de 10 preguntas o una revisión del banco cuesta en torno a céntimos
-de dólar; un PDF largo, algo más. La cuota mensual de cada institución limita el
-gasto: conviene empezar con una cuota baja (por ejemplo, 100 usos) y fijar un
-límite de gasto en la consola de Anthropic.
+```sql
+CREATE TABLE IF NOT EXISTS ajustes_plataforma (clave TEXT PRIMARY KEY, valor TEXT NOT NULL, updated_at INTEGER NOT NULL, updated_by TEXT);
+```
+
+Sin esa tabla (o sin elegir nada), manda la variable `AI_PROVIDER` (`gemini`,
+`openrouter`, `openai`, `anthropic` o `compatible`) y, si tampoco está, se usa
+Gemini si tiene clave o, si no, el primer proveedor que tenga clave. El modelo
+también se puede fijar con un Secret por proveedor: `GEMINI_MODEL`,
+`OPENROUTER_MODEL`, `OPENAI_MODEL`, `ANTHROPIC_MODEL` o `AI_MODEL` (este último
+sirve para «compatible» y, como antes, para Anthropic). Las instalaciones que ya
+tenían `ANTHROPIC_API_KEY` y `AI_MODEL` siguen funcionando igual mientras no
+añadan otra clave; al añadir la de Gemini, pasa a usarse Gemini.
+
+Los PDF los leen Gemini, OpenAI, OpenRouter (según el modelo) y Anthropic; con
+«compatible» hay que pegar el texto. Mientras no haya ninguna clave, la IA queda
+desactivada y el panel de la plataforma lo avisa. Después, el plan Pro se activa
+por institución en *Administración de la plataforma → Instituciones → Plan*.
+
+**Coste.** El proveedor cobra por uso (tokens), aparte de Cloudflare; Google AI
+Studio tiene además un nivel gratuito con límites. Una generación de 10
+preguntas o una revisión del banco cuesta en torno a céntimos de dólar; un PDF
+largo, algo más. La cuota mensual de cada institución limita el gasto: conviene
+empezar con una cuota baja (por ejemplo, 100 usos) y fijar un límite de gasto en
+la consola del proveedor.
 
 ### Ajustes de la plataforma
 
@@ -666,7 +689,7 @@ Lo que se configura sin tocar código está en la sección `[vars]` de
 
 Para cambiarlos, edita `wrangler.toml` y sube el cambio: se despliegan con la app.
 Las páginas los leen de `/api/config`, así que no hay que tocar el HTML. Lo
-sensible (`PLATFORM_ADMINS`, `ANTHROPIC_API_KEY` y, cuando llegue el envío de correos, la clave del
+sensible (`PLATFORM_ADMINS`, las claves de IA como `GEMINI_API_KEY` y, cuando llegue el envío de correos, la clave del
 servicio) va siempre como **Secret** en el panel, nunca en `wrangler.toml`.
 
 ### Copia de seguridad

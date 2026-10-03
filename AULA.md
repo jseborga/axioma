@@ -246,9 +246,11 @@ Con el plan Pro, quien administra o es docente tiene en cada banco:
 gasta **un uso**. El banco muestra cuántos quedan este mes. Si la IA falla, el
 uso se devuelve. Sin cuota, la app lo avisa y todo lo demás sigue igual.
 
-**Configuración.** La IA es Claude, de Anthropic. En Cloudflare hacen falta los
-Secrets `ANTHROPIC_API_KEY` y `AI_MODEL` (ver SETUP.md). Sin ellos,
-los botones siguen visibles, pero avisan de que la IA no está configurada.
+**Configuración.** El proveedor de IA se elige en *Administración de la
+plataforma → IA*: **Gemini de Google AI Studio** (por defecto), OpenRouter,
+OpenAI, Anthropic u otra API compatible con OpenAI. Su clave va como Secret en
+Cloudflare (ver SETUP.md). Sin clave, los botones siguen visibles, pero avisan
+de que la IA no está configurada.
 
 Tablas: `org_planes`, `ia_uso` e `ia_explicaciones` (ver SETUP.md).
 

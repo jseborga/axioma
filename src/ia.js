@@ -10,20 +10,27 @@
    Las explicaciones de las prácticas se generan en concursos.js con
    explicaciones(), que usa la misma cuota.
 
-   La IA es Claude (API de Anthropic). La clave y el modelo van como Secrets
-   ANTHROPIC_API_KEY y AI_MODEL en Cloudflare (no en el repositorio). Sin los
-   dos, la IA queda desactivada. Con IA_PRUEBA=1
-   (solo en desarrollo) se simulan las respuestas, sin llamar a la API.
+   El proveedor (Gemini de Google AI Studio por defecto, OpenRouter, OpenAI,
+   Anthropic u otra API compatible) y el modelo se eligen en el panel de la
+   plataforma; las claves van como Secrets en Cloudflare. Ver
+   ia-proveedores.js. Sin clave, la IA queda desactivada. Con IA_PRUEBA=1
+   (solo en desarrollo) se simulan las respuestas, sin llamar a ninguna API.
    Cada llamada gasta un uso de la cuota mensual de la institución.
+
+     GET  /api/admin/ia               proveedores, claves presentes y el elegido (plataforma)
+     POST /api/admin/ia               { proveedor, modelo } (plataforma)
+     POST /api/admin/ia/probar        { proveedor?, modelo? } una llamada mínima de prueba
    =========================================================== */
 import { rolOrg, esInvitado, esAdminPlataforma } from "./aula.js";
+import { PROVEEDORES, configuracion, resumen, guarda, pideJSON } from "./ia-proveedores.js";
 
-var API="https://api.anthropic.com/v1/messages";
 var MAX_PDF=12*1024*1024, MAX_TEXTO=60000;
 
 function mes(){return new Date().toISOString().slice(0,7);}
 function limpia(s,max){return String(s==null?"":s).replace(/\s+/g," ").trim().slice(0,max);}
-export function iaConfigurada(env){return !!((env.ANTHROPIC_API_KEY&&env.AI_MODEL)||env.IA_PRUEBA==="1");}
+/* la IA en uso: {proveedor, modelo, listo, prueba}; prueba = respuestas simuladas (desarrollo) */
+async function ia(env){var c=await configuracion(env); c.prueba=!c.listo&&env.IA_PRUEBA==="1"; return c;}
+export async function iaConfigurada(env){var c=await ia(env); return c.listo||c.prueba;}
 
 /* ---------- plan y cuota ---------- */
 export async function planDe(env,orgId){
@@ -51,24 +58,15 @@ async function autoriza(env,user,orgId){
   if(esInvitado(user))return {error:"google_required",st:403};
   var rol=await rolOrg(env,orgId,user.id);
   if(rol!=="admin"&&rol!=="docente"&&rol!=="auxiliar")return {error:"forbidden",st:403};
-  if(!iaConfigurada(env))return {error:"ia_not_configured",st:503};
+  var cfg=await ia(env);
+  if(!cfg.listo&&!cfg.prueba)return {error:"ia_not_configured",st:503};
   var p=await planDe(env,orgId);
   if(p.sin_tablas)return {error:"not_configured",st:503};
   if(!p.pro)return {error:"pro_required",st:402};
   if(!(await gasta(env,orgId,p.cuota)))return {error:"quota_exceeded",st:429,cuota:p.cuota};
-  return {ok:true};
+  return {ok:true,cfg:cfg};
 }
 
-/* ---------- llamada a Claude con una herramienta para obtener JSON ---------- */
-async function claude(env,sistema,contenido,herramienta,maxTokens){
-  var r=await fetch(API,{method:"POST",headers:{"x-api-key":env.ANTHROPIC_API_KEY,"anthropic-version":"2023-06-01","content-type":"application/json"},
-    body:JSON.stringify({model:env.AI_MODEL,max_tokens:maxTokens||8000,system:sistema,
-      tools:[herramienta],tool_choice:{type:"tool",name:herramienta.name},messages:[{role:"user",content:contenido}]})});
-  if(!r.ok){var t=await r.text().catch(function(){return "";}); throw new Error("IA "+r.status+": "+t.slice(0,200));}
-  var j=await r.json(), uso=(j.content||[]).filter(function(c){return c.type==="tool_use";})[0];
-  if(!uso)throw new Error("La IA no devolvió el formato esperado.");
-  return uso.input;
-}
 
 var H_PREGUNTAS={name:"entregar_preguntas",description:"Entrega las preguntas de opción múltiple generadas.",
   input_schema:{type:"object",properties:{preguntas:{type:"array",items:{type:"object",properties:{
@@ -107,8 +105,9 @@ async function generaPreguntas(req,env,user,json){
   if(texto)contenido.push({type:"text",text:"Contenido de referencia:\n\n"+texto});
   contenido.push({type:"text",text:pide});
   var r;
-  try{ r=env.IA_PRUEBA==="1"&&!env.ANTHROPIC_API_KEY?simulaPreguntas(tema,n,nivel):await claude(env,SISTEMA_PREGUNTAS,contenido,H_PREGUNTAS,Math.min(16000,900+n*450)); }
-  catch(e){ await devuelve(env,orgId); console.error("ia preguntas",e&&e.message); return json({error:"ia_failed"},null,502); }
+  try{ r=a.cfg.prueba?simulaPreguntas(tema,n,nivel):await pideJSON(env,a.cfg,SISTEMA_PREGUNTAS,contenido,H_PREGUNTAS,Math.min(16000,900+n*450)); }
+  catch(e){ await devuelve(env,orgId); console.error("ia preguntas",e&&e.message);
+    return json({error:/ia_pdf_unsupported/.test(String(e&&e.message))?"ia_pdf_unsupported":"ia_failed"},null,502); }
   /* al formato del importador (se revalida allí y de nuevo en el servidor al importar) */
   var items=(r.preguntas||[]).slice(0,n).map(function(p,i){return {fila:i+1,q:limpia(p.pregunta,300),correcta:limpia(p.correcta,200),
     otras:(p.incorrectas||[]).map(function(x){return limpia(x,200);}).filter(Boolean).slice(0,5),nivel:p.nivel,tema:limpia(p.tema,60),explicacion:limpia(p.explicacion,400)};});
@@ -135,8 +134,8 @@ async function revisaBanco(req,env,user,json){
   var lista=qs.map(function(q){var o=JSON.parse(q.opts);return {id:q.id,pregunta:q.q,correcta:o[q.answer],incorrectas:o.filter(function(_,i){return i!==q.answer;}),nivel:q.level,tema:q.topic||""};});
   var r;
   try{
-    if(env.IA_PRUEBA==="1"&&!env.ANTHROPIC_API_KEY)r={sugerencias:[{id:lista[0].id,problema:"Sugerencia simulada: el enunciado podría ser más preciso.",pregunta:lista[0].pregunta.replace(/\?$/,"")+" (versión mejorada)?"}]};
-    else r=await claude(env,"Eres un revisor experto de evaluaciones en español. Revisa cada pregunta de opción múltiple y señala SOLO las que tengan algún problema real: "+
+    if(a.cfg.prueba)r={sugerencias:[{id:lista[0].id,problema:"Sugerencia simulada: el enunciado podría ser más preciso.",pregunta:lista[0].pregunta.replace(/\?$/,"")+" (versión mejorada)?"}]};
+    else r=await pideJSON(env,a.cfg,"Eres un revisor experto de evaluaciones en español. Revisa cada pregunta de opción múltiple y señala SOLO las que tengan algún problema real: "+
       "respuesta incorrecta o discutible, más de una opción defendible, ambigüedad, faltas de ortografía o tildes, distractores absurdos o que delatan la respuesta, o nivel mal asignado. "+
       "Para cada una, explica el problema en una frase y propone la versión corregida solo de los campos que cambian. No incluyas las preguntas que están bien. Usa la herramienta entregar_revision.",
       [{type:"text",text:"Banco «"+bk.name+"»:\n"+JSON.stringify(lista)}],H_REVISION,12000);
@@ -161,12 +160,13 @@ export async function explicaciones(env,orgId,preguntas){
     var r=await st.bind.apply(st,claves).all();
     (r.results||[]).forEach(function(x){out[x.clave]=x.texto;});
     var faltan=preguntas.filter(function(p){return !out[p.clave];});
-    if(!faltan.length||!orgId||!iaConfigurada(env))return out;
+    var cfg=await ia(env);
+    if(!faltan.length||!orgId||!(cfg.listo||cfg.prueba))return out;
     var p=await planDe(env,orgId); if(!p.pro||!(await gasta(env,orgId,p.cuota)))return out;
     var res;
     try{
-      if(env.IA_PRUEBA==="1"&&!env.ANTHROPIC_API_KEY)res={explicaciones:faltan.map(function(f){return {clave:f.clave,texto:"Explicación simulada: «"+f.o[f.c]+"» es la correcta."};})};
-      else res=await claude(env,"Eres un docente paciente. Para cada pregunta de opción múltiple, escribe en español una explicación breve (una o dos frases, máximo 280 caracteres) de por qué la respuesta correcta es la correcta, "+
+      if(cfg.prueba)res={explicaciones:faltan.map(function(f){return {clave:f.clave,texto:"Explicación simulada: «"+f.o[f.c]+"» es la correcta."};})};
+      else res=await pideJSON(env,cfg,"Eres un docente paciente. Para cada pregunta de opción múltiple, escribe en español una explicación breve (una o dos frases, máximo 280 caracteres) de por qué la respuesta correcta es la correcta, "+
         "útil para que un estudiante aprenda. No repitas el enunciado. Usa la herramienta entregar_explicaciones.",
         [{type:"text",text:JSON.stringify(faltan.map(function(f){return {clave:f.clave,pregunta:f.q,correcta:f.o[f.c],opciones:f.o};}))}],H_EXPLICA,Math.min(8000,400+faltan.length*160));
     }catch(e){await devuelve(env,orgId);console.error("ia explica",e&&e.message);return out;}
@@ -183,7 +183,41 @@ async function planes(env,user,json){
   if(!esAdminPlataforma(env,user))return json({error:"forbidden"},null,403);
   var r=((await env.DB.prepare("SELECT p.*,(SELECT usos FROM ia_uso u WHERE u.org_id=p.org_id AND u.mes=?) AS usados FROM org_planes p").bind(mes()).all()).results)||[];
   var out={}; r.forEach(function(p){out[p.org_id]={plan:p.plan,cuota:p.cuota,hasta:p.hasta,usados:p.usados||0,pro:p.plan==="pro"&&(!p.hasta||p.hasta>Date.now())};});
-  return json({planes:out,ia:iaConfigurada(env),modelo:env.AI_MODEL||""});
+  var c=await ia(env);
+  return json({planes:out,ia:c.listo||c.prueba,prueba:c.prueba,proveedor:c.nombre,modelo:c.modelo});
+}
+/* ---------- proveedor de IA (administración de la plataforma) ---------- */
+async function verIA(env,user,json){
+  if(!esAdminPlataforma(env,user))return json({error:"forbidden"},null,403);
+  var r=await resumen(env); r.prueba=!r.actual.listo&&env.IA_PRUEBA==="1"; return json(r);
+}
+async function ponIA(req,env,user,json){
+  if(!esAdminPlataforma(env,user))return json({error:"forbidden"},null,403);
+  var b=await req.json().catch(function(){return {};}), p=String(b.proveedor||"");
+  if(!PROVEEDORES[p])return json({error:"bad_provider"},null,400);
+  var m=String(b.modelo||"").trim();
+  if(m&&!/^[A-Za-z0-9._:\/@+-]{1,120}$/.test(m))return json({error:"bad_model"},null,400);
+  try{await guarda(env,user,p,m);}catch(e){ if(/no such table/i.test(String(e&&e.message)))return json({error:"settings_not_configured"},null,503); throw e; }
+  return verIA(env,user,json);
+}
+/* una llamada mínima para comprobar clave y modelo (no gasta cuota de ninguna institución) */
+var H_PRUEBA={name:"responder",description:"Responde a la prueba.",input_schema:{type:"object",properties:{ok:{type:"boolean"},saludo:{type:"string"}},required:["ok","saludo"]}};
+async function pruebaIA(req,env,user,json){
+  if(!esAdminPlataforma(env,user))return json({error:"forbidden"},null,403);
+  var b=await req.json().catch(function(){return {};}), cfg=await ia(env);
+  if(b.proveedor&&PROVEEDORES[b.proveedor]){
+    var r0=await resumen(env), x=r0.proveedores.filter(function(q){return q.id===b.proveedor;})[0];
+    cfg={proveedor:b.proveedor,nombre:x.nombre,modelo:String(b.modelo||x.modelo||"").trim(),listo:x.clave};
+  }
+  if(!cfg.listo)return json({ok:false,error:"ia_not_configured",proveedor:cfg.nombre});
+  if(!cfg.modelo)return json({ok:false,error:"bad_model",proveedor:cfg.nombre});
+  var t0=Date.now();
+  try{
+    var r=await pideJSON(env,cfg,"Eres una prueba de conexión. Contesta con la herramienta o el JSON pedido.",[{type:"text",text:"Saluda en español en cinco palabras o menos y pon ok en true."}],H_PRUEBA,300);
+    return json({ok:!!(r&&(r.ok||r.saludo)),proveedor:cfg.nombre,modelo:cfg.modelo,ms:Date.now()-t0,saludo:String(r&&r.saludo||"").slice(0,80)});
+  }catch(e){
+    return json({ok:false,proveedor:cfg.nombre,modelo:cfg.modelo,ms:Date.now()-t0,detalle:String(e&&e.message||e).slice(0,300)});
+  }
 }
 async function ponPlan(req,env,user,orgId,json){
   if(!esAdminPlataforma(env,user))return json({error:"forbidden"},null,403);
@@ -202,11 +236,14 @@ export async function handleIA(req,env,url,path,ctx){
     if(path==="/ia/estado"&&req.method==="GET"){
       var org=String(url.searchParams.get("org")||"");
       if(!user||!(await rolOrg(env,org,user.id)))return json({error:"forbidden"},null,403);
-      var p=await planDe(env,org); p.ia=iaConfigurada(env); return json(p);
+      var p=await planDe(env,org); p.ia=await iaConfigurada(env); return json(p);
     }
     if(path==="/ia/preguntas"&&req.method==="POST")return await generaPreguntas(req,env,user,json);
     if(path==="/ia/revisar"&&req.method==="POST")return await revisaBanco(req,env,user,json);
     if(path==="/admin/planes"&&req.method==="GET")return await planes(env,user,json);
+    if(path==="/admin/ia"&&req.method==="GET")return await verIA(env,user,json);
+    if(path==="/admin/ia"&&req.method==="POST")return await ponIA(req,env,user,json);
+    if(path==="/admin/ia/probar"&&req.method==="POST")return await pruebaIA(req,env,user,json);
     if((m=path.match(/^\/admin\/planes\/([A-Z0-9]{6})$/))&&req.method==="POST")return await ponPlan(req,env,user,m[1],json);
   }catch(e){
     if(/no such table/i.test(String(e&&e.message)))return json({error:"not_configured"},null,503);

@@ -44,7 +44,7 @@ function copia(t,b){var o=b.textContent;
   else prompt("Copia el enlace:",t);}
 function ERR(e){if(e&&e.error==="few_questions"&&e.needed!==5)return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
   return {pro_required:"Las ayudas con IA son del plan Pro. Pide a la administración de la plataforma que lo active para tu institución.",
-  ia_not_configured:"La IA no está configurada en esta instalación (falta la clave ANTHROPIC_API_KEY).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
+  ia_not_configured:"La IA no está configurada en esta instalación: falta la clave del proveedor (ver Administración de la plataforma → IA).",ia_pdf_unsupported:"El proveedor de IA elegido no lee PDF: pega el texto del documento.",bad_provider:"Proveedor de IA desconocido.",bad_model:"Escribe el identificador del modelo (sin espacios).",settings_not_configured:"Falta la tabla ajustes_plataforma en la base de datos (ver SETUP.md).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
   ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",bad_code:"Ese código no es válido.",bad_prizes:"Revisa los premios por puesto: los rangos no pueden solaparse.",bad_threshold:"Para el premio por puntaje, pon el puntaje y el premio.",bad_game:"Elige un juego.",bad_boards:"No se pudieron preparar los tableros. Inténtalo otra vez.",maraton_not_configured:"Faltan las tablas de las competencias sin fin: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_end:"La duración no es válida.",code_used:"Ese código ya se usó.",code_expired:"Ese código ya venció.",few_questions:"El banco necesita al menos 5 preguntas que no sean de texto libre.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
@@ -1496,15 +1496,49 @@ function adminRepaso(t,o){
 function plataforma(tab,filtro){
   tab=tab||"resumen"; filtro=filtro||{};
   vista={render:function(){plataforma(tab,filtro);}};
-  pinta(atras(nombreSeccion())+'<h3>Administración de la plataforma</h3>'+tabs([["resumen","Resumen"],["orgs","Instituciones"],["usuarios","Usuarios"],["repaso","Repaso"]],tab)+'<div id="au-tab"><p class="fine">Cargando…</p></div>');
+  pinta(atras(nombreSeccion())+'<h3>Administración de la plataforma</h3>'+tabs([["resumen","Resumen"],["orgs","Instituciones"],["usuarios","Usuarios"],["repaso","Repaso"],["ia","IA"]],tab)+'<div id="au-tab"><p class="fine">Cargando…</p></div>');
   $("au-back").onclick=inicio;
   ligaTabs(function(t){plataforma(t);});
   var t=$("au-tab");
   if(tab==="repaso"){adminRepaso(t,null);return;}
+  if(tab==="ia"){platIA(t);return;}
   api("/api/admin/summary").then(function(r){
     if(tab==="resumen")platResumen(t,r);
     else if(tab==="orgs")platOrgs(t,r);
     else platUsuarios(t,r,filtro);
+  }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+/* proveedor y modelo de IA: las claves son Secrets de Cloudflare; aquí se elige cuál usar y se prueba */
+function platIA(t,nota){
+  api("/api/admin/ia").then(function(r){
+    var a=r.actual;
+    var h='<p class="'+(a.listo?'fine ok':'rt-hoy')+'">'+(a.listo?'✓ En uso: <b>'+esc(a.nombre)+'</b> · <code>'+esc(a.modelo)+'</code>'+(a.fuente==="automático"?' (elegido automáticamente)':''):
+        (r.prueba?'Modo de pruebas: sin clave de ningún proveedor, las respuestas de la IA son simuladas.':'La IA no está lista: falta la clave de <b>'+esc(a.nombre)+'</b>'+(a.modelo?'':' o el modelo')+'.'))+'</p>'+
+      (nota?'<p class="fine ok">'+esc(nota)+'</p>':'')+
+      (r.tabla?'':'<p class="rt-hoy">Para guardar la elección desde aquí falta la tabla <code>ajustes_plataforma</code> (ver SETUP.md). Mientras, se usa la variable AI_PROVIDER o el primer proveedor con clave.</p>')+
+      '<p class="fine">Las claves nunca se escriben aquí: se añaden como <b>Secret</b> en Cloudflare (Workers &amp; Pages → axioma → Settings → Variables and Secrets). '+
+      'Sin elegir nada se usa Gemini de Google AI Studio si está su clave.</p>'+
+      '<form class="rt-form" id="ia-form">'+r.proveedores.map(function(p){
+        return '<label class="ia-prov'+(p.id===a.proveedor?' sel':'')+'"><span class="ia-cab"><input type="radio" name="prov" value="'+p.id+'"'+(p.id===a.proveedor?' checked':'')+'> <b>'+esc(p.nombre)+'</b>'+
+          (p.id==="gemini"?' <span class="chip">por defecto</span>':'')+(p.clave?' <span class="chip activo">clave lista</span>':' <span class="chip">sin clave</span>')+'</span>'+
+          '<small>'+(p.clave?'':(p.id==="compatible"?'Faltan los Secrets ':'Falta el Secret ')+p.secretos.map(function(x){return '<code>'+esc(x)+'</code>';}).join(p.id==="compatible"?" y ":" o ")+'. ')+'Clave: '+esc(p.donde)+'.'+(p.pdf?'':' No lee PDF: se pega el texto.')+'</small>'+
+          '<input class="ia-mod" data-prov="'+p.id+'" list="ia-sug-'+p.id+'" maxlength="120" value="'+esc(p.modelo)+'" placeholder="'+esc(p.defecto||"identificador del modelo")+'" aria-label="Modelo de '+esc(p.nombre)+'">'+
+          '<datalist id="ia-sug-'+p.id+'">'+p.sugeridos.map(function(m){return '<option value="'+esc(m)+'">';}).join("")+'</datalist></label>';}).join("")+
+      '<div class="actions"><button class="primary" type="submit" id="ia-guarda">Usar este proveedor</button><button class="ghost" type="button" id="ia-prueba">Probar conexión</button></div>'+
+      '<p class="msg" id="ia-msg"></p></form>'+
+      '<p class="fine">La prueba hace una llamada mínima con el proveedor y el modelo marcados (no gasta la cuota de ninguna institución). El coste de cada llamada lo cobra el proveedor.</p>';
+    t.innerHTML=h;
+    var f=$("ia-form");
+    function elegido(){var x=f.querySelector("input[name=prov]:checked"); var id=x?x.value:a.proveedor; return {proveedor:id,modelo:f.querySelector('.ia-mod[data-prov="'+id+'"]').value.trim()};}
+    f.querySelectorAll("input[name=prov]").forEach(function(x){x.onchange=function(){f.querySelectorAll(".ia-prov").forEach(function(l){l.classList.toggle("sel",l.contains(x)&&x.checked);});};});
+    f.onsubmit=function(e){e.preventDefault(); var b=$("ia-guarda"); b.disabled=true;
+      api("/api/admin/ia",elegido()).then(function(){platIA(t,"Guardado. Las ayudas de IA usan ahora este proveedor.");})
+        .catch(function(er){b.disabled=false;aviso("ia-msg",ERR(er),true);});};
+    $("ia-prueba").onclick=function(){var b=this; b.disabled=true; aviso("ia-msg","Probando…");
+      api("/api/admin/ia/probar",elegido()).then(function(x){b.disabled=false;
+        if(x.ok)aviso("ia-msg","✓ "+x.proveedor+" responde ("+x.modelo+", "+x.ms+" ms)"+(x.saludo?": «"+x.saludo+"»":"")+".");
+        else aviso("ia-msg","✗ "+(x.proveedor||"")+(x.detalle?": "+x.detalle:x.error?": "+ERR(x):""),true);
+      }).catch(function(er){b.disabled=false;aviso("ia-msg",ERR(er),true);});};
   }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
 }
 function platResumen(t,r){
@@ -1548,7 +1582,7 @@ function platOrgs(t,r){
   var PL={planes:{}};
   function chipPlan(id){var p=PL.planes[id]; return p&&p.pro?'<span class="chip activo">Pro · '+p.usados+'/'+p.cuota+' IA</span>':'<span class="chip">Gratis</span>';}
   api("/api/admin/planes").then(function(x){PL=x; t.querySelectorAll("[data-planchip]").forEach(function(e){e.innerHTML=chipPlan(e.getAttribute("data-planchip"));});
-    if(!x.ia)aviso("po-res","La IA no está configurada: añade en Cloudflare los Secrets ANTHROPIC_API_KEY y AI_MODEL para que funcionen las ayudas del plan Pro.",true);}).catch(function(){});
+    if(!x.ia)aviso("po-res","La IA no está configurada: añade en Cloudflare la clave de un proveedor (por defecto, el Secret GEMINI_API_KEY de Google AI Studio) y revisa la pestaña IA.",true);}).catch(function(){});
   t.querySelectorAll("[data-plan]").forEach(function(btn){btn.onclick=function(){
     var id=this.getAttribute("data-plan"), z=$("po-plan-"+id); z.hidden=!z.hidden; if(z.hidden)return;
     var p=PL.planes[id]||{plan:"gratis",cuota:100,hasta:null}, hasta=p.hasta?new Date(p.hasta).toISOString().slice(0,10):"";

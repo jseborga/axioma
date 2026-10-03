@@ -670,3 +670,14 @@ CREATE TABLE IF NOT EXISTS campana_progreso (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS campana_progreso_code ON campana_progreso(code, vence_at);
+
+-- =========================================================
+-- Ajustes de la plataforma que se cambian desde su panel (p. ej. el proveedor
+-- y el modelo de IA). Las claves de los servicios NO van aquí: son Secrets.
+-- =========================================================
+CREATE TABLE IF NOT EXISTS ajustes_plataforma (
+  clave      TEXT PRIMARY KEY,
+  valor      TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  updated_by TEXT
+);
