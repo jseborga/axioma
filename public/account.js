@@ -14,7 +14,7 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){retur
 function firstName(n){return String(n||"").split(" ")[0]}
 function api(path,opts){
   var o=Object.assign({credentials:"same-origin",headers:{"Content-Type":"application/json"}},opts||{});
-  return fetch(path,o).then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j;});});
+  return fetch(path,o).then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t);}catch(x){throw {error:"http",status:r.status};}if(!r.ok)throw j;return j;});});
 }
 function store(k,v){try{if(v===undefined)return localStorage.getItem("ax_"+k);if(v===null)localStorage.removeItem("ax_"+k);else localStorage.setItem("ax_"+k,v);}catch(e){return null}}
 function dayNumber(){return Math.floor((Date.now()-Date.UTC(2026,0,1))/86400000)+1}

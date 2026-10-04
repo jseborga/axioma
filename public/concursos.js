@@ -18,7 +18,7 @@ var vista=null, refresco=null, reloj=null, desfase=0, teclas=null, activo=false;
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function api(path,body){
   return fetch(path,{method:body?"POST":"GET",credentials:"same-origin",headers:{"Content-Type":"application/json"},
-    body:body?JSON.stringify(body):undefined}).then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j;});});
+    body:body?JSON.stringify(body):undefined}).then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t);}catch(x){throw {error:"http",status:r.status};}if(!r.ok)throw j;return j;});});
 }
 function user(){return window.AxAccount&&AxAccount.user();}
 function ahora(){return Date.now()+desfase;}
@@ -37,6 +37,13 @@ function dura(ms){
 function tiempo(ms){var s=Math.round(ms/1000),m=Math.floor(s/60),g=s%60;return m+":"+(g<10?"0":"")+g;}
 function avatar(u){return u.picture?'<img class="av" src="'+esc(u.picture)+'" alt="" referrerpolicy="no-referrer">':'<span class="av noimg"></span>';}
 function enlace(code){return location.origin+location.pathname+"?concurso="+code;}
+/* si no hay un mensaje para ese error, al menos se dice qué pasó (y la referencia para buscarlo en los registros) */
+function falloDetalle(e){
+  if(e&&e.error==="server_error")return "Falló el servidor"+(e.ref?" (referencia "+e.ref+")":"")+(e.detalle?": "+e.detalle:"")+". Inténtalo otra vez y, si se repite, avisa con la referencia.";
+  if(e&&e.error==="http")return "El servidor respondió con un error "+(e.status||"")+". Inténtalo otra vez en un momento.";
+  if(e&&e.name==="TypeError")return "No hay conexión con el servidor. Revisa tu internet e inténtalo otra vez.";
+  return "No se pudo completar"+(e&&e.error?" ("+e.error+")":"")+". Inténtalo otra vez.";
+}
 function ERR(e){if(e&&e.error==="practice_mode")return "Esta es una práctica: entra desde su ficha con «Empezar la práctica».";if(e&&e.error==="few_questions")return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";
   return {not_configured:"Faltan las tablas de concursos en la base de datos. Hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",not_found:"No existe ningún concurso con ese código.",finished:"Ese concurso ya terminó.",
@@ -47,7 +54,7 @@ function ERR(e){if(e&&e.error==="practice_mode")return "Esta es una práctica: e
   consent_required:"Tienes menos de 18 años: para los concursos abiertos con premio hace falta el consentimiento de tu tutor o de tu institución.",
   org_pending:"La institución todavía no está aprobada.",
   google_required:"Esta convocatoria es para cuentas de Google: sal de la sesión de invitado y entra con Google.",
-  guests_not_allowed:"Esta convocatoria no admite invitados."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
+  guests_not_allowed:"Esta convocatoria no admite invitados."}[e&&e.error]||falloDetalle(e);}
 function errTxt(n,max){return max&&n>=max?"Sin límite de errores: se responden todas":n===0?"Sin errores: el primer fallo termina la partida":n===1?"1 error admitido":n+" errores admitidos";}
 function chip(c){
   var t=c.state==="pronto"?"Empieza en "+dura(c.starts_at-ahora()):c.state==="abierto"?"Termina en "+dura(c.ends_at-ahora()):"Terminado";
@@ -436,9 +443,9 @@ function registros(c){
     if(!r.rows.length)h+='<p class="fine">Todavía no hay nadie.</p>';
     else{
       var curso=!!r.course_code;
-      h+='<div class="tabla-wrap"><table class="tabla"><thead><tr><th>#</th><th>'+(curso?"Estudiante":"Participante")+'</th><th>'+(curso?"Registro":"Contacto")+'</th><th>Aciertos</th><th>Errores</th><th>Resp.</th><th>Tiempo</th><th>Estado</th></tr></thead><tbody>';
+      h+='<div class="tabla-wrap"><table class="tabla"><thead><tr><th>#</th><th>'+(curso?"Estudiante":"Participante")+'</th><th>'+(curso?"Teléfono · registro":"Contacto")+'</th><th>Aciertos</th><th>Errores</th><th>Resp.</th><th>Tiempo</th><th>Estado</th></tr></thead><tbody>';
       r.rows.forEach(function(x){
-        var contacto=curso?esc(x.student_code||"—"):(esc(x.phone||x.email||"—")+'<small>'+(x.guest?"Invitado · "+(x.verified_by==="prueba"?"código de prueba":"verificado"):"Google")+
+        var contacto=curso?(esc(x.phone||"—")+(x.student_code?'<small>registro '+esc(x.student_code)+'</small>':'')):(esc(x.phone||x.email||"—")+'<small>'+(x.guest?"Invitado · "+(x.verified_by==="prueba"?"código de prueba":"verificado"):"Google")+
           (x.marketing===true?" · acepta contacto":"")+'</small>');
         h+='<tr class="'+(x.status==="no participó"?"apagada":"")+'"><td>'+(x.rank||"—")+'</td><td>'+esc(x.name)+(curso?'<small>'+esc(x.email)+'</small>':'')+'</td><td>'+contacto+'</td>'+
           '<td><b>'+(x.started_at?x.correct:"—")+'</b></td><td>'+(x.started_at?x.errors:"—")+'</td><td>'+(x.started_at?x.answered:"—")+'</td>'+

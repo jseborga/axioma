@@ -28,7 +28,7 @@ var ws=null, estado=null, desfase=0, codigoSala=null, esPantalla=false, intencio
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function api(path,body){
   return fetch(path,{method:body?"POST":"GET",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined})
-    .then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j;});});
+    .then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t);}catch(x){throw {error:"http",status:r.status};}if(!r.ok)throw j;return j;});});
 }
 function user(){return window.AxAccount&&AxAccount.user();}
 function ahora(){return Date.now()+desfase;}

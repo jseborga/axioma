@@ -81,8 +81,10 @@ export async function handleApi(req,env,url){
       return await handleRetos(req,env,url,path,{json:json,dayNumber:dayNumber,user:await currentUser(req,env)});
     return json({error:"not_found"},null,404);
   }catch(e){
-    console.error("axioma api",path,e&&e.stack||e);   /* visible en Observability */
-    return json({error:"server_error"},null,500);
+    /* la referencia sale en el mensaje de la app y en el registro: así se encuentra el detalle */
+    var ref=Math.random().toString(36).slice(2,8).toUpperCase();
+    console.error("axioma api",ref,req.method,path,e&&e.stack||e);   /* visible en Workers → axioma → Logs */
+    return json({error:"server_error",ref:ref,detalle:String(e&&e.message||e).slice(0,160)},null,500);
   }
 }
 

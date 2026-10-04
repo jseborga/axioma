@@ -18,7 +18,7 @@
    =========================================================== */
 import { explicaciones } from "./ia.js";
 import { secuencia, secuenciaPool, semilla, CATEGORIAS, fichas, materializa, limpiaAreas, disponibles, hacenFalta, cuentaAreas } from "./preguntas.js";
-import { perfil, puedePremio, rolOrg, accesoCurso, puedeUsarBanco, esInvitado, esAcademica, extrasBanco } from "./aula.js";
+import { perfil, puedePremio, rolOrg, accesoCurso, puedeUsarBanco, esInvitado, esAcademica, extrasBanco, datosAlumnos } from "./aula.js";
 import "../public/banco-formato.js";
 var BF=globalThis.AxBanco;
 
@@ -582,6 +582,11 @@ async function resultados(env,user,code,json){
       filas.push({user_id:u.id,name:u.name,email:u.email,student_code:u.student_code||"",status:"no participó",
                   correct:0,errors:0,answered:0,total_ms:0,reason:"",started_at:null,finished_at:null});
     });
+  }
+  /* en los cursos: nombre completo y teléfono que dio cada estudiante al unirse */
+  if(c.course_code){
+    var dat=await datosAlumnos(env,c.org_id,filas.map(function(f){return f.user_id;}));
+    filas.forEach(function(f){var d=dat[f.user_id]; if(d){if(d.nombre)f.name=d.nombre; if(d.telefono)f.phone=d.telefono;}});
   }
   var pos=0; filas.forEach(function(f){ if(f.started_at)f.rank=++pos; });
 

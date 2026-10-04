@@ -11,7 +11,7 @@ var $=function(id){return document.getElementById(id)};
 var panel=$("inicio-panel"); if(!panel)return;
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-function get(path){return fetch(path,{credentials:"same-origin"}).then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j;});});}
+function get(path){return fetch(path,{credentials:"same-origin"}).then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t);}catch(x){throw {error:"http",status:r.status};}if(!r.ok)throw j;return j;});});}
 function user(){return window.AxAccount&&AxAccount.user();}
 function ir(m){if(window.AxApp)AxApp.setMode(m);}
 

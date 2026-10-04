@@ -23,7 +23,7 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){retur
 function api(path,body,method){
   return fetch(path,{method:method||(body?"POST":"GET"),credentials:"same-origin",
     headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined})
-    .then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j;});});
+    .then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t);}catch(x){throw {error:"http",status:r.status};}if(!r.ok)throw j;return j;});});
 }
 function user(){return window.AxAccount&&AxAccount.user();}
 function dia(){return Math.floor((Date.now()-Date.UTC(2026,0,1))/86400000)+1;}
@@ -32,6 +32,13 @@ function fecha(d){var t=new Date(Date.UTC(2026,0,1)+(d-1)*86400000);
   return t.toLocaleDateString("es",{day:"numeric",month:"short",timeZone:"UTC"});}
 function enlace(tipo,code){return location.origin+location.pathname+"?"+tipo+"="+code;}
 function tablero(nivel){var P=M.genera(nivel,Math.random);return {puzzle:P.puzzle.join(""),solution:P.solucion.join("")};}
+/* si no hay un mensaje para ese error, al menos se dice qué pasó (y la referencia para buscarlo en los registros) */
+function falloDetalle(e){
+  if(e&&e.error==="server_error")return "Falló el servidor"+(e.ref?" (referencia "+e.ref+")":"")+(e.detalle?": "+e.detalle:"")+". Inténtalo otra vez y, si se repite, avisa con la referencia.";
+  if(e&&e.error==="http")return "El servidor respondió con un error "+(e.status||"")+". Inténtalo otra vez en un momento.";
+  if(e&&e.name==="TypeError")return "No hay conexión con el servidor. Revisa tu internet e inténtalo otra vez.";
+  return "No se pudo completar"+(e&&e.error?" ("+e.error+")":"")+". Inténtalo otra vez.";
+}
 function ERR(e){return {not_configured:"Faltan las tablas de retos en la base de datos. Pídele al administrador que ejecute schema.sql.",
   unauthorized:"Tienes que entrar con Google.",not_found:"No existe ningún reto con ese código.",
   finished:"Ese reto ya ha terminado.",full:"Está completo.",team_full:"Ese equipo ya está completo.",
@@ -41,7 +48,7 @@ function ERR(e){return {not_configured:"Faltan las tablas de retos en la base de
   bad_level:"Nivel no válido.",bad_boards:"Los tableros no son válidos.",bad_result:"El resultado no es válido.",
   not_started:"Primero hay que abrir la ronda.",few_own:"Ese banco tiene "+(e&&e.have)+" preguntas: hacen falta al menos 10 para una partida de trivia.",
   forbidden_bank:"No puedes usar ese banco.",empty_pool:"Ese banco no tiene preguntas.",bad_source:"Elige de dónde salen las preguntas.",google_required:"Para esto hace falta entrar con Google.",
-  bank_full:"El banco está lleno (máximo "+(e&&e.max||"")+" preguntas).",empty:"No hay preguntas válidas para importar.",too_many:"Has llegado al límite.",bad_name:"El nombre es demasiado corto."}[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
+  bank_full:"El banco está lleno (máximo "+(e&&e.max||"")+" preguntas).",empty:"No hay preguntas válidas para importar.",too_many:"Has llegado al límite.",bad_name:"El nombre es demasiado corto."}[e&&e.error]||falloDetalle(e);}
 function avatar(u,cls){return u.picture?'<img class="'+(cls||"av")+'" src="'+esc(u.picture)+'" alt="" referrerpolicy="no-referrer">':'<span class="'+(cls||"av")+' noimg"></span>';}
 function copia(texto,boton){
   var ok=function(){var t=boton.textContent;boton.textContent="Copiado";setTimeout(function(){boton.textContent=t;},1400);};

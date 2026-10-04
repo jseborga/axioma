@@ -26,7 +26,7 @@ var NIV={1:"Fácil",2:"Medio",3:"Difícil"};
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function api(path,body){
   return fetch(path,{method:body?"POST":"GET",credentials:"same-origin",headers:{"Content-Type":"application/json"},
-    body:body?JSON.stringify(body):undefined}).then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j;});});
+    body:body?JSON.stringify(body):undefined}).then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t);}catch(x){throw {error:"http",status:r.status};}if(!r.ok)throw j;return j;});});
 }
 /* si falta el registro con consentimiento, se pide y se reintenta */
 function conRegistro(f){
@@ -42,6 +42,13 @@ function enlace(p,c){return location.origin+location.pathname+"?"+p+"="+c;}
 function copia(t,b){var o=b.textContent;
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent=o;},1400);});
   else prompt("Copia el enlace:",t);}
+/* si no hay un mensaje para ese error, al menos se dice qué pasó (y la referencia para buscarlo en los registros) */
+function falloDetalle(e){
+  if(e&&e.error==="server_error")return "Falló el servidor"+(e.ref?" (referencia "+e.ref+")":"")+(e.detalle?": "+e.detalle:"")+". Inténtalo otra vez y, si se repite, avisa con la referencia.";
+  if(e&&e.error==="http")return "El servidor respondió con un error "+(e.status||"")+". Inténtalo otra vez en un momento.";
+  if(e&&e.name==="TypeError")return "No hay conexión con el servidor. Revisa tu internet e inténtalo otra vez.";
+  return "No se pudo completar"+(e&&e.error?" ("+e.error+")":"")+". Inténtalo otra vez.";
+}
 function ERR(e){if(e&&e.error==="few_questions"&&e.needed!==5)return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
   return {pro_required:"Las ayudas con IA son del plan Pro. Pide a la administración de la plataforma que lo active para tu institución.",
   ia_not_configured:"La IA no está configurada en esta instalación: falta la clave del proveedor (ver Administración de la plataforma → IA).",ia_pdf_unsupported:"El proveedor de IA elegido no lee PDF: pega el texto del documento.",bad_provider:"Proveedor de IA desconocido.",bad_model:"Escribe el identificador del modelo (sin espacios).",settings_not_configured:"Falta la tabla ajustes_plataforma en la base de datos (ver SETUP.md).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
@@ -49,7 +56,7 @@ function ERR(e){if(e&&e.error==="few_questions"&&e.needed!==5)return "En esas á
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
-  student_code_required:"Escribe tu registro universitario (o código de estudiante).",archived:"Este curso está archivado.",
+  student_code_required:"Escribe tu registro universitario (o código de estudiante).",full_name_required:"Escribe tu nombre completo: nombres y apellidos.",phone_required:"Escribe un teléfono válido (solo números, de 7 a 15 cifras).",archived:"Este curso está archivado.",
   bad_name:"El nombre es demasiado corto.",bad_domain:"El dominio no es válido (ejemplo: umsa.bo).",levels_in_use:"No se puede quitar un nivel que tiene unidades.",
   unit_in_use:"No se puede borrar: tiene unidades, cursos o bancos asociados.",too_deep:"Ese nivel no existe en la estructura.",
   last_admin:"La institución no puede quedarse sin administración.",too_many:"Has llegado al límite.",empty_pool:"No hay preguntas con ese tema y nivel en el banco.",
@@ -59,7 +66,7 @@ function ERR(e){if(e&&e.error==="few_questions"&&e.needed!==5)return "En esas á
   bad_color:"El color no es válido.",bad_logo:"El logo no es válido o es demasiado grande.",bad_website:"El sitio web tiene que empezar por https://",
   bad_email:"Revisa el correo.",google_required:"Para esto hace falta entrar con Google.",cannot_block_admin:"No se puede bloquear a la administración de la plataforma."
 
-  }[e&&e.error]||"No se pudo completar. Inténtalo otra vez.";}
+  }[e&&e.error]||falloDetalle(e);}
 function aviso(id,t,mal){var m=$(id);if(!m)return;m.className="msg"+(mal?" bad":" good");m.textContent=t;}
 function atras(t,f){return '<button type="button" class="rt-back" id="au-back">‹ '+esc(t)+'</button>';}
 function tabs(lista,actual){
@@ -423,14 +430,16 @@ function curso(code,nota,tab){
       if(!u)h+='<p>Para unirte a este curso entra con Google.</p>'+(window.AxAccount&&AxAccount.configurado()?'<div class="actions"><button class="primary" id="cu-login">Entrar con Google</button></div>':'');
       else if(m&&m.status==="pendiente")h+='<p class="rt-hoy">Tu solicitud está pendiente: el docente tiene que aprobarla.</p>';
       else if(!c.org_active)h+='<p class="rt-hoy">La institución todavía no está habilitada.</p>';
-      else h+='<form class="rt-form" id="cu-join"><label>Tu registro universitario (o código de estudiante)<input id="cu-sc" maxlength="30" autocomplete="off"></label>'+
+      else h+='<form class="rt-form" id="cu-join"><label>Nombre completo (nombres y apellidos)<input id="cu-nom" maxlength="90" autocomplete="name" required value="'+esc(u.name||"")+'"></label>'+
+        '<label>Teléfono (celular)<input id="cu-tel" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" required placeholder="70012345"></label>'+
+        '<label>Registro o código de estudiante (opcional)<input id="cu-sc" maxlength="30" autocomplete="off"></label>'+
         (c.email_domain?'<p class="fine">Solo se admiten cuentas @'+esc(c.email_domain)+'.</p>':'')+
-        '<p class="fine">Al unirte, tu docente verá tu nombre, tu correo, tu registro y tus resultados en los cuestionarios de este curso.</p>'+
+        '<p class="fine">Al unirte, tu docente verá tu nombre completo, tu teléfono, tu correo, tu registro (si lo pones) y tus resultados en los cuestionarios de este curso.</p>'+
         '<div class="actions"><button class="primary" type="submit" id="cu-go">Unirme al curso</button></div><p class="msg" id="cu-msg"></p></form>';
       pinta(h); $("au-back").onclick=inicio;
       if($("cu-login"))$("cu-login").onclick=function(){AxAccount.abrirCuenta();};
       if($("cu-join"))$("cu-join").onsubmit=function(e){e.preventDefault();$("cu-go").disabled=true;
-        conRegistro(function(){return api("/api/courses/"+code+"/join",{student_code:$("cu-sc").value});})
+        conRegistro(function(){return api("/api/courses/"+code+"/join",{nombre:$("cu-nom").value,telefono:$("cu-tel").value,student_code:$("cu-sc").value});})
           .then(function(r){curso(code,r.status==="pendiente"?"Solicitud enviada. Tu docente tiene que aprobarla.":"¡Ya estás en el curso!");})
           .catch(function(er){$("cu-go").disabled=false;aviso("cu-msg",ERR(er),true);});};
       return;
@@ -474,20 +483,20 @@ function tabLibreta(c,t){
       '<div class="actions" style="align-self:end"><button type="button" class="ghost" id="lb-xls">Descargar Excel</button></div></div></div>';
     function tabla(g){
       var rows=L.rows.filter(function(r){return !g||r.group===g;});
-      return '<div class="tabla-wrap"><table class="tabla au-libreta"><thead><tr><th>Estudiante</th><th>Registro</th>'+(Object.keys(grupos).length?'<th>Grupo</th>':'')+
+      return '<div class="tabla-wrap"><table class="tabla au-libreta"><thead><tr><th>Estudiante</th><th>Teléfono</th><th>Registro</th>'+(Object.keys(grupos).length?'<th>Grupo</th>':'')+
         L.columns.map(function(q){return '<th title="'+esc(q.name)+'">'+esc(q.name.length>18?q.name.slice(0,17)+"…":q.name)+'<small>'+(q.modo==="practica"?'práctica':'examen')+(q.group_name?' · '+esc(q.group_name):'')+'</small></th>';}).join("")+
         '<th>Promedio<small>exámenes</small></th></tr></thead><tbody>'+
-        rows.map(function(r){return '<tr><td>'+esc(r.name)+'<small>'+esc(r.email)+'</small></td><td>'+esc(r.student_code||"—")+'</td>'+(Object.keys(grupos).length?'<td>'+esc(r.group||"—")+'</td>':'')+
+        rows.map(function(r){return '<tr><td>'+esc(r.name)+'<small>'+esc(r.email)+'</small></td><td>'+esc(r.phone||"—")+'</td><td>'+esc(r.student_code||"—")+'</td>'+(Object.keys(grupos).length?'<td>'+esc(r.group||"—")+'</td>':'')+
           L.columns.map(function(q,i){return celda(q,r.notas[i]);}).join("")+'<td class="prom">'+(r.promedio==null?'—':r.promedio)+'</td></tr>';}).join("")+
         '</tbody></table></div>'+(rows.length?'':'<p class="fine">Nadie en este grupo.</p>');
     }
     t.innerHTML=filtro+'<div id="lb-t">'+tabla("")+'</div><p class="fine">Exámenes: nota de 0 a 100 según los aciertos sobre el total de preguntas (un examen cerrado sin responder cuenta 0 en el promedio). Prácticas: el mejor intento y cuántos hizo. «·»: no es de su grupo.</p>';
     $("lb-g").onchange=function(){$("lb-t").innerHTML=tabla(this.value);};
     $("lb-xls").onclick=function(){
-      var g=$("lb-g").value, cab=["Estudiante","Correo","Registro","Grupo"].concat(L.columns.map(function(q){return q.name+(q.modo==="practica"?" (práctica)":"");})).concat(["Promedio exámenes"]);
+      var g=$("lb-g").value, cab=["Estudiante","Correo","Teléfono","Registro","Grupo"].concat(L.columns.map(function(q){return q.name+(q.modo==="practica"?" (práctica)":"");})).concat(["Promedio exámenes"]);
       var filas=[cab].concat(L.rows.filter(function(r){return !g||r.group===g;}).map(function(r){
-        return [r.name,r.email,r.student_code,r.group].concat(L.columns.map(function(q,i){return textoCelda(q,r.notas[i]);})).concat([r.promedio==null?"":r.promedio]);}));
-      AxExcel.descarga(AxExcel.escribir([{nombre:"Libreta",filas:filas,anchos:[28,30,14,14].concat(L.columns.map(function(){return 16;})).concat([12])}]),
+        return [r.name,r.email,r.phone||"",r.student_code,r.group].concat(L.columns.map(function(q,i){return textoCelda(q,r.notas[i]);})).concat([r.promedio==null?"":r.promedio]);}));
+      AxExcel.descarga(AxExcel.escribir([{nombre:"Libreta",filas:filas,anchos:[28,30,14,14,14].concat(L.columns.map(function(){return 16;})).concat([12])}]),
         ("Libreta - "+c.name+(g?" - "+g:"")).replace(/[\\/:*?"<>|]+/g," ").trim()+".xlsx");
     };
   }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
@@ -528,11 +537,11 @@ function tabAlumnos(c,t){
   var G=c.groups||[], hayG=c.extras;
   function selGrupo(m){return '<select data-grp="'+m.id+'"><option value="">—</option>'+G.map(function(g){return '<option value="'+g.id+'"'+(g.id===m.group_id?' selected':'')+'>'+esc(g.name)+'</option>';}).join("")+'</select>';}
   var h="";
-  if(pend.length)h+='<h4>Por aprobar</h4>'+pend.map(function(m){return '<div class="au-fila"><div><b>'+esc(m.name)+'</b><small>'+esc(m.email)+' · registro '+esc(m.student_code||"—")+'</small></div>'+
+  if(pend.length)h+='<h4>Por aprobar</h4>'+pend.map(function(m){return '<div class="au-fila"><div><b>'+esc(m.full_name||m.name)+'</b><small>'+esc(m.email)+(m.phone?' · 📞 '+esc(m.phone):'')+' · registro '+esc(m.student_code||"—")+'</small></div>'+
     '<button type="button" class="primary au-mini" data-apr="'+m.id+'">Aprobar</button><button type="button" class="ghost au-mini" data-quita="'+m.id+'">Rechazar</button></div>';}).join("");
   h+='<h4>En el curso ('+act.length+')</h4>'+
-    '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Nombre</th><th>Registro</th>'+(hayG&&G.length?'<th>Grupo</th>':'')+'<th>Rol</th><th></th></tr></thead><tbody>'+
-    act.map(function(m){return '<tr><td>'+esc(m.name)+(m.me?' <em>(tú)</em>':'')+'<small>'+esc(m.email)+'</small></td><td>'+esc(m.student_code||"—")+'</td>'+
+    '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Nombre</th><th>Teléfono</th><th>Registro</th>'+(hayG&&G.length?'<th>Grupo</th>':'')+'<th>Rol</th><th></th></tr></thead><tbody>'+
+    act.map(function(m){return '<tr><td>'+esc(m.full_name||m.name)+(m.me?' <em>(tú)</em>':'')+'<small>'+esc(m.email)+(m.full_name&&m.full_name!==m.name?' · '+esc(m.name):'')+'</small></td><td>'+esc(m.phone||"—")+'</td><td>'+esc(m.student_code||"—")+'</td>'+
       (hayG&&G.length?'<td>'+(m.owner||m.role!=="estudiante"?'':selGrupo(m))+'</td>':'')+
       '<td>'+(m.owner?'Docente':'<select data-rol="'+m.id+'"><option value="estudiante"'+(m.role==="estudiante"?' selected':'')+'>Estudiante</option><option value="auxiliar"'+(m.role==="auxiliar"?' selected':'')+'>Auxiliar</option></select>')+'</td>'+
       '<td>'+(m.owner||m.me?'':'<button type="button" class="ghost au-mini" data-quita="'+m.id+'">Quitar</button>')+'</td></tr>';}).join("")+

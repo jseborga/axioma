@@ -17,7 +17,7 @@ Excel.
 | **Administración de la institución** | Quien la registra. Cambia la estructura y los ajustes, gestiona miembros y roles, marca el consentimiento de menores y ve todos los cursos, bancos y registros. |
 | **Docente** | Entra con el enlace de docentes. Crea cursos, bancos de preguntas y cuestionarios, y ve los registros de sus cursos. |
 | **Auxiliar** | El docente lo nombra dentro de un curso. Crea cuestionarios en ese curso y ve sus registros. |
-| **Estudiante** | Entra con el código o el enlace del curso y su registro universitario. Responde los cuestionarios y ve su resultado. |
+| **Estudiante** | Entra con el código o el enlace del curso, su nombre completo y su teléfono (el registro universitario es opcional). Responde los cuestionarios y ve su resultado. |
 | **Auspiciador** | Reservado para la fase de patrocinios. |
 
 Un estudiante pertenece a su institución, pero sigue pudiendo participar en
@@ -77,7 +77,7 @@ Un curso es un paralelo de una materia en una gestión (por ejemplo, «Cálculo 
 Paralelo A», 2/2026).
 
 - Tiene un **código de 6 caracteres** y un enlace `…/?curso=CÓDIGO`. El
-  estudiante lo abre, escribe su registro universitario y entra. El código
+  estudiante lo abre, escribe su nombre completo y su teléfono (y, si quiere, su registro universitario) y entra. El código
   también sirve en la portada.
 - Con **aprobación**, cada ingreso queda pendiente hasta que el docente lo acepta.
 - En **Estudiantes** el docente aprueba, quita o nombra auxiliares.
@@ -172,7 +172,7 @@ público ni ganador.
 ## Registros
 
 - En el cuestionario, **Registros y estadísticas**: una fila por estudiante del
-  curso (también quien no participó) con registro universitario, aciertos,
+  curso (también quien no participó) con nombre completo, teléfono, registro universitario, aciertos,
   errores, tiempo y estado; y cada pregunta con su porcentaje de acierto, de la
   más fallada a la más acertada. **Descargar Excel** genera un libro con las
   hojas *Resultados* y *Preguntas*.

@@ -595,6 +595,18 @@ CREATE TABLE IF NOT EXISTS campana_cupones (codigo TEXT PRIMARY KEY, code TEXT N
 CREATE INDEX IF NOT EXISTS campana_cupones_code ON campana_cupones(code, user_id);
 ```
 
+### Añadir la tabla de datos de los estudiantes
+
+Al unirse a un curso, cada estudiante da su **nombre completo** y su
+**teléfono** (el registro universitario pasa a ser opcional). Se guardan en una
+tabla pequeña; pega esto en la consola de D1 (también está en `instalar.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS alumno_datos (org_id TEXT NOT NULL, user_id TEXT NOT NULL, nombre TEXT, telefono TEXT, updated_at INTEGER NOT NULL, PRIMARY KEY (org_id, user_id));
+```
+
+Sin ella, los estudiantes se unen igual, pero el docente no verá esos datos.
+
 ### Añadir las tablas de las competencias sin fin (maratón)
 
 Para las competencias que se juegan hasta perder (memoria sin fin, maratón de

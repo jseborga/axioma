@@ -14,7 +14,7 @@ var espera=null, datos=null;
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function api(path,body){
   return fetch(path,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
-    .then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j;});});
+    .then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t);}catch(x){throw {error:"http",status:r.status};}if(!r.ok)throw j;return j;});});
 }
 function edad(f){
   var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(f||""); if(!m)return null;
@@ -29,7 +29,14 @@ var ERR={bad_name:"Escribe tu nombre.",bad_phone:"Revisa el teléfono: con el c�
   too_many_codes:"Has pedido demasiados códigos. Espera un rato e inténtalo de nuevo.",verify_unavailable:"La verificación por código no está disponible ahora mismo. Entra con Google.",
   bad_code:"El código no es correcto.",code_expired:"El código caducó: pide otro.",code_used:"Ese código ya se usó: pide otro.",
   too_many_attempts:"Demasiados intentos con este código: pide otro.",not_configured:"El servicio no está disponible."};
-function error(e){return (e&&ERR[e.error])||"No se pudo completar. Inténtalo otra vez.";}
+/* si no hay un mensaje para ese error, al menos se dice qué pasó (y la referencia para buscarlo en los registros) */
+function falloDetalle(e){
+  if(e&&e.error==="server_error")return "Falló el servidor"+(e.ref?" (referencia "+e.ref+")":"")+(e.detalle?": "+e.detalle:"")+". Inténtalo otra vez y, si se repite, avisa con la referencia.";
+  if(e&&e.error==="http")return "El servidor respondió con un error "+(e.status||"")+". Inténtalo otra vez en un momento.";
+  if(e&&e.name==="TypeError")return "No hay conexión con el servidor. Revisa tu internet e inténtalo otra vez.";
+  return "No se pudo completar"+(e&&e.error?" ("+e.error+")":"")+". Inténtalo otra vez.";
+}
+function error(e){return (e&&ERR[e.error])||falloDetalle(e);}
 function aviso(t,mal){var m=$("inv-msg");if(m){m.className="msg"+(mal?" bad":"");m.textContent=t||"";}}
 
 /* o = { code | sala | campana, org_name, prize } → promesa: true si quedó verificado */

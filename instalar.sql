@@ -87,3 +87,4 @@ CREATE TABLE IF NOT EXISTS campana_maraton (code TEXT PRIMARY KEY, reglas TEXT N
 CREATE TABLE IF NOT EXISTS campana_progreso (intento_id INTEGER PRIMARY KEY, code TEXT NOT NULL, estado TEXT NOT NULL, vence_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS campana_progreso_code ON campana_progreso(code, vence_at);
 CREATE TABLE IF NOT EXISTS ajustes_plataforma (clave TEXT PRIMARY KEY, valor TEXT NOT NULL, updated_at INTEGER NOT NULL, updated_by TEXT);
+CREATE TABLE IF NOT EXISTS alumno_datos (org_id TEXT NOT NULL, user_id TEXT NOT NULL, nombre TEXT, telefono TEXT, updated_at INTEGER NOT NULL, PRIMARY KEY (org_id, user_id));

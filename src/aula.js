@@ -22,7 +22,7 @@
      GET  /api/orgs/:id/quizzes           registros con filtros (unidad, parcial, gestión)
    Cursos
      GET  /api/courses/:code              ficha (lo mínimo para unirse si no eres miembro)
-     POST /api/courses/:code/join         { student_code }
+     POST /api/courses/:code/join         { nombre, telefono, student_code? }
      POST /api/courses/:code/settings     (quien gestiona el curso)
      POST /api/courses/:code/members/:uid { role, status, remove }
    Bancos
@@ -512,8 +512,9 @@ async function fichaCurso(env,user,code,json){
     ).bind(c.org_id,code).all();
     var enGrupo={};
     if(extra)(((await env.DB.prepare("SELECT user_id,group_id FROM course_group_members WHERE code=?").bind(code).all()).results)||[]).forEach(function(x){enGrupo[x.user_id]=x.group_id;});
-    out.members=(mem.results||[]).map(function(x){return {id:x.id,name:x.name,email:x.email,picture:x.picture,role:x.role,status:x.status,
-      student_code:x.student_code,me:x.id===user.id,owner:x.id===c.owner_id,group_id:enGrupo[x.id]||null};});
+    var dat=await datosAlumnos(env,c.org_id,(mem.results||[]).map(function(x){return x.id;}));
+    out.members=(mem.results||[]).map(function(x){var d=dat[x.id]||{};return {id:x.id,name:x.name,email:x.email,picture:x.picture,role:x.role,status:x.status,
+      student_code:x.student_code,full_name:d.nombre||"",phone:d.telefono||"",me:x.id===user.id,owner:x.id===c.owner_id,group_id:enGrupo[x.id]||null};});
     try{out.invites=((await env.DB.prepare("SELECT email,name,student_code,created_at FROM course_invites WHERE code=? ORDER BY created_at DESC").bind(code).all()).results)||[];}catch(er){out.invites=[];}
     var bancos=await env.DB.prepare(
       "SELECT b.id,b.name,(SELECT COUNT(*) FROM bank_questions q WHERE q.bank_id=b.id) AS n FROM banks b WHERE b.org_id=? AND (b.owner_id=? OR ?='admin') ORDER BY b.name"
@@ -522,6 +523,18 @@ async function fichaCurso(env,user,code,json){
   }
   return json(out);
 }
+/* nombre completo y teléfono de cada estudiante en una institución (tabla opcional) */
+export async function datosAlumnos(env,orgId,ids){
+  var out={}; if(!orgId||!ids.length)return out;
+  try{
+    for(var i=0;i<ids.length;i+=90){
+      var parte=ids.slice(i,i+90), st=env.DB.prepare("SELECT user_id,nombre,telefono FROM alumno_datos WHERE org_id=? AND user_id IN ("+parte.map(function(){return "?";}).join(",")+")");
+      (((await st.bind.apply(st,[orgId].concat(parte)).all()).results)||[]).forEach(function(x){out[x.user_id]={nombre:x.nombre||"",telefono:x.telefono||""};});
+    }
+  }catch(e){}
+  return out;
+}
+function telefonoOk(t){var d=String(t||"").replace(/[\s().-]/g,""); return /^\+?\d{7,15}$/.test(d)?d:"";}
 async function uneCurso(env,user,code,b,json){
   var a=await accesoCurso(env,code,user.id);
   if(!a)return json({error:"not_found"},null,404);
@@ -531,11 +544,22 @@ async function uneCurso(env,user,code,b,json){
   if(a.miembro)return json({ok:true,already:true,status:a.miembro.status});
   if(!dominioOk(o,user))return json({error:"domain",domain:o.email_domain},null,403);
   var sc=limpia(b.student_code,30), now=Date.now(), estado=c.approval?"pendiente":"activo";
-  if(!sc&&!a.rolOrg)return json({error:"student_code_required"},null,400);
+  /* el docente identifica a cada estudiante por su nombre completo y su teléfono (el registro es opcional) */
+  var nombre=limpia(b.nombre,90), tel=telefonoOk(b.telefono);
+  if(!a.rolOrg){
+    if(nombre.length<5||nombre.split(" ").length<2)return json({error:"full_name_required"},null,400);
+    if(!tel)return json({error:"phone_required"},null,400);
+  }
   var ops=[env.DB.prepare("INSERT INTO course_members(code,user_id,role,status,joined_at) VALUES(?,?,'estudiante',?,?)").bind(code,user.id,estado,now)];
   if(!a.rolOrg)ops.push(env.DB.prepare("INSERT INTO org_members(org_id,user_id,role,student_code,joined_at) VALUES(?,?,'estudiante',?,?)").bind(c.org_id,user.id,sc,now));
   else if(sc)ops.push(env.DB.prepare("UPDATE org_members SET student_code=COALESCE(student_code,?) WHERE org_id=? AND user_id=?").bind(sc,c.org_id,user.id));
   await env.DB.batch(ops);
+  if(nombre||tel){
+    try{await env.DB.prepare("INSERT INTO alumno_datos(org_id,user_id,nombre,telefono,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(org_id,user_id) DO UPDATE SET "+
+      "nombre=COALESCE(NULLIF(excluded.nombre,''),alumno_datos.nombre),telefono=COALESCE(NULLIF(excluded.telefono,''),alumno_datos.telefono),updated_at=excluded.updated_at")
+      .bind(c.org_id,user.id,nombre,tel,now).run();}
+    catch(e){console.error("alumno_datos",e&&e.message);}       /* sin la tabla: se une igual */
+  }
   return json({ok:true,status:estado});
 }
 async function ajustesCurso(env,user,code,b,json){
@@ -656,6 +680,7 @@ async function libreta(env,user,code,json){
   pr.forEach(function(p){celdas[p.user_id+"|"+p.code]={best:p.mejor,attempts:p.n};});
   var cols=qs.map(function(q){return {code:q.code,name:q.name,partial:q.partial||"",modo:q.modo||"examen",group_id:q.grupo_id||null,
     group_name:q.grupo_id?nomG[q.grupo_id]||"":"",max_questions:q.max_questions,ends_at:q.ends_at};});
+  var dat=a.gestiona?await datosAlumnos(env,a.curso.org_id,al.map(function(u){return u.id;})):{};
   var filas=al.map(function(u){
     var notas=[], suma=0, n=0;
     cols.forEach(function(q){
@@ -666,7 +691,8 @@ async function libreta(env,user,code,json){
       if(nota!==null||Date.now()>q.ends_at){suma+=nota||0;n++;}          /* cerrado sin responder cuenta como 0 */
       notas.push(c?{nota:nota,correct:c.correct,errors:c.errors,finished:c.finished}:null);
     });
-    return {id:u.id,name:u.name,email:a.gestiona?u.email:"",student_code:u.student_code||"",group:u.group_id?nomG[u.group_id]||"":"",
+    var d=dat[u.id]||{};
+    return {id:u.id,name:d.nombre||u.name,email:a.gestiona?u.email:"",phone:d.telefono||"",student_code:u.student_code||"",group:u.group_id?nomG[u.group_id]||"":"",
       notas:notas,promedio:n?Math.round(suma/n):null};
   });
   return json({course:{code:code,name:a.curso.name,term:a.curso.term||""},columns:cols,rows:filas,manage:a.gestiona});

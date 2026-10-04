@@ -12,7 +12,7 @@ var panel=$("marca-panel"); if(!panel)return;
 var slug=null, activo=false;
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-function get(p){return fetch(p,{credentials:"same-origin"}).then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j;});});}
+function get(p){return fetch(p,{credentials:"same-origin"}).then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t);}catch(x){throw {error:"http",status:r.status};}if(!r.ok)throw j;return j;});});}
 function fecha(ms){return new Date(ms).toLocaleString("es",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});}
 function enlace(s){return location.origin+location.pathname+"?marca="+s;}
 function color(c){

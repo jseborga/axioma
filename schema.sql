@@ -681,3 +681,16 @@ CREATE TABLE IF NOT EXISTS ajustes_plataforma (
   updated_at INTEGER NOT NULL,
   updated_by TEXT
 );
+
+-- =========================================================
+-- Datos que da cada estudiante al unirse a un curso: nombre completo y teléfono
+-- (el registro o código de estudiante, opcional, sigue en org_members).
+-- =========================================================
+CREATE TABLE IF NOT EXISTS alumno_datos (
+  org_id     TEXT NOT NULL,
+  user_id    TEXT NOT NULL,
+  nombre     TEXT,
+  telefono   TEXT,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (org_id, user_id)
+);
