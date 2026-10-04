@@ -457,6 +457,7 @@ GUIAS.ciudad=[
    ["🗺️ Capas","Contaminación, seguridad, bomberos, salud, educación, ocio, valor del suelo y redes pintadas sobre el mapa."],
    ["👾 Retro","Píxeles nítidos como los juegos de ciudades de los 90, o la ciudad a toda resolución."],
    ["Impuestos","En 🏛️ Alcaldía: más impuestos dan más dinero, pero bajan la felicidad y frenan el crecimiento."],
+   ["💳 Deuda","En 🏛️ Alcaldía → 💳: pide un préstamo bancario (cuota fija) o emite bonos municipales (desde la Revolución Industrial) para invertir, y devuélvelos cada mes con intereses. Tu calificación crediticia (AAA a B) fija el interés; la deuda no puede pasar del 110 % de lo que ingresas en un año."],
    ["Contaminación","La industria y la central térmica contaminan; los parques, el reciclaje y la depuradora limpian."]]);}},
 {t:"Vecinos y desafíos",d:"",
  a:function(){return tarjetas([["Mundo abierto","Tus vecinos ven tu ciudad y tú la suya (🌍 Vecinos, o 🌐 para ver el mundo desde arriba), con ranking del mundo. Lo que hacen te llega al guardar y cada minuto. Puntaje: habitantes × felicidad + 30 por acierto + cultura + 200 por época."],

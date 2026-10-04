@@ -130,6 +130,34 @@ barrios ricos (su valor del suelo se calcula al cargarlas).
 
 El valor del suelo es una regla del motor: el servidor la repite igual al validar cada tramo.
 
+## Deuda pública: préstamos y bonos para invertir
+
+Como una alcaldía real, la ciudad puede pedir prestado para **invertir** (hospitales, universidad, centrales, depuradoras) y
+devolverlo cada mes con intereses (🏛️ Alcaldía → 💳 Deuda e inversión). Un mes del juego son 10 s.
+
+| | Préstamo bancario | Bonos municipales |
+|---|---|---|
+| Desde | la Antigüedad | la Revolución Industrial |
+| Interés base | 8 % anual | 5 % anual |
+| Plazos | 12, 24 o 36 meses | 24 o 48 meses |
+| Cómo se devuelve | cuota fija cada mes (sistema francés: intereses + capital) | cupón de intereses cada mes y todo el capital al vencer |
+| Devolver antes | lo pendiente + 1 % | lo pendiente + 2 % (recompra) |
+
+- **Más plazo, más interés**: +0,5 % anual por cada año más que el plazo más corto.
+- **Calificación crediticia** (AAA, AA, A, BBB, BB, B): depende de la deuda viva frente a los ingresos de un año
+  (menos de 30 % es AAA; 200 % o más es B), baja dos escalones durante un año tras un impago y uno si la caja está en rojo.
+  Tener 3 o más aciertos de economía la sube un escalón. Cada escalón suma interés (AA +0,5 %, A +1 %, BBB +2 %,
+  BB +4 %); con B nadie presta.
+- **Límite legal**: la deuda viva no puede pasar del 110 % de los ingresos de un año (mínimo 1.000 $), como en muchas
+  leyes de haciendas locales. Se pide en centenas, desde 500 $.
+- **Impago**: si después de pagar la deuda del mes la caja queda en rojo, cuenta como impago.
+- El panel muestra la oferta antes de firmar (interés, cuota o cupón, total a devolver e intereses), cada deuda con lo
+  pendiente y los intereses pagados, y una explicación con la regla de oro (deuda para invertir, no para gastos corrientes)
+  y un poco de historia.
+
+Pedir (`p`: monto, plazo, tipo) y devolver (`v`: número de deuda) son acciones del tramo: el servidor las repite y calcula
+los intereses igual que el navegador.
+
 ## Relieve y modo retro
 
 - **Relieve**: el mundo tiene colinas, laderas y valles (de 0, el agua, a 4 niveles). Cada casilla se inclina según sus cuatro

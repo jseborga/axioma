@@ -306,7 +306,11 @@ function eventos(now){
   var j=J, s=j.s, ev=s.ev||[]; s.ev=[];
   ev.forEach(function(e){
     if(e.tipo==="crece"){ if(j.chispas.length<30)j.chispas.push({i:e.i,t0:now}); if(Math.random()<0.15)SON.crece(); }
-    else if(e.tipo==="mes"){ var d=e.ing-e.gas; j.ultMes=e; flota((d>=0?"+":"")+fmt(d)+" $",d>=0?"#2e7d32":"#c62828"); if(d>0)SON.mes(); }
+    else if(e.tipo==="mes"){ var d=e.ing-e.gas-(e.deuda||0); j.ultMes=e; flota((d>=0?"+":"")+fmt(d)+" $",d>=0?"#2e7d32":"#c62828"); if(d>0)SON.mes(); }
+    else if(e.tipo==="prestamo"){ SON.mes(); msg((e.k==="o"?"📜 Bonos emitidos: ":"🏦 Préstamo firmado: ")+"+"+fmt(e.monto)+" $ para invertir. Se devuelve cada mes con intereses (🏛️ Alcaldía → 💳).",6000); }
+    else if(e.tipo==="saldada"){ msg("✅ "+A.DEUDA[e.k].nom+" de "+fmt(e.monto)+" $ pagado del todo. Costó "+fmt(e.intereses)+" $ de intereses.",6000); }
+    else if(e.tipo==="devuelta"){ msg("✅ Deuda devuelta antes de tiempo: "+fmt(e.costo)+" $ con la comisión.",5000); }
+    else if(e.tipo==="impago"){ SON.mal(); msg("🚨 Impago: al pagar la deuda la caja quedó en rojo. Tu calificación crediticia baja durante un año y pedir prestado saldrá más caro.",8000); }
     else if(e.tipo==="problema"){ var P=A.PROBLEMAS[e.p.k]; SON.alerta(); msg("⚠️ "+P.nom+": "+P.desc+" Toca «Problemas» para resolverlo.",7000); }
     else if(e.tipo==="era"){ var E=A.ERAS[e.n]; SON.territorio(); j.banner={t:E.ico+" "+E.nom,sub:"Tu ciudad entra en una nueva época de la historia",t0:now};
       msg("🎉 ¡Bienvenida a la "+E.nom+"! "+desbloquea(e.n),9000); herramientas(); }
@@ -603,18 +607,85 @@ function panelAlcaldia(){
     '<span>Seguridad<b>'+Math.round(st.cob.seg*100)+' %</b></span><span>Bomberos<b>'+Math.round(st.cob.fue*100)+' %</b></span>'+
     '<span>Salud<b>'+Math.round(st.cob.sal*100)+' %</b></span><span>Educación<b>'+Math.round(st.cob.edu*100)+' %</b></span>'+
     '<span>Problemas resueltos<b>'+s.resueltos+'</b></span><span>Puntaje<b>'+fmt(A.puntaje(s))+'</b></span>'+
-    '<span>Época<b>'+esc(eraNom(s.era))+'</b></span><span>Rutas comerciales<b>'+A.rutas(s)+(A.rutas(s)?' · +'+(8*Math.min(5,A.rutas(s)))+' %':'')+'</b></span></div>';
+    '<span>Época<b>'+esc(eraNom(s.era))+'</b></span><span>Rutas comerciales<b>'+A.rutas(s)+(A.rutas(s)?' · +'+(8*Math.min(5,A.rutas(s)))+' %':'')+'</b></span>'+
+    '<span>Pago de deuda del mes<b>'+(m&&m.deuda?fmt(m.deuda):"0")+' $</b></span><span>Deuda viva<b>'+fmt(A.deudaViva(s))+' $ · '+A.CALIF[A.calificacion(s,st)]+'</b></span></div>'+
+    '<button type="button" class="primary cs-bdeuda" id="cs-deuda">💳 Deuda e inversión: préstamos y bonos</button>';
   var temas=Object.keys(s.temas);
   h+='<h4>Tus aciertos por tema</h4>'+(temas.length?'<div class="cs-temas">'+temas.map(function(t){var x=s.temas[t],p=Math.round(100*x[0]/Math.max(1,x[1]));
     return '<span><b>'+esc(A.TEMAS[t]||t)+'</b><i style="--p:'+p+'%"></i><small>'+x[0]+'/'+x[1]+'</small></span>';}).join("")+'</div>':'<p class="fine">Todavía no respondiste preguntas.</p>');
   h+='<h4>Objetivos</h4><ol class="cs-mlist">'+MISIONES.map(function(x){var ok=x[1](s,st);return '<li class="'+(ok?'ok':'')+'">'+(ok?'✅ ':'⬜ ')+esc(x[0])+'</li>';}).join("")+'</ol>'+
     '<p class="cs-nota">Puntaje = habitantes × felicidad + 30 por cada acierto + cultura.</p>';
   abreModal(h);
+  $("cs-deuda").onclick=panelDeuda;
   if($("cs-imp")){
     $("cs-imp").oninput=function(){$("cs-imp-v").textContent=this.value+" %";};
     $("cs-imp").onchange=function(){var v=parseInt(this.value,10); if(v!==s.impuesto&&hace("i",v)){SON.pon();msg("Impuestos al "+v+" %.");}};
     $("cs-nok").onclick=function(){var n=$("cs-nnom").value.replace(/\s+/g," ").trim(); if(n&&n!==s.nombre&&hace("n",0,0,n)){SON.pon();hud(true);msg("Ahora tu ciudad se llama "+n+".");}};
   }
+}
+/* ---------- deuda pública: préstamos bancarios y bonos municipales para invertir ---------- */
+var MONTOS=[500,1000,2000,3000,5000,8000,12000,20000,30000,50000,80000];
+function panelDeuda(){
+  var j=J, s=j.s, st=s.est||A.calcula(s), n=A.calificacion(s,st), anual=A.ingresos(s,st)*12, of0=A.oferta(s,"b");
+  var h=cab("💳 Deuda e inversión");
+  h+='<p class="cs-nota">Como una alcaldía de verdad: pide prestado para <b>invertir</b> (hospitales, universidad, centrales, depuradoras) y devuélvelo cada mes con intereses. Un mes del juego son 10 s.</p>';
+  h+='<div class="cs-fin">'+
+    '<span>Calificación crediticia<b class="cs-calif c'+n+'">'+A.CALIF[n]+'</b></span>'+
+    '<span>Deuda viva<b>'+fmt(A.deudaViva(s))+' $</b></span>'+
+    '<span>Ingresos de un año<b>'+fmt(anual)+' $</b></span>'+
+    '<span>Límite legal (110 %)<b>'+fmt(of0.limite)+' $</b></span>'+
+    '<span>Pago de deuda al mes<b>'+fmt(A.servicioDeuda(s))+' $</b></span>'+
+    '<span>Puedes pedir hasta<b>'+fmt(n>=5?0:of0.max)+' $</b></span></div>';
+  var ds=s.deuda||[];
+  h+='<h4>Tus deudas</h4>'+(ds.length?'<div class="cs-deudas">'+ds.map(function(d){
+    var P=A.DEUDA[d.k], pago=d.k==="b"?d.cuota:Math.round(d.cap*d.tasa*100)/100, cst=d.cap*(1+P.comision);
+    return '<div class="cs-deu"><div><b>'+(d.k==="o"?"📜 ":"🏦 ")+P.nom+' · '+fmt(d.monto)+' $</b>'+
+      '<small>'+(d.tasa*1200).toFixed(1).replace(".",",")+' % anual · '+(d.k==="b"?'cuota '+fmt(pago)+' $/mes':'cupón '+fmt(pago)+' $/mes y '+fmt(d.cap)+' $ al vencer')+
+      ' · quedan '+d.n+' de '+d.plazo+' meses</small>'+
+      '<i class="cs-dbar" style="--p:'+Math.round(100*(1-d.cap/d.monto))+'%"></i><small>Pendiente '+fmt(d.cap)+' $ · intereses pagados '+fmt(d.intereses||0)+' $</small></div>'+
+      (j.solo?'':'<button type="button" class="ghost" data-dev="'+d.id+'"'+(s.dinero<cst?' disabled':'')+'>Devolver ya<br><small>'+fmt(cst)+' $ ('+Math.round(P.comision*100)+' %)</small></button>')+'</div>';
+  }).join("")+'</div>':'<p class="fine">Tu ciudad no debe nada.</p>');
+  if(!j.solo){
+    h+='<h4>Pedir dinero</h4><div class="cs-pide">'+
+      '<label>Tipo<select id="cs-dk"><option value="b">🏦 Préstamo bancario</option><option value="o"'+(s.era<3?' disabled':'')+'>📜 Bonos municipales'+(s.era<3?' (Revolución Industrial)':'')+'</option></select></label>'+
+      '<label>Plazo<select id="cs-dp"></select></label><label>Monto<select id="cs-dm"></select></label></div>'+
+      '<div class="cs-oferta" id="cs-of"></div><button type="button" class="primary" id="cs-dok">Firmar</button>';
+  }
+  h+='<details class="cs-como"><summary>¿Cómo funciona la deuda de una ciudad?</summary><ul>'+
+    '<li><b>Regla de oro:</b> endeudarse para invertir en obras que duran décadas y se pagan con los impuestos de los años siguientes; no para pagar los gastos de cada mes.</li>'+
+    '<li><b>Préstamo bancario</b> (8 % anual): cuota fija cada mes (sistema francés). Al principio la cuota es casi todo intereses; al final, casi todo capital.</li>'+
+    '<li><b>Bonos municipales</b> (5 % anual, desde la Revolución Industrial): la ciudad vende bonos a inversores, les paga un cupón de intereses cada mes y les devuelve todo el capital al vencer. Son más baratos, pero hay que tener el dinero al final.</li>'+
+    '<li><b>Más plazo, más interés</b>: +0,5 % anual por cada año extra, porque el riesgo es mayor.</li>'+
+    '<li><b>Calificación crediticia</b> (como las de S&amp;P, Moody\'s o Fitch): de AAA, la mejor, a B. Depende de cuánto debes frente a lo que ingresas en un año, de los impagos y de tener la caja en rojo. Cada escalón encarece el interés; con B nadie presta. Saber de economía (3 aciertos del tema) la mejora un escalón.</li>'+
+    '<li><b>Límite legal</b>: la deuda viva no puede pasar del 110 % de los ingresos de un año, como en muchas leyes de haciendas locales.</li>'+
+    '<li><b>Impago</b>: si al pagar la deuda la caja queda en rojo, la calificación baja dos escalones durante un año.</li>'+
+    '<li><b>Devolver antes</b> cuesta una comisión: 1 % el préstamo y 2 % recomprar los bonos.</li>'+
+    '<li><b>Un poco de historia:</b> en la Antigüedad prestaban los templos y los banqueros; en el Renacimiento, bancos como el de los Médici prestaban a ciudades y reyes, y Venecia y Génova ya tenían deuda pública; en el siglo XIX los bonos municipales pagaron el agua, el gas y los tranvías de las ciudades.</li></ul></details>';
+  abreModal(h);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-dev]"),function(b){b.onclick=function(){
+    if(hace("v",+b.getAttribute("data-dev"))){SON.pon(); hud(true); panelDeuda();} else msg("No alcanza el dinero para devolverla ahora.",3000);};});
+  if(j.solo)return;
+  var dk=$("cs-dk"), dp=$("cs-dp"), dm=$("cs-dm");
+  function opciones(){
+    var k=dk.value, P=A.DEUDA[k], pl=+dp.value;
+    dp.innerHTML=P.plazos.map(function(x){return '<option value="'+x+'"'+(x===pl?' selected':'')+'>'+x+' meses ('+(x*10/60).toFixed(0)+' min de juego)</option>';}).join("");
+    var of=A.oferta(s,k,+dp.value), mm=+dm.value;
+    var lista=MONTOS.filter(function(x){return x<=of.max;}); if(of.max>=500&&lista.indexOf(of.max)<0)lista.push(of.max);
+    dm.innerHTML=lista.map(function(x){return '<option value="'+x+'"'+(x===mm?' selected':'')+'>'+fmt(x)+' $</option>';}).join("");
+    if(!dm.value&&lista.length)dm.value=lista[0];
+    var z=$("cs-of"), ok=$("cs-dok");
+    if(!of.ok||!lista.length){ z.innerHTML='<span class="cs-bloq">'+esc(of.motivo||"No hay oferta.")+'</span>'; ok.disabled=true; return; }
+    var M=+dm.value, n2=+dp.value, cuota=k==="b"?A.cuotaFrancesa(M,of.tasa,n2):Math.round(M*of.tasa*100)/100, total=k==="b"?cuota*n2:cuota*n2+M;
+    z.innerHTML='<span>Interés<b>'+(of.anual*100).toFixed(1).replace(".",",")+' % anual</b><small>calificación '+of.nota+'</small></span>'+
+      '<span>'+(k==="b"?'Cuota fija':'Cupón')+'<b>'+fmt(cuota)+' $/mes</b><small>'+(k==="b"?'intereses + capital':'+ '+fmt(M)+' $ al vencer')+'</small></span>'+
+      '<span>Devuelves en total<b>'+fmt(total)+' $</b><small>'+fmt(total-M)+' $ de intereses</small></span>';
+    ok.disabled=false; ok.textContent=k==="b"?"🏦 Firmar el préstamo de "+fmt(M)+" $":"📜 Emitir "+fmt(M)+" $ en bonos";
+  }
+  dk.onchange=function(){dp.value=""; opciones();}; dp.onchange=opciones; dm.onchange=opciones; opciones();
+  $("cs-dok").onclick=function(){
+    var k=dk.value, M=+dm.value, n2=+dp.value;
+    if(hace("p",M,n2,k)){ hud(true); panelDeuda(); } else msg("El banco no aprobó ese monto: revisa el límite.",3500);
+  };
 }
 function cierraInfo(){var z=$("cs-info"); if(z){z.hidden=true;z.innerHTML="";} if(J)J.sel=null;}
 /* qué hay en una casilla y por qué crece o no */

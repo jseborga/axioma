@@ -330,10 +330,11 @@ function paso(s){
   /* cultura y economía */
   s.cultura+=st.cultura*0.1+st.pob/5000+0.05*rutas(s);
   if(s.tick%MES===0){
-    var imp=s.impuesto/10, ing=(st.pobPond*0.12+st.empCPond*0.15+st.empI*0.12)*imp*(s.techs.fiscal?1.1:1)*(1+0.08*Math.min(5,rutas(s)));
-    var gas=st.mant+st.calles*0.02;
-    s.dinero=Math.round((s.dinero+ing-gas)*100)/100;
-    aviso(s,{tipo:"mes",ing:ing,gas:gas});
+    var ing=ingresos(s,st), gas=st.mant+st.calles*0.02, pg=pagaDeuda(s);
+    s.dinero=Math.round((s.dinero+ing-gas-pg.tot)*100)/100;
+    /* si después de pagar la deuda la caja queda en rojo, el banco lo anota como impago: la calificación baja un año */
+    if(pg.tot>0&&s.dinero<0){s.impagos=(s.impagos||0)+1; s.impagoHasta=s.tick+12*MES; aviso(s,{tipo:"impago"});}
+    aviso(s,{tipo:"mes",ing:ing,gas:gas,deuda:pg.tot,intereses:pg.int});
   }
   /* problemas: vencen o aparecen */
   s.problemas=s.problemas.filter(function(p){
@@ -365,6 +366,59 @@ function premio(s,k){
   if(k==="apagon")s.bonoMW+=10; else if(k==="sequia")s.bonoAgua+=15; else if(k==="smog"){s.bonoLimpio=Math.min(3,s.bonoLimpio+1);s.cache=null;}
   else if(k==="feria")s.cultura+=15; else{ s.bonoFeliz=6; s.bonoFelizHasta=s.tick+240; }
   s.dinero+=400;
+}
+
+/* ---------- deuda pública: pedir prestado para invertir, como una alcaldía real ----------
+   Un mes del juego son 10 s. El préstamo bancario se devuelve con cuota fija (sistema francés: cada cuota paga los
+   intereses del mes y el resto amortiza capital); los bonos municipales pagan solo intereses (el cupón) cada mes y el
+   capital entero al vencer. La tasa depende de la calificación crediticia, que mira cuánto se debe frente a lo que se
+   ingresa en un año, si hubo impagos y si la caja está en rojo. Como en muchas leyes de haciendas locales, la deuda
+   viva no puede pasar del 110 % de los ingresos de un año. */
+var DEUDA={
+  b:{nom:"Préstamo bancario", anual:0.08, plazos:[12,24,36], era:0, comision:0.01},
+  o:{nom:"Bonos municipales", anual:0.05, plazos:[24,48], era:3, comision:0.02}
+};
+var CALIF=["AAA","AA","A","BBB","BB","B"], PRIMA=[0,0.005,0.01,0.02,0.04,0.07];
+function r2(x){return Math.round(x*100)/100;}
+function ingresos(s,st){
+  return (st.pobPond*0.12+st.empCPond*0.15+st.empI*0.12)*(s.impuesto/10)*(s.techs.fiscal?1.1:1)*(1+0.08*Math.min(5,rutas(s)));
+}
+function deudaViva(s){var t=0; (s.deuda||[]).forEach(function(d){t+=d.cap;}); return r2(t);}
+/* lo que toca pagar el próximo mes (intereses + capital) */
+function servicioDeuda(s){var t=0; (s.deuda||[]).forEach(function(d){var i=d.cap*d.tasa; t+=d.k==="b"?(d.n===1?d.cap+i:d.cuota):i+(d.n===1?d.cap:0);}); return r2(t);}
+function calificacion(s,st){
+  st=st||s.est||calcula(s);
+  var anual=ingresos(s,st)*12, viva=deudaViva(s), ratio=anual>0?viva/anual:(viva>0?99:0);
+  var n=ratio<0.3?0:ratio<0.6?1:ratio<0.9?2:ratio<1.2?3:ratio<2?4:5;
+  if((s.impagoHasta||0)>s.tick)n+=2;
+  if(s.dinero<0)n++;
+  if(n>0&&((s.temas.economia||[0])[0]>=3))n--;   /* una alcaldía que sabe de economía inspira confianza */
+  return Math.min(5,n);
+}
+/* lo que ofrece el banco (o el mercado, para los bonos) hoy: tasa, cuánto se puede pedir y por qué no */
+function oferta(s,k,plazo){
+  var P=DEUDA[k]; if(!P)return {ok:false,motivo:"no existe"};
+  var st=s.est||calcula(s), n=calificacion(s,st), anual=ingresos(s,st)*12;
+  var limite=Math.max(1000,Math.floor(anual*1.1/100)*100), max=Math.max(0,Math.floor((limite-deudaViva(s))/100)*100);
+  var pl=plazo||P.plazos[0], tasaA=P.anual+PRIMA[n]+0.005*Math.max(0,(pl-P.plazos[0])/12);   /* más plazo, más riesgo: un poco más de interés */
+  var o={ok:true,k:k,calif:n,nota:CALIF[n],anual:tasaA,tasa:tasaA/12,limite:limite,max:max,plazo:pl,motivo:""};
+  if(P.era>s.era){o.ok=false; o.motivo="Los bonos municipales llegan con la Revolución Industrial.";}
+  else if(P.plazos.indexOf(pl)<0){o.ok=false; o.motivo="Plazo no disponible.";}
+  else if(n>=5){o.ok=false; o.motivo="Con calificación B nadie presta: baja la deuda o sal de los números rojos.";}
+  else if(max<500){o.ok=false; o.motivo="Llegaste al límite de endeudamiento (110 % de los ingresos de un año).";}
+  return o;
+}
+function cuotaFrancesa(P,r,n){return r2(r>0?P*r/(1-Math.pow(1+r,-n)):P/n);}
+function pagaDeuda(s){
+  var tot=0, intr=0;
+  if(!s.deuda||!s.deuda.length)return {tot:0,int:0};
+  s.deuda=s.deuda.filter(function(d){
+    var i=r2(d.cap*d.tasa), a=d.n<=1?d.cap:(d.k==="b"?Math.min(d.cap,r2(d.cuota-i)):0);
+    d.cap=r2(d.cap-a); d.n--; d.intereses=r2((d.intereses||0)+i); tot+=i+a; intr+=i;
+    if(d.n<=0||d.cap<=0){aviso(s,{tipo:"saldada",k:d.k,monto:d.monto,intereses:d.intereses}); return false;}
+    return true;
+  });
+  return {tot:r2(tot),int:r2(intr)};
 }
 
 /* ---------- acciones ---------- */
@@ -404,6 +458,18 @@ function act(s,a,b,c,d,e,f){
   }
   if(a==="i"){                       /* impuestos: 6 a 14 % */
     if(!(b>=6&&b<=14))return false; s.impuesto=b; return true;
+  }
+  if(a==="p"){                       /* pedir prestado: b monto, c plazo en meses, d «b» préstamo bancario u «o» bonos */
+    var of=oferta(s,String(d||""),c);
+    if(!of.ok||!(b>=500&&b<=of.max&&b%100===0))return false;
+    s.deuda=(s.deuda||[]).concat([{id:s.nextDeuda||1,k:of.k,monto:b,cap:b,tasa:of.tasa,n:c,plazo:c,
+      cuota:of.k==="b"?cuotaFrancesa(b,of.tasa,c):0,desde:s.tick,intereses:0}]);
+    s.nextDeuda=(s.nextDeuda||1)+1; s.dinero=r2(s.dinero+b); s.est=null; aviso(s,{tipo:"prestamo",k:of.k,monto:b}); return true;
+  }
+  if(a==="v"){                       /* devolver ya lo que queda de una deuda (b = su número), con la comisión */
+    var dd=(s.deuda||[]).filter(function(x){return x.id===b;})[0]; if(!dd)return false;
+    var cst=r2(dd.cap*(1+DEUDA[dd.k].comision)); if(s.dinero<cst)return false;
+    s.dinero=r2(s.dinero-cst); s.deuda=s.deuda.filter(function(x){return x!==dd;}); s.est=null; aviso(s,{tipo:"devuelta",k:dd.k,costo:cst}); return true;
   }
   if(a==="n"){ s.nombre=String(d||"").replace(/\s+/g," ").trim().slice(0,30)||s.nombre; return true; }
   if(a==="q"){                       /* pregunta: b opción, c no se usa, d id, e «t:tech» o «p:problema», f si acertó */
@@ -472,9 +538,10 @@ function repite(estado,nuevo,seg,envio){
 }
 function resumen(s){var st=s.est||calcula(s);
   return {puntaje:puntaje(s),pob:st.pob,felicidad:st.felicidad,conocimiento:s.conocimiento,cultura:Math.round(s.cultura),radio:radio(s),
-          dinero:Math.round(s.dinero),techs:Object.keys(s.techs).length,resueltos:s.resueltos,temas:s.temas,era:s.era,tratados:rutas(s)};}
+          dinero:Math.round(s.dinero),deuda:Math.round(deudaViva(s)),techs:Object.keys(s.techs).length,resueltos:s.resueltos,temas:s.temas,era:s.era,tratados:rutas(s)};}
 
 G.AxCiudad={TICK:TICK,R:R,LADO:LADO,N:N,SEPARA:SEPARA,MES:MES,MAX_SEG:MAX_SEG,EDIF:EDIF,TECHS:TECHS,PROBLEMAS:PROBLEMAS,TEMAS:TEMAS,ERAS:ERAS,INFLU:INFLU,COSTO_RED:COSTO_RED,riqueza:riqueza,
+  DEUDA:DEUDA,CALIF:CALIF,oferta:oferta,calificacion:calificacion,deudaViva:deudaViva,servicioDeuda:servicioDeuda,ingresos:ingresos,cuotaFrancesa:cuotaFrancesa,
   influencia:influencia,rutas:rutas,tope:tope,requisitos:requisitos,
   POB:POB,EMPC:EMPC,EMPI:EMPI,
   semilla:semilla,rng:rng,terreno:terreno,centroSlot:centroSlot,crea:crea,serializa:serializa,deserializa:deserializa,
