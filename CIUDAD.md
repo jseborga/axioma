@@ -102,6 +102,20 @@ Puntaje: `habitantes × (0,5 + felicidad/100) + 30 × aciertos + cultura + 200 �
 - Los vecinos (las ranuras de alrededor) se ven en el mapa con su nombre, su territorio y
   sus edificios, y en 🌍 **Vecinos** con el ranking del mundo.
 
+### Cómo es el multijugador
+
+- Es **asíncrono**: cada persona juega su ciudad en su teléfono o computador, y lo que hacen las demás le llega al guardar
+  (cada ~40 s) y cada minuto. No hace falta estar conectados a la vez.
+- Cada ciudad nueva toma la siguiente ranura libre en **una sola instrucción** de la base de datos, así que aunque muchas
+  personas entren en el mismo instante nunca reciben la misma ranura.
+- Cada quien solo puede modificar su propia ciudad: el servidor rechaza un tramo que no sea el abierto de esa persona y
+  cualquier construcción fuera de su territorio.
+- La misma persona en dos dispositivos: vale el último que abrió la ciudad; el otro avisa «abriste esta ciudad en otra
+  pestaña o dispositivo».
+- 🌐 **Vista de mundo**: aleja la cámara para ver tu ciudad con sus ocho ranuras vecinas, con nombres, épocas, influencias y
+  rutas. El terreno se dibuja como una sola imagen inclinada para que vaya fluido (60 cuadros por segundo).
+- Si una vecina firma un tratado con tu ciudad, te llega un aviso para que firmes tú también.
+
 ## Desafíos de ciudad (docentes)
 
 En **Educativo → curso → Ciudad**, quien gestiona el curso crea un desafío: un mundo propio

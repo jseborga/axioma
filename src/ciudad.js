@@ -119,12 +119,13 @@ async function entrar(req,env,user,ctx){
   if(!c){
     if(cerrado)return ctx.json({error:"closed"},null,409);
     var nombre=limpia("Ciudad de "+String(user.name||"").split(" ")[0],30);
-    /* la siguiente ranura libre de la espiral (si dos entran a la vez, el índice único decide) */
-    for(var intento=0;intento<4&&!c;intento++){
-      var mx=await env.DB.prepare("SELECT MAX(slot) AS m FROM ciudad_ciudades WHERE mundo=?").bind(w.code).first();
-      var slot=mx&&mx.m!=null?mx.m+1:0;
+    /* la siguiente ranura libre de la espiral, en una sola instrucción: la base de datos la calcula y la
+       ocupa a la vez, así que dos personas que entran en el mismo instante nunca reciben la misma */
+    for(var intento=0;intento<6&&!c;intento++){
       try{
-        await env.DB.prepare("INSERT INTO ciudad_ciudades(mundo,user_id,slot,nombre,updated_at) VALUES(?,?,?,?,?)").bind(w.code,user.id,slot,nombre,now).run();
+        await env.DB.prepare("INSERT INTO ciudad_ciudades(mundo,user_id,slot,nombre,updated_at) "+
+          "SELECT ?,?,COALESCE(MAX(slot)+1,0),?,? FROM ciudad_ciudades WHERE mundo=? ON CONFLICT(mundo,user_id) DO NOTHING")
+          .bind(w.code,user.id,nombre,now,w.code).run();
       }catch(e){ if(!/UNIQUE|constraint/i.test(String(e&&e.message)))throw e; }
       c=await env.DB.prepare("SELECT * FROM ciudad_ciudades WHERE mundo=? AND user_id=?").bind(w.code,user.id).first();
     }
@@ -188,7 +189,8 @@ async function alrededor(env,w,slot,uid){
     var e=json(x.estado); if(!e)return;
     var era=e.era==null?(/[ewsh]/.test(e.tipo)?3:0):e.era, radio=A.radio(e), inf=radio+A.INFLU*era, d=Math.hypot(p.x-yo.x,p.y-yo.y);
     out.push({slot:x.slot,cx:p.x,cy:p.y,nombre:x.nombre,jugador:String(x.name||"").split(" ")[0],radio:radio,era:era,influencia:inf,distancia:Math.round(d*10)/10,
-      tipo:e.tipo,nivel:e.nivel,pob:x.poblacion,puntaje:x.puntaje,contacto:function(mia){return mia+inf>=d;}});
+      tipo:e.tipo,nivel:e.nivel,pob:x.poblacion,puntaje:x.puntaje,conmigo:!!(e.tratados&&e.tratados[slot]),
+      contacto:function(mia){return mia+inf>=d;}});
   });
   return out;
 }

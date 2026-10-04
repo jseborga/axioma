@@ -18,6 +18,7 @@ if(!A)return;
 var $=function(id){return document.getElementById(id)};
 var TW=32, TH=16, HW=16, HH=8;          /* rombo de una casilla (unidades del mapa) */
 var CH=16, CS=2;                        /* trozos de terreno de 16×16, dibujados al doble */
+var ZMIN=0.12, ZMUNDO=0.42;             /* por debajo de ZMUNDO se ve el mundo: terreno y ciudades simplificadas */
 var AUTOGUARDA=40000, PREG_S=25;
 var FUENTE="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif";
 var J=null, desfase=0;
@@ -206,7 +207,7 @@ function monta(ent){
       '<canvas id="cs-cv" aria-label="Mapa de la ciudad"></canvas>'+
       '<div class="cs-izq">'+
         '<button type="button" id="cs-zmas" title="Acercar">+</button><button type="button" id="cs-zmenos" title="Alejar">−</button>'+
-        '<button type="button" id="cs-centro" title="Volver al centro">🎯</button><button type="button" id="cs-capa" title="Capas de información">🗺️</button>'+
+        '<button type="button" id="cs-centro" title="Volver al centro">🎯</button><button type="button" id="cs-mundo" title="Ver el mundo y las ciudades vecinas">🌐</button><button type="button" id="cs-capa" title="Capas de información">🗺️</button>'+
         '<button type="button" id="cs-full" title="Pantalla completa">⛶</button></div>'+
       '<div class="cs-der">'+
         '<button type="button" id="cs-inv"><span>🔬</span><small>Investigar</small></button>'+
@@ -235,7 +236,7 @@ function monta(ent){
   enlaza();
   hud(true);
   cargaVecinos();
-  yo.tq=setInterval(function(){if(J===yo&&!yo.solo)cargaVecinos();},120000);
+  yo.tq=setInterval(function(){if(J===yo&&!yo.solo&&!document.hidden)cargaVecinos();},60000);
   var ultimo=performance.now(), acc=0, ultHud=0;
   function cuadro(now){
     if(!yo.vivo)return;
@@ -284,6 +285,7 @@ function guarda(alSalir){
     j.s=s; j.seg=r.seg; j.log=[]; j.guardando=false; j.ultGuardado=performance.now();
     j.rank=r.rank; j.total=r.total;
     estadoGuardado("✓ Guardado"+(r.rank?" · puesto #"+r.rank+" de "+r.total:""));
+    if(!nuevos.length)cargaVecinos();   /* lo que hicieron las vecinas mientras tanto */
   }).catch(function(e){
     if(J!==j)return;
     j.guardando=false; j.ultGuardado=performance.now();
@@ -541,7 +543,8 @@ function panelVecinos(){
     var firmado=!!s.tratados[v.slot], contacto=(s.contactos||[]).indexOf(v.slot)>=0, cool=Math.max(0,((s.tratCool[v.slot]||0)-s.tick)*A.TICK/1000);
     var f=Math.min(1,(mia+v.influencia)/v.distancia);
     h+='<div class="cs-it'+(firmado?' hecha':contacto?' resalta':'')+'"><div><b>🏙️ '+esc(v.nombre)+' <small style="display:inline">'+esc(eraNom(v.era))+'</small></b><small>de '+esc(v.jugador)+' · 👥 '+fmt(v.pob)+' · ⭐ '+fmt(v.puntaje)+'</small>'+
-      (firmado?'<small class="cs-ok">🤝 Tratado firmado: ruta comercial activa.</small>':contacto?'<small class="cs-req">✨ ¡Encuentro! Vuestras culturas se tocan: podéis firmar un tratado.</small>':
+      (firmado?'<small class="cs-ok">🤝 Tratado firmado: ruta comercial activa.'+(v.conmigo?' '+esc(v.nombre)+' también lo firmó.':'')+'</small>':
+        contacto?'<small class="cs-req">✨ ¡Encuentro! Vuestras culturas se tocan: podéis firmar un tratado.'+(v.conmigo?' <b>'+esc(v.nombre)+' ya lo firmó contigo.</b>':'')+'</small>':
         '<span class="cs-reqs"><span><i style="--p:'+Math.round(f*100)+'%"></i>Influencias '+mia+' + '+v.influencia+' de '+Math.round(v.distancia)+' casillas</span></span>')+'</div>'+
       '<span class="cs-acc">'+(contacto&&!firmado&&!j.solo?(cool>0?'<span class="cs-bloq">'+Math.ceil(cool)+' s</span>':'<button type="button" class="primary" data-trat="'+v.slot+'">Firmar tratado</button>'):'')+
       '<button type="button" class="ghost" data-vec="'+i+'">Ver</button></span></div>';
@@ -649,7 +652,13 @@ function cargaVecinos(){
   var j=J; if(!j)return;
   api("/api/ciudad/vecinos?mundo="+encodeURIComponent(j.mundo.code)).then(function(r){
     if(J!==j)return;
+    var antes={}; j.vecinos.forEach(function(v){if(v.conmigo)antes[v.slot]=1;});
     j.vecinos=(r.vecinos||[]).map(function(v){v.tipoA=v.tipo.split(""); v.nivelA=v.nivel.split("").map(Number); return v;});
+    /* una vecina firmó un tratado con mi ciudad: aviso para que yo también firme */
+    var nueva=j.vecinos.filter(function(v){return v.conmigo&&!antes[v.slot]&&!j.s.tratados[v.slot];})[0];
+    if(nueva&&j.vecinosCargados){ SON.territorio(); $("cs-vec").classList.add("alerta");
+      msg("🤝 "+nueva.nombre+" firmó un tratado con tu ciudad. Abre «Vecinos» y firma tú también para abrir la ruta comercial en la tuya.",9000); }
+    j.vecinosCargados=true;
   }).catch(function(){});
 }
 function vecinoEn(x,y){
@@ -675,7 +684,7 @@ function aMapa(px,py){var c=J.cam; return {x:(px-J.W/2)/c.z+c.x,y:(py-J.H/2)/c.z
 function aCasilla(ix,iy){var a=ix/HW, b=iy/HH; return {x:Math.round((a+b)/2),y:Math.round((b-a)/2)};}
 function zoom(f,px,py){
   var j=J, c=j.cam; if(px==null){px=j.W/2;py=j.H/2;}
-  var p=aMapa(px,py), z=Math.max(0.45,Math.min(3,c.z*f));
+  var p=aMapa(px,py), z=Math.max(ZMIN,Math.min(3,c.z*f));
   c.x=p.x-(px-j.W/2)/z; c.y=p.y-(py-j.H/2)/z; c.z=z;
 }
 
@@ -725,6 +734,15 @@ function enlaza(){
   function medioP(){var ps=Object.keys(j.ptr).map(function(k){return j.ptr[k];}); return ps.length<2?ps[0]:{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2};}
   $("cs-zmas").onclick=function(){zoom(1.25);}; $("cs-zmenos").onclick=function(){zoom(0.8);};
   $("cs-centro").onclick=function(){centra(false);};
+  $("cs-mundo").onclick=function(){
+    var c=j.cam;
+    if(c.z<ZMUNDO){ centra(true); $("cs-mundo").classList.remove("on"); return; }
+    /* la ciudad en el centro y sus ocho ranuras vecinas alrededor */
+    centra(false); tam();
+    c.z=Math.max(ZMIN,Math.min(ZMUNDO*0.9,j.W/(2*A.SEPARA*TW*1.15),j.H/(2*A.SEPARA*TH*1.15)));
+    $("cs-mundo").classList.add("on");
+    msg(j.vecinos.length?"🌐 El mundo: tu ciudad y "+j.vecinos.length+(j.vecinos.length===1?" vecina":" vecinas")+". Toca 🌐 otra vez para volver.":"🌐 El mundo alrededor de tu ciudad. Las ciudades que se funden en las ranuras de al lado aparecerán aquí.",5000);
+  };
   $("cs-capa").onclick=function(){
     var k=0; for(var i=0;i<CAPAS.length;i++)if(CAPAS[i][0]===j.capa)k=i;
     var c=CAPAS[(k+1)%CAPAS.length]; j.capa=c[0];
@@ -1018,6 +1036,8 @@ function dibuja(now){
   var kx0=Math.floor((Math.min.apply(null,xs)-1)/CH), kx1=Math.floor((Math.max.apply(null,xs)+1)/CH);
   var ky0=Math.floor((Math.min.apply(null,ys)-1)/CH), ky1=Math.floor((Math.max.apply(null,ys)+1)/CH);
   var kxA, kyA;
+  var lejos=c.z<ZMUNDO, gr=Math.max(1,0.8/c.z);   /* gr: grosor de las líneas para que se vean de lejos */
+  if(lejos){ terrenoMundo(g,c); kx1=kx0-1; }       /* de lejos, el terreno es una sola imagen */
   for(kxA=kx0;kxA<=kx1;kxA++)for(kyA=ky0;kyA<=ky1;kyA++){
     var t=trozo(kxA,kyA);
     if(t.ox>ix1||t.ox+t.w<ix0||t.oy>iy1||t.oy+t.h<iy0)continue;
@@ -1042,14 +1062,14 @@ function dibuja(now){
     }
     g.stroke(); g.restore();
   }
-  g.save(); g.setLineDash([6,4]); g.lineDashOffset=-now/80; g.strokeStyle="rgba(255,255,255,.85)"; g.lineWidth=1.3;
+  g.save(); g.setLineDash([6*gr,4*gr]); g.lineDashOffset=-now/80; g.strokeStyle="rgba(255,255,255,.85)"; g.lineWidth=1.3*gr;
   g.beginPath(); g.ellipse(cxI,cyI,(r+0.5)*TW/Math.SQRT2,(r+0.5)*TH/Math.SQRT2,0,0,6.283); g.stroke();
   g.strokeStyle="rgba(255,213,79,.5)"; g.setLineDash([]);
   j.vecinos.forEach(function(v){var vx=(v.cx-v.cy)*HW, vy=(v.cx+v.cy)*HH; g.beginPath(); g.ellipse(vx,vy,(v.radio+0.5)*TW/Math.SQRT2,(v.radio+0.5)*TH/Math.SQRT2,0,0,6.283); g.stroke();});
   g.restore();
   /* 3b) influencia cultural y rutas con las ciudades vecinas que se encontraron */
   var inf=A.influencia(s);
-  g.save(); g.setLineDash([2,6]); g.strokeStyle="rgba(255,213,79,.35)"; g.lineWidth=1;
+  g.save(); g.setLineDash([2*gr,6*gr]); g.strokeStyle="rgba(255,213,79,.35)"; g.lineWidth=gr;
   g.beginPath(); g.ellipse(cxI,cyI,inf*TW/Math.SQRT2,inf*TH/Math.SQRT2,0,0,6.283); g.stroke(); g.restore();
   j.vecinos.forEach(function(v){
     if((s.contactos||[]).indexOf(v.slot)<0)return;
@@ -1060,18 +1080,18 @@ function dibuja(now){
     var X0=(p0x-p0y)*HW, Y0=(p0x+p0y)*HH, X1=(p1x-p1y)*HW, Y1=(p1x+p1y)*HH;
     g.save();
     if(firmado){
-      g.strokeStyle=s.era<=1?"#b5916a":s.era===2?"#9c948a":"#5d6470"; g.lineWidth=5; g.beginPath(); g.moveTo(X0,Y0); g.lineTo(X1,Y1); g.stroke();
+      g.strokeStyle=s.era<=1?"#b5916a":s.era===2?"#9c948a":"#5d6470"; g.lineWidth=5*gr; g.beginPath(); g.moveTo(X0,Y0); g.lineTo(X1,Y1); g.stroke();
       if(s.era>=3){g.strokeStyle=s.era===5?"rgba(80,220,255,.8)":"rgba(255,255,255,.6)"; g.lineWidth=0.6; g.setLineDash([3,3]); g.beginPath(); g.moveTo(X0,Y0); g.lineTo(X1,Y1); g.stroke(); g.setLineDash([]);}
       for(var q2=0;q2<4;q2++){var f2=((now/9000)+q2/4)%1, ida=q2%2===0, ff=ida?f2:1-f2;
         vehiculo(g,X0+(X1-X0)*ff,Y0+(Y1-Y0)*ff-1,s.era,["#e53935","#fdd835","#1e88e5","#43a047"][q2],ida===(X1>X0));}
     } else {
-      g.strokeStyle="rgba(255,213,79,.85)"; g.lineWidth=1.4; g.setLineDash([5,4]); g.lineDashOffset=-now/60;
+      g.strokeStyle="rgba(255,213,79,.85)"; g.lineWidth=1.4*gr; g.setLineDash([5*gr,4*gr]); g.lineDashOffset=-now/60;
       g.beginPath(); g.moveTo(X0,Y0); g.lineTo(X1,Y1); g.stroke();
     }
     g.setLineDash([]);
     var mx=(X0+X1)/2, my=(Y0+Y1)/2;
-    g.fillStyle=firmado?"rgba(46,125,50,.9)":"rgba(255,160,0,.92)"; g.beginPath(); g.arc(mx,my-8,7,0,6.283); g.fill();
-    g.font="9px "+FUENTE; g.textAlign="center"; g.textBaseline="middle"; g.fillStyle="#fff"; g.fillText(firmado?"🤝":"✨",mx,my-7.5);
+    g.fillStyle=firmado?"rgba(46,125,50,.9)":"rgba(255,160,0,.92)"; g.beginPath(); g.arc(mx,my-8*gr,7*gr,0,6.283); g.fill();
+    g.font=(9*gr)+"px "+FUENTE; g.textAlign="center"; g.textBaseline="middle"; g.fillStyle="#fff"; g.fillText(firmado?"🤝":"✨",mx,my-7.5*gr);
     g.restore();
   });
   /* 4) objetos en orden de pintor (x+y creciente) */
@@ -1081,6 +1101,7 @@ function dibuja(now){
   if(j.arrastre&&j.arrastre.pinta&&j.arrastre.movido){var tt=j.herr.k==="x"?"x":j.herr.t; prev={}; var gas=0; casillasArrastre(j.arrastre.a,j.arrastre.b,tt).forEach(function(cc){var m=motivo(tt,cc.x-s.cx,cc.y-s.cy,gas); if(!m&&tt!=="x")gas+=A.costo(s,tt,cc.x-s.cx,cc.y-s.cy); prev[cc.x+","+cc.y]=!m;});}
   var fuegos={}; s.problemas.forEach(function(p){if(p.k==="incendio"&&p.i>=0)fuegos[p.i]=1;});
   var m=j.capa?A.mapas(s):null;
+  if(lejos){ planas(g,s,now); sMax=sMin-1; }   /* de lejos: las ciudades simplificadas, sin el detalle casilla a casilla */
   for(sv=sMin;sv<=sMax;sv++){
     for(dv=dMin;dv<=dMax;dv++){
       if(((sv+dv)&1)!==0)continue;
@@ -1133,11 +1154,12 @@ function dibuja(now){
   }
   if(j.sel){var sx=(j.sel.x-j.sel.y)*HW, sy=(j.sel.x+j.sel.y)*HH; g.strokeStyle="#ffeb3b"; g.lineWidth=1.6; rombo(g,sx,sy,HW,HH); g.stroke();}
   /* 8) nombres de las ciudades vecinas */
-  g.font="600 9px "+FUENTE; g.textAlign="center"; g.textBaseline="middle";
-  j.vecinos.concat([{cx:s.cx,cy:s.cy,nombre:s.nombre,jugador:"tú",yo:true}]).forEach(function(v){
-    var x=(v.cx-v.cy)*HW, y=(v.cx+v.cy)*HH-(v.yo?(A.radio(s)+1)*HH*1.4:(v.radio+1)*HH*1.4), tx=(v.yo?"🏛️ ":"🏙️ ")+v.nombre+" · "+v.jugador;
-    var w=g.measureText(tx).width+10;
-    g.fillStyle=v.yo?"rgba(13,71,161,.85)":"rgba(0,0,0,.6)"; g.beginPath(); if(g.roundRect)g.roundRect(x-w/2,y-7,w,14,7); else g.rect(x-w/2,y-7,w,14); g.fill();
+  var fz=9*Math.max(1,0.9/c.z);   /* de lejos los nombres crecen para seguir leyéndose */
+  g.font="600 "+fz+"px "+FUENTE; g.textAlign="center"; g.textBaseline="middle";
+  j.vecinos.concat([{cx:s.cx,cy:s.cy,nombre:s.nombre,jugador:"tú",yo:true,era:s.era}]).forEach(function(v){
+    var x=(v.cx-v.cy)*HW, y=(v.cx+v.cy)*HH-(v.yo?(A.radio(s)+1)*HH*1.4:(v.radio+1)*HH*1.4), tx=(v.yo?"🏛️ ":"🏙️ ")+v.nombre+" · "+v.jugador+(lejos&&A.ERAS[v.era]?" · "+A.ERAS[v.era].ico:"");
+    var w=g.measureText(tx).width+fz*1.1, hh=fz*1.55;
+    g.fillStyle=v.yo?"rgba(13,71,161,.85)":"rgba(0,0,0,.6)"; g.beginPath(); if(g.roundRect)g.roundRect(x-w/2,y-hh/2,w,hh,hh/2); else g.rect(x-w/2,y-hh/2,w,hh); g.fill();
     g.fillStyle="#fff"; g.fillText(tx,x,y+0.5);
   });
   /* 8b) el cartel de la época nueva */
@@ -1151,6 +1173,46 @@ function dibuja(now){
   g.font="800 15px "+FUENTE; g.textAlign="center";
   j.flot=j.flot.filter(function(f){var e=(now-f.t0)/1800; if(e>=1)return false;
     g.globalAlpha=1-e; g.fillStyle="#fff"; g.fillText(f.t,W/2+1,58-e*24+1); g.fillStyle=f.c; g.fillText(f.t,W/2,58-e*24); g.globalAlpha=1; return true;});
+}
+/* vista de mundo: el terreno alrededor como un mapa de un píxel cada 2×2 casillas, que se dibuja de una vez
+   inclinado con la misma transformación isométrica (x,y) → ((x−y)·16, (x+y)·8). Se rehace al alejarse mucho. */
+var MK=2, MM=360;
+function terrenoMundo(g,c){
+  var j=J, wx=(c.x/HW+c.y/HH)/2, wy=(c.y/HH-c.x/HW)/2;
+  var ox=Math.floor(wx/128)*128-MM*MK/2, oy=Math.floor(wy/128)*128-MM*MK/2, m=j.mapa;
+  if(!m||m.ox!==ox||m.oy!==oy){
+    var cv=document.createElement("canvas"); cv.width=MM; cv.height=MM;
+    var x2=cv.getContext("2d"), img=x2.createImageData(MM,MM), d=img.data, seed=j.s.mseed, px, py, k=0;
+    for(py=0;py<MM;py++)for(px=0;px<MM;px++){
+      var tx=ox+px*MK, ty=oy+py*MK, t=A.terreno(seed,tx,ty), n=hsh(tx,ty,seed), r, gg, b;
+      if(t==="w"){r=58;gg=147;b=220;} else if(t==="f"){r=74;gg=148-(n*14|0);b=70;} else {r=122+(n*10|0);gg=194+(n*8|0);b=98;}
+      k=(py*MM+px)*4; d[k]=r; d[k+1]=gg; d[k+2]=b; d[k+3]=255;
+    }
+    x2.putImageData(img,0,0);
+    m=j.mapa={c:cv,ox:ox,oy:oy};
+  }
+  g.save(); g.transform(HW*MK,HH*MK,-HW*MK,HH*MK,(m.ox-m.oy)*HW,(m.ox+m.oy)*HH);
+  g.imageSmoothingEnabled=false; g.drawImage(m.c,-0.5,-0.5); g.restore();
+}
+/* vista de mundo: cada ciudad como un mosaico de colores (calles, viviendas, comercio, industria, servicios) */
+var PLANO={R:["#c8e6c9","#e8b48a","#d9926a","#c7735a","#b85a4a"],C:"#64a8e8",I:"#c9a85a",P:"#2e7d32",Z:"#d7ccc8",cultura:"#ab47bc",servicio:"#fafafa",energia:"#ff8f00",agua:"#29b6f6"};
+function planas(g,s,now){
+  var j=J, ciudades=[{tipo:s.tipo,nivel:s.nivel,cx:s.cx,cy:s.cy,era:s.era}].concat(j.vecinos.map(function(v){return {tipo:v.tipoA,nivel:v.nivelA,cx:v.cx,cy:v.cy,era:v.era};}));
+  ciudades.forEach(function(c){
+    var grupos={}, i, t, col, E;
+    for(i=0;i<A.N;i++){ t=c.tipo[i]; if(!t||t===".")continue; E=A.EDIF[t];
+      if(t==="c")col=c.era<=1?"#b5916a":c.era===2?"#9c948a":"#4f5662";
+      else if(t==="R")col=PLANO.R[c.nivel[i]]; else if(t==="C")col=c.nivel[i]?PLANO.C:"#bbdefb"; else if(t==="I")col=c.nivel[i]?PLANO.I:"#fff3c4";
+      else if(t==="P")col=PLANO.P; else if(t==="Z")col=PLANO.Z; else col=PLANO[E.grupo]||PLANO.servicio;
+      (grupos[col]=grupos[col]||[]).push(i);
+    }
+    Object.keys(grupos).forEach(function(col){
+      g.fillStyle=col; g.beginPath();
+      grupos[col].forEach(function(i){var wx=Math.floor(i/A.LADO)-A.R+c.cx, wy=i%A.LADO-A.R+c.cy, x=(wx-wy)*HW, y=(wx+wy)*HH;
+        g.moveTo(x,y-HH); g.lineTo(x+HW,y); g.lineTo(x,y+HH); g.lineTo(x-HW,y); g.closePath();});
+      g.fill();
+    });
+  });
 }
 function coche(g,cr,s){
   var ax=cr.x+s.cx, ay=cr.y+s.cy, bx=cr.nx+s.cx, by=cr.ny+s.cy, f=Math.min(1,cr.t);
@@ -1183,5 +1245,5 @@ window.AxCiudadUI={portada:portada,juega:juega,cerrar:cerrar,
   estado:function(){return J&&J.s;},camara:function(){return J?{x:J.cam.x,y:J.cam.y,z:J.cam.z}:null;},
   /* para las pruebas: la casilla del mapa que se ve en un punto de la pantalla, y al revés */
   pantalla:function(dx,dy){if(!J)return null; var s=J.s, wx=s.cx+dx, wy=s.cy+dy, ix=(wx-wy)*HW, iy=(wx+wy)*HH; return {x:(ix-J.cam.x)*J.cam.z+J.W/2,y:(iy-J.cam.y)*J.cam.z+J.H/2};},
-  guarda:function(){return guarda();},reloj:function(ms){desfase=ms;},log:function(){return J?J.log:null;}};
+  guarda:function(){return guarda();},vecinos:function(){return J?J.vecinos:null;},reloj:function(ms){desfase=ms;},log:function(){return J?J.log:null;}};
 })();
