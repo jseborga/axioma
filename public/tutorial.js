@@ -433,7 +433,7 @@ GUIAS.granja=[
    ["Granero","Caben 24. Si se llena, entrega o usa «Vender» (a mitad de precio)."],["Vidas","Si se te va un pedido pierdes una; con tres perdidas se acaba la partida."]]);}},
 {t:"Dónde se juega",d:"",
  a:function(){return tarjetas([["La granja del día","La misma para todos; cuenta tu mejor partida del día y hay ranking. Suma en el ranking de tus grupos."],
-   ["Práctica y sin fin","Una granja nueva cada vez, o sin reloj hasta perder tres pedidos."],["Retos y competencias","Con amigos en Retos, o con premio en las competencias de las empresas (con su marca en el camión)."]],
+   ["Práctica y sin fin","Una granja nueva cada vez, o sin reloj hasta perder tres pedidos."],["Granja Grande","8 minutos en un mapa que se recorre arrastrando: 8 fábricas cuyas máquinas mejoras, parcelas que compras y un granero que amplías."],["Retos y competencias","Con amigos en Retos, o con premio en las competencias de las empresas (con su marca en el camión)."]],
    "El servidor repite tu partida con cada toque que hiciste y calcula él las monedas: nadie puede enviar una marca inventada.");}}
 ];
 GUIAS.juegos=[

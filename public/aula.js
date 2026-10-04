@@ -1144,7 +1144,7 @@ function crearCampana(o){
     '<form class="rt-form" id="cp-form">'+
     '<label>Nombre<input id="cp-n" maxlength="60" required placeholder="Desafío de reflejos de aniversario"></label>'+
     '<label>Juego<select id="cp-j"><optgroup label="Juegos rápidos">'+Object.keys(J).filter(function(k){return k.indexOf("granja")<0;}).map(function(k){return '<option value="'+k+'">'+J[k].icono+' '+J[k].nom+' · '+J[k].dur+'</option>';}).join("")+'</optgroup>'+
-      (J.granja?'<optgroup label="Arcade"><option value="granja">🚜 Granja Express · 4 min</option></optgroup>':'')+
+      (J.granja?'<optgroup label="Arcade"><option value="granja">🚜 Granja Express · 4 min</option>'+(J.granja_grande?'<option value="granja_grande">🏡 Granja Grande · 8 min</option>':'')+'</optgroup>':'')+
       (XM?'<optgroup label="Sin fin: se juega hasta perder">'+Object.keys(MJ).map(function(k){return '<option value="'+k+'">'+MJ[k].icono+' '+MJ[k].nom+'</option>';}).join("")+
         (J.granja_sinfin?'<option value="granja_sinfin">🚜 Granja sin fin</option>':'')+'</optgroup>':'')+'</select></label>'+
     '<p class="fine" id="cp-jd"></p>'+
@@ -1172,7 +1172,7 @@ function crearCampana(o){
   function juego(){var k=$("cp-j").value, mar=!!MJ[k], j=J[k]||MJ[k]||{};
     $("cp-jd").textContent=(j.desc||"")+(j.orden==="menos"?" Gana quien haga menos milisegundos.":k==="memoria_inf"?" Gana quien recuerde la secuencia más larga.":" Gana quien haga más puntos.");
     $("cp-ul").firstChild.textContent=j.orden==="menos"?"Milisegundos máximos":k==="memoria_inf"?"Casillas mínimas":"Puntos mínimos";
-    $("cp-u").placeholder=j.orden==="menos"?"350":({trivia:"1200",memoria:"8",calculo:"20",memoria_inf:"10",sudoku_mar:"300",axioma_mar:"150",granja:"1200",granja_sinfin:"1500"}[k]||"100");
+    $("cp-u").placeholder=j.orden==="menos"?"350":({trivia:"1200",memoria:"8",calculo:"20",memoria_inf:"10",sudoku_mar:"300",axioma_mar:"150",granja:"1200",granja_sinfin:"1500",granja_grande:"5000"}[k]||"100");
     $("cp-gx").hidden=k.indexOf("granja")!==0;
     if(k.indexOf("granja")===0)$("cp-ul").firstChild.textContent="Monedas mínimas";
     if(!XM)return;

@@ -837,6 +837,8 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `src/granja.js` | Granja Express: la granja del día y su ranking (repite cada partida) |
 | `public/granja-motor.js` | Granja Express: simulación determinista (navegador y servidor) |
 | `public/granja-ui.js` | Granja Express: lienzo de 8 bits, sonido y portada |
+| `public/granja-grande-motor.js` | Granja Grande: simulación con mejora de máquinas, parcelas y granero |
+| `public/granja-grande-ui.js` | Granja Grande: mapa 2D con desplazamiento, minimapa y edificios animados |
 | `src/perfiles.js` | Perfiles (jugador, Educativo, Empresas), grupos de amigos y «Mis partidas» |
 | `public/amigos.js` | Menú según el perfil, «Mis grupos y partidas» y solicitud de perfil |
 | `src/ajustes.js` | Ajustes de la plataforma (nombre, correo de contacto, remitente, verificación) |

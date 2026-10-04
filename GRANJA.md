@@ -71,6 +71,32 @@ una pregunta fallada invalida la partida.
   jugo y la torta con sus productos. Premios por puesto y cupones por monedas, como en el
   resto de competencias.
 
+## Granja Grande (versión extendida)
+
+En la portada de Granja Express, **🏡 Granja Grande**: partidas de **8 minutos** en un mapa
+de granja que se **recorre arrastrando** (con inercia) y un **minimapa** abajo a la derecha
+(tócalo para saltar a esa zona; los puntos amarillos son cosechas listas y los verdes,
+fábricas trabajando). Arriba quedan fijos el marcador y los pedidos; abajo, las semillas,
+«Vender», la pregunta y el granero con sus 12 productos.
+
+- **El mapa:** estación con su tren (sale con cada entrega), granero, casa, campo cercado
+  de 16 parcelas, estanque, huerto, caminos, y 8 fábricas animadas (aspas del molino,
+  humo del horno, gallinas y vacas que pasean, rueca que gira). El granjero camina hasta
+  donde tocas.
+- **Productos:** trigo, maíz, zanahoria y algodón; harina, pan, huevo, leche, jugo, torta,
+  queso y tela. Fábricas: molino, horno, gallinero, establo (2 maíz → leche), jugos,
+  pastelería, quesería (2 leche → queso) y telar (2 algodón → tela). Seis niveles.
+- **Mejora de máquinas:** toca el letrero ⬆ de una fábrica. Nivel 2: un 20 % más rápida y
+  una más en cola. Nivel 3: otro 20 %, otra en cola y **dos productos por tanda**. Cuesta
+  monedas (por ejemplo, el horno 62 y 124).
+- **Parcelas:** empiezas con 6 y compras hasta 16 (la del cartel «Se vende»; cada una
+  sube de precio). **Granero:** tócalo para ampliarlo de 30 a 66 (+12 cada vez).
+- **Puntaje:** todas las monedas **ganadas**; lo que inviertes no resta. Invertir bien
+  rinde: en las pruebas, un jugador que mejora sus máquinas gana más del doble.
+- Preguntas de mejora cada 45 s (abono, fábricas turbo, cosecha triple, vida, clientes
+  pacientes, buen precio o una subvención de 60 monedas).
+- Se juega en práctica, en **Retos** y en las **competencias** de empresas (con su marca).
+
 ## Cómo se evita hacer trampa
 
 La partida es una **simulación determinista** a 10 pasos por segundo a partir de una

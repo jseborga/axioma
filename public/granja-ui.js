@@ -31,6 +31,10 @@ var SPR={
  u:["....ww....","...wwww...","..wwwwww..","..wwwwww..",".wwwwwwww.",".wwwwwwwW.",".wwwwwwwW.","..wwwwWW..","...WWWW...",".........."],
  j:[".......k..","......k...","..wwwkwww.","..woooooW.","..woooooW.","..wooOooW.","..woooooW.","...wooow..","...WWWWW..",".........."],
  k:["....r.....","....y.....","..pppppp..",".pwpwpwpp.",".pppppppp.",".bccccccb.",".bbbbbbbb.",".cccccccc.",".BBBBBBBB.",".........."],
+ a:["..........","...ww.ww..","..wwwwwww.","..wwWwWww.","...wwwww..","....GGG...",".....G....",".....G....","....G.G...",".........."],
+ l:["....WW....","....ww....","...wwww...","..wuuuuw..","..wwwwww..","..wwwwww..","..wwwwww..","..wwwwww..","...WWWW...",".........."],
+ q:["..........","..........","......yy..","....yyYy..","..yyyyyyy.",".yYyyyYyyy",".yyyyyyyYy",".yyYyyyyyy",".YYYYYYYYY",".........."],
+ e:["..........",".uuuuuuuu.",".uUuUuUuu.",".uuuuuuuu.",".UuUuUuUu.",".uuuuuuuu.",".uUuUuUuu.",".uuuuuuuu.","..u.u.u.u.",".........."],
  moneda:[".yyyy.","yyYYyy","yYyyYy","yYyyYy","yyYYyy",".yyyy."],
  vida:[".rr.rr.","rrrrrrr","rrrrrrr",".rrrrr.","..rrr..","...r..."],
  vida0:[".DD.DD.","DDDDDDD","DDDDDDD",".DDDDD.","..DDD..","...D..."],
@@ -516,10 +520,13 @@ function portada(nota){
       '<small>Una granja nueva cada vez.'+(b1?' Tu mejor: <b>'+b1.score+' monedas</b>.':'')+'</small></button>'+
     '<button type="button" class="rt-card" id="gx-sf"><span class="rt-card-top"><b>♾️ Sin fin</b><span class="chip">hasta perder</span></span>'+
       '<small>Sigue hasta que se te escapen tres pedidos; cada vez con menos plazo.'+(b2?' Tu mejor: <b>'+b2.score+' monedas</b>.':'')+'</small></button>'+
+    (window.AxGranjaG?'<button type="button" class="rt-card gx-grande" id="gx-gr"><span class="rt-card-top"><b>🏡 Granja Grande</b><span class="chip activo">nuevo · 8 min</span></span>'+
+      '<small>La versión extendida: recorre el mapa arrastrando, mejora tus 8 máquinas, compra parcelas y amplía el granero. 12 productos.'+(guarda("best_granja_grande")?' Tu mejor: <b>'+guarda("best_granja_grande").score+' monedas</b>.':'')+'</small></button>':'')+
     '<h4>Ranking de hoy</h4><div id="gx-rank"><p class="fine">Cargando…</p></div>'+
     '<p class="fine">También se juega en <b>Retos</b> con tus amigos y en las <b>competencias</b> de las empresas.</p></div>';
   $("gx-prac").onclick=function(){practica("granja");};
   $("gx-sf").onclick=function(){practica("granja_sinfin");};
+  if($("gx-gr"))$("gx-gr").onclick=function(){practica("granja_grande");};
   $("gx-dia").onclick=function(){
     if(!u||u.guest){ if(window.AxAccount&&AxAccount.configurado())AxAccount.abrirCuenta(); else alert("El inicio de sesión no está configurado."); return; }
     delDia();
@@ -561,7 +568,7 @@ function delDia(){
 }
 function resultado(juego,res,linea,otra,conRanking){
   var pn=panel();
-  pn.innerHTML='<div class="rt-head"><h3>🚜 '+esc(R.JUEGOS[juego].nom)+'</h3><span class="chip activo">Terminado</span></div>'+
+  pn.innerHTML='<div class="rt-head"><h3>'+R.JUEGOS[juego].icono+' '+esc(R.JUEGOS[juego].nom)+'</h3><span class="chip activo">Terminado</span></div>'+
     '<div class="rp-res"><b>'+res.score+' monedas</b><small>'+(res.entregas!=null?res.entregas+' pedidos entregados · nivel '+res.nivel+' · ':'')+esc(linea)+'</small></div>'+
     (conRanking?'<h4>Ranking de hoy</h4><div id="gx-rank"><p class="fine">Cargando…</p></div>':'')+
     '<div class="actions"><button class="primary" id="gx-otra">Otra vez</button><button class="ghost" id="gx-menu">Granja Express</button></div>';
@@ -569,5 +576,6 @@ function resultado(juego,res,linea,otra,conRanking){
   if(conRanking)ranking($("gx-rank"));
 }
 
-window.AxGranjaUI={monta:monta,para:para,portada:portada,sprite:sprite};
+window.AxGranjaUI={monta:monta,para:para,portada:portada,sprite:sprite,P:P,SPR:SPR,SON:SON,vehiculo:vehiculo,api:api,ERR:ERR,guarda:guarda,resultado:resultado,
+  mudo:function(v){if(v!==undefined){mudo=v;try{localStorage.setItem("gx_mudo",v?"1":"0");}catch(e){}} return mudo;}};
 })();

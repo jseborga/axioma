@@ -14,6 +14,7 @@
    =========================================================== */
 import "../public/rapidos-motor.js";
 import "../public/granja-motor.js";
+import "../public/granja-grande-motor.js";
 import { esInvitado } from "./aula.js";
 import { fichas, preguntaGranja, CATEGORIAS } from "./preguntas.js";
 

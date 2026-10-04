@@ -19,6 +19,7 @@
 
 import "../public/rapidos-motor.js";
 import "../public/granja-motor.js";
+import "../public/granja-grande-motor.js";
 import { preguntasDeFuente } from "./mispreguntas.js";
 var R=globalThis.AxRapidos, GX=globalThis.AxGranja;
 
@@ -80,7 +81,7 @@ function penalizacion(errors,hints){return Math.max(0,errors-FALLOS_GRATIS)*PEN_
 function limpia(s,max){return String(s==null?"":s).replace(/\s+/g," ").trim().slice(0,max);}
 
 /* ---------- retos ---------- */
-var JUEGOS=["sudoku","trivia","memoria","calculo","reflejos","numeros","granja","granja_sinfin"];
+var JUEGOS=["sudoku","trivia","memoria","calculo","reflejos","numeros","granja","granja_sinfin","granja_grande"];
 var TOL=1500;   /* ms de margen entre el reloj del servidor y el del jugador */
 
 function estadoReto(ev,hoy){
@@ -347,7 +348,7 @@ async function resultadoReto(req,env,user,code,ctx){
     if(!res)return ctx.json({error:"bad_result"},null,400);
     /* lo que declara el jugador no puede ser más rápido que el reloj del servidor */
     var declarado=res.seconds*1000, margen={trivia:15000,memoria:5000,calculo:0,reflejos:3000,numeros:0}[ev.game];
-    if(GX.es(ev.game)){
+    if(GX.es(ev.game)||ev.game==="granja_grande"){
       if(!GX.tiempoOk(res,realMs))return ctx.json({error:"bad_time"},null,400);
     }else if(ev.game==="numeros"){
       if(res.score-(parseInt(b.envio.f,10)||0)*1000 < realMs-TOL-margen)return ctx.json({error:"bad_time"},null,400);

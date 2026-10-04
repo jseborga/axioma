@@ -30,6 +30,7 @@
 import "../public/rapidos-motor.js";
 import "../public/maraton-motor.js";
 import "../public/granja-motor.js";
+import "../public/granja-grande-motor.js";
 import { perfil, puedePremio, rolOrg, esInvitado, esAcademica, esAdminPlataforma } from "./aula.js";
 var R=globalThis.AxRapidos, X=globalThis.AxMaraton, GX=globalThis.AxGranja;
 
@@ -57,7 +58,7 @@ async function carga(env,code){
     c.reglas=m?JSON.parse(m.reglas):X.reglas(c.juego,{});
   }
   /* Granja Express: los productos de la empresa (nombres de pan, jugo y torta) */
-  if(c&&GX.es(c.juego)){
+  if(c&&(GX.es(c.juego)||c.juego==="granja_grande")){
     try{var g=await env.DB.prepare("SELECT reglas FROM campana_maraton WHERE code=?").bind(code).first(); c.productos=g?(JSON.parse(g.reglas).productos||null):null;}catch(e){c.productos=null;}
   }
   return c;
@@ -124,7 +125,7 @@ async function crea(req,env,user,json){
     if(X.plan(juego)){ if(!X.loteOk(juego,b.tableros))return json({error:"bad_boards"},null,400); maraton.lote=X.limpiaLote(juego,b.tableros); }
   }
   var productos=null;
-  if(GX.es(juego)&&b.productos&&typeof b.productos==="object"){
+  if((GX.es(juego)||juego==="granja_grande")&&b.productos&&typeof b.productos==="object"){
     productos={}; ["p","j","k"].forEach(function(k){var v=limpia(b.productos[k],24); if(v)productos[k]=v;});
     if(!Object.keys(productos).length)productos=null;
   }
@@ -230,7 +231,7 @@ async function termina(req,env,user,code,iid,json){
   if(!res)return json({error:"bad_result"},null,400);
   var realMs=now-t.started_at, declarado=res.seconds*1000;
   /* lo que declara el jugador no puede ser más rápido que el reloj del servidor */
-  if(GX.es(c.juego)){ if(!GX.tiempoOk(res,realMs))return json({error:"bad_time"},null,400); }
+  if(GX.es(c.juego)||c.juego==="granja_grande"){ if(!GX.tiempoOk(res,realMs))return json({error:"bad_time"},null,400); }
   else if(c.juego==="numeros"){ if(res.score-(parseInt(b.envio.f,10)||0)*1000<realMs-TOL-MARGEN.numeros)return json({error:"bad_time"},null,400); }
   else if(c.juego==="calculo"){
     var resp=Array.isArray(b.envio.r)?b.envio.r:[], fallos=0, todas=resp.length>=datos.p.length;

@@ -1775,3 +1775,9 @@ body[data-game=rapido] #pie-juego{display:none!important}
 .gx-mej button{font:inherit;text-align:left;padding:8px 10px;border-radius:10px;border:2px solid #7a1fa2;background:#f6ecff;color:#2a1608;cursor:pointer}
 .gx-mej button b{display:block;font-size:14px}
 .gx-mej button small{font-size:12px;color:#5a3a1c}
+
+.gx-gr canvas{aspect-ratio:240/380;touch-action:none}
+.gx-x{font:inherit;font-size:14px;font-weight:800;border:0;background:#ecdcc4;color:#5a3a1c;border-radius:8px;width:28px;height:28px;cursor:pointer}
+.gx-mej button:disabled{opacity:.55;cursor:default}
+.gx-grande{background:linear-gradient(135deg,#2c7a3a,#4a9a3e);color:#fff}
+.gx-grande small{color:#e8f5d8}
