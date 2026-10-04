@@ -1823,6 +1823,7 @@ body.cs-full{overflow:hidden}
 .cs.full .cs-mapa{flex:1;min-height:0}
 .cs-mapa canvas{display:block;width:100%;height:min(62vh,560px);touch-action:none;cursor:crosshair}
 .cs.full .cs-mapa canvas{height:100%}
+.cs-mapa canvas.retro{image-rendering:crisp-edges;image-rendering:pixelated}
 .cs-izq,.cs-der{position:absolute;top:8px;display:flex;flex-direction:column;gap:6px;z-index:1}
 .cs-izq{left:8px}.cs-der{right:8px}
 .cs-izq button{display:grid;place-items:center;padding:0;line-height:1;font-weight:700;width:36px;height:36px;border-radius:10px;border:0;background:rgba(15,27,45,.82);color:#fff;font-size:17px;cursor:pointer;backdrop-filter:blur(4px)}

@@ -72,6 +72,15 @@ firmarlo se reciben 500 $ y 20 de cultura. Cada ciudad firma sus propios tratado
 Los encuentros los calcula el servidor al guardar cada tramo con el estado de las vecinas en ese momento y los apunta en la
 ciudad (`contactos`). Así la repetición de cada tramo no depende de lo que hagan los demás mientras tanto.
 
+## Relieve y modo retro
+
+- **Relieve**: el mundo tiene colinas, laderas y valles (de 0, el agua, a 4 niveles). Cada casilla se inclina según sus cuatro
+  esquinas y se ilumina desde arriba a la izquierda. Las calles y los lotes vacíos siguen la ladera; los edificios se nivelan
+  sobre un cimiento de tierra. El relieve sale de la semilla del mundo y es solo visual: no cambia las reglas ni lo que valida
+  el servidor.
+- **Modo retro** (👾): la ciudad se dibuja a la mitad de resolución y se amplía sin suavizar, con píxeles nítidos como los
+  juegos de ciudades de los 90 (además, va más rápido). Viene encendido; el botón lo alterna y el teléfono lo recuerda.
+
 ## Preguntas: investigar y resolver problemas
 
 - 🔬 **Investigación**: 13 tecnologías (eólica, solar, hidroeléctrica, depuración,

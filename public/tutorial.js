@@ -453,6 +453,7 @@ GUIAS.ciudad=[
 {t:"Trucos",d:"",
  a:function(){return tarjetas([["🔍 Mirar","Toca una casilla y te dice por qué crece o no: falta calle, energía, agua, demanda, escuela…"],
    ["🗺️ Capas","Contaminación, seguridad, bomberos, salud, educación y ocio pintadas sobre el mapa."],
+   ["👾 Retro","Píxeles nítidos como los juegos de ciudades de los 90, o la ciudad a toda resolución."],
    ["Impuestos","En 🏛️ Alcaldía: más impuestos dan más dinero, pero bajan la felicidad y frenan el crecimiento."],
    ["Contaminación","La industria y la central térmica contaminan; los parques, el reciclaje y la depuradora limpian."]]);}},
 {t:"Vecinos y desafíos",d:"",
