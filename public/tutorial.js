@@ -436,6 +436,25 @@ GUIAS.granja=[
    ["Práctica y sin fin","Una granja nueva cada vez, o sin reloj hasta perder tres pedidos."],["Granja Grande","8 minutos en un mapa que se recorre arrastrando: mejoras tus 8 máquinas, compras parcelas, amplías el granero y el silo, y automatizas con cosechadora, fábricas automáticas y camión de reparto (botón ⚙ Mejoras)."],["Retos y competencias","Con amigos en Retos, o con premio en las competencias de las empresas (con su marca en el camión)."]],
    "El servidor repite tu partida con cada toque que hiciste y calcula él las monedas: nadie puede enviar una marca inventada.");}}
 ];
+GUIAS.ciudad=[
+{t:"Ciudad Saber",d:"Un constructor de ciudades en un mundo infinito: cada persona funda su ciudad en una ranura del mundo y las de al lado son sus vecinas. Haz que crezca con servicios bien pensados y resuelve sus problemas respondiendo preguntas de ingeniería básica, servicios y cultura general.",
+ a:function(){return ico("🏙️");}},
+{t:"Cómo se juega",d:"",
+ a:function(){return pasos([["Calles","En 🛣️ Vías, toca o arrastra para trazar calles. Las zonas solo crecen junto a una calle."],
+   ["Zonas","🏘️ Residencial (viviendas), Comercial (tiendas y oficinas) e Industrial (fábricas). Las barras R C I dicen qué hace falta."],
+   ["Servicios","⚡ Energía y 💧 agua para que crezcan; policía, bomberos, hospital y escuela para que suban de nivel y la gente esté feliz."],
+   ["Cultura","Bibliotecas, plazas, teatros, museos y la universidad suman 🎭 cultura: la cultura amplía tu territorio (el círculo punteado)."],
+   ["Preguntas","🔬 Investiga tecnologías (eólica, solar, hidroeléctrica, rascacielos…) acertando una pregunta de su tema. Los ⚠️ problemas (apagón, sequía, atasco, incendio…) se resuelven igual, antes de que venza su plazo. La ciudad se detiene mientras respondes y siempre ves la explicación."]]);}},
+{t:"Trucos",d:"",
+ a:function(){return tarjetas([["🔍 Mirar","Toca una casilla y te dice por qué crece o no: falta calle, energía, agua, demanda, escuela…"],
+   ["🗺️ Capas","Contaminación, seguridad, bomberos, salud, educación y ocio pintadas sobre el mapa."],
+   ["Impuestos","En 🏛️ Alcaldía: más impuestos dan más dinero, pero bajan la felicidad y frenan el crecimiento."],
+   ["Contaminación","La industria y la central térmica contaminan; los parques, el reciclaje y la depuradora limpian."]]);}},
+{t:"Vecinos y desafíos",d:"",
+ a:function(){return tarjetas([["Mundo abierto","Tus vecinos ven tu ciudad y tú la suya (🌍 Vecinos), con ranking del mundo. Puntaje: habitantes × felicidad + 30 por acierto + cultura."],
+   ["Desafíos de curso","El docente crea un mundo para su curso, con fechas y metas, y ve un reporte de aciertos por tema de cada estudiante."]],
+   "Tu ciudad se guarda sola cada ~40 s: el servidor repite lo que hiciste con su propio banco de preguntas, así que nadie puede inventar una ciudad o un acierto.");}}
+];
 GUIAS.juegos=[
 {t:"Más juegos",d:"Juegos en sala con código: estrategia 1 contra 1, juegos de mesa en grupo, dinámicas en vivo para eventos, sorteos y subastas, y juegos solo para adultos. Cada juego explica sus reglas en su ficha.",
  a:function(){return tarjetas([["Estrategia","Gomoku, Hex, tres en raya cuántico: contra el bot sin conexión, a dos en un teléfono o en línea."],

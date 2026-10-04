@@ -24,6 +24,7 @@ var ICONO={
   rapido:'<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
   juegos:'<svg viewBox="0 0 24 24"><path d="M7 6h10a5 5 0 0 1 4.9 6l-.9 4.4a2.7 2.7 0 0 1-4.6 1.3L14.2 15H9.8l-2.2 2.7a2.7 2.7 0 0 1-4.6-1.3L2.1 12A5 5 0 0 1 7 6zm0 3v1.5H5.5V12H7v1.5h1.5V12H10v-1.5H8.5V9H7zm9.5 0a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2zm-2 2.4a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2z"/></svg>',
   granja:'<svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9h-6v-5H9v5H3v-9z"/><path d="M10 9h4v3h-4z" opacity=".55"/></svg>',
+  ciudad:'<svg viewBox="0 0 24 24"><path d="M3 21V10l5-3v14z"/><path d="M9 21V4h7v17z" opacity=".75"/><path d="M17 21v-9h4v9z" opacity=".55"/></svg>',
   grupo:'<svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.2"/><circle cx="5" cy="9.5" r="2.4" opacity=".55"/><circle cx="19" cy="9.5" r="2.4" opacity=".55"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6H6z"/><path d="M1 19.5c0-2.4 1.8-4.3 4-4.3.6 0 1.1.1 1.6.3A7.6 7.6 0 0 0 4.9 19.5H1zm22 0h-3.9a7.6 7.6 0 0 0-1.7-4c.5-.2 1-.3 1.6-.3 2.2 0 4 1.9 4 4.3z" opacity=".55"/></svg>',
   reto:'<svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6H2zm15.5 0c0-2-.7-3.7-1.9-5 .5-.1.9-.1 1.4-.1 3.1 0 5 2.2 5 5.1h-4.5z"/></svg>'
 };
@@ -52,6 +53,7 @@ function abrir(){
       tarjeta("day","axioma","Axioma","El reto diario: deduce el tablero y descubre la regla que lo gobierna.")+
       tarjeta("sud","sudoku","Sudoku","Cinco niveles, tablero del día y ranking por tiempo.")+
       tarjeta("granja","granja","Granja Express","Arcade retro de estrategia y velocidad: siembra, fabrica y entrega. Ranking del día.")+
+      tarjeta("ciudad","ciudad","Ciudad Saber","Constructor de ciudades en un mundo infinito con vecinos: energía, agua y servicios que se resuelven respondiendo.")+
       tarjeta("rapido","rapido","Juegos rápidos","Trivia, memoria, cálculo, reflejos y del 1 al 25.")+
     '</div>'+
     '<h4 class="ini-cap">Con amigos</h4>'+

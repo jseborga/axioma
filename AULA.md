@@ -298,6 +298,20 @@ verdadero o falso.
 Tablas: `bank_question_extra`, `preguntas_imagenes` y `contest_textos` (ver
 SETUP.md).
 
+## Desafíos de Ciudad Saber
+
+En la pestaña **Ciudad** de un curso, quien lo gestiona crea un desafío de ciudad: un mundo
+propio de [Ciudad Saber](CIUDAD.md) con nombre, días abierto y metas opcionales
+(habitantes, felicidad, aciertos). Los estudiantes activos lo ven en su curso y fundan su
+ciudad junto a las de sus compañeros; resuelven los problemas de su ciudad respondiendo
+preguntas de energía, agua, transporte, urbanismo, ambiente, salud, seguridad, educación,
+economía, cultura e ingeniería básica.
+
+El **reporte** lista a cada estudiante (también a quien no empezó) con su ciudad,
+habitantes, felicidad, aciertos/preguntas, puntaje, minutos jugados, si cumple la meta y su
+% de aciertos por tema, más el resumen del curso por tema. Se descarga en Excel. «Cerrar
+ahora» termina el desafío y las ciudades quedan para mirarlas.
+
 ## Repaso de ingreso y nivelación (público)
 
 Un banco de preguntas puede publicarse como **repaso abierto**, pensado para

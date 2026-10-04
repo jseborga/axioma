@@ -666,6 +666,27 @@ CREATE INDEX IF NOT EXISTS granja_dia_rank ON granja_dia(day, best, updated_at);
 Sin ella, la práctica, los retos y las competencias de la granja funcionan igual; solo
 la granja del día avisa de que falta la tabla. Ver [GRANJA.md](GRANJA.md).
 
+### Añadir las tablas de Ciudad Saber
+
+El constructor de ciudades **Ciudad Saber** guarda los mundos (el abierto y los desafíos de
+curso), una ciudad por persona y mundo, y la primera respuesta a cada pregunta del tramo
+que se está jugando. Pega esto en la consola de D1 (también está al final de
+`instalar.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS ciudad_mundos (code TEXT PRIMARY KEY, nombre TEXT NOT NULL, tipo TEXT NOT NULL, ref TEXT, seed INTEGER NOT NULL, owner_id TEXT, meta TEXT, starts_at INTEGER, ends_at INTEGER, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS ciudad_mundos_ref ON ciudad_mundos(ref);
+CREATE TABLE IF NOT EXISTS ciudad_ciudades (mundo TEXT NOT NULL, user_id TEXT NOT NULL, slot INTEGER NOT NULL, nombre TEXT, estado TEXT, puntaje INTEGER NOT NULL DEFAULT 0, poblacion INTEGER NOT NULL DEFAULT 0, felicidad INTEGER NOT NULL DEFAULT 0, conocimiento INTEGER NOT NULL DEFAULT 0, temas TEXT, segundos INTEGER NOT NULL DEFAULT 0, seg_seed INTEGER, seg_at INTEGER, updated_at INTEGER NOT NULL, PRIMARY KEY (mundo, user_id));
+CREATE UNIQUE INDEX IF NOT EXISTS ciudad_slot ON ciudad_ciudades(mundo, slot);
+CREATE INDEX IF NOT EXISTS ciudad_rank ON ciudad_ciudades(mundo, puntaje);
+CREATE INDEX IF NOT EXISTS ciudad_user ON ciudad_ciudades(user_id);
+CREATE TABLE IF NOT EXISTS ciudad_respuestas (mundo TEXT NOT NULL, user_id TEXT NOT NULL, seg INTEGER NOT NULL, qid TEXT NOT NULL, o INTEGER NOT NULL, ok INTEGER NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (mundo, user_id, seg, qid));
+```
+
+Sin ellas, Ciudad Saber avisa de que faltan las tablas; el resto de la plataforma sigue
+igual. El mundo abierto se crea solo la primera vez que alguien entra. Usa también la
+tabla `preguntas_vistas` (para no repetir preguntas). Ver [CIUDAD.md](CIUDAD.md).
+
 ### Añadir las tablas de las competencias sin fin (maratón)
 
 Para las competencias que se juegan hasta perder (memoria sin fin, maratón de
@@ -839,6 +860,10 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `public/granja-ui.js` | Granja Express: lienzo de 8 bits, sonido y portada |
 | `public/granja-grande-motor.js` | Granja Grande: simulación con mejora de máquinas, parcelas y granero |
 | `public/granja-grande-ui.js` | Granja Grande: mapa 2D con desplazamiento, minimapa y edificios animados |
+| `src/ciudad.js` | Ciudad Saber: mundos, vecinos, ranking, preguntas y desafíos de curso (repite cada tramo) |
+| `src/ciudad-preguntas.js` | Ciudad Saber: banco de preguntas por tema (energía, agua, ingeniería…) |
+| `public/ciudad-motor.js` | Ciudad Saber: simulación determinista de la ciudad y del terreno infinito |
+| `public/ciudad-ui.js` | Ciudad Saber: vista isométrica, herramientas, paneles y guardado por tramos |
 | `src/perfiles.js` | Perfiles (jugador, Educativo, Empresas), grupos de amigos y «Mis partidas» |
 | `public/amigos.js` | Menú según el perfil, «Mis grupos y partidas» y solicitud de perfil |
 | `src/ajustes.js` | Ajustes de la plataforma (nombre, correo de contacto, remitente, verificación) |

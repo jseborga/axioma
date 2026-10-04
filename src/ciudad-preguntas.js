@@ -1,0 +1,247 @@
+/* ===========================================================
+   THE FINAL TEST · Ciudad Saber · banco de preguntas por tema
+   Vive solo en el servidor. Cada pregunta: [tema, pregunta,
+   correcta, otra, otra, otra, dato]. Los temas son los de la
+   ciudad: energía, agua, transporte, urbanismo, ambiente, salud,
+   seguridad, educación, economía, cultura e ingeniería básica.
+   =========================================================== */
+var B=[
+/* ---------- energía ---------- */
+["energia","¿En qué unidad se mide la potencia eléctrica?","Vatio (W)","Voltio (V)","Amperio (A)","Ohmio (Ω)","Un megavatio (MW) son un millón de vatios: la potencia de una central se mide en MW."],
+["energia","¿En qué unidad se mide la tensión eléctrica?","Voltio","Vatio","Julio","Amperio","En Bolivia la red doméstica es de 220 voltios."],
+["energia","¿Qué fuente de energía es renovable?","Solar","Carbón","Petróleo","Gas natural","El sol, el viento y el agua se renuevan; los combustibles fósiles tardan millones de años en formarse."],
+["energia","¿Qué convierte un panel solar fotovoltaico?","Luz en electricidad","Calor en viento","Agua en vapor","Electricidad en luz","Funciona gracias al efecto fotoeléctrico en celdas de silicio."],
+["energia","¿Qué mueve el viento en un aerogenerador?","Unas aspas que hacen girar un generador","Un pistón de vapor","Una celda química","Una turbina de gas","La potencia de un aerogenerador crece con el cubo de la velocidad del viento."],
+["energia","¿Qué energía aprovecha una central hidroeléctrica?","La del agua que cae o corre","La del calor de la Tierra","La de las mareas","La del uranio","El agua mueve turbinas acopladas a generadores."],
+["energia","Si un foco de 100 W está encendido 10 horas, ¿cuánta energía consume?","1 kWh","10 kWh","100 Wh","0,1 kWh","Energía = potencia × tiempo: 100 W × 10 h = 1000 Wh = 1 kWh."],
+["energia","¿Qué tipo de foco gasta menos electricidad para dar la misma luz?","LED","Incandescente","Halógeno","De filamento de carbono","Un LED usa alrededor de un 80 % menos energía que un foco incandescente."],
+["energia","¿Por qué se transmite la electricidad a alta tensión en líneas largas?","Para perder menos energía en los cables","Para que viaje más rápido","Porque es más segura en las casas","Para que no haga ruido","A igual potencia, más tensión significa menos corriente y menos pérdidas por calor."],
+["energia","¿Qué gas emite sobre todo la quema de carbón y petróleo?","Dióxido de carbono (CO₂)","Oxígeno","Helio","Nitrógeno puro","El CO₂ es el principal gas de efecto invernadero de origen humano."],
+["energia","¿Qué aparato cambia el voltaje de la corriente alterna?","El transformador","El fusible","El interruptor","La batería","Los transformadores elevan la tensión para el transporte y la bajan para las casas."],
+["energia","¿Qué energía aprovecha la geotermia?","El calor del interior de la Tierra","La luz de la Luna","El movimiento de las nubes","La presión del aire","Bolivia estudia la geotermia en Laguna Colorada (Potosí)."],
+["energia","¿Qué almacena una batería?","Energía química que se convierte en eléctrica","Agua a presión","Viento comprimido","Luz solar directa","Las baterías de ion litio usan litio; el salar de Uyuni tiene una de las mayores reservas."],
+["energia","¿Qué pasa si se conectan demasiados aparatos a un mismo enchufe?","Se sobrecarga el circuito y puede calentarse","Gastan menos energía","Funcionan más rápido","Nada, la corriente se reparte gratis","Por eso existen los disyuntores y fusibles."],
+["energia","¿Qué es la «demanda pico» en una red eléctrica?","El momento del día en que más electricidad se consume","La tarifa más barata","La tensión máxima de un cable","El consumo de una sola casa","Suele darse al anochecer, cuando se encienden luces y cocinas."],
+["energia","¿Cuál de estas centrales NO quema combustible?","Eólica","Térmica a gas","Térmica a diésel","Térmica a carbón","Las eólicas, solares e hidroeléctricas no queman nada para generar."],
+["energia","¿Qué significa la eficiencia energética?","Obtener el mismo servicio con menos energía","Gastar más energía para producir más","Usar solo energía solar","Apagar la red de noche","Aislar techos, usar LED y motores eficientes son ejemplos."],
+["energia","¿Qué partícula forma la corriente eléctrica en un cable de cobre?","Los electrones","Los protones","Los neutrones","Los fotones","En los metales, los electrones libres se mueven y transportan la carga."],
+
+/* ---------- agua ---------- */
+["agua","¿Qué porcentaje aproximado del agua del planeta es dulce?","Alrededor del 3 %","Alrededor del 30 %","Alrededor del 50 %","Alrededor del 90 %","Y la mayor parte de esa agua dulce está congelada en glaciares y polos."],
+["agua","¿A qué temperatura hierve el agua al nivel del mar?","100 °C","80 °C","120 °C","90 °C","En La Paz, a unos 3600 m, hierve cerca de los 88 °C por la menor presión."],
+["agua","¿Qué hace una planta potabilizadora?","Trata el agua para que se pueda beber","Calienta el agua de las casas","Genera electricidad con agua","Recoge la lluvia en tanques","Usa coagulación, sedimentación, filtración y desinfección (por ejemplo, con cloro)."],
+["agua","¿Qué hace una planta depuradora de aguas residuales?","Limpia el agua usada antes de devolverla a ríos o lagos","Embotella agua mineral","Produce hielo","Bombea agua a los edificios","Evita que la contaminación llegue a ríos y lagos."],
+["agua","¿Qué es un acuífero?","Una capa subterránea de roca o arena que almacena agua","Una tubería de agua potable","Un tipo de nube","Una represa de concreto","Los pozos extraen agua de los acuíferos."],
+["agua","¿Qué sustancia se usa comúnmente para desinfectar el agua potable?","Cloro","Azúcar","Sal de mesa","Aceite","El cloro elimina bacterias y virus en dosis seguras."],
+["agua","¿Qué es el ciclo del agua?","El recorrido del agua: evaporación, condensación, precipitación y escurrimiento","El tiempo que dura una ducha","El camino de una tubería","La limpieza de un tanque","Es impulsado por la energía del Sol."],
+["agua","¿Qué es una fuga en la red de agua?","Una pérdida de agua por roturas en las tuberías","Un tipo de grifo","Una medición del consumo","Un pozo nuevo","En muchas ciudades se pierde más del 30 % del agua en fugas."],
+["agua","¿Qué medida ahorra más agua en casa?","Reparar grifos que gotean y cerrar la llave al cepillarse","Lavar el auto con manguera abierta","Regar al mediodía","Tirar el aceite por el lavaplatos","Un grifo que gotea puede perder miles de litros al año."],
+["agua","¿Qué glaciar boliviano desapareció en 2009 y era una pista de esquí?","Chacaltaya","Huayna Potosí","Illimani","Sajama","Su desaparición se asocia al calentamiento global."],
+["agua","¿Qué indica el pH del agua?","Si es ácida o básica","Su temperatura","Su cantidad de oxígeno","Su color","El agua potable suele tener un pH entre 6,5 y 8,5."],
+["agua","¿Qué es una cuenca hidrográfica?","El territorio cuyas aguas desembocan en un mismo río, lago o mar","Un lavamanos grande","Un tipo de presa","Un tanque elevado","Cuidar la cuenca alta protege el agua de las ciudades."],
+["agua","¿Por qué se ponen tanques de agua en lo alto de los edificios?","Para que la gravedad dé presión al agua","Para que el agua se enfríe","Para que no la vean","Para evaporarla","La presión aumenta unos 0,1 bar por cada metro de altura de agua."],
+["agua","¿Qué enfermedad se transmite por agua contaminada?","El cólera","La gripe","El sarampión","La varicela","El agua potable y el saneamiento han salvado millones de vidas."],
+["agua","¿Qué es el riego por goteo?","Dar agua gota a gota cerca de la raíz para ahorrar agua","Regar con cañones de agua","Inundar los campos","Regar solo con lluvia","Puede ahorrar más de la mitad del agua frente al riego por inundación."],
+["agua","¿Qué lago comparten Bolivia y Perú?","El Titicaca","El Poopó","El Uru Uru","El Rogaguado","Es el lago navegable más alto del mundo."],
+["agua","¿Cuántos litros de agua por persona al día recomienda la OMS como mínimo para necesidades básicas?","Entre 50 y 100 litros","5 litros","500 litros","1000 litros","Incluye beber, cocinar e higiene."],
+["agua","¿Qué es una represa?","Una barrera que retiene el agua de un río","Un tipo de pez","Una tubería de desagüe","Un pozo profundo","Sirve para almacenar agua, regar o generar electricidad."],
+
+/* ---------- transporte ---------- */
+["transporte","¿Qué transporte lleva más personas por carril en una ciudad?","El metro o tren urbano","El auto particular","La moto","El taxi","Un carril de metro puede llevar decenas de miles de personas por hora."],
+["transporte","¿Qué sistema de transporte por cable tiene La Paz y El Alto?","Mi Teleférico","Metro subterráneo","Tranvía","Monorriel","Es la red de teleféricos urbanos más grande del mundo."],
+["transporte","¿Qué es un carril exclusivo para buses (BRT)?","Un carril solo para buses rápidos","Un carril para bicicletas","Un estacionamiento","Una autopista de peaje","El BRT de Curitiba (Brasil) fue pionero en el mundo."],
+["transporte","¿Qué reduce más los atascos en una ciudad?","Un buen transporte público","Más estacionamientos en el centro","Combustible más barato","Más semáforos sin coordinar","Construir solo más calles atrae más autos (demanda inducida)."],
+["transporte","¿Qué es la «demanda inducida»?","Cuando más carriles atraen más autos y el atasco vuelve","Que la gente pide más buses","El precio del pasaje","La demanda de bicicletas","Por eso ampliar calles no siempre resuelve los atascos."],
+["transporte","¿Qué ventaja tiene una rotonda frente a un cruce con semáforo?","El tráfico fluye sin detenerse por completo y hay menos choques graves","Es más barata de pintar","Permite estacionar","Elimina a los peatones","Los choques en rotondas suelen ser de menor ángulo y velocidad."],
+["transporte","¿Qué es la intermodalidad?","Combinar varios medios de transporte en un viaje","Usar solo el auto","Un tipo de motor","Un semáforo inteligente","Por ejemplo: bicicleta hasta la estación y luego tren."],
+["transporte","Si un bus va a 40 km/h, ¿cuánto tarda en recorrer 10 km?","15 minutos","25 minutos","40 minutos","10 minutos","Tiempo = distancia / velocidad = 10/40 h = 0,25 h = 15 min."],
+["transporte","¿Qué medio de transporte urbano no emite gases al usarse?","La bicicleta","El minibús","La moto","El camión","Además mejora la salud de quien la usa."],
+["transporte","¿Qué es una ciclovía?","Un carril para bicicletas","Un tipo de autopista","Un puente peatonal","Una parada de bus","Separarla del tráfico la hace más segura."],
+["transporte","¿Qué señal de tránsito tiene forma octogonal?","PARE","Ceda el paso","Velocidad máxima","Prohibido estacionar","Su forma única permite reconocerla aun cubierta de nieve o polvo."],
+["transporte","¿Para qué sirve sincronizar los semáforos en «ola verde»?","Para que los autos pasen varios semáforos seguidos en verde","Para gastar menos luz","Para que los peatones crucen siempre","Para cobrar peaje","Reduce paradas, tiempo y emisiones."],
+["transporte","¿Qué ciudad latinoamericana es famosa por su sistema de buses Transmilenio?","Bogotá","Lima","Quito","Asunción","Funciona con carriles exclusivos desde el año 2000."],
+["transporte","¿Qué parte de un puente transmite las cargas al suelo?","Las pilas y los cimientos","Las barandas","El asfalto","Las luces","Los cimientos reparten el peso sobre el terreno."],
+["transporte","¿Qué ventaja tiene el tren frente al camión para la carga?","Gasta menos energía por tonelada transportada","Llega a cualquier casa","No necesita vías","Es más rápido de cargar","Un tren de carga puede mover mucha más carga por litro de combustible."],
+["transporte","¿Qué significa «zona 30» en una ciudad?","Una zona con velocidad máxima de 30 km/h","Una zona con 30 calles","Un estacionamiento de 30 minutos","Un barrio con 30 casas","A 30 km/h la mayoría de los peatones atropellados sobrevive."],
+["transporte","¿Qué es un paso a desnivel?","Un cruce en el que una vía pasa por encima o por debajo de otra","Un semáforo intermitente","Una rampa para bicicletas","Una calle cerrada","Evita que los flujos se crucen al mismo nivel."],
+["transporte","¿Qué medio de transporte conecta muchas ciudades de Bolivia con el exterior por el océano Pacífico?","Camiones por carretera hasta puertos de Chile y Perú","Barcos por el lago Titicaca","Trenes de alta velocidad","Aviones de carga únicamente","Bolivia usa sobre todo los puertos de Arica e Ilo."],
+
+/* ---------- urbanismo ---------- */
+["urbanismo","¿Para qué sirve dividir una ciudad en zonas (residencial, comercial, industrial)?","Para ordenar los usos y alejar la industria contaminante de las casas","Para cobrar más impuestos","Para que no haya calles","Para que todos vivan en el centro","Es la base de la zonificación urbana."],
+["urbanismo","¿Qué es la densidad de población?","Cuántas personas viven por unidad de superficie","La altura de los edificios","El ancho de las calles","La cantidad de parques","Se mide, por ejemplo, en habitantes por km²."],
+["urbanismo","¿Qué es una «ciudad de 15 minutos»?","Una ciudad donde lo básico está a 15 minutos a pie o en bici","Una ciudad que se construyó en 15 años","Una ciudad con 15 barrios","Una ciudad sin autos","Propuesta por el urbanista Carlos Moreno."],
+["urbanismo","¿Qué ventaja tienen los usos mixtos (vivienda con comercio cerca)?","Menos viajes largos y calles más vivas","Más contaminación","Menos tiendas","Más atascos","La gente puede resolver su día a pie."],
+["urbanismo","¿Qué son las áreas verdes urbanas?","Parques, plazas y jardines de la ciudad","Calles pintadas de verde","Edificios con techo verde únicamente","Zonas industriales","Mejoran el aire, la temperatura y la salud mental."],
+["urbanismo","¿Qué es la «isla de calor» urbana?","Que la ciudad está más caliente que el campo que la rodea","Un parque en el centro","Un edificio con calefacción","Una playa artificial","El asfalto y el concreto acumulan calor; los árboles lo reducen."],
+["urbanismo","¿Qué es un plano catastral?","El registro de los terrenos y sus límites","Un mapa de rutas de bus","Un mapa del clima","El plano de una casa","Sirve para cobrar impuestos y planificar."],
+["urbanismo","¿Por qué conviene construir viviendas cerca del transporte público?","Para que la gente viaje sin depender del auto","Porque es más ruidoso","Para tener menos vecinos","Porque el terreno es gratis","Se llama desarrollo orientado al transporte."],
+["urbanismo","¿Qué es la expansión urbana dispersa?","Una ciudad que crece hacia afuera con baja densidad","Una ciudad con rascacielos","Una ciudad sin calles","Un barrio histórico","Encarece los servicios: más tubos, cables y calles por persona."],
+["urbanismo","¿Qué es una plaza mayor en las ciudades coloniales?","El espacio central rodeado por la iglesia y el gobierno","Un mercado techado","Un estadio","Una estación de tren","La Plaza Murillo en La Paz es un ejemplo."],
+["urbanismo","¿Qué es la accesibilidad universal en una ciudad?","Que todas las personas, incluidas las que tienen discapacidad, puedan usarla","Que haya autos para todos","Que los edificios sean altos","Que no haya escaleras eléctricas","Rampas, veredas anchas y semáforos sonoros son ejemplos."],
+["urbanismo","¿Qué mide el «índice de área verde por habitante»?","Los m² de parques y jardines por persona","El número de árboles cortados","La cantidad de lluvia","El ancho de las veredas","La OMS sugiere al menos 9 m² por habitante."],
+["urbanismo","¿Qué es un rascacielos?","Un edificio muy alto, de muchos pisos","Un puente colgante","Una torre de agua","Un tipo de grúa","Permite más densidad usando menos suelo."],
+["urbanismo","¿Qué es un retiro o retranqueo en construcción?","La distancia obligatoria entre el edificio y el límite del terreno","Un tipo de ladrillo","El techo de una casa","El sótano","Asegura luz, ventilación y espacio público."],
+["urbanismo","¿Qué ciudad boliviana es Patrimonio de la Humanidad por su arquitectura colonial?","Sucre","El Alto","Cobija","Trinidad","También Potosí lo es, por su historia minera."],
+["urbanismo","¿Por qué no conviene construir viviendas en el lecho de un río?","Por el riesgo de inundaciones y deslizamientos","Porque el agua es fría","Porque hay mucho ruido","Porque no hay sol","Los planes de riesgo marcan esas zonas como no urbanizables."],
+["urbanismo","¿Qué es la gentrificación?","Cuando un barrio se encarece y desplaza a sus vecinos de menores ingresos","La construcción de parques","El aumento de calles","La llegada de industrias","Es uno de los retos de la renovación urbana."],
+["urbanismo","¿Qué es un «uso de suelo»?","El destino permitido de un terreno: vivienda, comercio, industria…","El tipo de tierra para cultivar","La cantidad de cemento","El pago de un alquiler","Lo define el plan de ordenamiento territorial."],
+
+/* ---------- ambiente ---------- */
+["ambiente","¿Qué gas producen las plantas en la fotosíntesis?","Oxígeno","Dióxido de carbono","Metano","Nitrógeno","Y a cambio absorben dióxido de carbono."],
+["ambiente","¿Qué significan las tres R de la ecología?","Reducir, reutilizar y reciclar","Reír, rodar y respirar","Regar, recoger y romper","Recoger, revender y rentar","Reducir es la más importante: lo que no se produce no contamina."],
+["ambiente","¿Qué es el efecto invernadero?","Gases que retienen el calor en la atmósfera","Un tipo de cultivo","La lluvia ácida","El agujero de la capa de ozono","Es natural, pero las emisiones humanas lo intensifican."],
+["ambiente","¿Qué son las partículas PM2,5?","Partículas finas del aire que dañan los pulmones","Un tipo de reciclaje","Una medida de ruido","Una vitamina","Vienen sobre todo de motores, quemas e industrias."],
+["ambiente","¿Qué residuo tarda más en degradarse?","Una botella de vidrio","Una cáscara de plátano","Una hoja de papel","Un trozo de algodón","El vidrio puede tardar miles de años; por suerte es 100 % reciclable."],
+["ambiente","¿Qué es el compostaje?","Convertir restos orgánicos en abono","Quemar basura","Enterrar plásticos","Lavar botellas","Casi la mitad de la basura doméstica es orgánica."],
+["ambiente","¿Qué hace un relleno sanitario bien construido?","Aísla la basura del suelo y del agua y controla sus gases","Quema la basura a cielo abierto","Tira la basura al río","Separa el oro de la basura","Los botaderos a cielo abierto contaminan el agua y el aire."],
+["ambiente","¿Qué contaminación produce el exceso de bocinas y motores?","Contaminación acústica","Contaminación lumínica","Contaminación térmica","Contaminación radiactiva","Afecta el sueño y la salud."],
+["ambiente","¿Por qué los árboles ayudan a una ciudad?","Dan sombra, limpian el aire y absorben agua de lluvia","Porque producen ruido","Porque bajan los impuestos","Porque atraen el tráfico","Un árbol grande puede bajar varios grados la temperatura a su sombra."],
+["ambiente","¿Qué es la huella de carbono?","La cantidad de gases de efecto invernadero que causa una actividad","La marca de un zapato","El carbón que se usa en una parrilla","La contaminación del agua","Se mide en toneladas de CO₂ equivalente."],
+["ambiente","¿Qué ecosistema boliviano se conoce como pulmón por sus bosques?","La Amazonía","El Altiplano","El Chaco seco","Los salares","Cubre buena parte del norte del país."],
+["ambiente","¿Qué ocurre con la contaminación si se usan filtros en las chimeneas industriales?","Disminuye la emisión de partículas","Aumenta","Se convierte en oxígeno puro","No cambia nada","Los filtros y lavadores de gases son obligatorios en muchos países."],
+["ambiente","¿Qué es un área protegida?","Un territorio con normas especiales para conservar la naturaleza","Un barrio cerrado","Una zona industrial","Un estacionamiento","El Parque Madidi es una de las más biodiversas del mundo."],
+["ambiente","¿Qué contamina el aire de las ciudades en altura como La Paz y El Alto?","Sobre todo el humo de vehículos viejos","Los teleféricos eléctricos","Las bicicletas","Los paneles solares","La altura hace que los motores quemen peor el combustible."],
+["ambiente","¿Qué es la lluvia ácida?","Lluvia con ácidos formados por la contaminación del aire","Lluvia muy fría","Lluvia con arena","Granizo grande","La causan óxidos de azufre y nitrógeno."],
+["ambiente","¿Qué energía ayuda más a bajar la contaminación de una ciudad?","La eléctrica de fuentes renovables","La de leña","La de carbón","La de diésel","Buses eléctricos y teleféricos no emiten humo en la calle."],
+["ambiente","¿Qué es la biodiversidad?","La variedad de seres vivos de un lugar","El número de fábricas","La cantidad de lluvia","La temperatura media","Bolivia es uno de los países más megadiversos."],
+["ambiente","¿Qué hacer con las pilas usadas?","Llevarlas a un punto de recolección","Tirarlas al río","Quemarlas","Enterrarlas en el patio","Contienen metales que contaminan el suelo y el agua."],
+
+/* ---------- salud ---------- */
+["salud","¿Qué ayuda más a prevenir enfermedades infecciosas en una ciudad?","El agua potable, el saneamiento y las vacunas","Tener más estacionamientos","Más tráfico","Menos parques","Son las intervenciones de salud pública que más vidas han salvado."],
+["salud","¿Qué órgano bombea la sangre?","El corazón","El hígado","El pulmón","El riñón","Late unas 100 000 veces al día."],
+["salud","¿Qué es una vacuna?","Un preparado que entrena al sistema inmunitario","Un antibiótico","Una vitamina","Un analgésico","Enseña al cuerpo a reconocer un microbio sin enfermar gravemente."],
+["salud","¿Para qué sirven los antibióticos?","Para combatir infecciones por bacterias","Para curar la gripe causada por virus","Para bajar la presión","Para dormir mejor","No sirven contra los virus; usarlos mal crea resistencia."],
+["salud","¿Qué es el «mal de altura» o soroche?","Malestar por la menor cantidad de oxígeno en la altura","Una alergia al polvo","Una infección del estómago","Un tipo de gripe","Descansar, hidratarse y subir poco a poco ayuda."],
+["salud","¿Cuánta actividad física recomienda la OMS a los adultos por semana?","Al menos 150 minutos de actividad moderada","10 minutos","1 hora al mes","Ninguna","Caminar o ir en bici cuenta."],
+["salud","¿Qué es un centro de salud de primer nivel?","El que atiende consultas básicas y prevención cerca de la gente","Un hospital de alta especialidad","Una farmacia","Un laboratorio de vacunas","Resuelve la mayoría de los problemas de salud de un barrio."],
+["salud","¿Por qué es importante lavarse las manos con jabón?","Elimina microbios que causan enfermedades","Hace crecer las uñas","Calienta el cuerpo","Mejora la vista","Reduce mucho las diarreas y las infecciones respiratorias."],
+["salud","¿Qué nutriente da sobre todo energía rápida?","Los carbohidratos","Las vitaminas","Los minerales","El agua","Están en el pan, el arroz, la papa y la quinua."],
+["salud","¿Qué grano andino es muy nutritivo y tiene todos los aminoácidos esenciales?","La quinua","El arroz blanco","El trigo","El maíz dulce","Bolivia es uno de sus mayores productores."],
+["salud","¿Qué número de emergencias médicas se usa en Bolivia?","165 (y 911 en algunas ciudades)","100","999","555","Conviene conocer los números de emergencia de tu ciudad."],
+["salud","¿Qué es una epidemia?","Un aumento grande de casos de una enfermedad en un lugar y tiempo","Una enfermedad que dura toda la vida","Un medicamento nuevo","Un hospital lleno","Si se extiende a muchos países se llama pandemia."],
+["salud","¿Qué hábito daña más los pulmones?","Fumar","Caminar","Dormir 8 horas","Comer fruta","El tabaco causa la mayoría de los cánceres de pulmón."],
+["salud","¿Qué hace un hospital de tercer nivel?","Atiende casos complejos con especialistas y alta tecnología","Solo vacuna","Solo vende medicamentos","Atiende únicamente resfríos","Recibe pacientes derivados de otros niveles."],
+["salud","¿Qué vitamina produce la piel con el sol?","La vitamina D","La vitamina C","La vitamina B12","La vitamina K","Ayuda a fijar el calcio en los huesos."],
+["salud","¿Qué ruido continuo empieza a dañar el oído?","Más de unos 85 decibelios durante horas","20 decibelios","Un susurro","El canto de un pájaro","El tráfico intenso puede superar ese nivel."],
+["salud","¿Qué se recomienda beber para evitar la deshidratación?","Agua segura","Bebidas con mucho azúcar","Café en exceso","Alcohol","El cuerpo es alrededor de un 60 % agua."],
+["salud","¿Qué es la salud mental?","El bienestar emocional, psicológico y social","Solo no tener fiebre","Tener buena memoria únicamente","La fuerza de los músculos","Los parques y la vida comunitaria la favorecen."],
+
+/* ---------- seguridad ---------- */
+["seguridad","¿Qué tipo de extintor sirve para un fuego eléctrico?","De CO₂ o de polvo químico","De agua","De espuma con agua","Ninguno, se apaga solo","El agua conduce la electricidad: es peligrosa en fuegos eléctricos."],
+["seguridad","¿Qué tres elementos necesita el fuego (triángulo del fuego)?","Combustible, oxígeno y calor","Agua, tierra y viento","Luz, sombra y humo","Gas, vapor y hielo","Quitar uno de ellos apaga el fuego."],
+["seguridad","En un incendio con humo, ¿cómo conviene salir?","Agachado, cerca del suelo","Corriendo de pie","Por el ascensor","Volviendo por tus cosas","El humo sube; abajo el aire es más respirable."],
+["seguridad","¿Para qué sirve un hidrante en la calle?","Para que los bomberos se conecten a la red de agua","Para lavar autos","Para regar plazas","Para medir la lluvia","Deben estar libres de obstáculos."],
+["seguridad","¿Qué mejora la seguridad en una calle por la noche?","Buena iluminación y gente usando el espacio","Calles vacías y oscuras","Muros altos sin ventanas","Basura acumulada","Se habla de «ojos en la calle», idea de Jane Jacobs."],
+["seguridad","¿Qué es una ruta de evacuación?","El camino señalizado para salir de un lugar en una emergencia","Una autopista nueva","Un atajo para el tráfico","Una ruta turística","Debe estar libre y bien señalizada."],
+["seguridad","¿Qué hacer durante un sismo si estás dentro de un edificio?","Agacharse, cubrirse y sujetarse lejos de ventanas","Correr por las escaleras","Usar el ascensor","Salir al balcón","Después, evacuar con calma por las rutas señaladas."],
+["seguridad","¿Para qué sirve una alarma de humo?","Para avisar a tiempo de un incendio","Para medir la temperatura","Para encender luces","Para ahuyentar insectos","Detectar el humo temprano salva vidas, sobre todo de noche."],
+["seguridad","¿Qué número de bomberos se usa en Bolivia?","119","110","120","130","En emergencias policiales se usa el 110."],
+["seguridad","¿Qué es un plan de gestión de riesgos?","Preparar a la ciudad para prevenir y responder a desastres","Un seguro de autos","Un plan de impuestos","Un mapa turístico","Incluye mapas de amenazas, alertas y simulacros."],
+["seguridad","¿Qué hacer ante una fuga de gas en casa?","Cerrar la llave, ventilar y no encender nada eléctrico","Encender la luz para buscarla","Prender un fósforo","Cerrar las ventanas","Una chispa puede provocar una explosión."],
+["seguridad","¿Qué es un simulacro?","Un ensayo de cómo actuar en una emergencia","Un incendio real","Un juego de mesa","Una clase de cocina","Practicar reduce el pánico cuando ocurre de verdad."],
+["seguridad","¿Qué es la mazamorra en La Paz?","Un deslizamiento de lodo y piedras","Una lluvia de granizo","Una fiesta","Un tipo de sismo","Ocurre en laderas inestables tras lluvias intensas."],
+["seguridad","¿Qué protege mejor a un ciclista en caso de caída?","El casco","Los guantes de lana","Una gorra","Lentes de sol","Reduce mucho el riesgo de lesiones graves en la cabeza."],
+["seguridad","¿Qué ayuda a reducir los accidentes de tránsito?","Respetar los límites de velocidad","Usar el celular al conducir","Manejar cansado","No usar cinturón","La velocidad influye en la frecuencia y gravedad de los choques."],
+["seguridad","¿Qué hace un pararrayos?","Conduce el rayo a tierra de forma segura","Atrae la lluvia","Genera electricidad para la casa","Mide el viento","Lo inventó Benjamin Franklin."],
+["seguridad","¿Por qué se ponen puertas cortafuego en edificios?","Para frenar el avance del fuego y el humo","Para que no entre el sol","Para ahorrar energía","Por decoración","Dan tiempo para evacuar."],
+["seguridad","¿Qué es la policía comunitaria?","Policías que trabajan cerca de los vecinos de un barrio","Un tipo de alarma","Guardias privados de una empresa","Bomberos voluntarios","La confianza entre vecinos y policía ayuda a prevenir delitos."],
+
+/* ---------- educación ---------- */
+["educacion","¿Qué institución forma profesionales con títulos de licenciatura?","La universidad","El jardín de niños","La escuela primaria","La guardería","En Bolivia, la más antigua es la Universidad San Francisco Xavier (Sucre, 1624)."],
+["educacion","¿Qué es la alfabetización?","Aprender a leer y escribir","Aprender a nadar","Aprender a manejar","Aprender un oficio","Bolivia fue declarada libre de analfabetismo en 2008."],
+["educacion","¿Qué beneficio da una biblioteca pública a una ciudad?","Acceso gratuito a libros, información y espacios de estudio","Más tráfico","Menos impuestos","Más industria","También ofrece internet y actividades culturales."],
+["educacion","¿Qué es el método científico?","Observar, plantear hipótesis, experimentar y concluir","Memorizar respuestas","Adivinar resultados","Copiar a otros","Es la forma de construir conocimiento comprobable."],
+["educacion","¿Cuántos años dura normalmente la educación primaria en Bolivia?","6 años","3 años","10 años","2 años","Luego vienen 6 años de secundaria."],
+["educacion","¿Qué es una beca?","Una ayuda económica para estudiar","Un examen final","Un tipo de título","Una sanción","Muchas universidades e instituciones ofrecen becas."],
+["educacion","¿Qué significa STEM en educación?","Ciencia, tecnología, ingeniería y matemáticas","Deportes, teatro, escritura y música","Solo idiomas","Historia y geografía","Son áreas clave para el desarrollo tecnológico."],
+["educacion","¿Qué es la educación técnica?","La que forma en oficios y técnicas específicas","La que solo enseña teoría","La que dura un día","La que es solo virtual","Electricistas, mecánicos o técnicos en salud son ejemplos."],
+["educacion","¿Qué idiomas son oficiales en Bolivia además del castellano?","Los idiomas de las naciones y pueblos indígena originario campesinos","Solo el inglés","Solo el portugués","Ninguno","La Constitución reconoce 36 idiomas, como el aymara, el quechua y el guaraní."],
+["educacion","¿Qué es el aprendizaje a lo largo de la vida?","Seguir aprendiendo en cualquier edad","Estudiar solo de niño","Repetir el mismo curso","Aprender solo en la escuela","La ciudad educa con museos, bibliotecas y cursos."],
+["educacion","¿Qué es una feria científica?","Un evento donde estudiantes presentan proyectos de ciencia","Un mercado de verduras","Un concierto","Una competencia de fútbol","Fomenta la curiosidad y la investigación."],
+["educacion","¿Qué hace un museo además de exhibir?","Conserva, investiga y educa sobre el patrimonio","Vende autos","Recauda impuestos","Construye carreteras","Los museos son parte de la vida cultural de una ciudad."],
+["educacion","¿Qué es la deserción escolar?","Que un estudiante abandone sus estudios","Un tipo de examen","Una vacación","Un premio escolar","Escuelas cercanas y seguras ayudan a evitarla."],
+["educacion","¿Qué es un número primo?","Un número mayor que 1 que solo se divide entre 1 y sí mismo","Un número par","Un número negativo","Un número con decimales","2, 3, 5, 7 y 11 son primos."],
+["educacion","¿Quién escribió «Don Quijote de la Mancha»?","Miguel de Cervantes","Gabriel García Márquez","Pablo Neruda","Mario Vargas Llosa","Se publicó en 1605."],
+["educacion","¿Qué es la educación inclusiva?","La que garantiza que todos aprendan juntos, con los apoyos que necesiten","La que separa a los estudiantes por notas","La que es solo para algunos","La que no tiene profesores","Incluye a estudiantes con discapacidad y de distintas culturas."],
+["educacion","¿Qué ciencia estudia los seres vivos?","La biología","La geología","La astronomía","La economía","Viene del griego bios (vida) y logos (estudio)."],
+["educacion","¿Qué es una tesis universitaria?","Un trabajo de investigación para obtener un título","Un examen oral corto","Un libro de texto","Una tarea diaria","Debe aportar conocimiento original."],
+
+/* ---------- economía ---------- */
+["economia","¿Qué es el presupuesto de una ciudad?","El plan de ingresos y gastos para un periodo","El sueldo del alcalde","El precio del pasaje","Un tipo de impuesto","Si se gasta más de lo que entra, hay déficit."],
+["economia","¿Qué es el déficit?","Cuando los gastos superan a los ingresos","Cuando se ahorra mucho","Un tipo de moneda","Una ganancia extra","Se cubre con deuda o recortes."],
+["economia","¿Qué es la inflación?","El aumento general de los precios","La baja de los precios","El aumento de los sueldos únicamente","El cierre de bancos","Hace que el dinero compre menos."],
+["economia","¿Cuál es la moneda de Bolivia?","El boliviano","El peso","El sol","El dólar boliviano","Su símbolo es Bs."],
+["economia","Si un producto cuesta 200 y tiene un 15 % de descuento, ¿cuánto se paga?","170","185","150","215","El 15 % de 200 es 30; 200 − 30 = 170."],
+["economia","¿Qué es un impuesto?","Un pago obligatorio al Estado para financiar servicios públicos","Un préstamo del banco","Una multa de tránsito únicamente","Un regalo","Con impuestos se pagan escuelas, hospitales y calles."],
+["economia","¿Qué pasa si una ciudad sube mucho los impuestos?","Puede recaudar más al inicio pero desalentar a vecinos y empresas","Siempre crece más rápido","Baja la inflación de inmediato","Nada cambia","Hay un equilibrio entre recaudar y no frenar la economía."],
+["economia","¿Qué es el interés de un préstamo?","Lo que se paga por usar dinero prestado","El dinero que te regalan","El precio de una casa","Un tipo de cambio","Se expresa como un porcentaje anual."],
+["economia","¿Qué es la oferta y la demanda?","La relación entre lo que se vende y lo que se quiere comprar, que fija precios","Una ley de tránsito","Un impuesto","Un tipo de banco","Si hay mucha demanda y poca oferta, el precio sube."],
+["economia","¿Qué es el PIB?","El valor de todos los bienes y servicios que produce un país en un año","El precio de la gasolina","El presupuesto de una ciudad","La deuda de un país","Producto Interno Bruto."],
+["economia","¿Qué es el comercio exterior?","El intercambio de bienes y servicios entre países","La venta en el mercado del barrio","Un tipo de impuesto local","El transporte urbano","Bolivia exporta gas, minerales y soya, entre otros."],
+["economia","¿Qué es una cooperativa?","Una empresa de propiedad de sus socios que se reparten los beneficios","Una empresa del Estado","Un banco extranjero","Una tienda de un solo dueño","Hay cooperativas de ahorro, de servicios y de producción."],
+["economia","Si ganas 3000 al mes y ahorras el 10 %, ¿cuánto ahorras en un año?","3600","300","30000","1200","300 al mes × 12 meses = 3600."],
+["economia","¿Qué es la economía informal?","La actividad que no está registrada ni paga impuestos","La banca en línea","La economía de las grandes empresas","Las exportaciones","Es muy grande en América Latina."],
+["economia","¿Qué es el turismo para una ciudad?","Una fuente de ingresos y empleo por visitantes","Un gasto sin beneficio","Un tipo de impuesto","Una industria pesada","El salar de Uyuni y el lago Titicaca atraen turistas de todo el mundo."],
+["economia","¿Qué es un emprendimiento?","Un negocio o proyecto nuevo que alguien inicia","Un préstamo del Estado","Un impuesto municipal","Una deuda","Muchos empiezan pequeños y crecen."],
+["economia","¿Qué es la inversión pública?","El gasto del Estado en obras y servicios que duran, como caminos o escuelas","El sueldo de los funcionarios","Una compra personal","Un préstamo a una persona","Bien elegida, impulsa el crecimiento de la ciudad."],
+["economia","¿Qué es el desempleo?","Cuando personas que quieren trabajar no encuentran empleo","Cuando todos trabajan","Las vacaciones","La jubilación","Una ciudad con comercio e industria crea empleos."],
+
+/* ---------- cultura ---------- */
+["cultura","¿Qué fiesta de Oruro es Obra Maestra del Patrimonio Oral e Inmaterial de la Humanidad?","El Carnaval de Oruro","La Feria de Alasitas","El Gran Poder","Todos Santos","La UNESCO la declaró en 2001."],
+["cultura","¿En qué ciudad se celebra la feria de Alasitas con el Ekeko?","La Paz","Santa Cruz","Tarija","Cobija","Se celebra cada 24 de enero."],
+["cultura","¿Qué sitio arqueológico boliviano tiene la Puerta del Sol?","Tiwanaku","Samaipata","Iskanwaya","Incallajta","Fue centro de una gran cultura andina."],
+["cultura","¿Quién pintó «La Gioconda»?","Leonardo da Vinci","Pablo Picasso","Vincent van Gogh","Diego Velázquez","Se exhibe en el Museo del Louvre, en París."],
+["cultura","¿Qué instrumento andino es una flauta de cañas de varios tubos?","El sikus o zampoña","El charango","La guitarra","El violín","Se toca en pareja, alternando notas."],
+["cultura","¿Qué instrumento de cuerdas pequeño es típico de los Andes?","El charango","El arpa","El piano","El contrabajo","Tradicionalmente se hacía con caparazón de quirquincho."],
+["cultura","¿Qué escritor boliviano escribió «Raza de bronce»?","Alcides Arguedas","Franz Tamayo","Jaime Saenz","Adela Zamudio","Se publicó en 1919."],
+["cultura","¿Qué son las misiones jesuíticas de Chiquitos?","Pueblos con iglesias barrocas declarados Patrimonio de la Humanidad","Fortalezas incas","Minas de plata","Puertos fluviales","Están en Santa Cruz y aún se celebra en ellas un festival de música barroca."],
+["cultura","¿Qué es el patrimonio cultural?","Los bienes y tradiciones heredados que una comunidad valora y protege","Las deudas de una familia","Los edificios nuevos","Los impuestos","Puede ser material (edificios) o inmaterial (fiestas, idiomas)."],
+["cultura","¿Qué cerro de Potosí fue la mayor mina de plata del mundo colonial?","El Cerro Rico","El Illimani","El Tunari","El Sajama","Su plata financió en parte al imperio español."],
+["cultura","¿Qué es un teatro municipal?","Un espacio público para obras, conciertos y danza","Un mercado","Una cancha","Un hospital","El Teatro Municipal Alberto Saavedra Pérez de La Paz es de 1845."],
+["cultura","¿Qué danza boliviana representa a los mineros y al diablo?","La diablada","La cueca","La saya","El taquirari","Es el símbolo del Carnaval de Oruro."],
+["cultura","¿Qué celebra el 6 de agosto Bolivia?","Su independencia (1825)","El día del mar","Año nuevo andino","El día de la madre","Ese año se fundó la República en Sucre."],
+["cultura","¿Qué es la Wiphala?","Una bandera cuadrangular de colores de los pueblos andinos","Un tipo de comida","Un instrumento","Una fiesta","La Constitución la reconoce como símbolo del Estado."],
+["cultura","¿Qué escritor colombiano escribió «Cien años de soledad»?","Gabriel García Márquez","Jorge Luis Borges","Julio Cortázar","Octavio Paz","Ganó el Nobel de Literatura en 1982."],
+["cultura","¿Qué atrae una ciudad con mucha vida cultural?","Turistas, talento y nuevas ideas","Solo tráfico","Más contaminación","Menos empleo","La cultura también es motor económico."],
+["cultura","¿Qué es una lengua originaria?","El idioma propio de un pueblo indígena","Un idioma inventado","Un dialecto de computadora","Una lengua muerta siempre","El aymara, el quechua y el guaraní se hablan en Bolivia."],
+["cultura","¿Qué es la Fiesta del Gran Poder?","Una gran entrada folclórica de La Paz","Una feria de autos","Un festival de cine","Una carrera de bicicletas","Fue declarada Patrimonio Cultural Inmaterial de la Humanidad en 2019."],
+
+/* ---------- ingeniería básica ---------- */
+["ingenieria","¿Qué forma geométrica da más rigidez a una estructura de barras?","El triángulo","El cuadrado","El círculo","El pentágono","Por eso las cerchas y las torres eléctricas usan triángulos."],
+["ingenieria","¿Qué material resiste muy bien la compresión pero poco la tracción?","El concreto sin armar","El acero","El caucho","El hilo de nylon","Por eso se le pone acero: concreto armado."],
+["ingenieria","¿Qué es el concreto armado?","Concreto con barras de acero dentro","Concreto pintado","Concreto con vidrio","Madera prensada","El acero resiste la tracción y el concreto la compresión."],
+["ingenieria","Si una viga mide 6 m y se divide en 4 partes iguales, ¿cuánto mide cada parte?","1,5 m","2 m","1,25 m","2,4 m","6 ÷ 4 = 1,5."],
+["ingenieria","¿Qué ley relaciona tensión, corriente y resistencia (V = I × R)?","La ley de Ohm","La ley de Newton","La ley de Hooke","La ley de Boyle","Si V = 220 V y R = 110 Ω, la corriente es 2 A."],
+["ingenieria","Un tanque de 2 m × 3 m × 1 m, ¿cuánta agua puede contener?","6 m³ (6000 litros)","5 m³","600 litros","60 m³","Volumen = largo × ancho × alto; 1 m³ = 1000 litros."],
+["ingenieria","¿Qué mide un manómetro?","La presión","La temperatura","La velocidad","La humedad","Se usa en tuberías, calderas y neumáticos."],
+["ingenieria","¿Qué simple máquina es una rampa?","El plano inclinado","La polea","La rueda","El tornillo sin fin","Permite subir cargas con menos fuerza, recorriendo más distancia."],
+["ingenieria","¿Para qué sirve una polea?","Para cambiar la dirección de una fuerza y levantar cargas más fácilmente","Para medir la corriente","Para cortar madera","Para enfriar motores","Combinando poleas se reduce la fuerza necesaria."],
+["ingenieria","¿Qué es la topografía?","La medición y representación del terreno","El estudio de las rocas","El diseño de motores","La química del suelo","Es el primer paso antes de construir caminos o edificios."],
+["ingenieria","¿Por qué los puentes tienen juntas de dilatación?","Porque los materiales se estiran con el calor y se encogen con el frío","Para que pase el agua","Para decorarlos","Para que vibren más","Sin ellas, el puente podría agrietarse."],
+["ingenieria","¿Qué tipo de puente se sostiene con cables que cuelgan de torres?","El puente colgante","El puente de arco","El puente de viga","El puente levadizo","El Golden Gate de San Francisco es un ejemplo."],
+["ingenieria","¿Qué es la pendiente de una calle del 10 %?","Que sube 10 m por cada 100 m horizontales","Que sube 10 m en total","Que es 10 veces más larga","Que tiene 10 curvas","Las calles de La Paz pueden superar el 20 %."],
+["ingenieria","¿Qué es un sistema de alcantarillado?","La red de tuberías que lleva las aguas residuales y de lluvia","Un sistema de semáforos","Una red de cables de internet","Un tipo de pavimento","Separar aguas negras y pluviales evita desbordes."],
+["ingenieria","¿Qué es la resistencia sísmica de un edificio?","Su capacidad de soportar terremotos sin colapsar","Su altura máxima","Su color","Su consumo de luz","Columnas, vigas bien unidas y cimientos adecuados son clave."],
+["ingenieria","¿Cuántos centímetros tiene un metro?","100","10","1000","12","Y 1 km tiene 1000 metros."],
+["ingenieria","¿Qué es el ángulo recto?","Un ángulo de 90 grados","Un ángulo de 45 grados","Un ángulo de 180 grados","Un ángulo de 360 grados","Las escuadras sirven para trazarlo en obra."],
+["ingenieria","Si un muro de 4 m de largo y 2,5 m de alto se pinta, ¿cuántos m² son?","10 m²","6,5 m²","8 m²","12 m²","Área = 4 × 2,5 = 10 m²."]
+];
+
+import { semilla, rng, baraja } from "./preguntas.js";
+var POR_ID={}, POR_TEMA={};
+B.forEach(function(b){var id="c"+semilla(b[1]).toString(36); POR_ID[id]=b; (POR_TEMA[b[0]]=POR_TEMA[b[0]]||[]).push(id);});
+export var TEMAS_CIUDAD=Object.keys(POR_TEMA);
+export function cuantas(){return B.length;}
+/* opciones barajadas según el tramo de juego (seg) y la pregunta: el servidor recompone el orden */
+export function preguntaCiudad(id,seg){
+  var b=POR_ID[id]; if(!b)return null;
+  var r=rng(semilla("ciudad:"+seg+":"+id)), o=[b[2],b[3],b[4],b[5]], orden=baraja([0,1,2,3],r);
+  return {id:id,tema:b[0],q:b[1],o:orden.map(function(k){return o[k];}),c:orden.indexOf(0),dato:b[6]||""};
+}
+/* una pregunta del tema que la persona no haya visto (o la vista hace más tiempo) */
+export function eligeCiudad(tema,evita,al){
+  var ids=(POR_TEMA[tema]||[]).slice(), visto={}; (evita||[]).forEach(function(x,i){visto[x]=i+1;});
+  var nuevas=ids.filter(function(x){return !visto[x];});
+  if(nuevas.length)return nuevas[Math.floor(al*nuevas.length)];
+  ids.sort(function(a,b){return visto[a]-visto[b];}); return ids[0]||null;
+}

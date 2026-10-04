@@ -747,3 +747,56 @@ CREATE TABLE IF NOT EXISTS granja_dia (
   PRIMARY KEY (user_id, day)
 );
 CREATE INDEX IF NOT EXISTS granja_dia_rank ON granja_dia(day, best, updated_at);
+
+-- ============================================================
+-- The Final Test · Ciudad Saber: ciudades en mundos infinitos
+-- ============================================================
+-- Un mundo es una semilla de terreno donde cada persona tiene su ciudad en una
+-- ranura (en espiral) y las demás son sus vecinas. «ABIERTO» es el mundo de
+-- todos; los desafíos de ciudad de un curso son mundos propios con fechas.
+CREATE TABLE IF NOT EXISTS ciudad_mundos (
+  code       TEXT PRIMARY KEY,          -- «ABIERTO» o un código de 6 letras
+  nombre     TEXT NOT NULL,
+  tipo       TEXT NOT NULL,             -- abierto | curso
+  ref        TEXT,                      -- el curso (courses.code) del desafío
+  seed       INTEGER NOT NULL,          -- semilla del terreno
+  owner_id   TEXT,
+  meta       TEXT,                      -- objetivos del desafío (JSON: pob, fel, con)
+  starts_at  INTEGER,
+  ends_at    INTEGER,                   -- después solo se puede mirar
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ciudad_mundos_ref ON ciudad_mundos(ref);
+-- Una ciudad por persona y mundo: el estado comprobado por el servidor y el
+-- tramo abierto (seg_seed, seg_at) que se repite al guardar.
+CREATE TABLE IF NOT EXISTS ciudad_ciudades (
+  mundo        TEXT NOT NULL,
+  user_id      TEXT NOT NULL,
+  slot         INTEGER NOT NULL,
+  nombre       TEXT,
+  estado       TEXT,                    -- NULL hasta el primer guardado
+  puntaje      INTEGER NOT NULL DEFAULT 0,
+  poblacion    INTEGER NOT NULL DEFAULT 0,
+  felicidad    INTEGER NOT NULL DEFAULT 0,
+  conocimiento INTEGER NOT NULL DEFAULT 0,
+  temas        TEXT,                    -- JSON {tema:[aciertos,intentos]}
+  segundos     INTEGER NOT NULL DEFAULT 0,
+  seg_seed     INTEGER,
+  seg_at       INTEGER,
+  updated_at   INTEGER NOT NULL,
+  PRIMARY KEY (mundo, user_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ciudad_slot ON ciudad_ciudades(mundo, slot);
+CREATE INDEX IF NOT EXISTS ciudad_rank ON ciudad_ciudades(mundo, puntaje);
+CREATE INDEX IF NOT EXISTS ciudad_user ON ciudad_ciudades(user_id);
+-- La primera respuesta a cada pregunta del tramo: la que vale al repetirlo.
+CREATE TABLE IF NOT EXISTS ciudad_respuestas (
+  mundo   TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  seg     INTEGER NOT NULL,
+  qid     TEXT NOT NULL,
+  o       INTEGER NOT NULL,
+  ok      INTEGER NOT NULL,
+  at      INTEGER NOT NULL,
+  PRIMARY KEY (mundo, user_id, seg, qid)
+);

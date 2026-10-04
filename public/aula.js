@@ -451,14 +451,14 @@ function curso(code,nota,tab){
           .catch(function(er){$("cu-go").disabled=false;aviso("cu-msg",ERR(er),true);});};
       return;
     }
-    if(!c.manage){ pinta(cab+listaCuestionarios(c,false)+(c.extras?'<h4>Mi avance</h4><div id="au-avance"><p class="fine">Cargando…</p></div>':''));
-      $("au-back").onclick=inicio; ligaCuestionarios(); if(c.extras)miAvance(c); return; }
+    if(!c.manage){ pinta(cab+listaCuestionarios(c,false)+(window.AxCiudadUI?'<div id="au-ciudad"></div>':'')+(c.extras?'<h4>Mi avance</h4><div id="au-avance"><p class="fine">Cargando…</p></div>':''));
+      $("au-back").onclick=inicio; ligaCuestionarios(); if(c.extras)miAvance(c); if(window.AxCiudadUI)ciudadAlumno(c); return; }
     /* vista de quien gestiona el curso */
     var pend=(c.members||[]).filter(function(x){return x.status==="pendiente";}).length;
     tab=tab||"cuest";
     pinta(cab+'<div class="rt-code"><span>Código del curso</span><b>'+c.code+'</b><button type="button" class="ghost" id="cu-copy">Copiar enlace</button>'+
         (navigator.share?'<button type="button" class="ghost" id="cu-share">Invitar</button>':'')+'</div>'+
-      tabs([["cuest","Cuestionarios"]].concat(c.extras?[["libreta","Libreta"]]:[]).concat([["alumnos","Estudiantes"+(pend?" ("+pend+")":"")],["ajustes","Ajustes"]]),tab)+'<div id="au-tab"></div>');
+      tabs([["cuest","Cuestionarios"]].concat(c.extras?[["libreta","Libreta"]]:[]).concat(window.AxCiudadUI?[["ciudad","Ciudad"]]:[]).concat([["alumnos","Estudiantes"+(pend?" ("+pend+")":"")],["ajustes","Ajustes"]]),tab)+'<div id="au-tab"></div>');
     $("au-back").onclick=inicio;
     $("cu-copy").onclick=function(){copia(enlace("curso",c.code),this);};
     if($("cu-share"))$("cu-share").onclick=function(){navigator.share({text:"Únete a «"+c.name+"» en The Final Test: "+enlace("curso",c.code)}).catch(function(){});};
@@ -469,9 +469,77 @@ function curso(code,nota,tab){
       if($("cu-nuevo"))$("cu-nuevo").onclick=function(){crearCuestionario(c);};
       ligaCuestionarios();
     }else if(tab==="libreta")tabLibreta(c,t);
+    else if(tab==="ciudad")tabCiudad(c,t);
     else if(tab==="alumnos")tabAlumnos(c,t);
     else tabAjustesCurso(c,t);
   }).catch(function(e){pinta(atras("Educativo")+'<p class="fine bad">'+esc(ERR(e))+'</p>');$("au-back").onclick=inicio;});
+}
+/* ---------- desafíos de Ciudad Saber ---------- */
+function abreCiudad(code){if(window.AxApp)AxApp.setMode("ciudad"); if(window.AxCiudadUI)AxCiudadUI.juega(code);}
+function metaCiudad(m){if(!m)return "";var p=[];if(m.pob)p.push(m.pob+" habitantes");if(m.fel)p.push(m.fel+" % de felicidad");if(m.con)p.push(m.con+(m.con===1?" acierto":" aciertos"));return p.join(" · ");}
+function ciudadAlumno(c){
+  api("/api/ciudad/desafios?course="+c.code).then(function(r){
+    var z=$("au-ciudad"); if(!z||!r.desafios.length)return;
+    z.innerHTML='<h4>🏙️ Desafíos de ciudad</h4>'+r.desafios.map(function(d){var m=d.mia;
+      return '<div class="rt-card"><span class="rt-card-top"><b>'+esc(d.nombre)+'</b><span class="chip'+(d.abierto?' activo':'')+'">'+(d.abierto?'hasta '+fecha(d.ends_at):'terminado')+'</span></span>'+
+        '<small>'+(d.meta?'Meta: '+esc(metaCiudad(d.meta))+'. ':'')+(m&&m.updated_at?'Tu ciudad: 👥 '+m.poblacion+' · 😊 '+m.felicidad+' % · 🧠 '+m.conocimiento+' aciertos.':'Todavía no fundaste tu ciudad.')+'</small>'+
+        '<div class="actions"><button type="button" class="primary" data-ciudad="'+d.code+'">'+(d.abierto?(m?'Seguir con mi ciudad':'Fundar mi ciudad'):'Ver mi ciudad')+'</button></div></div>';}).join("");
+    Array.prototype.forEach.call(z.querySelectorAll("[data-ciudad]"),function(b){b.onclick=function(){abreCiudad(b.getAttribute("data-ciudad"));};});
+  }).catch(function(){});
+}
+function tabCiudad(c,t){
+  t.innerHTML='<p class="fine">Cargando…</p>';
+  api("/api/ciudad/desafios?course="+c.code).then(function(r){
+    if(!t.isConnected)return;
+    t.innerHTML='<p class="fine">Un desafío de ciudad es un mundo propio de Ciudad Saber para este curso: cada estudiante funda su ciudad junto a las de sus compañeros, '+
+        'resuelve apagones, sequías, atascos y otros problemas respondiendo preguntas de energía, agua, transporte, urbanismo, ambiente, salud, seguridad, educación, economía, cultura e ingeniería básica, '+
+        'y tú ves sus aciertos por tema.</p>'+
+      (c.archived?'':'<form class="rt-form" id="cd-form"><label>Nombre del desafío<input id="cd-nom" maxlength="60" required placeholder="Ciudad sostenible"></label>'+
+        '<div class="rt-2"><label>Días abierto<input id="cd-dias" type="number" min="1" max="120" value="14"></label><label>Meta de habitantes (opcional)<input id="cd-pob" type="number" min="0" placeholder="500"></label></div>'+
+        '<div class="rt-2"><label>Meta de felicidad % (opcional)<input id="cd-fel" type="number" min="0" max="100" placeholder="60"></label><label>Meta de aciertos (opcional)<input id="cd-con" type="number" min="0" placeholder="10"></label></div>'+
+        '<div class="actions"><button class="primary" type="submit" id="cd-go">Crear desafío</button></div><p class="msg" id="cd-msg"></p></form>')+
+      '<div id="cd-lista">'+(r.desafios.length?r.desafios.map(function(d){
+        return '<div class="rt-card"><span class="rt-card-top"><b>🏙️ '+esc(d.nombre)+'</b><span class="chip'+(d.abierto?' activo':'')+'">'+(d.abierto?'hasta '+fecha(d.ends_at):'terminado')+'</span></span>'+
+          '<small>'+d.ciudades+(d.ciudades===1?' ciudad':' ciudades')+(d.meta?' · Meta: '+esc(metaCiudad(d.meta)):'')+'</small>'+
+          '<div class="actions"><button type="button" class="primary" data-rep="'+d.code+'">Reporte</button><button type="button" class="ghost" data-ver="'+d.code+'">Ver el mundo</button>'+
+          (d.abierto?'<button type="button" class="ghost" data-cerrar="'+d.code+'">Cerrar ahora</button>':'')+'</div></div>';}).join(""):'<p class="fine">Todavía no hay desafíos de ciudad.</p>')+'</div><div id="cd-rep"></div>';
+    if($("cd-form"))$("cd-form").onsubmit=function(e){e.preventDefault(); $("cd-go").disabled=true;
+      api("/api/ciudad/desafios",{course:c.code,nombre:$("cd-nom").value,dias:$("cd-dias").value,meta:{pob:$("cd-pob").value,fel:$("cd-fel").value,con:$("cd-con").value}})
+        .then(function(){tabCiudad(c,t);}).catch(function(er){$("cd-go").disabled=false;aviso("cd-msg",ERR(er),true);});};
+    Array.prototype.forEach.call(t.querySelectorAll("[data-rep]"),function(b){b.onclick=function(){
+      var z=$("cd-rep"), card=b.closest(".rt-card"); if(card&&card.parentNode)card.parentNode.insertBefore(z,card.nextSibling); reporteCiudad(b.getAttribute("data-rep"),z);};});
+    Array.prototype.forEach.call(t.querySelectorAll("[data-ver]"),function(b){b.onclick=function(){abreCiudad(b.getAttribute("data-ver"));};});
+    Array.prototype.forEach.call(t.querySelectorAll("[data-cerrar]"),function(b){b.onclick=function(){
+      if(!confirm("¿Cerrar el desafío ahora? Las ciudades quedarán solo para mirar."))return;
+      api("/api/ciudad/desafios/"+b.getAttribute("data-cerrar")+"/cerrar",{}).then(function(){tabCiudad(c,t);}).catch(function(er){alert(ERR(er));});};});
+  }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(e&&e.error==="ciudad_not_configured"?"Faltan las tablas de Ciudad Saber en la base de datos (ver SETUP.md).":ERR(e))+'</p>';});
+}
+function reporteCiudad(code,z){
+  z.innerHTML='<p class="fine">Cargando el reporte…</p>';
+  api("/api/ciudad/reporte?mundo="+code).then(function(R){
+    if(!z.isConnected)return;
+    var temas=Object.keys(R.nombres), meta=R.mundo.meta;
+    var pct=function(x){return x&&x[1]?Math.round(100*x[0]/x[1]):null;};
+    var clase=temas.filter(function(k){return R.temas[k];}).map(function(k){var p=pct(R.temas[k]);
+      return '<span><b>'+esc(R.nombres[k])+'</b><i style="--p:'+p+'%"></i><small>'+p+' % · '+R.temas[k][1]+'</small></span>';}).join("");
+    z.innerHTML='<h4>Reporte · '+esc(R.mundo.nombre)+'</h4>'+
+      (clase?'<p class="fine">Aciertos del curso por tema (lo más bajo es lo que conviene repasar):</p><div class="cs-temas cd-temas">'+clase+'</div>':'<p class="fine">Todavía nadie respondió preguntas.</p>')+
+      '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Estudiante</th><th>Ciudad</th><th>Habitantes</th><th>Felicidad</th><th>Aciertos</th><th>Puntaje</th><th>Minutos</th>'+(meta?'<th>Meta</th>':'')+
+        temas.map(function(k){return '<th>'+esc(R.nombres[k])+'</th>';}).join("")+'</tr></thead><tbody>'+
+      R.alumnos.map(function(a){return '<tr><td>'+esc(a.name)+'<small>'+esc(a.email)+'</small></td><td>'+(a.jugo?esc(a.ciudad):'<i>sin empezar</i>')+'</td><td>'+a.pob+'</td><td>'+a.fel+' %</td>'+
+        '<td>'+a.aciertos+'/'+a.preguntas+'</td><td>'+a.puntaje+'</td><td>'+a.minutos+'</td>'+(meta?'<td class="'+(a.cumple?'ok':'mal')+'">'+(a.cumple?'✓':'—')+'</td>':'')+
+        temas.map(function(k){var p=pct(a.temas[k]);return '<td>'+(p==null?'—':p+' %')+'</td>';}).join("")+'</tr>';}).join("")+
+      '</tbody></table></div>'+(R.alumnos.length?'':'<p class="fine">No hay estudiantes activos en el curso.</p>')+
+      '<div class="actions"><button type="button" class="ghost" id="cd-xls">Descargar Excel</button></div>';
+    $("cd-xls").onclick=function(){
+      var cab=["Estudiante","Correo","Ciudad","Habitantes","Felicidad %","Aciertos","Preguntas","Puntaje","Minutos"].concat(meta?["Cumple la meta"]:[]).concat(temas.map(function(k){return R.nombres[k]+" %";}));
+      var filas=[cab].concat(R.alumnos.map(function(a){return [a.name,a.email,a.ciudad,a.pob,a.fel,a.aciertos,a.preguntas,a.puntaje,a.minutos].concat(meta?[a.cumple?"sí":"no"]:[])
+        .concat(temas.map(function(k){var p=pct(a.temas[k]);return p==null?"":p;}));}));
+      AxExcel.descarga(AxExcel.escribir([{nombre:"Ciudad",filas:filas,anchos:[28,30,20,12,12,10,10,10,10].concat(meta?[14]:[]).concat(temas.map(function(){return 12;}))}]),
+        ("Ciudad - "+R.mundo.nombre).replace(/[\\/:*?"<>|]+/g," ").trim()+".xlsx");
+    };
+    if(z.scrollIntoView)z.scrollIntoView({behavior:"smooth",block:"start"});
+  }).catch(function(e){z.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
 }
 /* ---------- libreta de notas ---------- */
 function celda(q,x){
