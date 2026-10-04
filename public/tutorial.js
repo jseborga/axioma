@@ -420,15 +420,16 @@ GUIAS.rapido=[
    return tarjetas(Object.keys(F.JUEGOS).map(function(k){var j=F.JUEGOS[k];return [j.icono+" "+j.nom,j.gente];}));}}
 ];
 GUIAS.granja=[
-{t:"Granja Express",d:"Un arcade de 8 bits de estrategia y velocidad: siembra, fabrica y entrega los pedidos antes de que se vayan. Tres minutos para juntar todas las monedas que puedas.",
+{t:"Granja Express",d:"Un arcade de 8 bits de estrategia y velocidad: siembra, fabrica y entrega los pedidos antes de que se vayan, y acierta preguntas para mejorar tu granja. Cuatro minutos para juntar todas las monedas que puedas.",
  a:function(){return ico("🚜");}},
 {t:"Cómo se juega",d:"",
  a:function(){return pasos([["Siembra","Elige la semilla a la derecha y toca una parcela vacía. Cuando brille, tócala para cosechar: cada parcela da 2."],
    ["Fabrica","Toca una fábrica para ponerla a trabajar (hasta 3 en cola): el molino hace harina con 2 de trigo, el horno pan con harina… Lo hecho va solo al granero."],
    ["Entrega","Arriba llegan los pedidos en camión, tren, avión y barco. Cuando tengas todo (sale con borde verde), tócalo. La barra de abajo es su plazo; la ✕ lo descarta."],
-   ["Sube de nivel","Con 100, 300 y 650 monedas se abren la zanahoria, el gallinero, los jugos, la pastelería y más andenes."]]);}},
+   ["Sube de nivel","Con 100, 300 y 650 monedas se abren la zanahoria, el gallinero, los jugos, la pastelería y más andenes."],
+   ["Acierta y mejora","Cada 40 s se enciende «¡Pregunta!» (junto a las fábricas). La granja se detiene mientras respondes; si aciertas ganas 10 monedas y eliges una de tres mejoras: abono, parcela nueva, granero grande, fábricas turbo, cosecha triple, vida extra… Las preguntas son de cultura general y no se repiten."]]);}},
 {t:"Trucos",d:"",
- a:function(){return tarjetas([["Combo","Si entregas otro pedido antes de 8 s, cada entrega vale un 10 % más (hasta +50 %)."],["Rapidez","Cuanto antes entregues, más monedas extra."],
+ a:function(){return tarjetas([["Combo","Si entregas otro pedido antes de 10 s, cada entrega vale un 10 % más (hasta +50 %)."],["Rapidez","Cuanto antes entregues, más monedas extra."],
    ["Granero","Caben 24. Si se llena, entrega o usa «Vender» (a mitad de precio)."],["Vidas","Si se te va un pedido pierdes una; con tres perdidas se acaba la partida."]]);}},
 {t:"Dónde se juega",d:"",
  a:function(){return tarjetas([["La granja del día","La misma para todos; cuenta tu mejor partida del día y hay ranking. Suma en el ranking de tus grupos."],

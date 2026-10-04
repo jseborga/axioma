@@ -8,13 +8,21 @@
      POST /api/granja/dia/empieza   → { day, datos }
      POST /api/granja/dia/termina   { envio:{a,fin} } → { score, best, mejoro, rank, total }
      GET  /api/granja/ranking?day=N → { day, top:[…], me, total }
+     POST /api/granja/preguntas     { seed, evita:[id…] } → preguntas de mejora sin la respuesta,
+                                    sin repetir las vistas en 60 días (con cuenta) o las que manda el teléfono
+     POST /api/granja/responde      { seed, id, o } → { ok, correcta, dato }
    =========================================================== */
 import "../public/rapidos-motor.js";
 import "../public/granja-motor.js";
 import { esInvitado } from "./aula.js";
+import { fichas, preguntaGranja, CATEGORIAS } from "./preguntas.js";
 
 var R=globalThis.AxRapidos, A=globalThis.AxGranja;
-var TOP=20;
+var TOP=20, VISTAS_MS=60*86400000, MAX_PREG=10;
+
+/* las respuestas a las preguntas de mejora las comprueba el banco del servidor
+   (vale para la granja del día, los retos y las competencias) */
+A.oraculo=function(id,opcion,seed){var p=preguntaGranja(id,seed); return p?opcion===p.c:null;};
 
 export function datosDelDia(day){return R.genera("granja",R.semilla("granja:"+day));}
 
@@ -23,6 +31,8 @@ export async function handleGranja(req,env,url,path,ctx){
   if(!env.DB)return json({error:"not_configured"},null,503);
   try{
     if(path==="/granja/ranking"&&req.method==="GET")return await ranking(env,user,url,ctx);
+    if(path==="/granja/preguntas"&&req.method==="POST")return await preguntas(req,env,user,ctx);
+    if(path==="/granja/responde"&&req.method==="POST")return await responde(req,env,user,ctx);
     if(!user)return json({error:"unauthorized"},null,401);
     if(esInvitado(user))return json({error:"google_required"},null,403);
     if(path==="/granja/dia/empieza"&&req.method==="POST")return await empieza(env,user,ctx);
@@ -74,4 +84,30 @@ async function ranking(env,user,url,ctx){
       me={rank:p.n+1,score:m.best};}
   }
   return ctx.json({day:day,top:top,me:me,total:tot.n});
+}
+
+/* ---------- preguntas de mejora ---------- */
+function vistas(env,uid){
+  if(!uid)return Promise.resolve([]);
+  return env.DB.prepare("SELECT qid FROM preguntas_vistas WHERE quien=? AND visto_at>? ORDER BY visto_at").bind(uid,Date.now()-VISTAS_MS).all()
+    .then(function(r){return (r.results||[]).map(function(x){return x.qid;});},function(){return [];});
+}
+async function preguntas(req,env,user,ctx){
+  var b=await req.json().catch(function(){return {};}), seed=parseInt(b.seed,10)>>>0;
+  var evita=(Array.isArray(b.evita)?b.evita:[]).slice(-600).map(function(x){return String(x).slice(0,24);});
+  var uid=user&&!esInvitado(user)?user.id:null;
+  evita=(await vistas(env,uid)).concat(evita);
+  var al=crypto.getRandomValues(new Uint32Array(1))[0];
+  /* fácil y medio, sin cálculo: preguntas de cultura general variadas */
+  var ids=fichas(al,2,false,MAX_PREG,{evita:evita}).filter(function(f){return f.charAt(0)==="q";}).map(function(f){return f.slice(1);});
+  return ctx.json({preguntas:ids.map(function(id){var p=preguntaGranja(id,seed); return {id:id,q:p.q,o:p.o,area:CATEGORIAS[p.cat]||""};})});
+}
+async function responde(req,env,user,ctx){
+  var b=await req.json().catch(function(){return {};}), seed=parseInt(b.seed,10)>>>0, o=parseInt(b.o,10);
+  var p=preguntaGranja(String(b.id||""),seed);
+  if(!p)return ctx.json({error:"not_found"},null,404);
+  if(user&&!esInvitado(user)){
+    try{await env.DB.prepare("INSERT INTO preguntas_vistas(quien,qid,visto_at) VALUES(?,?,?) ON CONFLICT(quien,qid) DO UPDATE SET visto_at=excluded.visto_at").bind(user.id,p.id,Date.now()).run();}catch(e){}
+  }
+  return ctx.json({ok:o===p.c,correcta:p.c,dato:p.dato});
 }

@@ -1,26 +1,27 @@
 # Granja Express
 
 Un arcade de 8 bits de **estrategia y velocidad**, inspirado en los juegos de granja y
-pueblo, pero en partidas de 3 minutos: siembras, fabricas y entregas los pedidos antes
-de que se vayan. Menú → **Granja Express** (o la tarjeta de la portada).
+pueblo, pero en partidas cortas: siembras, fabricas y entregas los pedidos antes
+de que se vayan, y aciertas preguntas de cultura general para mejorar tu granja. Partidas
+de 4 minutos. Menú → **Granja Express** (o la tarjeta de la portada).
 
 ## Cómo se juega
 
 | Parte | Qué hace |
 | --- | --- |
-| **Parcelas** (6) | Elige la semilla a la derecha y toca una parcela vacía. Cuando brilla, tócala: cada parcela da **2**. Trigo 4 s, maíz 6 s, zanahoria 5 s. |
+| **Parcelas** (6, hasta 8 con mejoras) | Elige la semilla y toca una parcela vacía. Cuando brilla, tócala: cada parcela da **2**. Trigo 6 s, maíz 9 s, zanahoria 7,5 s. |
 | **Fábricas** | Toca una para ponerla a trabajar (hasta 3 en cola). Lo hecho va solo al granero. |
-| **Pedidos** | Llegan en camión, tren, avión y barco con su plazo (la barra de abajo). Con todo listo, el borde se pone verde: tócalo para entregar. La ✕ lo descarta (sin castigo, pero el andén tarda 8 s en llenarse). |
+| **Pedidos** | Llegan en camión, tren, avión y barco con su plazo (la barra de abajo). Con todo listo, el borde se pone verde: tócalo para entregar. La ✕ lo descarta (sin castigo, pero el andén tarda 10 s en llenarse). |
 | **Granero** | Caben 24. «Vender» saca productos a mitad de precio para no quedarse sin sitio. |
 | **Vidas** | 3. Cada pedido que se va quita una; sin vidas se acaba la partida. |
 
 | Fábrica | Receta | Tiempo | Nivel |
 | --- | --- | --- | --- |
-| Molino | 2 trigo → harina | 4 s | 1 |
-| Horno | 1 harina → pan | 5 s | 1 |
-| Gallinero | 1 maíz → huevo | 4 s | 2 |
-| Jugos | 2 zanahorias → jugo | 4 s | 2 |
-| Pastelería | harina + huevo + zanahoria → torta | 7 s | 3 |
+| Molino | 2 trigo → harina | 6 s | 1 |
+| Horno | 1 harina → pan | 7 s | 1 |
+| Gallinero | 1 maíz → huevo | 6 s | 2 |
+| Jugos | 2 zanahorias → jugo | 6 s | 2 |
+| Pastelería | harina + huevo + zanahoria → torta | 10 s | 3 |
 
 **Niveles dentro de la partida:** con 100, 300 y 650 monedas se sube al nivel 2, 3 y 4:
 zanahoria, gallinero y jugos, un tercer andén, la pastelería y, en el 4, un cuarto andén
@@ -28,14 +29,39 @@ zanahoria, gallinero y jugos, un tercer andén, la pastelería y, en el 4, un cu
 
 **Monedas por pedido:** el valor de lo que lleva (+15 % por nivel), más un extra por la
 rapidez (cuanto más plazo sobra, más) y el **combo**: si entregas otro pedido antes de
-8 s, cada entrega vale un 10 % más (hasta +50 %).
+10 s, cada entrega vale un 10 % más (hasta +50 %).
+
+## Preguntas de mejora
+
+A los 25 s y luego cada 40 s se enciende **«¡Pregunta!»** junto a las fábricas (hasta 10
+por partida). Al tocarla, **la granja se detiene** y sale una pregunta de cultura general
+con cuatro opciones y 20 s para responder. Si aciertas: **+10 monedas** y eliges **una
+de tres mejoras** (al azar entre las que te quedan):
+
+| Mejora | Efecto | Veces |
+| --- | --- | --- |
+| Abono | Los cultivos crecen un 20 % más rápido | 2 |
+| Parcela nueva | Una parcela más | 2 |
+| Granero grande | 8 lugares más en el granero | 2 |
+| Fábricas turbo | Las fábricas trabajan un 20 % más rápido | 2 |
+| Cola larga | Cada fábrica acepta 4 en cola | 1 |
+| Cosecha triple | Cada parcela da 3 | 1 |
+| Vida extra | Un corazón más | 1 |
+| Clientes pacientes | Los pedidos nuevos esperan un 25 % más | 2 |
+| Buen precio | Cada entrega paga un 15 % más | 2 |
+
+Las preguntas salen del **banco del servidor** (más de mil, de todas las áreas) y **no se
+repiten**: con cuenta, no vuelven las que respondiste en los últimos 60 días; sin cuenta,
+el teléfono recuerda las suyas. La respuesta correcta nunca llega antes al teléfono, y al
+repetir la partida el servidor comprueba cada respuesta con su banco: decir que se acertó
+una pregunta fallada invalida la partida.
 
 ## Modos
 
 - **La granja del día:** la misma para todo el mundo (semilla del día). Se juega cuantas
   veces se quiera y cuenta la mejor partida; ranking del día. Suma 2 puntos por día en el
   ranking semanal de los **grupos de amigos** y aparece en «Mis partidas».
-- **Práctica:** una granja nueva cada vez; la mejor marca se guarda en el teléfono.
+- **Práctica:** una granja nueva cada vez (4 minutos); la mejor marca se guarda en el teléfono.
 - **Sin fin:** sin reloj, hasta que se escapen tres pedidos; los plazos se acortan con el
   tiempo (hasta un 40 %). Máximo 20 minutos.
 - **Retos:** «Granja Express» y «Granja sin fin» aparecen como juegos rápidos al crear un
@@ -52,15 +78,18 @@ semilla (`public/granja-motor.js`, el mismo archivo en el navegador y en el Work
 navegador guarda cada toque como `[paso, acción, …]` y, al terminar, envía esa lista. El
 servidor **repite la partida entera** y calcula él las monedas: una acción imposible
 (cosechar sin sembrar, entregar sin tener) invalida el envío. Además compara la duración
-simulada con su reloj: no se puede enviar una partida de 3 minutos jugada en 5 segundos.
+simulada con su reloj (descontando las pausas de las preguntas): no se puede enviar una partida
+de 4 minutos jugada en 5 segundos.
 La simulación avanza con el reloj real aunque la pestaña quede en segundo plano.
 
 ## Técnica
 
+- Entorno de granja: cielo con nubes y vías del tren bajo los pedidos, pasto y cerca en el
+  campo, camino de tierra para las fábricas y piso de madera con cajones en el granero.
 - Pantalla ordenada por secciones en el orden en que se juega: **pedidos** (lo que hay
   que entregar, con «tengo/falta» por producto), **campo** (parcelas y semillas),
   **fábricas** (cada una muestra su receta: entradas → salida) y **granero**.
-- Lienzo lógico de 192×284 con tantos píxeles reales como la pantalla: los sprites de
+- Lienzo lógico de 192×302 con tantos píxeles reales como la pantalla: los sprites de
   8 bits (10×10, dibujados por código, igual que edificios y vehículos) quedan nítidos y
   los textos se leen. Sin imágenes ni librerías: unos 40 KB, funciona sin conexión.
 - Sonido de 8 bits con WebAudio (se puede silenciar).

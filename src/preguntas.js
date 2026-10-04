@@ -415,6 +415,13 @@ export function fichas(seed,dif,conMates,n,opts){
   }
   return out;
 }
+/* Granja Express: una pregunta del banco con sus opciones en un orden que depende de la
+   partida (semilla) y de la pregunta; así el servidor puede comprobar la opción elegida */
+export function preguntaGranja(id,seed){
+  var b=POR_ID[id]; if(!b)return null;
+  var op=opciones(b[3],b.slice(4,7),rng(semilla("granja:"+seed+":"+id)));
+  return {id:id,cat:b[1],nivel:b[0],q:b[2],o:op.o,c:op.c,dato:b[7]||""};
+}
 /* de fichas a preguntas: cada una con su propio azar, estable */
 export function materializa(seed,lista){
   return lista.map(function(f,i){

@@ -1144,7 +1144,7 @@ function crearCampana(o){
     '<form class="rt-form" id="cp-form">'+
     '<label>Nombre<input id="cp-n" maxlength="60" required placeholder="Desafío de reflejos de aniversario"></label>'+
     '<label>Juego<select id="cp-j"><optgroup label="Juegos rápidos">'+Object.keys(J).filter(function(k){return k.indexOf("granja")<0;}).map(function(k){return '<option value="'+k+'">'+J[k].icono+' '+J[k].nom+' · '+J[k].dur+'</option>';}).join("")+'</optgroup>'+
-      (J.granja?'<optgroup label="Arcade"><option value="granja">🚜 Granja Express · 3 min</option></optgroup>':'')+
+      (J.granja?'<optgroup label="Arcade"><option value="granja">🚜 Granja Express · 4 min</option></optgroup>':'')+
       (XM?'<optgroup label="Sin fin: se juega hasta perder">'+Object.keys(MJ).map(function(k){return '<option value="'+k+'">'+MJ[k].icono+' '+MJ[k].nom+'</option>';}).join("")+
         (J.granja_sinfin?'<option value="granja_sinfin">🚜 Granja sin fin</option>':'')+'</optgroup>':'')+'</select></label>'+
     '<p class="fine" id="cp-jd"></p>'+

@@ -107,7 +107,7 @@ consentimiento de su tutor, como en las convocatorias con premio. Tablas:
 
 ### Granja Express con tu marca
 
-En **Nueva competencia**, el grupo «Arcade» trae **Granja Express** (3 minutos) y el
+En **Nueva competencia**, el grupo «Arcade» trae **Granja Express** (4 minutos, con preguntas de mejora) y el
 grupo «Sin fin», **Granja sin fin**. El camión de reparto lleva el logo y el color de tu
 marca, y puedes poner el nombre de tus productos en lugar de «Pan», «Jugo» y «Torta».
 El premio por puntaje se mide en monedas. Ver [GRANJA.md](GRANJA.md).
