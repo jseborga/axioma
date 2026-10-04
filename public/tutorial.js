@@ -456,7 +456,7 @@ GUIAS.ciudad=[
    ["Impuestos","En 🏛️ Alcaldía: más impuestos dan más dinero, pero bajan la felicidad y frenan el crecimiento."],
    ["Contaminación","La industria y la central térmica contaminan; los parques, el reciclaje y la depuradora limpian."]]);}},
 {t:"Vecinos y desafíos",d:"",
- a:function(){return tarjetas([["Mundo abierto","Tus vecinos ven tu ciudad y tú la suya (🌍 Vecinos), con ranking del mundo. Puntaje: habitantes × felicidad + 30 por acierto + cultura."],
+ a:function(){return tarjetas([["Mundo abierto","Tus vecinos ven tu ciudad y tú la suya (🌍 Vecinos, o 🌐 para ver el mundo desde arriba), con ranking del mundo. Lo que hacen te llega al guardar y cada minuto. Puntaje: habitantes × felicidad + 30 por acierto + cultura + 200 por época."],
    ["Desafíos de curso","El docente crea un mundo para su curso, con fechas y metas, y ve un reporte de aciertos por tema de cada estudiante."]],
    "Tu ciudad se guarda sola cada ~40 s: el servidor repite lo que hiciste con su propio banco de preguntas, así que nadie puede inventar una ciudad o un acierto.");}}
 ];
