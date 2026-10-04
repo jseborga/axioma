@@ -217,7 +217,17 @@ function mapas(s){
   var tipo=s.tipo, cable=s.cable, tubo=s.tubo;
   var redE=componentes(function(i){return cable[i]||(tipo[i]&&tipo[i]!=="c");});
   var redA=componentes(function(i){return tubo[i]||(tipo[i]&&tipo[i]!=="c");});
-  return s.cache={cov:cov,feliz:feliz,cont:cont,occ:occ,res:res,redE:redE,redA:redA};
+  /* el valor del suelo de las zonas residenciales y comerciales: lo suben los parques y la cultura, los servicios,
+     el aire limpio y tener agua cerca; lo baja la contaminación. Con valor alto, el barrio se vuelve acomodado */
+  var valor=new Float32Array(N);
+  for(var k2=0;k2<occ.length;k2++){ i=occ[k2]; t=tipo[i]; if(t!=="R"&&t!=="C")continue;
+    dx=Math.floor(i/LADO)-R; dy=i%LADO-R;
+    var v=0.3+Math.min(0.3,feliz[i]*0.025)+0.07*((cov.seg[i]?1:0)+(cov.sal[i]?1:0)+(cov.edu[i]?1:0))-Math.min(0.45,cont[i]*0.09);
+    var agua=false; for(var ax=-2;ax<=2&&!agua;ax++)for(var ay=-2;ay<=2;ay++){ if(Math.abs(ax)+Math.abs(ay)>2)continue; if(terr(s,dx+ax,dy+ay)==="w"){agua=true;break;} }
+    if(agua)v+=0.12;
+    valor[i]=Math.max(0,Math.min(1,v));
+  }
+  return s.cache={cov:cov,feliz:feliz,cont:cont,occ:occ,res:res,redE:redE,redA:redA,valor:valor};
 }
 /* grupos de casillas unidas en cruz que cumplen cond (recorrido determinista, de la casilla 0 a la N−1) */
 function componentes(cond){
@@ -236,15 +246,18 @@ function componentes(cond){
   }
   return {comp:comp,n:n};
 }
+/* 0 popular, 1 clase media, 2 acomodado (o comercio de lujo) */
+var RIQ_R=[1,1.2,1.45], RIQ_C=[1,1.25,1.6];
+function riqueza(v){return v<0.42?0:v<0.66?1:2;}
 function calcula(s){
   var m=mapas(s), cov=m.cov, i, t, e, l, k, occ=m.occ, res=m.res;
-  var st={pob:0,empC:0,empI:0,mwCap:s.bonoMW,mwUso:0,agCap:s.bonoAgua,agUso:0,calles:0,mant:0,cultura:0,edif:0,R:0,C:0,I:0};
+  var st={pob:0,empC:0,empI:0,pobPond:0,empCPond:0,pobRica:0,mwCap:s.bonoMW,mwUso:0,agCap:s.bonoAgua,agUso:0,calles:0,mant:0,cultura:0,edif:0,R:0,C:0,I:0};
   var cE=m.redE.comp, cA=m.redA.comp, useE=new Float64Array(m.redE.n), capE=new Float64Array(m.redE.n), useA=new Float64Array(m.redA.n), capA=new Float64Array(m.redA.n), u;
   for(k=0;k<occ.length;k++){i=occ[k]; t=s.tipo[i]; e=EDIF[t]; l=s.nivel[i];
     st.mant+=e.mant;
     if(t==="c"){st.calles++;continue;}
-    if(t==="R"){st.pob+=POB[l];u=MW_R[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_R[l];st.agUso+=u;useA[cA[i]]+=u;st.R++;continue;}
-    if(t==="C"){st.empC+=EMPC[l];u=MW_C[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_C[l];st.agUso+=u;useA[cA[i]]+=u;st.C++;continue;}
+    if(t==="R"){st.pob+=POB[l]; var rq=riqueza(m.valor[i]); st.pobPond+=POB[l]*RIQ_R[rq]; if(rq===2)st.pobRica+=POB[l];u=MW_R[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_R[l];st.agUso+=u;useA[cA[i]]+=u;st.R++;continue;}
+    if(t==="C"){st.empC+=EMPC[l]; st.empCPond+=EMPC[l]*RIQ_C[riqueza(m.valor[i])];u=MW_C[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_C[l];st.agUso+=u;useA[cA[i]]+=u;st.C++;continue;}
     if(t==="I"){st.empI+=EMPI[l];u=MW_I[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_I[l];st.agUso+=u;useA[cA[i]]+=u;st.I++;continue;}
     st.edif++;
     if(e.mw){st.mwCap+=e.mw;capE[cE[i]]+=e.mw;} else {st.mwUso+=1;useE[cE[i]]+=1;}
@@ -317,7 +330,7 @@ function paso(s){
   /* cultura y economía */
   s.cultura+=st.cultura*0.1+st.pob/5000+0.05*rutas(s);
   if(s.tick%MES===0){
-    var imp=s.impuesto/10, ing=(st.pob*0.12+st.empC*0.15+st.empI*0.12)*imp*(s.techs.fiscal?1.1:1)*(1+0.08*Math.min(5,rutas(s)));
+    var imp=s.impuesto/10, ing=(st.pobPond*0.12+st.empCPond*0.15+st.empI*0.12)*imp*(s.techs.fiscal?1.1:1)*(1+0.08*Math.min(5,rutas(s)));
     var gas=st.mant+st.calles*0.02;
     s.dinero=Math.round((s.dinero+ing-gas)*100)/100;
     aviso(s,{tipo:"mes",ing:ing,gas:gas});
@@ -461,7 +474,7 @@ function resumen(s){var st=s.est||calcula(s);
   return {puntaje:puntaje(s),pob:st.pob,felicidad:st.felicidad,conocimiento:s.conocimiento,cultura:Math.round(s.cultura),radio:radio(s),
           dinero:Math.round(s.dinero),techs:Object.keys(s.techs).length,resueltos:s.resueltos,temas:s.temas,era:s.era,tratados:rutas(s)};}
 
-G.AxCiudad={TICK:TICK,R:R,LADO:LADO,N:N,SEPARA:SEPARA,MES:MES,MAX_SEG:MAX_SEG,EDIF:EDIF,TECHS:TECHS,PROBLEMAS:PROBLEMAS,TEMAS:TEMAS,ERAS:ERAS,INFLU:INFLU,COSTO_RED:COSTO_RED,
+G.AxCiudad={TICK:TICK,R:R,LADO:LADO,N:N,SEPARA:SEPARA,MES:MES,MAX_SEG:MAX_SEG,EDIF:EDIF,TECHS:TECHS,PROBLEMAS:PROBLEMAS,TEMAS:TEMAS,ERAS:ERAS,INFLU:INFLU,COSTO_RED:COSTO_RED,riqueza:riqueza,
   influencia:influencia,rutas:rutas,tope:tope,requisitos:requisitos,
   POB:POB,EMPC:EMPC,EMPI:EMPI,
   semilla:semilla,rng:rng,terreno:terreno,centroSlot:centroSlot,crea:crea,serializa:serializa,deserializa:deserializa,

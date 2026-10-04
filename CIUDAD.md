@@ -95,6 +95,41 @@ La electricidad y el agua llegan solo a lo que está **conectado** a una central
 
 Las redes son reglas del motor: el servidor las repite igual que el resto de cada tramo.
 
+## Valor del suelo, barrios ricos y comercio de lujo
+
+Cada casilla residencial o comercial tiene un **valor del suelo** (de 0 a 100 %), que el motor calcula con lo que la rodea:
+
+- Lo **suben** los parques, plazas, teatros, museos y monumentos cercanos (hasta +30 %), estar cubierta por policía, salud y
+  educación (+7 % cada uno) y tener **agua a la vista** (un lago o el mar a 2 casillas o menos, +12 %).
+- Lo **baja** la contaminación (hasta −45 %): una zona rica al lado de una fábrica no dura.
+
+Según su valor, el barrio es **popular** (menos de 42 %), de **clase media** (42–66 %) o **acomodado** (66 % o más):
+
+| | Clase media | Acomodado |
+|---|---|---|
+| Residencial: impuestos por habitante | ×1,2 | ×1,45 |
+| Comercial: impuestos por empleo | ×1,25 | ×1,6 |
+
+Así, planificar parques, cultura y servicios junto a las viviendas y las tiendas, y alejar la industria, se paga solo.
+
+Cada clase se ve distinta y según la época: la clase media suma jardincitos, balcones y toldos; los barrios acomodados son
+casas patricias con jardín (Antigüedad), casonas con torreón (Edad Media), palacetes con cúpula y fuente (Renacimiento),
+villas victorianas con cerca (Revolución Industrial), villas modernas con piscina, apartamentos de lujo con balcones,
+cornisa dorada y azotea verde, y **torres redondas** de cristal (Era Moderna y Digital, con terrazas verdes en la Digital).
+El comercio de lujo va del bazar con toldos y el mercado con soportales a la galería renacentista, los grandes almacenes,
+las boutiques de cristal con franja dorada y los rascacielos de cristal con corona dorada o redondos con aguja y baliza.
+
+Los edificios de las zonas se dibujan con **volumen suave**: degradados en las caras (la izquierda iluminada), un bisel claro
+en la arista del frente, sombra de contacto en la base y sombra proyectada difusa, sin esquinas bruscas. Para que esto no
+cueste en cada cuadro, cada combinación (zona, nivel, época, clase, variante, día o noche) se dibuja una vez y se guarda como
+imagen; lo que se mueve (humo, balizas, el resplandor nocturno) se pinta aparte. Las ciudades vecinas también muestran sus
+barrios ricos (su valor del suelo se calcula al cargarlas).
+
+- Capa 🗺️ **Valor del suelo**: rojo = popular, amarillo = clase media, verde = acomodado.
+- La ficha de la casilla (🔍) dice la clase del barrio y su valor, y qué lo sube.
+
+El valor del suelo es una regla del motor: el servidor la repite igual al validar cada tramo.
+
 ## Relieve y modo retro
 
 - **Relieve**: el mundo tiene colinas, laderas y valles (de 0, el agua, a 4 niveles). Cada casilla se inclina según sus cuatro
