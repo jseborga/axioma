@@ -3,7 +3,8 @@
    Vive solo en el servidor. Cada pregunta: [tema, pregunta,
    correcta, otra, otra, otra, dato]. Los temas son los de la
    ciudad: energía, agua, transporte, urbanismo, ambiente, salud,
-   seguridad, educación, economía, cultura e ingeniería básica.
+   seguridad, educación, economía, cultura, ingeniería básica e historia
+   (estas llevan además la época a la que dan paso).
    =========================================================== */
 var B=[
 /* ---------- energía ---------- */
@@ -224,7 +225,43 @@ var B=[
 ["ingenieria","¿Qué es la resistencia sísmica de un edificio?","Su capacidad de soportar terremotos sin colapsar","Su altura máxima","Su color","Su consumo de luz","Columnas, vigas bien unidas y cimientos adecuados son clave."],
 ["ingenieria","¿Cuántos centímetros tiene un metro?","100","10","1000","12","Y 1 km tiene 1000 metros."],
 ["ingenieria","¿Qué es el ángulo recto?","Un ángulo de 90 grados","Un ángulo de 45 grados","Un ángulo de 180 grados","Un ángulo de 360 grados","Las escuadras sirven para trazarlo en obra."],
-["ingenieria","Si un muro de 4 m de largo y 2,5 m de alto se pinta, ¿cuántos m² son?","10 m²","6,5 m²","8 m²","12 m²","Área = 4 × 2,5 = 10 m²."]
+["ingenieria","Si un muro de 4 m de largo y 2,5 m de alto se pinta, ¿cuántos m² son?","10 m²","6,5 m²","8 m²","12 m²","Área = 4 × 2,5 = 10 m²."],
+/* ---------- historia: la pregunta para pasar a cada época (el último número es la época) ---------- */
+["historia","¿Qué sistema organizaba la sociedad europea en la Edad Media, con señores, vasallos y siervos?","El feudalismo","La democracia","El capitalismo industrial","El socialismo","El señor daba tierra y protección a cambio de lealtad, trabajo y tributos.",1],
+["historia","¿Con qué hecho se suele marcar el inicio de la Edad Media (año 476)?","La caída del Imperio romano de Occidente","El descubrimiento de América","La Revolución francesa","La invención de la imprenta","Termina, según la convención, en 1453 o 1492.",1],
+["historia","¿Qué ruta comercial unía China con el Mediterráneo?","La Ruta de la Seda","El Camino de Santiago","El Qhapaq Ñan","La Ruta 66","Por ella viajaban seda, especias, papel e ideas.",1],
+["historia","¿Qué cultura levantó la ciudad de Tiwanaku junto al lago Titicaca?","La cultura tiwanaku","Los aztecas","Los mayas","Los romanos","Fue un gran centro ceremonial andino entre los años 500 y 1000.",1],
+["historia","¿Qué eran los gremios en las ciudades medievales?","Asociaciones de artesanos de un mismo oficio","Ejércitos de caballeros","Templos de piedra","Impuestos al trigo","Controlaban la calidad, los precios y el aprendizaje del oficio.",1],
+["historia","¿Para qué servían sobre todo las murallas de las ciudades medievales?","Para defenderse de los ataques","Para regar los campos","Para decorar la entrada","Para producir energía","Tener murallas y un mercado daba a una villa la categoría de ciudad.",1],
+["historia","¿Cuál se considera la universidad más antigua de Europa que sigue funcionando (1088)?","La de Bolonia","La de Harvard","La de San Andrés","La de Salamanca","Las universidades nacieron en la Edad Media como gremios de maestros y estudiantes.",1],
+["historia","¿Quién pintó la Mona Lisa?","Leonardo da Vinci","Pablo Picasso","Vincent van Gogh","Diego Velázquez","Leonardo también fue ingeniero e inventor: diseñó máquinas voladoras y puentes.",2],
+["historia","¿Qué invento de Gutenberg (hacia 1450) multiplicó los libros?","La imprenta de tipos móviles","El telescopio","La brújula","La máquina de vapor","Antes, cada libro se copiaba a mano.",2],
+["historia","¿En qué ciudad italiana nació el Renacimiento?","Florencia","Madrid","París","Lisboa","La familia Médici financió a artistas y científicos.",2],
+["historia","¿Qué propuso Nicolás Copérnico?","Que la Tierra gira alrededor del Sol","Que la Tierra es plana","Que el Sol gira alrededor de la Luna","Que las estrellas no existen","Es el modelo heliocéntrico (1543).",2],
+["historia","¿Qué ciudad se fundó en 1545 al pie del Cerro Rico por su plata?","Potosí","Sucre","Cusco","Quito","Llegó a ser una de las ciudades más pobladas del mundo en el siglo XVII.",2],
+["historia","¿Quién pintó el techo de la Capilla Sixtina?","Miguel Ángel","Leonardo da Vinci","Rafael Sanzio","Sandro Botticelli","Trabajó en él de 1508 a 1512.",2],
+["historia","¿En qué año llegó Cristóbal Colón a América?","1492","1592","1392","1810","Llegó a la isla de Guanahaní, en las Bahamas.",2],
+["historia","¿Qué máquina impulsó la Revolución Industrial?","La máquina de vapor","El motor eléctrico","La computadora","El panel solar","James Watt la perfeccionó hacia 1769.",3],
+["historia","¿En qué país comenzó la Revolución Industrial?","Gran Bretaña","Japón","Brasil","Rusia","Tenía carbón, hierro, capital y un gran comercio.",3],
+["historia","¿Qué combustible movía las primeras fábricas y locomotoras?","El carbón","El uranio","El hidrógeno","La gasolina","Por eso las ciudades industriales se llenaron de humo.",3],
+["historia","¿En qué año se fundó la República de Bolivia?","1825","1810","1879","1952","El Acta de Independencia se firmó en Chuquisaca (hoy Sucre).",3],
+["historia","¿Qué medio de transporte transformó los viajes y el comercio en el siglo XIX?","El ferrocarril","El avión","El automóvil eléctrico","El helicóptero","La primera línea pública de pasajeros con locomotora abrió en 1830 en Inglaterra.",3],
+["historia","¿Qué problema urbano creció con las fábricas del siglo XIX?","El hacinamiento y la contaminación","La falta de carbón","El exceso de bosques","La escasez de obreros","De ahí nacieron las primeras leyes de salud pública y urbanismo.",3],
+["historia","¿Quién desarrolló una bombilla incandescente práctica en 1879?","Thomas Edison","Isaac Newton","Galileo Galilei","Johannes Gutenberg","La luz eléctrica cambió el horario de las ciudades.",3],
+["historia","¿Qué popularizó Henry Ford con la cadena de montaje?","El automóvil","El avión","El tren","La bicicleta","El Ford T bajó tanto de precio que muchas familias pudieron comprarlo.",4],
+["historia","¿En qué año llegó el ser humano a la Luna?","1969","1959","1979","1989","Fue la misión Apolo 11.",4],
+["historia","¿Qué organización se fundó en 1945 para mantener la paz mundial?","La ONU","La FIFA","La OPEP","La Unesco","Bolivia es miembro fundador.",4],
+["historia","¿Qué científica ganó dos premios Nobel por sus estudios de la radiactividad?","Marie Curie","Ada Lovelace","Frida Kahlo","Rosalind Franklin","Ganó el de Física (1903) y el de Química (1911).",4],
+["historia","¿Qué trajo la Revolución Nacional de 1952 en Bolivia?","Voto universal, reforma agraria y nacionalización de las minas","La independencia de España","La fundación de La Paz","La guerra del Pacífico","Desde entonces votan también las mujeres y la población indígena.",4],
+["historia","¿Qué descubrió Alexander Fleming en 1928?","La penicilina","La aspirina","Los rayos X","La insulina","Fue el primer antibiótico de uso masivo.",4],
+["historia","¿Qué fuente de energía se empezó a usar tras la Segunda Guerra Mundial y usa uranio?","La nuclear","La solar","La eólica","La geotérmica","Una central nuclear calienta agua con la fisión del uranio.",4],
+["historia","¿Qué red mundial se popularizó en los años 90 con la World Wide Web?","Internet","El telégrafo","La radio AM","La televisión por cable","La web la inventó Tim Berners-Lee en 1989.",5],
+["historia","¿Qué es un algoritmo?","Una serie de pasos ordenados para resolver un problema","Un virus informático","Un tipo de pantalla","Un idioma antiguo","Las recetas de cocina también son algoritmos.",5],
+["historia","¿Qué es una ciudad inteligente?","Una que usa datos y tecnología para mejorar sus servicios","Una ciudad sin habitantes","Una ciudad solo con universidades","Una ciudad sin calles","Por ejemplo, semáforos que se ajustan al tráfico o sensores de calidad del aire.",5],
+["historia","¿Qué unidad mide la cantidad de información digital?","El byte","El voltio","El metro","El julio","Un byte son 8 bits; un gigabyte, unos mil millones de bytes.",5],
+["historia","¿Qué sistema usa satélites para ubicarte en un mapa?","El GPS","El Wi-Fi","El Bluetooth","El USB","Necesita la señal de al menos 4 satélites.",5],
+["historia","¿Qué es la inteligencia artificial?","Sistemas que aprenden de datos para realizar tareas","Robots que solo existen en las películas","Un tipo de batería","Una red eléctrica","Se usa en traductores, asistentes de voz y diagnósticos médicos.",5],
+["historia","¿Qué dispositivo junta teléfono, cámara e internet en el bolsillo?","El teléfono inteligente","El fax","El walkie-talkie","El telégrafo","El primero muy popular apareció en 2007.",5]
 ];
 
 import { semilla, rng, baraja } from "./preguntas.js";
@@ -238,9 +275,11 @@ export function preguntaCiudad(id,seg){
   var r=rng(semilla("ciudad:"+seg+":"+id)), o=[b[2],b[3],b[4],b[5]], orden=baraja([0,1,2,3],r);
   return {id:id,tema:b[0],q:b[1],o:orden.map(function(k){return o[k];}),c:orden.indexOf(0),dato:b[6]||""};
 }
-/* una pregunta del tema que la persona no haya visto (o la vista hace más tiempo) */
-export function eligeCiudad(tema,evita,al){
+/* una pregunta del tema que la persona no haya visto (o la vista hace más tiempo);
+   con «era», las de historia de esa época si quedan */
+export function eligeCiudad(tema,evita,al,era){
   var ids=(POR_TEMA[tema]||[]).slice(), visto={}; (evita||[]).forEach(function(x,i){visto[x]=i+1;});
+  if(era){var deEra=ids.filter(function(x){return POR_ID[x][7]===era;}); if(deEra.some(function(x){return !visto[x];}))ids=deEra;}
   var nuevas=ids.filter(function(x){return !visto[x];});
   if(nuevas.length)return nuevas[Math.floor(al*nuevas.length)];
   ids.sort(function(a,b){return visto[a]-visto[b];}); return ids[0]||null;

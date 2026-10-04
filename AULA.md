@@ -305,9 +305,9 @@ propio de [Ciudad Saber](CIUDAD.md) con nombre, días abierto y metas opcionales
 (habitantes, felicidad, aciertos). Los estudiantes activos lo ven en su curso y fundan su
 ciudad junto a las de sus compañeros; resuelven los problemas de su ciudad respondiendo
 preguntas de energía, agua, transporte, urbanismo, ambiente, salud, seguridad, educación,
-economía, cultura e ingeniería básica.
+economía, cultura, ingeniería básica e historia (para pasar de época: de la Antigüedad a la Era Digital).
 
-El **reporte** lista a cada estudiante (también a quien no empezó) con su ciudad,
+El **reporte** lista a cada estudiante (también a quien no empezó) con su ciudad, su época de la historia,
 habitantes, felicidad, aciertos/preguntas, puntaje, minutos jugados, si cumple la meta y su
 % de aciertos por tema, más el resumen del curso por tema. Se descarga en Excel. «Cerrar
 ahora» termina el desafío y las ciudades quedan para mirarlas.

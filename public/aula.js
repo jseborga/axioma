@@ -524,18 +524,18 @@ function reporteCiudad(code,z){
       return '<span><b>'+esc(R.nombres[k])+'</b><i style="--p:'+p+'%"></i><small>'+p+' % · '+R.temas[k][1]+'</small></span>';}).join("");
     z.innerHTML='<h4>Reporte · '+esc(R.mundo.nombre)+'</h4>'+
       (clase?'<p class="fine">Aciertos del curso por tema (lo más bajo es lo que conviene repasar):</p><div class="cs-temas cd-temas">'+clase+'</div>':'<p class="fine">Todavía nadie respondió preguntas.</p>')+
-      '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Estudiante</th><th>Ciudad</th><th>Habitantes</th><th>Felicidad</th><th>Aciertos</th><th>Puntaje</th><th>Minutos</th>'+(meta?'<th>Meta</th>':'')+
+      '<div class="tabla-wrap"><table class="tabla"><thead><tr><th>Estudiante</th><th>Ciudad</th><th>Época</th><th>Habitantes</th><th>Felicidad</th><th>Aciertos</th><th>Puntaje</th><th>Minutos</th>'+(meta?'<th>Meta</th>':'')+
         temas.map(function(k){return '<th>'+esc(R.nombres[k])+'</th>';}).join("")+'</tr></thead><tbody>'+
-      R.alumnos.map(function(a){return '<tr><td>'+esc(a.name)+'<small>'+esc(a.email)+'</small></td><td>'+(a.jugo?esc(a.ciudad):'<i>sin empezar</i>')+'</td><td>'+a.pob+'</td><td>'+a.fel+' %</td>'+
+      R.alumnos.map(function(a){return '<tr><td>'+esc(a.name)+'<small>'+esc(a.email)+'</small></td><td>'+(a.jugo?esc(a.ciudad):'<i>sin empezar</i>')+'</td><td>'+(a.jugo&&R.eras?esc(R.eras[a.era]||""):'—')+'</td><td>'+a.pob+'</td><td>'+a.fel+' %</td>'+
         '<td>'+a.aciertos+'/'+a.preguntas+'</td><td>'+a.puntaje+'</td><td>'+a.minutos+'</td>'+(meta?'<td class="'+(a.cumple?'ok':'mal')+'">'+(a.cumple?'✓':'—')+'</td>':'')+
         temas.map(function(k){var p=pct(a.temas[k]);return '<td>'+(p==null?'—':p+' %')+'</td>';}).join("")+'</tr>';}).join("")+
       '</tbody></table></div>'+(R.alumnos.length?'':'<p class="fine">No hay estudiantes activos en el curso.</p>')+
       '<div class="actions"><button type="button" class="ghost" id="cd-xls">Descargar Excel</button></div>';
     $("cd-xls").onclick=function(){
-      var cab=["Estudiante","Correo","Ciudad","Habitantes","Felicidad %","Aciertos","Preguntas","Puntaje","Minutos"].concat(meta?["Cumple la meta"]:[]).concat(temas.map(function(k){return R.nombres[k]+" %";}));
-      var filas=[cab].concat(R.alumnos.map(function(a){return [a.name,a.email,a.ciudad,a.pob,a.fel,a.aciertos,a.preguntas,a.puntaje,a.minutos].concat(meta?[a.cumple?"sí":"no"]:[])
+      var cab=["Estudiante","Correo","Ciudad","Época","Habitantes","Felicidad %","Aciertos","Preguntas","Puntaje","Minutos"].concat(meta?["Cumple la meta"]:[]).concat(temas.map(function(k){return R.nombres[k]+" %";}));
+      var filas=[cab].concat(R.alumnos.map(function(a){return [a.name,a.email,a.ciudad,a.jugo&&R.eras?String(R.eras[a.era]||"").replace(/^\S+\s/,""):"",a.pob,a.fel,a.aciertos,a.preguntas,a.puntaje,a.minutos].concat(meta?[a.cumple?"sí":"no"]:[])
         .concat(temas.map(function(k){var p=pct(a.temas[k]);return p==null?"":p;}));}));
-      AxExcel.descarga(AxExcel.escribir([{nombre:"Ciudad",filas:filas,anchos:[28,30,20,12,12,10,10,10,10].concat(meta?[14]:[]).concat(temas.map(function(){return 12;}))}]),
+      AxExcel.descarga(AxExcel.escribir([{nombre:"Ciudad",filas:filas,anchos:[28,30,20,20,12,12,10,10,10,10].concat(meta?[14]:[]).concat(temas.map(function(){return 12;}))}]),
         ("Ciudad - "+R.mundo.nombre).replace(/[\\/:*?"<>|]+/g," ").trim()+".xlsx");
     };
     if(z.scrollIntoView)z.scrollIntoView({behavior:"smooth",block:"start"});

@@ -9,10 +9,15 @@
 
      GET  /api/ciudad/mundos                 → { mundos:[{code,nombre,tipo,ends_at,abierto,ciudades,mia}] }
      POST /api/ciudad/entrar   {mundo}       → { mundo, slot, estado|null, nuevo, seg, cerrado }
-     POST /api/ciudad/guardar  {mundo,seg,envio:{a,fin}} → { ok, seg, resumen, rank, total }
+     POST /api/ciudad/guardar  {mundo,seg,envio:{a,fin}} → { ok, seg, resumen, rank, total, contactos }
      GET  /api/ciudad/vecinos?mundo=X        → { vecinos:[{slot,cx,cy,nombre,jugador,radio,tipo,nivel,pob}] }
      GET  /api/ciudad/ranking?mundo=X        → { top:[…], me, total }
-     POST /api/ciudad/pregunta {mundo,tema,evita} → { id, tema, q, o } (sin la respuesta, sin repetir en 60 días)
+     POST /api/ciudad/pregunta {mundo,tema,evita,era} → { id, tema, q, o } (sin la respuesta, sin repetir en 60 días;
+                                    con era, las de historia de esa época)
+   Encuentros: al guardar, el servidor mira qué vecinas tocan con su influencia
+   cultural (territorio + 7 por época) y lo apunta en la ciudad (s.contactos) antes
+   de guardarla; el navegador hace lo mismo con lo que recibe, así el tramo
+   siguiente parte del mismo estado. Con un contacto se puede firmar un tratado.
      POST /api/ciudad/responde {mundo,id,o}  → { ok, correcta, dato } (vale la primera respuesta)
    Desafíos de ciudad (docentes):
      GET  /api/ciudad/desafios?course=C      → { desafios:[…], manage }
@@ -84,7 +89,8 @@ async function mundo(env,code,uid){
 function abiertoAhora(w,now){return (!w.starts_at||now>=w.starts_at)&&(!w.ends_at||now<w.ends_at);}
 function publico(w,now){var meta=json(w.meta);
   return {code:w.code,nombre:w.nombre,tipo:w.tipo,curso:w.ref||null,starts_at:w.starts_at||null,ends_at:w.ends_at||null,abierto:abiertoAhora(w,now),meta:meta||null};}
-function miCiudad(c){return c?{slot:c.slot,nombre:c.nombre,puntaje:c.puntaje,poblacion:c.poblacion,felicidad:c.felicidad,conocimiento:c.conocimiento,updated_at:c.updated_at}:null;}
+function miCiudad(c){if(!c)return null; var m=/"era":(\d)/.exec(c.estado||"");
+  return {slot:c.slot,nombre:c.nombre,puntaje:c.puntaje,poblacion:c.poblacion,felicidad:c.felicidad,conocimiento:c.conocimiento,updated_at:c.updated_at,era:m?+m[1]:(c.estado?0:null)};}
 
 async function mundos(env,user,ctx){
   var now=Date.now(), w=await abierto(env);
@@ -157,6 +163,7 @@ async function guardar(req,env,user,ctx){
   try{ s=A.repite(c.estado,{mseed:w.seed>>>0,slot:c.slot,nombre:c.nombre},seg,envio); }
   finally{ A.oraculo=oraculoBanco; }
   if(!s)return ctx.json({error:"bad_result"},null,400);
+  s.contactos=(await alrededor(env,w,c.slot,user.id)).filter(function(v){return v.contacto(A.influencia(s));}).map(function(v){return v.slot;}).sort(function(a,b){return a-b;});
   var r=A.resumen(s), estado=A.serializa(s), nuevo=azar32();
   var u=await env.DB.prepare("UPDATE ciudad_ciudades SET estado=?,nombre=?,puntaje=?,poblacion=?,felicidad=?,conocimiento=?,temas=?,segundos=segundos+?,"+
     "seg_seed=?,seg_at=?,updated_at=? WHERE mundo=? AND user_id=? AND seg_seed=?")
@@ -165,36 +172,44 @@ async function guardar(req,env,user,ctx){
   await env.DB.prepare("DELETE FROM ciudad_respuestas WHERE mundo=? AND user_id=? AND seg<>?").bind(w.code,user.id,nuevo).run();
   var pos=await env.DB.prepare("SELECT COUNT(*) AS n FROM ciudad_ciudades WHERE mundo=? AND estado IS NOT NULL AND (puntaje>? OR (puntaje=? AND updated_at<?))").bind(w.code,r.puntaje,r.puntaje,now).first();
   var tot=await env.DB.prepare("SELECT COUNT(*) AS n FROM ciudad_ciudades WHERE mundo=? AND estado IS NOT NULL").bind(w.code).first();
-  return ctx.json({ok:true,seg:nuevo,resumen:r,rank:pos.n+1,total:tot.n});
+  return ctx.json({ok:true,seg:nuevo,resumen:r,rank:pos.n+1,total:tot.n,contactos:s.contactos});
 }
 
 /* ---------- vecinos: las ciudades de las ranuras de alrededor ---------- */
 function anillo(k){return k<=0?0:Math.ceil((Math.sqrt(k+1)-1)/2);}
-async function vecinos(env,user,url,ctx){
-  var m=await mundo(env,url.searchParams.get("mundo"),user.id);
-  if(!m||!m.juega)return ctx.json({error:"not_found"},null,404);
-  var w=m.w, c=await env.DB.prepare("SELECT slot FROM ciudad_ciudades WHERE mundo=? AND user_id=?").bind(w.code,user.id).first();
-  if(!c)return ctx.json({vecinos:[]});
-  var r=anillo(c.slot), desde=r>=2?(2*r-3)*(2*r-3):0, hasta=(2*r+3)*(2*r+3)-1, yo=A.centroSlot(c.slot);
+/* las ciudades de las 8 ranuras de alrededor, con su estado y si su influencia toca la mía */
+async function alrededor(env,w,slot,uid){
+  var r=anillo(slot), desde=r>=2?(2*r-3)*(2*r-3):0, hasta=(2*r+3)*(2*r+3)-1, yo=A.centroSlot(slot);
   var rows=((await env.DB.prepare("SELECT c.slot,c.nombre,c.estado,c.poblacion,c.puntaje,u.name FROM ciudad_ciudades c JOIN users u ON u.id=c.user_id "+
-    "WHERE c.mundo=? AND c.slot BETWEEN ? AND ? AND c.user_id<>? AND c.estado IS NOT NULL").bind(w.code,desde,hasta,user.id).all()).results)||[];
+    "WHERE c.mundo=? AND c.slot BETWEEN ? AND ? AND c.user_id<>? AND c.estado IS NOT NULL").bind(w.code,desde,hasta,uid).all()).results)||[];
   var out=[];
   rows.forEach(function(x){
     var p=A.centroSlot(x.slot); if(Math.max(Math.abs(p.x-yo.x),Math.abs(p.y-yo.y))>A.SEPARA)return;
     var e=json(x.estado); if(!e)return;
-    out.push({slot:x.slot,cx:p.x,cy:p.y,nombre:x.nombre,jugador:String(x.name||"").split(" ")[0],radio:A.radio(e),tipo:e.tipo,nivel:e.nivel,pob:x.poblacion,puntaje:x.puntaje});
+    var era=e.era==null?(/[ewsh]/.test(e.tipo)?3:0):e.era, radio=A.radio(e), inf=radio+A.INFLU*era, d=Math.hypot(p.x-yo.x,p.y-yo.y);
+    out.push({slot:x.slot,cx:p.x,cy:p.y,nombre:x.nombre,jugador:String(x.name||"").split(" ")[0],radio:radio,era:era,influencia:inf,distancia:Math.round(d*10)/10,
+      tipo:e.tipo,nivel:e.nivel,pob:x.poblacion,puntaje:x.puntaje,contacto:function(mia){return mia+inf>=d;}});
   });
-  return ctx.json({vecinos:out.slice(0,8)});
+  return out;
+}
+async function vecinos(env,user,url,ctx){
+  var m=await mundo(env,url.searchParams.get("mundo"),user.id);
+  if(!m||!m.juega)return ctx.json({error:"not_found"},null,404);
+  var c=await env.DB.prepare("SELECT slot FROM ciudad_ciudades WHERE mundo=? AND user_id=?").bind(m.w.code,user.id).first();
+  if(!c)return ctx.json({vecinos:[]});
+  var vs=(await alrededor(env,m.w,c.slot,user.id)).slice(0,8);
+  vs.forEach(function(v){delete v.contacto;});
+  return ctx.json({vecinos:vs});
 }
 
 async function ranking(env,user,url,ctx){
   var code=mundoCode(url.searchParams.get("mundo")||ABIERTO);
   if(!code)return ctx.json({error:"not_found"},null,404);
   if(code!==ABIERTO){var m=await mundo(env,code,user&&user.id); if(!m||!m.juega)return ctx.json({error:"not_found"},null,404);}
-  var rows=((await env.DB.prepare("SELECT c.user_id,c.nombre,c.puntaje,c.poblacion,c.felicidad,c.conocimiento,c.updated_at,u.name,u.picture FROM ciudad_ciudades c JOIN users u ON u.id=c.user_id "+
+  var rows=((await env.DB.prepare("SELECT c.user_id,c.nombre,c.puntaje,c.poblacion,c.felicidad,c.conocimiento,c.updated_at,json_extract(c.estado,'$.era') AS era,u.name,u.picture FROM ciudad_ciudades c JOIN users u ON u.id=c.user_id "+
     "WHERE c.mundo=? AND c.estado IS NOT NULL ORDER BY c.puntaje DESC,c.updated_at ASC LIMIT ?").bind(code,TOP).all()).results)||[];
   var tot=await env.DB.prepare("SELECT COUNT(*) AS n FROM ciudad_ciudades WHERE mundo=? AND estado IS NOT NULL").bind(code).first();
-  var top=rows.map(function(x,i){return {rank:i+1,name:x.name,picture:x.picture,ciudad:x.nombre,score:x.puntaje,pob:x.poblacion,fel:x.felicidad,con:x.conocimiento,me:!!(user&&x.user_id===user.id)};});
+  var top=rows.map(function(x,i){return {rank:i+1,name:x.name,picture:x.picture,ciudad:x.nombre,score:x.puntaje,pob:x.poblacion,fel:x.felicidad,con:x.conocimiento,era:x.era||0,me:!!(user&&x.user_id===user.id)};});
   var me=null;
   if(user){
     var c=await env.DB.prepare("SELECT puntaje,updated_at FROM ciudad_ciudades WHERE mundo=? AND user_id=? AND estado IS NOT NULL").bind(code,user.id).first();
@@ -219,7 +234,8 @@ async function pregunta(req,env,user,ctx){
   var evita=[];
   try{evita=(((await env.DB.prepare("SELECT qid FROM preguntas_vistas WHERE quien=? AND visto_at>? ORDER BY visto_at").bind(user.id,Date.now()-VISTAS_MS).all()).results)||[]).map(function(x){return x.qid;});}catch(e){}
   evita=evita.concat((Array.isArray(b.evita)?b.evita:[]).slice(-200).map(function(x){return String(x).slice(0,24);}));
-  var id=eligeCiudad(tema,evita,azar32()/4294967296), p=id&&preguntaCiudad(id,c.seg);
+  var era=parseInt(b.era,10); if(!(era>=1&&era<=5))era=0;
+  var id=eligeCiudad(tema,evita,azar32()/4294967296,era), p=id&&preguntaCiudad(id,c.seg);
   if(!p)return ctx.json({error:"not_found"},null,404);
   return ctx.json({id:p.id,tema:p.tema,q:p.q,o:p.o,seg:c.seg});
 }
@@ -284,7 +300,7 @@ async function reporte(env,user,url,ctx){
   if(!m||!m.gestiona)return ctx.json({error:"forbidden"},null,403);
   var w=m.w, now=Date.now();
   var rows=((await env.DB.prepare(
-    "SELECT u.id,u.name,u.email,cm.role,c.nombre,c.puntaje,c.poblacion,c.felicidad,c.conocimiento,c.temas,c.segundos,c.updated_at,c.estado IS NOT NULL AS jugo "+
+    "SELECT u.id,u.name,u.email,cm.role,c.nombre,c.puntaje,c.poblacion,c.felicidad,c.conocimiento,c.temas,c.segundos,c.updated_at,c.estado IS NOT NULL AS jugo,json_extract(c.estado,'$.era') AS era "+
     "FROM course_members cm JOIN users u ON u.id=cm.user_id LEFT JOIN ciudad_ciudades c ON c.mundo=? AND c.user_id=cm.user_id "+
     "WHERE cm.code=? AND cm.status='activo' AND cm.role='estudiante' ORDER BY c.puntaje DESC,u.name").bind(w.code,w.ref).all()).results)||[];
   var meta=json(w.meta)||{}, total={};
@@ -293,7 +309,7 @@ async function reporte(env,user,url,ctx){
     Object.keys(t).forEach(function(k){ac+=t[k][0]; in_+=t[k][1]; var g=total[k]||(total[k]=[0,0]); g[0]+=t[k][0]; g[1]+=t[k][1];});
     var cumple=!!x.jugo&&(!meta.pob||x.poblacion>=meta.pob)&&(!meta.fel||x.felicidad>=meta.fel)&&(!meta.con||x.conocimiento>=meta.con);
     return {id:x.id,name:x.name,email:x.email,jugo:!!x.jugo,ciudad:x.nombre||"",puntaje:x.puntaje||0,pob:x.poblacion||0,fel:x.felicidad||0,con:x.conocimiento||0,
-      aciertos:ac,preguntas:in_,temas:t,minutos:Math.round((x.segundos||0)/60),updated_at:x.updated_at||null,cumple:(meta.pob||meta.fel||meta.con)?cumple:null};
+      aciertos:ac,preguntas:in_,temas:t,era:x.era||0,minutos:Math.round((x.segundos||0)/60),updated_at:x.updated_at||null,cumple:(meta.pob||meta.fel||meta.con)?cumple:null};
   });
-  return ctx.json({mundo:publico(w,now),alumnos:alumnos,temas:total,nombres:A.TEMAS});
+  return ctx.json({mundo:publico(w,now),alumnos:alumnos,temas:total,nombres:A.TEMAS,eras:A.ERAS.map(function(e){return e.ico+" "+e.nom;})});
 }

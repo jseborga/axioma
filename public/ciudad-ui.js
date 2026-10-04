@@ -91,21 +91,24 @@ var CAPAS=[["","Sin capa"],["cont","Contaminación"],["seg","Seguridad"],["fue",
 var MISIONES=[
   ["Traza una calle",function(s,st){return st.calles>=1;}],
   ["Pon una zona residencial junto a la calle",function(s,st){return st.R>=1;}],
-  ["Da electricidad: construye una central",function(s,st){return st.mwCap>s.bonoMW;}],
   ["Agua potable: construye un pozo",function(s,st){return st.agCap>s.bonoAgua;}],
   ["Zonas comerciales e industriales",function(s,st){return st.C>=1&&st.I>=1;}],
-  ["Llega a 100 habitantes",function(s,st){return st.pob>=100;}],
-  ["Investiga una tecnología",function(s){return Object.keys(s.techs).length>=1;}],
+  ["Cultura: una plaza o una biblioteca",function(s){return s.tipo.indexOf("Z")>=0||s.tipo.indexOf("L")>=0;}],
+  ["Avanza a la Edad Media (🏺 arriba)",function(s){return s.era>=1;}],
   ["Resuelve un problema",function(s){return s.resueltos>=1;}],
   ["Escuela y hospital",function(s){return s.tipo.indexOf("k")>=0&&s.tipo.indexOf("H")>=0;}],
-  ["Biblioteca: tu primera cultura",function(s){return s.tipo.indexOf("L")>=0;}],
+  ["Investiga una tecnología",function(s){return Object.keys(s.techs).length>=1;}],
+  ["Avanza al Renacimiento",function(s){return s.era>=2;}],
   ["Amplía el territorio a radio 10",function(s){return A.radio(s)>=10;}],
-  ["Llega a 500 habitantes",function(s,st){return st.pob>=500;}],
-  ["Funda una universidad",function(s){return s.tipo.indexOf("u")>=0;}],
-  ["Energía limpia: eólica o solar",function(s){return s.tipo.indexOf("w")>=0||s.tipo.indexOf("s")>=0;}],
-  ["Llega a 1.500 habitantes",function(s,st){return st.pob>=1500;}],
+  ["Avanza a la Revolución Industrial",function(s){return s.era>=3;}],
+  ["Da electricidad: construye una central",function(s,st){return s.tipo.indexOf("e")>=0||s.tipo.indexOf("h")>=0;}],
+  ["Avanza a la Era Moderna",function(s){return s.era>=4;}],
+  ["Firma un tratado con una ciudad vecina",function(s){return A.rutas(s)>=1;}],
+  ["Avanza a la Era Digital",function(s){return s.era>=5;}],
   ["Levanta un monumento",function(s){return s.tipo.indexOf("O")>=0;}]
 ];
+function eraNom(n){var E=A.ERAS[n]; return E?E.ico+" "+E.nom:"";}
+function bloqueo(s,t){var E=A.EDIF[t]; return E.era>s.era?"era":E.tech&&!s.techs[E.tech]?"tech":null;}
 function culturaPara(r){return 3*(r-7)*(r-7);}
 
 /* ===================== PORTADA ===================== */
@@ -142,7 +145,7 @@ function tarjetaMundo(w){
   return '<div class="rt-card cs-mundo-card'+(curso?' cs-curso':'')+'"><span class="rt-card-top"><b>'+(curso?'🎓 ':'🌍 ')+esc(w.nombre)+'</b>'+chip+'</span>'+
     '<small>'+(curso?'Curso '+esc(w.curso_nombre||w.curso)+'. ':'El mundo de todos: tus vecinos son las ciudades de las ranuras de al lado. ')+
       w.ciudades+(w.ciudades===1?' ciudad':' ciudades')+'.'+(w.meta?' Meta: '+esc(metaTxt(w.meta))+'.':'')+'</small>'+
-    (mia&&mia.updated_at&&mia.puntaje!=null?'<div class="cs-mia"><b>'+esc(mia.nombre)+'</b><span>👥 '+fmt(mia.poblacion)+' · 😊 '+mia.felicidad+' % · 🧠 '+mia.conocimiento+' · ⭐ '+fmt(mia.puntaje)+'</span></div>':'')+
+    (mia&&mia.updated_at&&mia.puntaje!=null?'<div class="cs-mia"><b>'+esc(mia.nombre)+'</b><span>'+(mia.era!=null?esc(eraNom(mia.era))+' · ':'')+'👥 '+fmt(mia.poblacion)+' · 😊 '+mia.felicidad+' % · 🧠 '+mia.conocimiento+' · ⭐ '+fmt(mia.puntaje)+'</span></div>':'')+
     '<div class="actions"><button type="button" class="primary" data-mundo="'+esc(w.code)+'">'+(mia?(w.abierto?'Seguir con mi ciudad':'Ver mi ciudad'):'Fundar mi ciudad')+'</button></div></div>';
 }
 function rankingEn(z,mundo){
@@ -150,7 +153,7 @@ function rankingEn(z,mundo){
   api("/api/ciudad/ranking?mundo="+encodeURIComponent(mundo)).then(function(r){
     z.innerHTML=r.top.length?'<ol class="rank-list">'+r.top.map(function(e){
       return '<li'+(e.me?' class="me"':'')+'><span class="pos">'+e.rank+'</span>'+(e.picture?'<img src="'+esc(e.picture)+'" alt="" referrerpolicy="no-referrer">':'<span class="noimg"></span>')+
-        '<span class="who">'+esc(e.ciudad||"")+' <small>'+esc(e.name)+(e.me?' (tú)':'')+'</small></span><span class="pts"><b>'+fmt(e.score)+'</b> pts</span></li>';}).join("")+'</ol>'+
+        '<span class="who">'+(A.ERAS[e.era||0]?A.ERAS[e.era||0].ico+' ':'')+esc(e.ciudad||"")+' <small>'+esc(e.name)+(e.me?' (tú)':'')+'</small></span><span class="pts"><b>'+fmt(e.score)+'</b> pts</span></li>';}).join("")+'</ol>'+
       (r.me&&r.me.rank>r.top.length?'<p class="fine">Tu puesto: <b>#'+r.me.rank+'</b> de '+r.total+'.</p>':'')
       :'<p class="fine">Todavía no hay ciudades. ¡Funda la primera!</p>';
   }).catch(function(e){z.innerHTML='<p class="fine">'+esc(e&&e.error==="ciudad_not_configured"?ERR(e):"No se pudo cargar el ranking.")+'</p>';});
@@ -187,7 +190,8 @@ function monta(ent){
   J=yo;
   pn.innerHTML='<div class="cs" id="cs">'+
     '<div class="cs-top">'+
-      '<button type="button" class="cs-nom" id="cs-nom" title="Ayuntamiento">🏛️ <b id="cs-nombre"></b></button>'+
+      '<button type="button" class="cs-nom" id="cs-nom" title="Alcaldía">🏛️ <b id="cs-nombre"></b></button>'+
+      '<button type="button" class="cs-era" id="cs-era" title="Épocas de la historia"></button>'+
       '<span class="cs-st" title="Presupuesto">💰 <b id="cs-din"></b></span>'+
       '<span class="cs-st" title="Población">👥 <b id="cs-pob"></b></span>'+
       '<span class="cs-st" title="Felicidad">😊 <b id="cs-fel"></b></span>'+
@@ -270,8 +274,13 @@ function guarda(alSalir){
   var envio={a:j.log,fin:j.s.segTick};
   return api("/api/ciudad/guardar",{mundo:j.mundo.code,seg:j.seg,envio:envio}).then(function(r){
     if(J!==j)return;
-    /* el tramo siguiente parte del estado que el servidor acaba de comprobar */
+    /* el tramo siguiente parte del estado que el servidor acaba de comprobar, con los encuentros que vio */
+    var antes=j.s.contactos||[], nuevos=(r.contactos||[]).filter(function(x){return antes.indexOf(x)<0;});
+    j.s.contactos=(r.contactos||[]).slice();
     var s=A.deserializa(A.serializa(j.s),r.seg); s.ev=[];
+    if(nuevos.length){ SON.territorio(); $("cs-vec").classList.add("alerta");
+      var v=vecinoSlot(nuevos[0]); msg("✨ ¡Encuentro de mundos! Tu influencia cultural llegó a "+(v?v.nombre+", la ciudad de "+v.jugador:"una ciudad vecina")+". Abre «Vecinos» para firmar un tratado.",9000);
+      cargaVecinos(); }
     j.s=s; j.seg=r.seg; j.log=[]; j.guardando=false; j.ultGuardado=performance.now();
     j.rank=r.rank; j.total=r.total;
     estadoGuardado("✓ Guardado"+(r.rank?" · puesto #"+r.rank+" de "+r.total:""));
@@ -293,6 +302,9 @@ function eventos(now){
     if(e.tipo==="crece"){ if(j.chispas.length<30)j.chispas.push({i:e.i,t0:now}); if(Math.random()<0.15)SON.crece(); }
     else if(e.tipo==="mes"){ var d=e.ing-e.gas; j.ultMes=e; flota((d>=0?"+":"")+fmt(d)+" $",d>=0?"#2e7d32":"#c62828"); if(d>0)SON.mes(); }
     else if(e.tipo==="problema"){ var P=A.PROBLEMAS[e.p.k]; SON.alerta(); msg("⚠️ "+P.nom+": "+P.desc+" Toca «Problemas» para resolverlo.",7000); }
+    else if(e.tipo==="era"){ var E=A.ERAS[e.n]; SON.territorio(); j.banner={t:E.ico+" "+E.nom,sub:"Tu ciudad entra en una nueva época de la historia",t0:now};
+      msg("🎉 ¡Bienvenida a la "+E.nom+"! "+desbloquea(e.n),9000); herramientas(); }
+    else if(e.tipo==="tratado"){ var v=vecinoSlot(e.slot); msg("🤝 Tratado firmado"+(v?" con "+v.nombre:"")+": ruta comercial abierta (+8 % de ingresos, más comercio y cultura).",7000); }
     else if(e.tipo==="vence"){ SON.mal(); msg("😞 No se resolvió «"+A.PROBLEMAS[e.k].nom+"»: −300 $ y la gente está molesta.",6000); }
   });
   var r=A.radio(s);
@@ -306,7 +318,12 @@ function hud(primera){
   $("cs-nombre").textContent=s.nombre;
   $("cs-din").textContent=fmt(s.dinero); $("cs-din").parentNode.classList.toggle("mal",s.dinero<0);
   $("cs-pob").textContent=fmt(st.pob); $("cs-fel").textContent=st.felicidad+" %";
-  $("cs-mw").textContent=fmt(st.mwUso)+"/"+fmt(st.mwCap); $("cs-mw-w").classList.toggle("mal",st.ratioMW<1);
+  if(st.sinLuz){$("cs-mw").textContent="—"; $("cs-mw-w").title="Sin electricidad hasta la Revolución Industrial";}
+  else{$("cs-mw").textContent=fmt(st.mwUso)+"/"+fmt(st.mwCap); $("cs-mw-w").title="Electricidad: consumo / generación";}
+  $("cs-mw-w").classList.toggle("mal",st.ratioMW<1);
+  var rq=A.requisitos(s,s.era+1), listo=rq&&rq.every(function(x){return x.ok;});
+  $("cs-era").innerHTML=eraNom(s.era)+(rq?' <small>'+(listo?'¡lista para avanzar!':Math.round(100*rq.reduce(function(a,x){return a+Math.min(1,x.v/x.meta);},0)/rq.length)+' %')+'</small>':'');
+  $("cs-era").classList.toggle("listo",!!listo);
   $("cs-ag").textContent=fmt(st.agUso)+"/"+fmt(st.agCap); $("cs-ag-w").classList.toggle("mal",st.ratioAg<1);
   var r=A.radio(s), sig=r<A.R?culturaPara(r+1):null;
   $("cs-cul").textContent=fmt(s.cultura)+(sig?"/"+fmt(sig):"");
@@ -328,7 +345,7 @@ function hud(primera){
   /* precios y bloqueos de la barra */
   if(j.grupo)Array.prototype.forEach.call(document.querySelectorAll("#cs-sub [data-t]"),function(bt){
     var t=bt.getAttribute("data-t"), E=A.EDIF[t]; bt.classList.toggle("caro",s.dinero<E.costo*(t==="c"&&s.techs.transporte?0.5:1));
-    var bloq=E.tech&&!s.techs[E.tech]; if(bt.classList.contains("bloq")!==!!bloq){herramientas();}
+    var bloq=bloqueo(s,t); if(bt.classList.contains("bloq")!==!!bloq){herramientas();}
   });
 }
 function chipMeta(ico,v,m,suf){var ok=v>=m;return '<span class="cs-chip'+(ok?' ok':'')+'">'+ico+' '+fmt(v)+(suf||"")+' / '+fmt(m)+(suf||"")+(ok?' ✓':'')+'</span>';}
@@ -346,9 +363,9 @@ function herramientas(){
   var g=GRUPOS.filter(function(x){return x.k===j.grupo;})[0];
   if(g&&g.t){
     sz.innerHTML=g.t.map(function(t){
-      var E=A.EDIF[t], bloq=E.tech&&!s.techs[E.tech], c=E.costo*(t==="c"&&s.techs.transporte?0.5:1);
+      var E=A.EDIF[t], bq=bloqueo(s,t), bloq=!!bq, c=E.costo*(t==="c"&&s.techs.transporte?0.5:1);
       return '<button type="button" data-t="'+t+'" class="'+(bloq?'bloq ':'')+(j.herr.t===t?'sel':'')+'" aria-pressed="'+(j.herr.t===t)+'" title="'+esc(DESC[t])+'">'+
-        '<span class="cs-ico z'+t+'">'+ICO[t]+'</span><b>'+esc(E.nom)+'</b><small>'+(bloq?'🔒 '+esc(A.TECHS[E.tech].nom):fmt(c)+' $'+(E.mw?' · '+E.mw+' MW':'')+(E.agua?' · '+E.agua+' 💧':''))+'</small></button>';
+        '<span class="cs-ico z'+t+'">'+ICO[t]+'</span><b>'+esc(E.nom)+'</b><small>'+(bq==="era"?'🔒 '+esc(eraNom(E.era)):bq?'🔒 '+esc(A.TECHS[E.tech].nom):fmt(c)+' $'+(E.mw?' · '+E.mw+' MW':'')+(E.agua?' · '+E.agua+' 💧':''))+'</small></button>';
     }).join("");
   } else if(j.herr.k==="x")sz.innerHTML='<p class="fine">🧨 Toca o arrastra sobre lo que quieras demoler (no devuelve el dinero).</p>';
   else sz.innerHTML='<p class="fine">🔍 Toca una casilla para ver por qué crece (o no). Arrastra para moverte; acerca con la rueda o con dos dedos.</p>';
@@ -360,7 +377,9 @@ function herramientas(){
   };});
   Array.prototype.forEach.call(sz.querySelectorAll("[data-t]"),function(b){b.onclick=function(){
     var t=b.getAttribute("data-t"), E=A.EDIF[t];
-    if(E.tech&&!s.techs[E.tech]){panelInvestigar(E.tech);return;}
+    var bq=bloqueo(s,t);
+    if(bq==="era"){msg(E.nom+" llega con la época "+eraNom(E.era)+".",4000);panelEpocas();return;}
+    if(bq){panelInvestigar(E.tech);return;}
     j.herr=j.herr.t===t?{k:"info"}:{k:"b",t:t};
     if(j.herr.t)msg(ICO[t]+" "+E.nom+": "+DESC[t],5000);
     herramientas();
@@ -377,6 +396,7 @@ function motivo(t,dx,dy,gastado){
   if(!A.dentro(s,dx,dy))return "Fuera de tu territorio: la cultura 🎭 lo amplía.";
   if(s.tipo[i])return "Ya hay algo construido.";
   if(terr(s.cx+dx,s.cy+dy)==="w")return "En el agua no se construye.";
+  if(E.era>s.era)return "Llega con la época "+eraNom(E.era)+".";
   if(E.tech&&!s.techs[E.tech])return "Primero investiga «"+A.TECHS[E.tech].nom+"».";
   if(E.junto){var ok=false;[[1,0],[-1,0],[0,1],[0,-1]].forEach(function(v){if(terr(s.cx+dx+v[0],s.cy+dy+v[1])===E.junto)ok=true;}); if(!ok)return "Tiene que tocar el agua.";}
   if(s.dinero-(gastado||0)<A.costo(s,t,dx,dy))return "Faltan $: cuesta "+fmt(A.costo(s,t,dx,dy))+".";
@@ -415,15 +435,17 @@ function cab(t){return '<div class="cs-mh"><b>'+t+'</b><button type="button" cla
 
 function panelInvestigar(resalta){
   var j=J, s=j.s;
-  var h=cab("🔬 Investigación")+'<p class="cs-nota">Cada tecnología se investiga acertando una pregunta de su tema. Si fallas, espera 30 s para intentarlo de nuevo con otra pregunta.</p><div class="cs-lista">';
+  var h=cab("🔬 Investigación")+'<p class="cs-nota">Cada tecnología se investiga acertando una pregunta de su tema. Si fallas, espera 30 s para intentarlo de nuevo con otra pregunta. Algunas llegan con una época más avanzada (<a href="#" id="cs-a-eras">⏳ épocas</a>).</p><div class="cs-lista">';
   Object.keys(A.TECHS).forEach(function(k){
     var T=A.TECHS[k], hecha=!!s.techs[k], falta=(T.req||[]).filter(function(r){return !s.techs[r];}), cool=Math.max(0,((s.techCool[k]||0)-s.tick)*A.TICK/1000);
     h+='<div class="cs-it'+(hecha?' hecha':'')+(k===resalta?' resalta':'')+'"><div><b>'+(hecha?'✅ ':'')+esc(T.nom)+'</b><small>'+esc(T.desc)+' · Tema: '+esc(A.TEMAS[T.tema])+'</small>'+
-      (falta.length&&!hecha?'<small class="cs-req">Requiere: '+falta.map(function(r){return esc(A.TECHS[r].nom);}).join(", ")+'</small>':'')+'</div>'+
-      (hecha?'':falta.length?'<span class="cs-bloq">🔒</span>':cool>0?'<span class="cs-bloq">'+Math.ceil(cool)+' s</span>':
+      (falta.length&&!hecha?'<small class="cs-req">Requiere: '+falta.map(function(r){return esc(A.TECHS[r].nom);}).join(", ")+'</small>':'')+
+      (!hecha&&T.era>s.era?'<small class="cs-req">Llega con la época '+esc(eraNom(T.era))+'</small>':'')+'</div>'+
+      (hecha?'':T.era>s.era?'<span class="cs-bloq">🔒</span>':falta.length?'<span class="cs-bloq">🔒</span>':cool>0?'<span class="cs-bloq">'+Math.ceil(cool)+' s</span>':
         (j.solo?'':'<button type="button" class="primary" data-tech="'+k+'">Investigar</button>'))+'</div>';
   });
   abreModal(h+'</div>');
+  $("cs-a-eras").onclick=function(e){e.preventDefault();panelEpocas();};
   Array.prototype.forEach.call(document.querySelectorAll("[data-tech]"),function(b){b.onclick=function(){var k=b.getAttribute("data-tech");pregunta("t:"+k,A.TECHS[k].tema,"🔬 "+A.TECHS[k].nom);};});
   var el=document.querySelector(".cs-it.resalta"); if(el&&el.scrollIntoView)el.scrollIntoView({block:"center"});
 }
@@ -449,9 +471,10 @@ function pregunta(obj,tema,titulo){
   if(j.qActiva)return;
   var probK=null;
   if(obj.charAt(0)==="p"){var pr=s.problemas.filter(function(x){return x.id===+obj.slice(2);})[0]; if(!pr)return; probK=pr.k;}
+  var eraQ=obj.charAt(0)==="e"?+obj.slice(2):0;
   j.qActiva=true;
   abreModal('<div class="cs-mh"><b>'+esc(titulo)+'</b><span class="cs-tema">'+esc(A.TEMAS[tema])+'</span></div><p class="fine">Buscando una pregunta…</p>');
-  api("/api/ciudad/pregunta",{mundo:j.mundo.code,tema:tema,evita:Object.keys(s.qUsadas)}).then(function(q){
+  api("/api/ciudad/pregunta",{mundo:j.mundo.code,tema:tema,evita:Object.keys(s.qUsadas),era:eraQ||undefined}).then(function(q){
     if(J!==j)return;
     if(q.seg!==j.seg){j.qActiva=false;cierraModal();msg("La ciudad se está guardando; vuelve a intentarlo.");return;}
     var t0=Date.now(), hecho=false;
@@ -470,8 +493,10 @@ function pregunta(obj,tema,titulo){
         var ok=hace("q",r.o,0,q.id,obj,r.ok), txt;
         if(!ok)txt="No se pudo aplicar (¿el problema ya se resolvió?).";
         else if(obj.charAt(0)==="t"){var T=A.TECHS[obj.slice(2)]; txt=r.ok?"✅ ¡Correcto! Investigaste «"+T.nom+"». "+T.desc:"❌ No era esa. Podrás volver a intentarlo en 30 s con otra pregunta.";}
+        else if(obj.charAt(0)==="e")txt=r.ok?"✅ ¡Correcto! Tu ciudad entra en la "+A.ERAS[eraQ].nom+".":"❌ No era esa. Repasa y vuelve a intentarlo en 30 s.";
+        else if(obj.charAt(0)==="r")txt=r.ok?"✅ ¡Correcto! Tratado firmado: se abre una ruta comercial.":"❌ No era esa. Podrás proponer el tratado otra vez en 30 s.";
         else txt=r.ok?"✅ ¡Correcto! Problema resuelto: +400 $ y "+premioTxt(probK)+".":"❌ No era esa: el plazo del problema se acorta 10 s.";
-        if(r.ok){SON[obj.charAt(0)==="t"?"tech":"bien"]();}else SON.mal();
+        if(r.ok){SON[obj.charAt(0)==="p"?"bien":"tech"]();}else SON.mal();
         $("cs-qn").innerHTML='<b class="'+(r.ok?'cs-ok':'cs-no')+'">'+esc(txt)+'</b>'+(r.dato?'<span class="cs-dato">💡 '+esc(r.dato)+'</span>':'')+
           '<span class="actions"><button type="button" class="primary" id="cs-qsig">Seguir</button></span>';
         $("cs-qsig").onclick=function(){j.qActiva=false;cierraModal();herramientas();hud();};
@@ -480,14 +505,49 @@ function pregunta(obj,tema,titulo){
   }).catch(function(e){ if(J!==j)return; j.qActiva=false; cierraModal(); msg(ERR(e),5000); });
 }
 
+/* lo que trae cada época */
+function desbloquea(n){
+  var ed=Object.keys(A.EDIF).filter(function(t){return A.EDIF[t].era===n;}).map(function(t){return A.EDIF[t].nom;});
+  var te=Object.keys(A.TECHS).filter(function(k){return A.TECHS[k].era===n;}).map(function(k){return A.TECHS[k].nom;});
+  var p=[];
+  if(A.ERAS[n].tope>(A.ERAS[n-1]||{tope:0}).tope)p.push("zonas hasta el nivel "+A.ERAS[n].tope+(n>=4?" (con Rascacielos)":""));
+  if(ed.length)p.push("edificios: "+ed.join(", "));
+  if(te.length)p.push("tecnologías: "+te.join(", "));
+  if(n===3)p.push("la electricidad: desde ahora las zonas necesitan energía (llega una primera red que cubre lo que ya consumes)");
+  p.push("+"+A.INFLU+" de influencia cultural");
+  return "Trae "+p.join("; ")+".";
+}
+function panelEpocas(){
+  var j=J, s=j.s;
+  var h=cab("⏳ Épocas de la historia")+'<p class="cs-nota">Tu ciudad recorre la historia. Para pasar a la siguiente época llega a sus metas y acierta una pregunta de historia de esa época. Cada época cambia el aspecto de la ciudad, desbloquea edificios y lleva más lejos su influencia cultural.</p><div class="cs-lista">';
+  A.ERAS.forEach(function(E,n){
+    var rq=A.requisitos(s,n), listo=rq&&rq.every(function(x){return x.ok;}), cool=Math.max(0,(s.eraCool-s.tick)*A.TICK/1000);
+    h+='<div class="cs-it'+(n<=s.era?' hecha':'')+(n===s.era+1?' resalta':'')+'"><div><b>'+(n<s.era?'✅ ':n===s.era?'📍 ':'')+E.ico+' '+esc(E.nom)+(n===s.era?' · tu época':'')+'</b>'+
+      (n>0?'<small>'+esc(desbloquea(n))+'</small>':'<small>Calles de tierra, casas de adobe, mercados y talleres. Sin electricidad.</small>')+
+      (rq?'<span class="cs-reqs">'+rq.map(function(x){var f=Math.min(1,x.v/x.meta);return '<span class="'+(x.ok?'ok':'')+'"><i style="--p:'+Math.round(f*100)+'%"></i>'+x.nom+' '+fmt(x.v)+'/'+fmt(x.meta)+'</span>';}).join("")+'</span>':'')+
+      '</div>'+(rq&&!j.solo?(listo?(cool>0?'<span class="cs-bloq">'+Math.ceil(cool)+' s</span>':'<button type="button" class="primary" data-era="'+n+'">Avanzar</button>'):'<span class="cs-bloq">🔒</span>'):'')+'</div>';
+  });
+  abreModal(h+'</div>');
+  Array.prototype.forEach.call(document.querySelectorAll("[data-era]"),function(b){b.onclick=function(){var n=+b.getAttribute("data-era"); pregunta("e:"+n,"historia","⏳ Hacia la "+A.ERAS[n].nom);};});
+  var el=document.querySelector(".cs-it.resalta"); if(el&&el.scrollIntoView)el.scrollIntoView({block:"center"});
+}
+function vecinoSlot(slot){return J.vecinos.filter(function(v){return v.slot===slot;})[0]||null;}
 function panelVecinos(){
-  var j=J;
-  var h=cab("🌍 Vecinos y ranking")+'<p class="cs-nota">Tus vecinos son las ciudades de las ranuras de al lado en este mundo. Toca «Ver» para viajar con la cámara.</p><div class="cs-lista">';
+  var j=J, s=j.s, mia=A.influencia(s);
+  $("cs-vec").classList.remove("alerta");
+  var h=cab("🌍 Vecinos y encuentros")+'<p class="cs-nota">Tus vecinos son las ciudades de las ranuras de al lado. Tu <b>influencia cultural</b> (territorio + '+A.INFLU+' por época, ahora '+mia+' casillas) se extiende por el mundo: cuando toca la de una vecina, vuestras ciudades se encuentran y podéis firmar un <b>tratado</b> (una pregunta de cultura) que abre una ruta comercial: +8 % de ingresos, más comercio y más cultura. Los encuentros se actualizan al guardar.</p><div class="cs-lista">';
   if(!j.vecinos.length)h+='<p class="fine">Todavía no tienes vecinos cerca. Cuando otras personas funden su ciudad junto a la tuya, aparecerán en el mapa.</p>';
   j.vecinos.forEach(function(v,i){
-    h+='<div class="cs-it"><div><b>🏙️ '+esc(v.nombre)+'</b><small>de '+esc(v.jugador)+' · 👥 '+fmt(v.pob)+' · ⭐ '+fmt(v.puntaje)+'</small></div><button type="button" class="ghost" data-vec="'+i+'">Ver</button></div>';
+    var firmado=!!s.tratados[v.slot], contacto=(s.contactos||[]).indexOf(v.slot)>=0, cool=Math.max(0,((s.tratCool[v.slot]||0)-s.tick)*A.TICK/1000);
+    var f=Math.min(1,(mia+v.influencia)/v.distancia);
+    h+='<div class="cs-it'+(firmado?' hecha':contacto?' resalta':'')+'"><div><b>🏙️ '+esc(v.nombre)+' <small style="display:inline">'+esc(eraNom(v.era))+'</small></b><small>de '+esc(v.jugador)+' · 👥 '+fmt(v.pob)+' · ⭐ '+fmt(v.puntaje)+'</small>'+
+      (firmado?'<small class="cs-ok">🤝 Tratado firmado: ruta comercial activa.</small>':contacto?'<small class="cs-req">✨ ¡Encuentro! Vuestras culturas se tocan: podéis firmar un tratado.</small>':
+        '<span class="cs-reqs"><span><i style="--p:'+Math.round(f*100)+'%"></i>Influencias '+mia+' + '+v.influencia+' de '+Math.round(v.distancia)+' casillas</span></span>')+'</div>'+
+      '<span class="cs-acc">'+(contacto&&!firmado&&!j.solo?(cool>0?'<span class="cs-bloq">'+Math.ceil(cool)+' s</span>':'<button type="button" class="primary" data-trat="'+v.slot+'">Firmar tratado</button>'):'')+
+      '<button type="button" class="ghost" data-vec="'+i+'">Ver</button></span></div>';
   });
   abreModal(h+'</div><h4>Ranking de '+esc(j.mundo.nombre)+'</h4><div id="cs-rank2"><p class="fine">Cargando…</p></div>');
+  Array.prototype.forEach.call(document.querySelectorAll("[data-trat]"),function(b){b.onclick=function(){var v=vecinoSlot(+b.getAttribute("data-trat")); pregunta("r:"+v.slot,"cultura","🤝 Tratado con "+v.nombre);};});
   Array.prototype.forEach.call(document.querySelectorAll("[data-vec]"),function(b){b.onclick=function(){var v=j.vecinos[+b.getAttribute("data-vec")]; cierraModal(); vuela(v.cx,v.cy); msg("🏙️ "+v.nombre+", de "+v.jugador+". Toca 🎯 para volver.",5000);};});
   rankingEn($("cs-rank2"),j.mundo.code);
 }
@@ -501,7 +561,8 @@ function panelAlcaldia(){
     '<span>Empleos<b>'+fmt(st.empC+st.empI)+'</b></span><span>Territorio<b>radio '+A.radio(s)+'</b></span>'+
     '<span>Seguridad<b>'+Math.round(st.cob.seg*100)+' %</b></span><span>Bomberos<b>'+Math.round(st.cob.fue*100)+' %</b></span>'+
     '<span>Salud<b>'+Math.round(st.cob.sal*100)+' %</b></span><span>Educación<b>'+Math.round(st.cob.edu*100)+' %</b></span>'+
-    '<span>Problemas resueltos<b>'+s.resueltos+'</b></span><span>Puntaje<b>'+fmt(A.puntaje(s))+'</b></span></div>';
+    '<span>Problemas resueltos<b>'+s.resueltos+'</b></span><span>Puntaje<b>'+fmt(A.puntaje(s))+'</b></span>'+
+    '<span>Época<b>'+esc(eraNom(s.era))+'</b></span><span>Rutas comerciales<b>'+A.rutas(s)+(A.rutas(s)?' · +'+(8*Math.min(5,A.rutas(s)))+' %':'')+'</b></span></div>';
   var temas=Object.keys(s.temas);
   h+='<h4>Tus aciertos por tema</h4>'+(temas.length?'<div class="cs-temas">'+temas.map(function(t){var x=s.temas[t],p=Math.round(100*x[0]/Math.max(1,x[1]));
     return '<span><b>'+esc(A.TEMAS[t]||t)+'</b><i style="--p:'+p+'%"></i><small>'+x[0]+'/'+x[1]+'</small></span>';}).join("")+'</div>':'<p class="fine">Todavía no respondiste preguntas.</p>');
@@ -529,7 +590,7 @@ function info(c){
     h='<b>'+tn+'</b><small>'+(tr==="w"?"No se puede construir en el agua.":tr==="f"?"Construir aquí cuesta 15 $ más (hay que talar).":"Libre para construir.")+'</small>';
   } else {
     var E=A.EDIF[t], l=s.nivel[i], m=A.mapas(s), st=s.est||A.calcula(s);
-    h='<b>'+ICO[t]+' '+esc(E.nom)+(E.zona?' · nivel '+l+'/'+(s.techs.rascacielos?4:3):'')+'</b>';
+    h='<b>'+ICO[t]+' '+esc(E.nom)+(E.zona?' · nivel '+l+'/'+A.tope(s):'')+'</b>';
     if(E.zona){
       var habit=t==="R"?A.POB[l]+" habitantes":t==="C"?A.EMPC[l]+" empleos":A.EMPI[l]+" empleos";
       var dem=t==="R"?st.demR:t==="C"?st.demC:st.demI, frena=[];
@@ -537,6 +598,7 @@ function info(c){
       if(st.ratioMW<0.95)frena.push("falta electricidad");
       if(l>=1&&st.ratioAg<0.95)frena.push("falta agua");
       if(dem<=0)frena.push("no hay demanda "+t+" (mira las barras R C I)");
+      if(l>=A.tope(s))frena.push("ya llegó al nivel máximo de la "+A.ERAS[s.era].nom+(s.era<5?" (la próxima época lo sube)":""));
       if(m.cont[i]>2&&t!=="I")frena.push("hay mucha contaminación");
       if(l>=2&&!m.cov.edu[i]&&t!=="I")frena.push("sin escuela cerca no pasa del nivel 2");
       h+='<small>'+habit+'.</small>'+(frena.length?'<small class="cs-req">No crece porque '+frena.join(", ")+'.</small>':'<small class="cs-ok">Puede seguir creciendo.</small>');
@@ -673,7 +735,7 @@ function enlaza(){
   $("cs-inv").onclick=function(){panelInvestigar();};
   $("cs-prob").onclick=panelProblemas;
   $("cs-vec").onclick=panelVecinos;
-  $("cs-ayu").onclick=panelAlcaldia; $("cs-nom").onclick=panelAlcaldia;
+  $("cs-ayu").onclick=panelAlcaldia; $("cs-nom").onclick=panelAlcaldia; $("cs-era").onclick=panelEpocas;
   $("cs-modal").onclick=function(e){if(e.target===this)cierraModal();};
   Array.prototype.forEach.call(document.querySelectorAll("[data-vel]"),function(b){b.onclick=function(){
     var v=+b.getAttribute("data-vel"); j.vel=v; j.pausa=v===0; marcaVel();};});
@@ -743,6 +805,10 @@ function tejado(g,x,y,f,h,alto,col){ /* tejado a cuatro aguas sobre una caja */
   g.fillStyle=sombrea(col,-0.25); g.beginPath(); g.moveTo(x-hw,y-h); g.lineTo(x,y+hh-h); g.lineTo(x,cy); g.closePath(); g.fill();
   g.fillStyle=col; g.beginPath(); g.moveTo(x,y+hh-h); g.lineTo(x+hw,y-h); g.lineTo(x,cy); g.closePath(); g.fill();
 }
+function placas(g,x,y,f){ /* paneles solares sobre un techo plano */
+  g.fillStyle="#1f4f8f"; rombo(g,x,y,HW*f,HH*f); g.fill();
+  g.strokeStyle="rgba(150,200,255,.7)"; g.lineWidth=0.4; g.beginPath(); g.moveTo(x-HW*f/2,y-HH*f/2); g.lineTo(x+HW*f/2,y+HH*f/2); g.moveTo(x+HW*f/2,y-HH*f/2); g.lineTo(x-HW*f/2,y+HH*f/2); g.stroke();
+}
 function ventanas(g,x,y,f,h,pisos,luz,noche,luces,sd){
   var hw=HW*f, hh=HH*f, k, p;
   for(p=0;p<pisos;p++){
@@ -772,18 +838,33 @@ function arbol(g,x,y,n,esc){
   else{ g.fillStyle="#3d8f3f"; g.beginPath(); g.arc(x,y-9*esc,5.5*esc,0,6.283); g.fill(); g.fillStyle="#56a956"; g.beginPath(); g.arc(x-1.5,y-10.5*esc,3*esc,0,6.283); g.fill(); }
 }
 var PARED=["#f4e3c1","#e8d2b0","#f7f1e3","#e9c9a8","#dfe7ef"], TEJA=["#c0503a","#a8432f","#7a4b3a","#3f6e9c","#5b6b4a"];
-/* lo que hay en una casilla: calle, zona o edificio */
-function pieza(g,t,l,x,y,wx,wy,now,noche,luces,vecina,s){
-  var n=hsh(wx,wy,7), k;
+/* el aspecto de cada época: paredes, tejados, suelo de las zonas y calles */
+var ESTILO=[
+  {pared:["#d9b382","#cfa877","#e0bd8e"], teja:["#c9a24a","#b8913e"], suelo:"#c8b48a", calle:"tierra"},     /* Antigüedad: adobe y paja */
+  {pared:["#e8dcc4","#ddd0b6","#efe5d0"], teja:["#5d4037","#6d4c41"], suelo:"#bfb08f", calle:"tierra"},     /* Edad Media: piedra y madera */
+  {pared:["#f1dfc0","#f3e2c2","#ead2ae"], teja:["#c1663d","#b85a35"], suelo:"#bfb6a6", calle:"piedra"},     /* Renacimiento: estuco y teja */
+  {pared:["#b5654a","#a85a42","#9e4f3a"], teja:["#55585e","#4a4d52"], suelo:"#a9a39a", calle:"asfalto"},    /* Revolución Industrial: ladrillo */
+  {pared:PARED, teja:TEJA, suelo:"#9aa3a0", calle:"asfalto"},                                                 /* Era Moderna */
+  {pared:["#e8f4f8","#dff0f5","#f2f8fa"], teja:null, suelo:"#a7b4b8", calle:"digital"}                        /* Era Digital: vidrio y paneles */
+];
+function elige(a,n){return a[Math.floor(n*a.length)%a.length];}
+/* lo que hay en una casilla: calle, zona o edificio, al estilo de su época */
+function pieza(g,t,l,x,y,wx,wy,now,noche,luces,vecina,s,era){
+  var n=hsh(wx,wy,7), k, E=ESTILO[era||0];
   if(t==="c"){
-    g.fillStyle="#5d6470"; rombo(g,x,y,HW,HH); g.fill();
-    g.strokeStyle="rgba(255,255,255,.55)"; g.lineWidth=0.6; g.setLineDash([2,2]);
+    var tipoC=E.calle;
+    g.fillStyle=tipoC==="tierra"?"#b5916a":tipoC==="piedra"?"#9c948a":"#5d6470"; rombo(g,x,y,HW,HH); g.fill();
     var con=calleVecina(wx,wy,s,vecina);
-    g.beginPath();
-    if(con[0]){g.moveTo(x,y);g.lineTo(x+HW/2,y+HH/2);} if(con[1]){g.moveTo(x,y);g.lineTo(x-HW/2,y-HH/2);}
-    if(con[2]){g.moveTo(x,y);g.lineTo(x-HW/2,y+HH/2);} if(con[3]){g.moveTo(x,y);g.lineTo(x+HW/2,y-HH/2);}
-    g.stroke(); g.setLineDash([]);
-    if(noche&&n<0.25&&luces.length<500)luces.push(x+5,y-3,x+5,y-3);
+    if(tipoC==="tierra"){ g.fillStyle="rgba(120,90,50,.35)"; g.fillRect(x-5+n*6,y-1,1.5,1); g.fillRect(x+2-n*5,y+2,1.5,1); }
+    else if(tipoC==="piedra"){ g.fillStyle="rgba(255,255,255,.25)"; for(k=0;k<5;k++)g.fillRect(x-8+k*4,y-2+((k*7)%5),1.4,1); }
+    else{
+      g.strokeStyle=tipoC==="digital"?"rgba(80,220,255,.8)":"rgba(255,255,255,.55)"; g.lineWidth=0.6; g.setLineDash([2,2]);
+      g.beginPath();
+      if(con[0]){g.moveTo(x,y);g.lineTo(x+HW/2,y+HH/2);} if(con[1]){g.moveTo(x,y);g.lineTo(x-HW/2,y-HH/2);}
+      if(con[2]){g.moveTo(x,y);g.lineTo(x-HW/2,y+HH/2);} if(con[3]){g.moveTo(x,y);g.lineTo(x+HW/2,y-HH/2);}
+      g.stroke(); g.setLineDash([]);
+    }
+    if(noche&&n<(era>=3?0.25:0.1)&&luces.length<500)luces.push(x+5,y-3,x+5,y-3);
     return;
   }
   if(t==="R"||t==="C"||t==="I"){
@@ -792,27 +873,76 @@ function pieza(g,t,l,x,y,wx,wy,now,noche,luces,vecina,s){
       g.strokeStyle=t==="R"?"#2e7d32":t==="C"?"#1565c0":"#c79100"; g.lineWidth=0.6; rombo(g,x,y,HW-2,HH-1); g.stroke();
       return;
     }
-    g.fillStyle="#9aa3a0"; rombo(g,x,y,HW-1,HH-0.5); g.fill();
+    g.fillStyle=E.suelo; rombo(g,x,y,HW-1,HH-0.5); g.fill();
+    var pc=elige(E.pared,n), tc=E.teja?elige(E.teja,hsh(wx,wy,3)):null, sd=wx*31+wy;
     if(t==="R"){
-      var pc=PARED[Math.floor(n*PARED.length)], tc=TEJA[Math.floor(hsh(wx,wy,3)*TEJA.length)];
-      if(l===1){caja(g,x,y,0.55,7,pc);tejado(g,x,y,0.55,7,6,tc);arbol(g,x+9,y+1,0.8,0.55);}
-      else if(l===2){caja(g,x,y,0.72,11,pc);tejado(g,x,y,0.72,11,7,tc);ventanas(g,x,y,0.72,11,1,"#6d8db0",noche,luces,wx*31+wy);}
-      else if(l===3){caja(g,x,y,0.8,26,pc,sombrea(pc,-0.05));ventanas(g,x,y,0.8,26,4,"#6d8db0",noche,luces,wx*31+wy);g.fillStyle="#8a8f99";g.fillRect(x-2,y-30,4,3);}
-      else{caja(g,x,y,0.68,50,"#d8dee8","#b9c2cf");ventanas(g,x,y,0.68,50,8,"#7aa0c8",noche,luces,wx*31+wy);g.fillStyle="#9aa3b0";g.fillRect(x-0.5,y-58,1,6);}
+      if(era===4){
+        if(l===1){caja(g,x,y,0.55,7,pc);tejado(g,x,y,0.55,7,6,tc);arbol(g,x+9,y+1,0.8,0.55);}
+        else if(l===2){caja(g,x,y,0.72,11,pc);tejado(g,x,y,0.72,11,7,tc);ventanas(g,x,y,0.72,11,1,"#6d8db0",noche,luces,sd);}
+        else if(l===3){caja(g,x,y,0.8,26,pc,sombrea(pc,-0.05));ventanas(g,x,y,0.8,26,4,"#6d8db0",noche,luces,sd);g.fillStyle="#8a8f99";g.fillRect(x-2,y-30,4,3);}
+        else{caja(g,x,y,0.68,50,"#d8dee8","#b9c2cf");ventanas(g,x,y,0.68,50,8,"#7aa0c8",noche,luces,sd);g.fillStyle="#9aa3b0";g.fillRect(x-0.5,y-58,1,6);}
+      } else if(era===5){
+        if(l<=2){caja(g,x,y,l===1?0.58:0.74,l===1?8:13,pc,"#cfe8ee"); placas(g,x,y-(l===1?8:13),l===1?0.4:0.55); ventanas(g,x,y,l===1?0.58:0.74,l===1?8:13,1,"#7fd1d9",noche,luces,sd);}
+        else if(l===3){caja(g,x,y,0.8,30,"#7fd1d9","#bff0f2");ventanas(g,x,y,0.8,30,5,"#e0fbff",noche,luces,sd);g.fillStyle="#66bb6a";rombo(g,x,y-30,HW*0.5,HH*0.5);g.fill();}
+        else{caja(g,x,y,0.66,60,"#5fb8c9","#a8eef5");ventanas(g,x,y,0.66,60,9,"#e0fbff",noche,luces,sd);g.fillStyle="rgba(80,220,255,"+(0.5+0.4*Math.sin(now/400+n*6))+")";g.fillRect(x-HW*0.66,y-44,HW*0.66,1.2);}
+      } else if(era===0||l===1){
+        var f1=era===0?0.5:0.56, h1=era===0?6:8;
+        caja(g,x,y,f1,h1,pc); tejado(g,x,y,f1,h1,era===0?8:6,tc);
+        if(era<=1){g.fillStyle="#5a3a1c";g.fillRect(x+2,y-3,2,3);}
+        if(era===3){g.fillStyle="#6d4c41";g.fillRect(x-4,y-h1-9,2,5);}
+      } else if(l===2){
+        caja(g,x,y,0.72,13,pc); tejado(g,x,y,0.72,13,era===1?9:6,tc); ventanas(g,x,y,0.72,13,1,era<=2?"#7a5a3a":"#6d8db0",noche,luces,sd);
+        if(era===1){g.strokeStyle="rgba(70,45,25,.6)";g.lineWidth=0.6;g.beginPath();g.moveTo(x-HW*0.72,y-6);g.lineTo(x,y+HH*0.72-6);g.stroke();}
+      } else {
+        var h3=era<=2?20:24; caja(g,x,y,0.82,h3,pc); ventanas(g,x,y,0.82,h3,3,era<=2?"#7a5a3a":"#5d7590",noche,luces,sd);
+        if(era===2){g.fillStyle="#c1663d";g.beginPath();g.arc(x,y-h3-1,4,Math.PI,0);g.fill();} else tejado(g,x,y,0.82,h3,4,tc);
+      }
     } else if(t==="C"){
-      if(l===1){caja(g,x,y,0.7,9,"#ffd59e");g.fillStyle=n<0.5?"#e53935":"#1e88e5";g.beginPath();g.moveTo(x-HW*0.7,y-5);g.lineTo(x,y+HH*0.7-5);g.lineTo(x,y+HH*0.7-3);g.lineTo(x-HW*0.7,y-3);g.fill();}
-      else if(l===2){caja(g,x,y,0.8,15,"#cfe3f7");ventanas(g,x,y,0.8,15,2,"#4a7fb5",noche,luces,wx*17+wy);g.fillStyle="#ff7043";g.fillRect(x-6,y-17,8,2);}
-      else if(l===3){caja(g,x,y,0.76,34,"#5d9fd8","#8cc0ee");ventanas(g,x,y,0.76,34,6,"#cfe8ff",noche,luces,wx*17+wy);}
-      else{caja(g,x,y,0.66,62,"#3f7fc0","#78b4ec");ventanas(g,x,y,0.66,62,10,"#d8eeff",noche,luces,wx*17+wy);g.strokeStyle="#c0c6cf";g.lineWidth=0.8;g.beginPath();g.moveTo(x,y-62);g.lineTo(x,y-72);g.stroke();
-        if(Math.floor(now/600)%2){g.fillStyle="#ff1744";g.fillRect(x-0.8,y-73,1.6,1.6);}}
+      if(era===4){
+        if(l===1){caja(g,x,y,0.7,9,"#ffd59e");g.fillStyle=n<0.5?"#e53935":"#1e88e5";g.beginPath();g.moveTo(x-HW*0.7,y-5);g.lineTo(x,y+HH*0.7-5);g.lineTo(x,y+HH*0.7-3);g.lineTo(x-HW*0.7,y-3);g.fill();}
+        else if(l===2){caja(g,x,y,0.8,15,"#cfe3f7");ventanas(g,x,y,0.8,15,2,"#4a7fb5",noche,luces,wx*17+wy);g.fillStyle="#ff7043";g.fillRect(x-6,y-17,8,2);}
+        else if(l===3){caja(g,x,y,0.76,34,"#5d9fd8","#8cc0ee");ventanas(g,x,y,0.76,34,6,"#cfe8ff",noche,luces,wx*17+wy);}
+        else{caja(g,x,y,0.66,62,"#3f7fc0","#78b4ec");ventanas(g,x,y,0.66,62,10,"#d8eeff",noche,luces,wx*17+wy);g.strokeStyle="#c0c6cf";g.lineWidth=0.8;g.beginPath();g.moveTo(x,y-62);g.lineTo(x,y-72);g.stroke();
+          if(Math.floor(now/600)%2){g.fillStyle="#ff1744";g.fillRect(x-0.8,y-73,1.6,1.6);}}
+      } else if(era===5){
+        var hc=[0,10,18,36,64][l]; caja(g,x,y,0.74,hc,"#69c7e0","#a6ecf7"); ventanas(g,x,y,0.74,hc,Math.max(1,Math.round(hc/7)),"#e0fbff",noche,luces,wx*17+wy);
+        g.fillStyle="rgba(255,64,160,"+(0.6+0.3*Math.sin(now/300+n*5))+")"; g.fillRect(x-HW*0.74,y-hc*0.55,HW*0.74,1.4);
+      } else if(era===0){
+        /* puesto de mercado con toldo */
+        caja(g,x,y,0.55,4,"#c8a878"); tejado(g,x,y,0.7,4,7,n<0.5?"#d84b3a":"#e0a030");
+        g.fillStyle="#7a5a3a"; g.fillRect(x-7,y-4,1,5); g.fillRect(x+6,y-2,1,5);
+      } else {
+        var hc2=era===1?10:era===2?14:15; hc2+=(l-1)*8;
+        caja(g,x,y,0.78,hc2,era===3?"#9e4f3a":era===2?"#f0d9b0":"#e8dcc4");
+        if(era===2){g.fillStyle="#6d4c41";for(k=0;k<3;k++){g.beginPath();g.arc(x-HW*0.78+3+k*4,y-1+k*2,1.4,Math.PI,0);g.fill();g.fillRect(x-HW*0.78+1.6+k*4,y-1+k*2,2.8,2);}}
+        ventanas(g,x,y,0.78,hc2,Math.max(1,l),era===3?"#ffe0a0":"#7a5a3a",noche,luces,wx*17+wy);
+        if(era<=2)tejado(g,x,y,0.78,hc2,5,elige(E.teja,n)); else {g.fillStyle="#2e3b4e";g.fillRect(x-6,y-hc2-3,10,3);}
+        if(era===1){g.fillStyle="#8d6e63";g.fillRect(x+HW*0.78-1,y-6,0.6,3);g.fillStyle="#c62828";g.fillRect(x+HW*0.78-2,y-3,3,2);}
+      }
     } else {
-      var al=[0,9,13,17,21][l], f=[0,0.75,0.85,0.9,0.92][l];
-      caja(g,x,y,f,al,"#b7a58a","#8d7f6a");
-      g.fillStyle="#6f6455"; for(k=0;k<3;k++){g.beginPath();g.moveTo(x-HW*f+k*5+1,y-al-1);g.lineTo(x-HW*f+k*5+4,y-al-4);g.lineTo(x-HW*f+k*5+4,y-al-1);g.fill();}
-      for(k=0;k<Math.min(l,3);k++){var cx=x+3+k*3.5, cy=y-al+1-k; g.fillStyle="#8b4a3c"; g.fillRect(cx-1.2,cy-10,2.4,10); g.fillStyle="#fafafa"; g.fillRect(cx-1.2,cy-8,2.4,1.2); if(!vecina)humo(g,cx,cy-11,now,n+k*0.3,true);}
+      if(era<=2){
+        /* taller artesanal */
+        var fi=[0.6,0.7,0.8][era], hi=[6,9,11][era]+(l-1)*3;
+        caja(g,x,y,fi,hi,era===0?"#b08b5a":era===1?"#9e9e9e":"#c0a080"); tejado(g,x,y,fi,hi,5,elige(E.teja,n));
+        if(era===1){g.strokeStyle="#6d4c41";g.lineWidth=0.8;g.beginPath();g.arc(x-HW*fi+1,y-3,4,0,6.283);g.stroke();
+          g.save();g.translate(x-HW*fi+1,y-3);g.rotate(now/700);g.beginPath();g.moveTo(-4,0);g.lineTo(4,0);g.moveTo(0,-4);g.lineTo(0,4);g.stroke();g.restore();}
+        if(!vecina)humo(g,x+3,y-hi-6,now,n,false);
+      } else if(era===5){
+        var h5=[0,12,15,18,21][l]; caja(g,x,y,0.9,h5,"#eceff1","#ffffff"); placas(g,x,y-h5,0.75);
+        g.fillStyle="rgba(80,220,255,.8)"; g.fillRect(x-HW*0.9+2,y-4,6,1);
+      } else {
+        var al=[0,9,13,17,21][l], f=[0,0.75,0.85,0.9,0.92][l];
+        caja(g,x,y,f,al,era===3?"#9e5a44":"#b7a58a",era===3?"#7a463a":"#8d7f6a");
+        g.fillStyle="#6f6455"; for(k=0;k<3;k++){g.beginPath();g.moveTo(x-HW*f+k*5+1,y-al-1);g.lineTo(x-HW*f+k*5+4,y-al-4);g.lineTo(x-HW*f+k*5+4,y-al-1);g.fill();}
+        for(k=0;k<Math.min(l+(era===3?1:0),3);k++){var cx=x+3+k*3.5, cy=y-al+1-k; g.fillStyle="#8b4a3c"; g.fillRect(cx-1.2,cy-(era===3?14:10),2.4,era===3?14:10); g.fillStyle="#fafafa"; g.fillRect(cx-1.2,cy-8,2.4,1.2); if(!vecina)humo(g,cx,cy-(era===3?15:11),now,n+k*0.3,true);}
+      }
     }
     return;
   }
+  /* la guardia de las primeras épocas: una torre de vigía */
+  if(t==="p"&&era<=1){ g.fillStyle="#b9ad98"; rombo(g,x,y,HW-0.5,HH-0.25); g.fill();
+    caja(g,x,y,0.42,20,"#a1887f","#8d6e63"); g.fillStyle="#5d4037"; g.fillRect(x-0.5,y-30,1,10);
+    g.fillStyle="#c62828"; g.beginPath(); g.moveTo(x+0.5,y-30); g.lineTo(x+6,y-28+Math.sin(now/200)); g.lineTo(x+0.5,y-26); g.fill(); return; }
   /* edificios de servicio */
   g.fillStyle=t==="P"?"#5fb85a":t==="Z"?"#e2d6bf":"#a7aeb0"; rombo(g,x,y,HW-0.5,HH-0.25); g.fill();
   switch(t){
@@ -917,6 +1047,33 @@ function dibuja(now){
   g.strokeStyle="rgba(255,213,79,.5)"; g.setLineDash([]);
   j.vecinos.forEach(function(v){var vx=(v.cx-v.cy)*HW, vy=(v.cx+v.cy)*HH; g.beginPath(); g.ellipse(vx,vy,(v.radio+0.5)*TW/Math.SQRT2,(v.radio+0.5)*TH/Math.SQRT2,0,0,6.283); g.stroke();});
   g.restore();
+  /* 3b) influencia cultural y rutas con las ciudades vecinas que se encontraron */
+  var inf=A.influencia(s);
+  g.save(); g.setLineDash([2,6]); g.strokeStyle="rgba(255,213,79,.35)"; g.lineWidth=1;
+  g.beginPath(); g.ellipse(cxI,cyI,inf*TW/Math.SQRT2,inf*TH/Math.SQRT2,0,0,6.283); g.stroke(); g.restore();
+  j.vecinos.forEach(function(v){
+    if((s.contactos||[]).indexOf(v.slot)<0)return;
+    var vx=(v.cx-v.cy)*HW, vy=(v.cx+v.cy)*HH, firmado=!!(s.tratados&&s.tratados[v.slot]);
+    /* el camino sale del borde de mi territorio y llega al borde del suyo */
+    var dx=v.cx-s.cx, dy=v.cy-s.cy, d=Math.hypot(dx,dy), a0=(A.radio(s)+1)/d, a1=1-(v.radio+1)/d;
+    var p0x=s.cx+dx*a0, p0y=s.cy+dy*a0, p1x=s.cx+dx*a1, p1y=s.cy+dy*a1;
+    var X0=(p0x-p0y)*HW, Y0=(p0x+p0y)*HH, X1=(p1x-p1y)*HW, Y1=(p1x+p1y)*HH;
+    g.save();
+    if(firmado){
+      g.strokeStyle=s.era<=1?"#b5916a":s.era===2?"#9c948a":"#5d6470"; g.lineWidth=5; g.beginPath(); g.moveTo(X0,Y0); g.lineTo(X1,Y1); g.stroke();
+      if(s.era>=3){g.strokeStyle=s.era===5?"rgba(80,220,255,.8)":"rgba(255,255,255,.6)"; g.lineWidth=0.6; g.setLineDash([3,3]); g.beginPath(); g.moveTo(X0,Y0); g.lineTo(X1,Y1); g.stroke(); g.setLineDash([]);}
+      for(var q2=0;q2<4;q2++){var f2=((now/9000)+q2/4)%1, ida=q2%2===0, ff=ida?f2:1-f2;
+        vehiculo(g,X0+(X1-X0)*ff,Y0+(Y1-Y0)*ff-1,s.era,["#e53935","#fdd835","#1e88e5","#43a047"][q2],ida===(X1>X0));}
+    } else {
+      g.strokeStyle="rgba(255,213,79,.85)"; g.lineWidth=1.4; g.setLineDash([5,4]); g.lineDashOffset=-now/60;
+      g.beginPath(); g.moveTo(X0,Y0); g.lineTo(X1,Y1); g.stroke();
+    }
+    g.setLineDash([]);
+    var mx=(X0+X1)/2, my=(Y0+Y1)/2;
+    g.fillStyle=firmado?"rgba(46,125,50,.9)":"rgba(255,160,0,.92)"; g.beginPath(); g.arc(mx,my-8,7,0,6.283); g.fill();
+    g.font="9px "+FUENTE; g.textAlign="center"; g.textBaseline="middle"; g.fillStyle="#fff"; g.fillText(firmado?"🤝":"✨",mx,my-7.5);
+    g.restore();
+  });
   /* 4) objetos en orden de pintor (x+y creciente) */
   var luces=[], coches={};
   j.cars.forEach(function(cr){var ax=cr.x+s.cx, ay=cr.y+s.cy, bx=cr.nx+s.cx, by=cr.ny+s.cy, key=(bx+by>ax+ay)?bx+","+by:ax+","+ay; (coches[key]=coches[key]||[]).push(cr);});
@@ -935,7 +1092,7 @@ function dibuja(now){
       else if(j.vecinos.length){var vv=vecinoEn(wx,wy); if(vv&&vv.t){tipo=vv.t; niv=vv.l; vecina=true;}}
       var ter=terr(wx,wy);
       if(ter==="w"&&!tipo){var hh2=hsh(wx,wy,11); if(hh2<0.18){var fz=(now/1600+hh2*7)%1; g.fillStyle="rgba(255,255,255,"+(0.45*Math.sin(fz*Math.PI))+")"; g.fillRect(x-4+fz*6,y-1,4,0.8);}}
-      if(tipo)pieza(g,tipo,niv,x,y,wx,wy,now,hayNoche,luces,vecina,s);
+      if(tipo)pieza(g,tipo,niv,x,y,wx,wy,now,hayNoche,luces,vecina,s,vecina?vv.v.era:s.era);
       else if(ter==="f")arbol(g,x,y+2,hsh(wx,wy,5),0.95);
       else if(ter==="g"&&!vecina&&ii<0&&hsh(wx,wy,9)<0.035)arbol(g,x,y+2,hsh(wx,wy,5),0.7);
       if(ii>=0&&fuegos[ii])fuego(g,x,y,now);
@@ -963,7 +1120,7 @@ function dibuja(now){
   if(!j.capa&&noche>0.02){
     g.setTransform(j.dpr,0,0,j.dpr,0,0); g.fillStyle="rgba(12,20,60,"+(0.5*noche)+")"; g.fillRect(0,0,W,H);
     g.setTransform(k,0,0,k,j.dpr*W/2-c.x*k,j.dpr*H/2-c.y*k);
-    if(hayNoche){g.globalCompositeOperation="lighter"; g.fillStyle="rgba(255,214,110,"+(0.35*noche)+")";
+    if(hayNoche){g.globalCompositeOperation="lighter"; g.fillStyle=(s.era<3?"rgba(255,150,60,":s.era===5?"rgba(140,230,255,":"rgba(255,214,110,")+(0.35*noche)+")";
       for(var li=0;li<luces.length;li+=2){g.beginPath(); g.arc(luces[li],luces[li+1],2.6,0,6.283); g.fill();}
       g.globalCompositeOperation="source-over";}
   }
@@ -983,6 +1140,12 @@ function dibuja(now){
     g.fillStyle=v.yo?"rgba(13,71,161,.85)":"rgba(0,0,0,.6)"; g.beginPath(); if(g.roundRect)g.roundRect(x-w/2,y-7,w,14,7); else g.rect(x-w/2,y-7,w,14); g.fill();
     g.fillStyle="#fff"; g.fillText(tx,x,y+0.5);
   });
+  /* 8b) el cartel de la época nueva */
+  if(j.banner){var eb=(now-j.banner.t0)/4500; if(eb>=1)j.banner=null; else{
+    g.setTransform(j.dpr,0,0,j.dpr,0,0); var al=eb<0.1?eb/0.1:eb>0.8?(1-eb)/0.2:1;
+    g.globalAlpha=al; g.fillStyle="rgba(10,16,35,.72)"; g.fillRect(0,H/2-44,W,88);
+    g.textAlign="center"; g.textBaseline="middle"; g.fillStyle="#ffd54f"; g.font="800 26px "+FUENTE; g.fillText(j.banner.t,W/2,H/2-10);
+    g.fillStyle="#fff"; g.font="500 13px "+FUENTE; g.fillText(j.banner.sub,W/2,H/2+20); g.globalAlpha=1;}}
   /* 9) dinero del mes, flotando */
   g.setTransform(j.dpr,0,0,j.dpr,0,0);
   g.font="800 15px "+FUENTE; g.textAlign="center";
@@ -995,9 +1158,19 @@ function coche(g,cr,s){
   /* por el carril derecho: se aparta a un lado de la dirección en pantalla */
   var vx=(bx-ax-(by-ay))*HW, vy=(bx-ax+(by-ay))*HH, n=Math.hypot(vx,vy)||1;
   x+=-vy/n*2.6; y+=vx/n*2.6;
+  vehiculo(g,x,y,s.era,cr.c,vx>=0);
+}
+/* de la carreta al coche eléctrico */
+function vehiculo(g,x,y,era,col,der){
   g.fillStyle="rgba(0,0,0,.25)"; g.fillRect(x-2.5,y-0.5,5,2);
-  g.fillStyle=cr.c; g.fillRect(x-2.4,y-3,4.8,2.6);
+  if(era<=1){ g.fillStyle="#8d6e63"; g.fillRect(x-2.2,y-2.6,4.4,2); g.fillStyle="#4e342e"; g.fillRect(x-2,y-0.8,1.2,1.2); g.fillRect(x+0.8,y-0.8,1.2,1.2);
+    g.fillStyle=era===0?"#a1887f":"#795548"; g.fillRect(x+(der?2.4:-4.4),y-3,2,2.2); return; }               /* carreta y su animal */
+  if(era===2){ g.fillStyle="#3e2723"; g.fillRect(x-2,y-4,4,3.2); g.fillStyle="#d7ccc8"; g.fillRect(x-1.2,y-3.4,2.4,1.1);
+    g.fillStyle="#6d4c41"; g.fillRect(x+(der?2.2:-4.6),y-3,2.4,2); return; }                                  /* carruaje */
+  if(era===3){ g.fillStyle="#212121"; g.fillRect(x-2.4,y-3,4.8,2.4); g.fillRect(x-1.4,y-4.6,2.8,1.8); return; }   /* auto antiguo */
+  g.fillStyle=col; g.fillRect(x-2.4,y-3,4.8,2.6);
   g.fillStyle="rgba(200,230,255,.9)"; g.fillRect(x-1.2,y-4.2,2.4,1.3);
+  if(era===5){g.fillStyle="rgba(80,220,255,.7)"; g.fillRect(x-2.4,y-0.6,4.8,0.7);}                             /* eléctrico */
 }
 function fuego(g,x,y,now){
   for(var k=0;k<4;k++){var f=Math.sin(now/90+k*1.7)*1.5, hx=x-6+k*4;
