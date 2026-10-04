@@ -24,6 +24,7 @@ var PLOT=function(i){return {x:40+(i%4)*36,y:116+Math.floor(i/4)*36,w:32,h:32};}
 var FAB=[[222,104],[286,104],[350,104],[414,104],[222,206],[286,206],[350,206],[414,206]].map(function(p){return {x:p[0],y:p[1],w:56,h:56};});
 var SIGNO=function(z){return {x:z.x+38,y:z.y-4,w:18,h:13};};
 var GRANERO={x:96,y:34,w:66,h:60}, CASA={x:178,y:40,w:42,h:44}, ESTACION={x:8,y:32,w:72,h:44};
+var COBERTIZO={x:228,y:36,w:58,h:40}, GARAJE={x:294,y:36,w:58,h:40}, SILO={x:362,y:34,w:34,h:44};
 var ESTANQUE={x:110,y:322,rx:62,ry:34};
 var MINI={x:VW-68,y:BOT-52,w:64,h:49};
 
@@ -181,7 +182,8 @@ function monta(cont,datos,cfg,done){
         ' → '+esc(nombres[f.da])+' · '+(f.dura/10)+' s · mejorar: '+A.costoMaquina(i,1)+' y '+A.costoMaquina(i,2)+' monedas</li>';}).join("")+
       '<li>Cultivos: '+A.CULTIVOS.map(function(k){return esc(nombres[k])+' '+(A.ITEMS[k].crece/10)+' s (nivel '+A.ITEMS[k].nivel+')';}).join(", ")+'. Cada parcela da 2.</li>'+
       '<li><b>Máquinas</b>: toca el letrero ⬆ de una fábrica. Nivel 2: un 20 % más rápida y una más en cola. Nivel 3: otro 20 %, otra en cola y <b>dos productos por tanda</b>.</li>'+
-      '<li><b>Parcelas</b>: hasta 16; toca la del cartel «Se vende». <b>Granero</b>: tócalo para ampliarlo (+12).</li>'+
+      '<li><b>Parcelas</b>: hasta 16; toca la del cartel «Se vende».</li>'+
+      '<li><b>⚙ Mejoras</b> (abajo): amplía el granero (hasta 90) y construye el silo (+30 o +60); compra la <b>cosechadora</b> (cosecha y vuelve a sembrar sola), el <b>camión de reparto</b> (entrega solo los pedidos completos) y automatiza cada fábrica.</li>'+
       '<li>Las monedas que gastas no restan: el puntaje son todas las monedas que ganaste.</li>'+
       '<li>Niveles con '+A.NIVELES.slice(2).join(", ")+' monedas ganadas. Preguntas de mejora cada 45 s (la granja se detiene).</li></ul></details></div>');
   var cv=$("gx-cv"), ctx=cv.getContext("2d"), K=2, caja=$("gx-q"), BG=null, BGK=0;
@@ -193,11 +195,12 @@ function monta(cont,datos,cfg,done){
 
   var s=A.crea(datos.seed), log=[], semilla="t", vender=false, flot=[], banner=null, temblor=0;
   var cam={x:0,y:56,vx:0,vy:0}, gj={x:120,y:96,tx:120,ty:96,dir:1};
+  var tractor={x:COBERTIZO.x+20,y:COBERTIZO.y+30,tx:COBERTIZO.x+20,ty:COBERTIZO.y+30,dir:-1}, camiones=[];
   var trenes=[], nubes=[{x:40,y:80,w:90},{x:300,y:240,w:120},{x:420,y:40,w:80}];
   var bichos=[]; for(var b=0;b<4;b++)bichos.push({t:"gallina",x:356+b*10,y:168,dir:1,base:350,ancho:44});
   for(b=0;b<2;b++)bichos.push({t:"vaca",x:418+b*20,y:166,dir:-1,base:414,ancho:40});
   var logo=null; if(marca.logo){logo=new Image();logo.src=marca.logo;}
-  J={vivo:true,raf:0,cam:cam,fuera:function(){window.removeEventListener("resize",ajusta);}};
+  J={vivo:true,raf:0,cam:cam,s:s,fuera:function(){window.removeEventListener("resize",ajusta);}};
   var yo=J, t0=0, inicio=performance.now()+3200, pausa=0;
   var qs=null, qsError=false;
   var vistas={}; try{vistas=JSON.parse(localStorage.getItem("gx_vistas")||"{}")||{};}catch(e){}
@@ -224,19 +227,41 @@ function monta(cont,datos,cfg,done){
       '<div class="gx-mej">'+
       '<button type="button" id="gx-fab"'+(A.hay(s,d.de)&&f.cola.length<A.cola(s,i)?'':' disabled')+'><b>Fabricar</b><small>'+(A.hay(s,d.de)?(f.cola.length<A.cola(s,i)?"Poner una tanda en la cola":"La cola está llena"):"Faltan "+esc(falta(d.de)))+'</small></button>'+
       (c?'<button type="button" id="gx-up"'+(s.monedas>=c?'':' disabled')+'><b>Mejorar a nivel '+(f.lv+1)+' · '+c+' monedas</b><small>'+sig+(s.monedas>=c?'':' · te faltan '+(c-s.monedas))+'</small></button>':
-        '<p class="gx-qn"><b>Máquina al máximo.</b></p>')+'</div></div>';
+        '<p class="gx-qn"><b>Máquina al máximo.</b></p>')+
+      (f.auto?'<button type="button" id="gx-au" class="'+(f.on?'gx-on':'gx-off')+'"><b>Automática · '+(f.on?'encendida':'apagada')+'</b><small>Toca para '+(f.on?'apagarla':'encenderla')+'</small></button>':
+        '<button type="button" id="gx-au"'+(s.monedas>=A.costoAutoFab(i)?'':' disabled')+'><b>Automatizar · '+A.costoAutoFab(i)+' monedas</b><small>Fabrica sola lo que piden los pedidos, sin gastar lo que ellos necesitan</small></button>')+'</div></div>';
     $("gx-cx").onclick=cierraCaja;
     if($("gx-fab"))$("gx-fab").onclick=function(){if(hace("f",i))cierraCaja();};
     if($("gx-up"))$("gx-up").onclick=function(){if(hace("u",i)){SON.nivel();cierraCaja();msg(d.nom+": máquina al nivel "+s.fabricas[i].lv+".");}};
+    $("gx-au").onclick=function(){ if(f.auto){hace("T",i);panelMaquina(i);} else if(hace("F",i)){SON.nivel();panelMaquina(i);msg(d.nom+": ahora es automática.");} };
   }
-  function panelGranero(){
-    var c=A.COSTO_GRANERO[s.graneroLv];
-    caja.hidden=false;
-    caja.innerHTML='<div class="gx-qc"><div class="gx-qh"><span>🏚️ Granero · '+A.total(s)+'/'+A.capacidad(s)+'</span><button type="button" class="gx-x" id="gx-cx">✕</button></div>'+
-      '<div class="gx-mej">'+(c?'<button type="button" id="gx-up"'+(s.monedas>=c?'':' disabled')+'><b>Ampliar a '+(A.capacidad(s)+12)+' · '+c+' monedas</b><small>12 lugares más'+(s.monedas>=c?'':' · te faltan '+(c-s.monedas))+'</small></button>':
-      '<p class="gx-qn"><b>El granero ya está al máximo.</b></p>')+'</div></div>';
+  /* almacenamiento y automatización: todo lo que se compra con monedas */
+  function panelMejoras(){
+    var fila=function(id,titulo,detalle,costo,max,nota){
+      return '<button type="button" data-compra="'+id+'"'+(costo!=null&&s.monedas>=costo?'':' disabled')+'><b>'+titulo+(costo!=null?' · '+costo+' monedas':'')+'</b><small>'+detalle+
+        (costo==null?' · '+(max||'al máximo'):s.monedas<costo?' · te faltan '+(costo-s.monedas):'')+(nota?' · '+nota:'')+'</small></button>';};
+    var g=A.COSTO_GRANERO[s.graneroLv], h='<div class="gx-qc gx-panel"><div class="gx-qh"><span>⚙️ Mejoras de la granja</span><button type="button" class="gx-x" id="gx-cx">✕</button></div>'+
+      '<p class="gx-qn">Tienes <b>'+s.monedas+' monedas</b>. Lo que inviertes no resta del puntaje.</p>'+
+      '<span class="gx-mt">📦 Almacenamiento · '+A.total(s)+'/'+A.capacidad(s)+'</span><div class="gx-mej">'+
+      fila("g",g!=null?"Ampliar el granero":"Granero",g!=null?"+12 lugares (nivel "+(s.graneroLv+1)+" de 5)":"Granero al máximo",g,"al máximo")+
+      fila("A2",s.auto.silo?"Silo nivel "+(s.auto.silo+1):"Construir el silo",A.AUTOS.silo.desc+" ("+s.auto.silo+"/2)",A.costoAuto("silo",s.auto.silo),"silo al máximo")+
+      '</div><span class="gx-mt">🤖 Automatización</span><div class="gx-mej">'+
+      fila("A0",s.auto.cosechadora?"Cosechadora nivel 2":"Comprar la cosechadora",A.AUTOS.cosechadora.desc+(s.auto.cosechadora?" (ahora cada "+A.AUTOS.cosechadora.cada[s.auto.cosechadora-1]/10+" s)":" (una parcela cada 3 s; en el nivel 2, cada 1,2 s)"),A.costoAuto("cosechadora",s.auto.cosechadora),"al máximo")+
+      fila("A1",s.auto.camion?"Camión nivel 2":"Comprar el camión de reparto",A.AUTOS.camion.desc+(s.auto.camion?" (ahora cada "+A.AUTOS.camion.cada[s.auto.camion-1]/10+" s)":" (revisa cada 2,5 s; en el nivel 2, cada 0,6 s)"),A.costoAuto("camion",s.auto.camion),"al máximo")+
+      A.FABRICAS.map(function(d,i){var f=s.fabricas[i];
+        if(d.nivel>s.nivel)return '';
+        if(f.auto)return '<button type="button" data-compra="T'+i+'" class="'+(f.on?'gx-on':'gx-off')+'"><b>'+esc(d.nom)+' automática · '+(f.on?'encendida':'apagada')+'</b><small>Toca para '+(f.on?'apagarla':'encenderla')+'. Fabrica sola lo que piden los pedidos (y 3 de reserva) sin gastar lo que ellos necesitan.</small></button>';
+        return fila("F"+i,"Automatizar "+esc(d.nom),"Fabrica sola cuando hay con qué",A.costoAutoFab(i));}).join("")+
+      '</div></div>';
+    caja.hidden=false; caja.innerHTML=h;
     $("gx-cx").onclick=cierraCaja;
-    if($("gx-up"))$("gx-up").onclick=function(){if(hace("g",0)){SON.nivel();cierraCaja();msg("Granero ampliado: caben "+A.capacidad(s)+".");}};
+    var bs=caja.querySelectorAll("[data-compra]");
+    for(var n=0;n<bs.length;n++)bs[n].onclick=function(){
+      var c=this.getAttribute("data-compra"), ok=false;
+      if(c==="g")ok=hace("g",0); else if(c.charAt(0)==="A")ok=hace("A",+c.slice(1)); else if(c.charAt(0)==="F")ok=hace("F",+c.slice(1)); else if(c.charAt(0)==="T")ok=hace("T",+c.slice(1));
+      if(ok){ if(c.charAt(0)!=="T")SON.nivel(); var y0=caja.querySelector(".gx-qc").scrollTop; panelMejoras(); caja.querySelector(".gx-qc").scrollTop=y0; }
+      else SON.no();
+    };
   }
   function abrePregunta(){
     if(!s.qDisp||pausa)return;
@@ -277,8 +302,8 @@ function monta(cont,datos,cfg,done){
 
   /* ---------- zonas fijas (arriba y abajo) ---------- */
   var ZP=function(i,n){var w=(236-(n-1)*2)/n;return {x:2+Math.round(i*(w+2)),y:22,w:Math.floor(w),h:42};};
-  var ZS=function(i){return {x:2+i*38,y:BOT+3,w:36,h:17};};
-  var ZV={x:156,y:BOT+3,w:38,h:17}, ZQ={x:196,y:BOT+3,w:42,h:17};
+  var ZS=function(i){return {x:2+i*34.5,y:BOT+3,w:33,h:17};};
+  var ZV={x:141,y:BOT+3,w:30,h:17}, ZM={x:173,y:BOT+3,w:31,h:17}, ZQ={x:206,y:BOT+3,w:32,h:17};
   var ZI=function(i){return {x:2+(i%6)*39.3,y:BOT+23+Math.floor(i/6)*25,w:37.5,h:23};};
 
   /* ---------- toques y arrastre ---------- */
@@ -322,6 +347,7 @@ function monta(cont,datos,cfg,done){
         if(A.ITEMS[k].nivel>s.nivel){msg(nombres[k]+" se desbloquea en el nivel "+A.ITEMS[k].nivel+".");SON.no();return;}
         semilla=k; msg("Semilla: "+nombres[k]+". Toca una parcela vacía."); return;}
       if(dentro(ZV,x,y)){vender=!vender;msg(vender?"Modo venta: toca un producto para venderlo a mitad de precio.":"Venta cerrada.");return;}
+      if(dentro(ZM,x,y)){panelMejoras();return;}
       if(dentro(ZQ,x,y)){ if(s.qDisp)abrePregunta(); else msg(s.preguntas>=A.MAX_Q?"No quedan preguntas en esta partida.":"La próxima pregunta llega en "+Math.ceil((s.proxQ-s.tick)/10)+" s."); return; }
       for(i=0;i<ORDEN.length;i++){z=ZI(i); if(!dentro(z,x,y))continue; var it=ORDEN[i];
         if(A.ITEMS[it].nivel>s.nivel){msg(nombres[it]+" aparece en el nivel "+A.ITEMS[it].nivel+".");return;}
@@ -353,7 +379,8 @@ function monta(cont,datos,cfg,done){
       if(!pc.c){if(hace("s",i,semilla))return; msg(A.ITEMS[semilla].nivel>s.nivel?nombres[semilla]+" se desbloquea en el nivel "+A.ITEMS[semilla].nivel+".":"No se puede sembrar.");SON.no();return;}
       if(s.tick-pc.t0>=A.crece(s,pc.c)){if(hace("c",i))return; msg("El granero está lleno: entrega, vende o amplíalo (toca el granero).");SON.no();return;}
       msg(nombres[pc.c]+": le faltan "+Math.ceil((A.crece(s,pc.c)-(s.tick-pc.t0))/10)+" s."); return;}
-    if(dentro(GRANERO,wx,wy)){camina(GRANERO.x+33,GRANERO.y+64);panelGranero();return;}
+    if(dentro(GRANERO,wx,wy)){camina(GRANERO.x+33,GRANERO.y+64);panelMejoras();return;}
+    if(dentro(COBERTIZO,wx,wy)||dentro(GARAJE,wx,wy)||dentro(SILO,wx,wy)){camina(wx,wy+20);panelMejoras();return;}
     if(dentro(ESTACION,wx,wy)){msg("La estación: los pedidos se entregan tocándolos arriba.");return;}
     camina(wx,wy);
   }
@@ -370,12 +397,14 @@ function monta(cont,datos,cfg,done){
     var now=performance.now();
     s.ev.forEach(function(e){
       if(e.tipo==="siembra")SON.siembra();
-      else if(e.tipo==="cosecha"){SON.cosecha();var z=PLOT(e.i);flota("+"+e.n,z.x+10,z.y+6,P.w,true);}
+      else if(e.tipo==="cosecha"){if(!e.auto)SON.cosecha();var z=PLOT(e.i);flota("+"+e.n,z.x+10,z.y+6,e.auto?"#bfe9ff":P.w,true);
+        if(e.auto){tractor.tx=z.x+16;tractor.ty=z.y+20;}}
       else if(e.tipo==="fabrica")SON.fabrica();
       else if(e.tipo==="hecho"){SON.hecho();var f=FAB[e.f];flota("+1 "+nombres[e.k],f.x+10,f.y+4,"#7dff9a",true);}
       else if(e.tipo==="entrega"){SON.entrega(e.combo);var z2=ZP(Math.min(e.i,anden()-1),anden());flota("+"+e.monedas,z2.x+z2.w/2-6,z2.y+14,P.y);
         trenes.push({x:ESTACION.x+10,t0:now,v:0.09});
-        msg("¡Entregado! +"+e.monedas+" monedas"+(e.combo?" · combo "+e.combo:"")+".");}
+        if(e.auto)camiones.push({t0:now});
+        msg((e.auto?"🚚 El camión entregó un pedido: +":"¡Entregado! +")+e.monedas+" monedas"+(e.combo?" · combo "+e.combo:"")+".");}
       else if(e.tipo==="perdido"){SON.perdido();temblor=now+400;msg("¡Se fue un pedido! Te quedan "+s.vidas+(s.vidas===1?" vida.":" vidas."));}
       else if(e.tipo==="nivel"){SON.nivel();banner={t:"¡NIVEL "+e.n+"!",t0:now};
         var nuevas=A.FABRICAS.filter(function(f){return f.nivel===e.n;}).map(function(f){return f.nom;}).concat(A.CULTIVOS.filter(function(k){return A.ITEMS[k].nivel===e.n;}).map(function(k){return nombres[k];}));
@@ -385,7 +414,9 @@ function monta(cont,datos,cfg,done){
       else if(e.tipo==="mejora"){banner={t:"¡MEJORA!",t0:now};}
       else if(e.tipo==="maquina"){var f2=FAB[e.f];flota("★ NIVEL "+e.lv,f2.x+4,f2.y-6,"#ffd84d",true);}
       else if(e.tipo==="parcela"){var z3=PLOT(e.i);flota("¡NUEVA!",z3.x,z3.y+10,"#ffd84d",true);}
-      else if(e.tipo==="lleno")msg("El granero está lleno: lo fabricado espera en la fábrica.");
+      else if(e.tipo==="lleno")msg("El granero está lleno: lo fabricado espera en la fábrica. Amplía el almacenamiento en ⚙ Mejoras.");
+      else if(e.tipo==="auto"){banner={t:"¡"+A.AUTOS[e.k].nom.toUpperCase()+"!",t0:now}; msg(A.AUTOS[e.k].nom+(e.lv>1?" mejorado al nivel "+e.lv:" comprado")+". "+A.AUTOS[e.k].desc+".");}
+      else if(e.tipo==="autofab"){var f3=FAB[e.f];flota("⚙ AUTO",f3.x+8,f3.y-6,"#7dff9a",true);}
     });
     s.ev.length=0;
   }
@@ -397,6 +428,41 @@ function monta(cont,datos,cfg,done){
   function barra(x,y,w,h,fr,c){r(ctx,"rgba(0,0,0,.45)",x,y,w,h);r(ctx,c,x,y,Math.max(0,w*Math.min(1,fr)),h);}
   function pill(t,cx,y,c){ctx.font="800 5.5px "+FUENTE;var w=ctx.measureText(t).width+6;caja2(cx-w/2,y,w,8,"rgba(20,16,10,.72)");tx(t,cx,y+1.2,{t:5.5,c:c||"#fff",al:"center",peso:800});}
 
+  function cobertizo(now){var c=COBERTIZO;
+    r(ctx,"rgba(0,0,0,.2)",c.x+3,c.y+c.h-4,c.w,5);
+    r(ctx,"#5a3a1c",c.x+4,c.y+12,c.w-8,c.h-14); r(ctx,"#86552b",c.x+5,c.y+13,c.w-10,c.h-16);
+    for(var k=0;k<6;k++)r(ctx,"rgba(0,0,0,.15)",c.x+5+k*8,c.y+13,1,c.h-16);
+    ctx.fillStyle="#5f574f"; ctx.fillRect(c.x+1,c.y+8,c.w-2,5);
+    r(ctx,"#2a1608",c.x+14,c.y+20,c.w-28,c.h-22);
+    if(!s.auto.cosechadora){pillW("Cosechadora · ⚙ Mejoras",c.x+c.w/2,c.y+c.h-2);} else pillW("Cosechadora nv "+s.auto.cosechadora,c.x+c.w/2,c.y+c.h-2,"#7dff9a");}
+  function garaje(now){var c=GARAJE;
+    r(ctx,"rgba(0,0,0,.2)",c.x+3,c.y+c.h-4,c.w,5);
+    r(ctx,"#8f877a",c.x+4,c.y+12,c.w-8,c.h-14); r(ctx,"#c9c2b4",c.x+5,c.y+13,c.w-10,c.h-16);
+    ctx.fillStyle="#3b4a8c"; ctx.fillRect(c.x+1,c.y+8,c.w-2,5);
+    for(var k=0;k<5;k++)r(ctx,"#8f877a",c.x+12,c.y+18+k*4,c.w-24,1.5);
+    if(s.auto.camion&&!camiones.length)dibujaCamion(c.x+c.w/2-8,c.y+28,1,s.auto.camion);
+    if(!s.auto.camion)pillW("Camión · ⚙ Mejoras",c.x+c.w/2,c.y+c.h-2); else pillW("Camión nv "+s.auto.camion,c.x+c.w/2,c.y+c.h-2,"#7dff9a");}
+  function silo(now){var c=SILO, lv=s.auto.silo;
+    r(ctx,"rgba(0,0,0,.2)",c.x+2,c.y+c.h-4,c.w,5);
+    if(!lv){r(ctx,"#8a8a8a",c.x+4,c.y+c.h-12,c.w-8,8); pillW("Silo · ⚙",c.x+c.w/2,c.y+c.h-24);return;}
+    var alto=lv===1?30:38;
+    r(ctx,"#8f877a",c.x+5,c.y+c.h-alto-4,c.w-10,alto); r(ctx,"#c2c3c7",c.x+6,c.y+c.h-alto-3,c.w-12,alto-2);
+    for(var k=0;k<alto;k+=6)r(ctx,"rgba(0,0,0,.12)",c.x+6,c.y+c.h-alto-3+k,c.w-12,1);
+    ctx.fillStyle="#ff004d"; ctx.beginPath(); ctx.ellipse(c.x+c.w/2,c.y+c.h-alto-4,(c.w-10)/2,6,0,Math.PI,0); ctx.fill();
+    pillW("Silo +"+(30*lv),c.x+c.w/2,c.y+c.h-2,"#7dff9a");}
+  function dibujaTractor(x,y,dir,now,lv){
+    r(ctx,"rgba(0,0,0,.2)",x-9,y+5,18,3);
+    r(ctx,lv>1?"#ff004d":"#00a04a",x-7,y-6,12,7); r(ctx,"#1d2b53",x+(dir>0?-1:-6),y-12,6,6); r(ctx,"#7fd4ff",x+(dir>0?0:-5),y-11,4,3);
+    r(ctx,"#5f574f",x+(dir>0?4:-8),y-9,1.5,4);
+    var g=late(now,120);
+    r(ctx,"#1d1d1d",x+(dir>0?-8:2),y-3,7,7); r(ctx,g?"#5f574f":"#3f3a35",x+(dir>0?-6:4),y-1,3,3);
+    r(ctx,"#1d1d1d",x+(dir>0?3:-7),y,4,4);}
+  function dibujaCamion(x,y,dir,lv){
+    r(ctx,"rgba(0,0,0,.2)",x-1,y+7,18,2);
+    r(ctx,marca.color||(lv>1?"#ff004d":"#ffa300"),x+(dir>0?0:5),y-3,11,9); r(ctx,"#29adff",x+(dir>0?11:0),y,5,6); r(ctx,"#7fd4ff",x+(dir>0?12:1),y+1,3,2);
+    r(ctx,"#1d1d1d",x+2,y+6,3,3); r(ctx,"#1d1d1d",x+11,y+6,3,3);
+    if(logo)try{ctx.drawImage(logo,x+(dir>0?2:7),y-2,7,7);}catch(e){}}
+  function pillW(t,cx,y,c){ctx.font="800 4.8px "+FUENTE;var w=ctx.measureText(t).width+5;caja2(cx-w/2,y-8,w,7,"rgba(20,16,10,.72)");tx(t,cx,y-7,{t:4.8,c:c||"#fff",al:"center",peso:800});}
   function mundo(now){
     var tk=s.tick, i, z;
     ctx.save();
@@ -461,6 +527,8 @@ function monta(cont,datos,cfg,done){
       if(fb.cola.length)barra(z.x+10,z.y+70,36,2.5,(tk-fb.t0)/A.dura(s,i),"#7dff9a");
       if(fb.lista&&late(now,300))pill("¡GRANERO LLENO!",z.x+28,z.y+22,"#ff8fab");
       else if(!fb.cola.length&&A.hay(s,d.de)&&late(now,700))pill("toca para fabricar",z.x+28,z.y+22,"#bfe9ff");
+      if(fb.auto){caja2(z.x+2,z.y-4,20,9,fb.on?"#0d7a43":"#5f574f","#fff1e8"); tx("AUTO",z.x+12,z.y-2.6,{t:5,c:"#fff",al:"center",peso:900});
+        if(fb.on){ctx.save();ctx.translate(z.x+46,z.y+28);ctx.rotate(now/400);r(ctx,"#c2c3c7",-3,-1,6,2);r(ctx,"#c2c3c7",-1,-3,2,6);ctx.restore();}}
       /* letrero de mejora */
       var sg=SIGNO(z), c4=A.costoMaquina(i,fb.lv), puede=c4&&s.monedas>=c4;
       caja2(sg.x,sg.y,sg.w,sg.h,c4?(puede?(late(now,450)?"#0d7a43":"#16a05a"):"#3b4a8c"):"#a07a2a","#fff1e8");
@@ -476,6 +544,19 @@ function monta(cont,datos,cfg,done){
       for(var k=0;k<6;k++)r(ctx,"#1d1d1d",x-42+k*10,26,4,3);
       var hum=((now/300)%1); ctx.fillStyle="rgba(230,230,230,"+(0.7-hum*0.7)+")"; ctx.beginPath(); ctx.arc(x+3-hum*8,9-hum*6,2+hum*3,0,Math.PI*2); ctx.fill();
       return true;});
+    /* cobertizo de la cosechadora, garaje del camión y silo */
+    cobertizo(now); garaje(now); silo(now);
+    /* la cosechadora va hasta la parcela que cosecha y vuelve */
+    if(s.auto.cosechadora){
+      var tdx=tractor.tx-tractor.x, tdy=tractor.ty-tractor.y, td=Math.hypot(tdx,tdy);
+      if(td>1){var tv=Math.min(td,1.8);tractor.x+=tdx/td*tv;tractor.y+=tdy/td*tv;if(Math.abs(tdx)>0.5)tractor.dir=tdx>0?1:-1;}
+      else if(tractor.tx!==COBERTIZO.x+20&&rnd(now)<0.01){tractor.tx=COBERTIZO.x+20;tractor.ty=COBERTIZO.y+30;}
+      dibujaTractor(tractor.x,tractor.y,tractor.dir,now,s.auto.cosechadora);
+    }
+    /* el camión de reparto va del garaje a la estación */
+    camiones=camiones.filter(function(c){var e3=(now-c.t0)/2200; if(e3>1)return false;
+      var x0=GARAJE.x+18, x1=ESTACION.x+ESTACION.w-4, f4=e3<0.5?e3*2:2-e3*2, x=x0+(x1-x0)*f4;
+      dibujaCamion(x,82,e3<0.5?-1:1,s.auto.camion); return true;});
     /* granjero */
     var ddx=gj.tx-gj.x, ddy=gj.ty-gj.y, dist=Math.hypot(ddx,ddy), anda=dist>1;
     if(anda){var v=Math.min(dist,1.4); gj.x+=ddx/dist*v; gj.y+=ddy/dist*v; if(Math.abs(ddx)>0.5)gj.dir=ddx>0?1:-1;}
@@ -524,9 +605,11 @@ function monta(cont,datos,cfg,done){
     r(ctx,"#6b4220",0,BOT,VW,VH-BOT); for(var yy2=BOT+5;yy2<VH;yy2+=6)r(ctx,"#5f3a1c",0,yy2,VW,0.7);
     for(i=0;i<4;i++){z=ZS(i); var k=A.CULTIVOS[i], ab=A.ITEMS[k].nivel<=s.nivel, sel=ab&&semilla===k;
       caja2(z.x,z.y,z.w,z.h,ab?(sel?"#2f4f9a":"rgba(29,39,92,.92)"):"rgba(16,22,48,.7)",sel?"#ffec27":null);
-      if(ab){spr(ctx,k,z.x+2,z.y+3.5); tx(nombres[k].slice(0,7),z.x+13,z.y+2.5,{t:4.8}); tx((A.crece(s,k)/10).toFixed(1).replace(".0","").replace(".",",")+" s",z.x+13,z.y+9.5,{t:4.3,c:"#aab6e6",peso:600});}
-      else{spr(ctx,"lock",z.x+3,z.y+5); tx("Nivel "+A.ITEMS[k].nivel,z.x+12,z.y+6,{t:4.6,c:"#aab6e6"});}}
-    caja2(ZV.x,ZV.y,ZV.w,ZV.h,vender?"#ff004d":"#3a2414",vender?"#fff":"#c8a165"); tx(vender?"Vendiendo":"Vender",ZV.x+ZV.w/2,ZV.y+5.5,{t:5.3,al:"center"});
+      if(ab){spr(ctx,k,z.x+1.5,z.y+3.5); tx(nombres[k].slice(0,6),z.x+12.5,z.y+2.5,{t:4.6}); tx((A.crece(s,k)/10).toFixed(1).replace(".0","").replace(".",",")+" s",z.x+12.5,z.y+9.5,{t:4.2,c:"#aab6e6",peso:600});}
+      else{spr(ctx,"lock",z.x+3,z.y+5); tx("Nv "+A.ITEMS[k].nivel,z.x+12,z.y+6,{t:4.6,c:"#aab6e6"});}}
+    caja2(ZV.x,ZV.y,ZV.w,ZV.h,vender?"#ff004d":"#3a2414",vender?"#fff":"#c8a165"); tx(vender?"Vende…":"Vender",ZV.x+ZV.w/2,ZV.y+5.5,{t:5,al:"center"});
+    var hayCompra=s.monedas>=Math.min(A.COSTO_GRANERO[s.graneroLv]||1e9,A.costoAuto("cosechadora",s.auto.cosechadora)||1e9,A.costoAuto("camion",s.auto.camion)||1e9,A.costoAuto("silo",s.auto.silo)||1e9);
+    caja2(ZM.x,ZM.y,ZM.w,ZM.h,hayCompra&&late(now,500)?"#0d7a43":"#3a2414",hayCompra?"#7dff9a":"#c8a165"); tx("⚙ Mejoras",ZM.x+ZM.w/2,ZM.y+5.5,{t:4.8,al:"center",peso:800});
     if(s.qDisp){caja2(ZQ.x,ZQ.y,ZQ.w,ZQ.h,late(now,300)?"#7a1fa2":"#5b1680",late(now,150)?"#ffec27":"#ffd84d",1.5); tx("❓ ¡Pregunta!",ZQ.x+ZQ.w/2,ZQ.y+5,{t:5.6,al:"center",peso:900});}
     else{caja2(ZQ.x,ZQ.y,ZQ.w,ZQ.h,"rgba(16,22,48,.7)","#4b5aa0"); tx(s.preguntas>=A.MAX_Q?"Sin más":"❓ en "+Math.max(0,Math.ceil((s.proxQ-tk)/10))+" s",ZQ.x+ZQ.w/2,ZQ.y+5.5,{t:5,c:"#dfe6ff",al:"center"});}
     for(i=0;i<ORDEN.length;i++){z=ZI(i); var it=ORDEN[i], cnt=s.granero[it]||0, vis=A.ITEMS[it].nivel<=s.nivel;
@@ -569,5 +652,6 @@ function monta(cont,datos,cfg,done){
   yo.raf=requestAnimationFrame(cuadro);
 }
 
-window.AxGranjaGUI={monta:monta,para:para,camara:function(){return J&&J.cam?{x:J.cam.x,y:J.cam.y}:null;}};
+/* camara y estado: para las pruebas (el servidor repite cada partida, así que tocarlo no sirve para hacer trampa) */
+window.AxGranjaGUI={monta:monta,para:para,camara:function(){return J&&J.cam?{x:J.cam.x,y:J.cam.y}:null;},estado:function(){return J&&J.s;}};
 })();

@@ -79,7 +79,8 @@ de granja que se **recorre arrastrando** (con inercia) y un **minimapa** abajo a
 fábricas trabajando). Arriba quedan fijos el marcador y los pedidos; abajo, las semillas,
 «Vender», la pregunta y el granero con sus 12 productos.
 
-- **El mapa:** estación con su tren (sale con cada entrega), granero, casa, campo cercado
+- **El mapa:** estación con su tren (sale con cada entrega), granero, silo, cobertizo de la
+  cosechadora, garaje del camión, casa, campo cercado
   de 16 parcelas, estanque, huerto, caminos, y 8 fábricas animadas (aspas del molino,
   humo del horno, gallinas y vacas que pasean, rueca que gira). El granjero camina hasta
   donde tocas.
@@ -90,7 +91,20 @@ fábricas trabajando). Arriba quedan fijos el marcador y los pedidos; abajo, las
   una más en cola. Nivel 3: otro 20 %, otra en cola y **dos productos por tanda**. Cuesta
   monedas (por ejemplo, el horno 62 y 124).
 - **Parcelas:** empiezas con 6 y compras hasta 16 (la del cartel «Se vende»; cada una
-  sube de precio). **Granero:** tócalo para ampliarlo de 30 a 66 (+12 cada vez).
+  sube de precio).
+- **Almacenamiento** (botón **⚙ Mejoras** abajo, o tocando el granero, el silo, el
+  cobertizo o el garaje): el granero pasa de 30 a 90 (+12 en cinco ampliaciones: 80, 160,
+  280, 420 y 600 monedas) y el **silo** suma 30 o 60 más (200 y 400). Hasta 150 lugares.
+- **Automatización:**
+  - **Cosechadora** (220; nivel 2, 450): cosecha sola las parcelas listas y vuelve a
+    sembrar lo mismo, una cada 3 s (o cada 1,2 s). Se ve el tractor ir a cada parcela.
+  - **Fábricas automáticas** (desde 105 monedas cada una, en el panel ⚙ de la fábrica o
+    en Mejoras): ponen tandas solas cuando hay con qué. Nunca gastan lo que piden los
+    pedidos visibles y no fabrican más de lo pedido más 3 de reserva, para no llenar el
+    granero. Se encienden y apagan cuando quieras.
+  - **Camión de reparto** (260; nivel 2, 520): entrega solo los pedidos que ya puedes
+    completar (revisa cada 2,5 s, o cada 0,6 s). Se le ve salir del garaje a la estación.
+  - En las pruebas con el jugador automático, automatizar multiplica por 3 las monedas.
 - **Puntaje:** todas las monedas **ganadas**; lo que inviertes no resta. Invertir bien
   rinde: en las pruebas, un jugador que mejora sus máquinas gana más del doble.
 - Preguntas de mejora cada 45 s (abono, fábricas turbo, cosecha triple, vida, clientes

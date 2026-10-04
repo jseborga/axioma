@@ -1781,3 +1781,7 @@ body[data-game=rapido] #pie-juego{display:none!important}
 .gx-mej button:disabled{opacity:.55;cursor:default}
 .gx-grande{background:linear-gradient(135deg,#2c7a3a,#4a9a3e);color:#fff}
 .gx-grande small{color:#e8f5d8}
+
+.gx-panel{max-height:92%;overflow:auto}
+.gx-mej button.gx-on{border-color:#0d7a43;background:#e3f8ea}
+.gx-mej button.gx-off{border-color:#8a8a8a;background:#f1efe9}

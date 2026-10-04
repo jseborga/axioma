@@ -2,7 +2,9 @@
    THE FINAL TEST · Granja Grande · motor
    La versión extendida de Granja Express: 8 minutos, 12 productos,
    8 fábricas que se mejoran (velocidad y cola), parcelas que se
-   compran (hasta 16) y un granero que se amplía. Las monedas se
+   compran (hasta 16), un granero y un silo que se amplían, y
+   automatización: cosechadora, fábricas automáticas y camión de
+   reparto que trabajan solos. Las monedas se
    gastan en mejoras: el puntaje son las monedas ganadas en total.
 
    Igual que la granja clásica, es una simulación determinista a 10
@@ -50,7 +52,16 @@ var MAQ_MAX=3;
 /* lo que cuesta mejorar cada máquina (al nivel 2 y al 3) */
 function costoMaquina(i,lv){var b=20+ITEMS[FABRICAS[i].da].valor*3; return lv===1?b:lv===2?b*2:null;}
 function costoParcela(s){return 30+15*(s.parcelasN-PARCELAS);}
-var COSTO_GRANERO=[80,160,280];
+var COSTO_GRANERO=[80,160,280,420,600];          /* granero: 30 → 90 */
+/* automatización y almacenes que se compran */
+var AUTOS={
+  cosechadora:{nom:"Cosechadora",  desc:"Cosecha sola las parcelas listas y vuelve a sembrar lo mismo", costo:[220,450], cada:[30,12]},
+  camion:     {nom:"Camión de reparto",desc:"Entrega solo los pedidos que ya puedes completar",       costo:[260,520], cada:[25,6]},
+  silo:       {nom:"Silo",         desc:"30 lugares más de almacenamiento por nivel",                  costo:[200,400]}
+};
+var AUTO_KEYS=["cosechadora","camion","silo"];
+function costoAuto(k,lv){var c=AUTOS[k].costo; return lv<c.length?c[lv]:null;}
+function costoAutoFab(i){return 60+ITEMS[FABRICAS[i].da].valor*5;}   /* automatizar una fábrica */
 var MEJORAS={
   abono:    {nom:"Abono",            desc:"Los cultivos crecen un 20 % más rápido",        max:2},
   turbo:    {nom:"Fábricas turbo",   desc:"Todas las fábricas, un 15 % más rápidas",      max:2},
@@ -71,13 +82,14 @@ function crea(seed){
     mej:{},preguntas:0,aciertos:0,qDisp:false,proxQ:PRIMERA_Q,qUsadas:{}};
   s.r=rng(s.seed);
   var i; for(i=0;i<MAX_PARCELAS;i++)s.parcelas.push({c:null,t0:0});
-  for(i=0;i<FABRICAS.length;i++)s.fabricas.push({cola:[],t0:0,lista:0,lv:1});
+  for(i=0;i<FABRICAS.length;i++)s.fabricas.push({cola:[],t0:0,lista:0,lv:1,auto:false,on:false});
+  s.auto={cosechadora:0,camion:0,silo:0}; s.cosT=0; s.camT=0;
   for(i=0;i<5;i++)s.pedidos.push({llega:i<ANDENES[1]?10+i*50:-1,p:null});
   Object.keys(MEJORAS).forEach(function(k){s.mej[k]=0;});
   return s;
 }
 function nParcelas(s){return s.parcelasN;}
-function capacidad(s){return GRANERO+GRANERO_PASO*s.graneroLv;}
+function capacidad(s){return GRANERO+GRANERO_PASO*s.graneroLv+30*s.auto.silo;}
 function crece(s,c){return Math.round(ITEMS[c].crece*(1-0.2*s.mej.abono));}
 function dura(s,i){return Math.round(FABRICAS[i].dura*(1-0.2*(s.fabricas[i].lv-1))*(1-0.15*s.mej.turbo));}
 function cola(s,i){return COLA+(s.fabricas[i].lv-1);}
@@ -128,6 +140,7 @@ function paso(s){
       for(var n2=salida(s,i);n2>0;n2--){ if(total(s)<capacidad(s)){pon(s,d.da,1);aviso(s,{tipo:"hecho",f:i,k:d.da});}else{f.lista++;aviso(s,{tipo:"lleno"});} }
     }
   }
+  automatiza(s);
   for(i=0;i<5;i++){
     var o=s.pedidos[i];
     if(o.p&&s.tick>=o.p.vence){
@@ -145,12 +158,51 @@ function subeNivel(s){
     for(var i=ANDENES[s.nivel-1];i<ANDENES[s.nivel];i++)if(!s.pedidos[i].p&&s.pedidos[i].llega<0)s.pedidos[i].llega=s.tick+20;
   }
 }
-function gasta(s,n){if(s.monedas<n)return false; s.monedas-=n; s.gastado+=n; return true;}
+function gasta(s,n){if(n==null||s.monedas<n)return false; s.monedas-=n; s.gastado+=n; return true;}
+/* lo que piden los pedidos visibles de cada producto */
+function demanda(s){var d={}; for(var i=0;i<ANDENES[s.nivel];i++){var o=s.pedidos[i].p; if(o)o.items.forEach(function(x){d[x[0]]=(d[x[0]]||0)+x[1];});} return d;}
+function entrega(s,b,auto){
+  var o=s.pedidos[b].p;
+  o.items.forEach(function(x){s.granero[x[0]]-=x[1];});
+  s.combo=s.tick-s.ultEntrega<=COMBO_T?Math.min(5,s.combo+1):0; s.ultEntrega=s.tick;
+  var extra=Math.floor(Math.max(0,o.vence-s.tick)/30);
+  var g=Math.round((o.premio+extra)*(1+0.1*s.combo)*(1+0.15*s.mej.precio));
+  s.entregas++; s.pedidos[b].p=null; s.pedidos[b].llega=s.tick+30;
+  aviso(s,{tipo:"entrega",i:b,monedas:g,combo:s.combo,auto:!!auto}); gana(s,g);
+}
+/* las máquinas automáticas trabajan solas en cada paso, siempre igual: el servidor las repite */
+function automatiza(s){
+  var i, k, lv;
+  lv=s.auto.cosechadora;
+  if(lv&&s.tick>=s.cosT){
+    for(i=0;i<s.parcelasN;i++){var pc=s.parcelas[i];
+      if(pc.c&&s.tick-pc.t0>=crece(s,pc.c)&&total(s)+rinde(s)<=capacidad(s)){
+        k=pc.c; pon(s,k,rinde(s)); aviso(s,{tipo:"cosecha",i:i,k:k,n:rinde(s),auto:true}); pc.t0=s.tick;   /* vuelve a sembrar lo mismo */
+        s.cosT=s.tick+AUTOS.cosechadora.cada[lv-1]; break;}}
+  }
+  /* fábricas automáticas: ponen una tanda si hay con qué, sin tocar lo que piden los pedidos
+     y sin acumular más de lo pedido más 3 de reserva */
+  if(s.tick%5===0){
+    var dem=null;
+    for(i=0;i<FABRICAS.length;i++){var f=s.fabricas[i], d=FABRICAS[i];
+      if(!f.auto||!f.on||d.nivel>s.nivel||f.cola.length>=cola(s,i)||!hay(s,d.de))continue;
+      dem=dem||demanda(s);
+      /* no llena el granero de lo que nadie pide: mantiene lo pedido y 3 de reserva */
+      if((s.granero[d.da]||0)+f.cola.length*salida(s,i)>=(dem[d.da]||0)+3)continue;
+      var sobra=true; for(k in d.de)if((s.granero[k]||0)-d.de[k]<(dem[k]||0))sobra=false;
+      if(!sobra)continue;
+      quita(s,d.de); if(!f.cola.length)f.t0=s.tick; f.cola.push(d.da); aviso(s,{tipo:"fabrica",f:i,auto:true});}
+  }
+  lv=s.auto.camion;
+  if(lv&&s.tick>=s.camT){
+    for(i=0;i<ANDENES[s.nivel];i++)if(puedeEntregar(s,i)){entrega(s,i,true); s.camT=s.tick+AUTOS.camion.cada[lv-1]; break;}
+  }
+}
 
 /* ---------- acciones ---------- */
 function act(s,a,b,c,d2,e2){
   if(s.fin)return false;
-  var pc, f, d, o;
+  var pc, f, d, o, k;
   if(a==="s"){
     pc=b<s.parcelasN&&s.parcelas[b]; if(!pc||pc.c||CULTIVOS.indexOf(c)<0||ITEMS[c].nivel>s.nivel)return false;
     pc.c=c; pc.t0=s.tick; aviso(s,{tipo:"siembra",i:b}); return true;
@@ -165,13 +217,22 @@ function act(s,a,b,c,d2,e2){
   }
   if(a==="e"){
     if(!(b>=0&&b<ANDENES[s.nivel])||!puedeEntregar(s,b))return false;
-    o=s.pedidos[b].p;
-    o.items.forEach(function(x){s.granero[x[0]]-=x[1];});
-    s.combo=s.tick-s.ultEntrega<=COMBO_T?Math.min(5,s.combo+1):0; s.ultEntrega=s.tick;
-    var extra=Math.floor(Math.max(0,o.vence-s.tick)/30);
-    var g=Math.round((o.premio+extra)*(1+0.1*s.combo)*(1+0.15*s.mej.precio));
-    s.entregas++; s.pedidos[b].p=null; s.pedidos[b].llega=s.tick+30;
-    aviso(s,{tipo:"entrega",i:b,monedas:g,combo:s.combo}); gana(s,g); return true;
+    entrega(s,b,false); return true;
+  }
+  if(a==="A"){                                 /* comprar o mejorar la cosechadora, el camión o el silo */
+    k=AUTO_KEYS[b]; if(!k)return false;
+    var lvA=s.auto[k]; if(!gasta(s,costoAuto(k,lvA)))return false;
+    s.auto[k]++; if(k==="cosechadora")s.cosT=s.tick; if(k==="camion")s.camT=s.tick;
+    aviso(s,{tipo:"auto",k:k,lv:s.auto[k]}); return true;
+  }
+  if(a==="F"){                                 /* automatizar una fábrica */
+    d=FABRICAS[b]; f=s.fabricas[b]; if(!d||d.nivel>s.nivel||f.auto)return false;
+    if(!gasta(s,costoAutoFab(b)))return false;
+    f.auto=true; f.on=true; aviso(s,{tipo:"autofab",f:b}); return true;
+  }
+  if(a==="T"){                                 /* encender o apagar una fábrica automática */
+    f=s.fabricas[b]; if(!f||!f.auto)return false;
+    f.on=!f.on; aviso(s,{tipo:"autoon",f:b,on:f.on}); return true;
   }
   if(a==="v"){
     if(!ITEMS[c]||!(s.granero[c]>0))return false;
@@ -258,6 +319,7 @@ if(R&&!R.JUEGOS.granja_grande){
 G.AxGranjaG={TICK:TICK,DUR:DUR,PARCELAS:PARCELAS,MAX_PARCELAS:MAX_PARCELAS,GRANERO:GRANERO,VIDAS:VIDAS,COMBO_T:COMBO_T,MAQ_MAX:MAQ_MAX,
   CADA_Q:CADA_Q,MAX_Q:MAX_Q,PREMIO_Q:PREMIO_Q,MEJORAS:MEJORAS,ITEMS:ITEMS,CULTIVOS:CULTIVOS,FABRICAS:FABRICAS,NIVELES:NIVELES,ANDENES:ANDENES,
   COSTO_GRANERO:COSTO_GRANERO,costoMaquina:costoMaquina,costoParcela:costoParcela,JUEGO:JUEGO,
+  AUTOS:AUTOS,AUTO_KEYS:AUTO_KEYS,costoAuto:costoAuto,costoAutoFab:costoAutoFab,demanda:demanda,
   crea:crea,paso:paso,act:act,repite:repite,total:total,hay:hay,puedeEntregar:puedeEntregar,
   nParcelas:nParcelas,capacidad:capacidad,crece:crece,dura:dura,cola:cola,salida:salida,rinde:rinde,ofertas:ofertas,
   genera:genera,evalua:evalua};
