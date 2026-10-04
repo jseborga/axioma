@@ -70,6 +70,7 @@ var GRUPOS=[
   {k:"zonas",ico:"🏘️",nom:"Zonas",t:["R","C","I"]},
   {k:"energia",ico:"⚡",nom:"Energía",t:["e","w","s","h"]},
   {k:"agua",ico:"💧",nom:"Agua",t:["b","d"]},
+  {k:"redes",ico:"🔌",nom:"Redes",red:true},
   {k:"servicios",ico:"🚓",nom:"Servicios",t:["p","f","H","k"]},
   {k:"cultura",ico:"🎭",nom:"Cultura",t:["L","Z","P","T","M","u","O"]},
   {k:"x",ico:"🧨",nom:"Demoler"},
@@ -89,11 +90,12 @@ var DESC={
   L:"+1 de cultura: la cultura amplía el territorio.",M:"+3 de cultura y felicidad.",T:"+2 de cultura y mucha felicidad.",
   P:"Felicidad y aire limpio alrededor.",Z:"Felicidad y un poco de cultura.",O:"+8 de cultura y gran felicidad."
 };
-var CAPAS=[["","Sin capa"],["cont","Contaminación"],["seg","Seguridad"],["fue","Bomberos"],["sal","Salud"],["edu","Educación"],["feliz","Ocio"]];
+var CAPAS=[["","Sin capa"],["cont","Contaminación"],["seg","Seguridad"],["fue","Bomberos"],["sal","Salud"],["edu","Educación"],["feliz","Ocio"],["luz","Electricidad"],["agua","Red de agua"]];
 var MISIONES=[
   ["Traza una calle",function(s,st){return st.calles>=1;}],
   ["Pon una zona residencial junto a la calle",function(s,st){return st.R>=1;}],
   ["Agua potable: construye un pozo",function(s,st){return st.agCap>s.bonoAgua;}],
+  ["Lleva el agua con una tubería (🔌 Redes)",function(s){return s.tubo.indexOf(1)>=0;}],
   ["Zonas comerciales e industriales",function(s,st){return st.C>=1&&st.I>=1;}],
   ["Cultura: una plaza o una biblioteca",function(s){return s.tipo.indexOf("Z")>=0||s.tipo.indexOf("L")>=0;}],
   ["Avanza a la Edad Media (🏺 arriba)",function(s){return s.era>=1;}],
@@ -104,6 +106,7 @@ var MISIONES=[
   ["Amplía el territorio a radio 10",function(s){return A.radio(s)>=10;}],
   ["Avanza a la Revolución Industrial",function(s){return s.era>=3;}],
   ["Da electricidad: construye una central",function(s,st){return s.tipo.indexOf("e")>=0||s.tipo.indexOf("h")>=0;}],
+  ["Tiende una línea eléctrica (🔌 Redes)",function(s){return s.cable.indexOf(1)>=0;}],
   ["Avanza a la Era Moderna",function(s){return s.era>=4;}],
   ["Firma un tratado con una ciudad vecina",function(s){return A.rutas(s)>=1;}],
   ["Avanza a la Era Digital",function(s){return s.era>=5;}],
@@ -188,7 +191,7 @@ function monta(ent){
   var s=ent.estado?A.deserializa(ent.estado,ent.seg):A.deserializa(A.serializa(A.crea(ent.nuevo.mseed,ent.nuevo.slot,ent.nuevo.nombre)),ent.seg);
   var yo={vivo:true,s:s,log:[],seg:ent.seg,mundo:ent.mundo,solo:!!ent.cerrado,vel:1,pausa:false,modal:false,guardando:false,
     ultGuardado:performance.now(),vecinos:[],herr:{k:"info"},grupo:null,capa:"",cars:[],chispas:[],flot:[],trozos:{},ntrozos:0,
-    radio:A.radio(s),mision:-1,retro:retroGuardado(),cam:{x:0,y:0,z:1},ptr:{},arrastre:null,hover:null,ultMes:null,avisos:[]};
+    radio:A.radio(s),mision:-1,retro:retroGuardado(),sub:false,cam:{x:0,y:0,z:1},ptr:{},arrastre:null,hover:null,ultMes:null,avisos:[]};
   J=yo; ultT=null;
   pn.innerHTML='<div class="cs" id="cs">'+
     '<div class="cs-top">'+
@@ -323,11 +326,14 @@ function hud(primera){
   $("cs-pob").textContent=fmt(st.pob); $("cs-fel").textContent=st.felicidad+" %";
   if(st.sinLuz){$("cs-mw").textContent="—"; $("cs-mw-w").title="Sin electricidad hasta la Revolución Industrial";}
   else{$("cs-mw").textContent=fmt(st.mwUso)+"/"+fmt(st.mwCap); $("cs-mw-w").title="Electricidad: consumo / generación";}
+  if(!st.sinLuz&&st.sinRedE){$("cs-mw").textContent+=" ⚠"+st.sinRedE; $("cs-mw-w").title=st.sinRedE+" zonas o edificios sin electricidad: falta generación o conexión (🔌 Redes)";}
   $("cs-mw-w").classList.toggle("mal",st.ratioMW<1);
   var rq=A.requisitos(s,s.era+1), listo=rq&&rq.every(function(x){return x.ok;});
   $("cs-era").innerHTML=eraNom(s.era)+(rq?' <small>'+(listo?'¡lista para avanzar!':Math.round(100*rq.reduce(function(a,x){return a+Math.min(1,x.v/x.meta);},0)/rq.length)+' %')+'</small>':'');
   $("cs-era").classList.toggle("listo",!!listo);
-  $("cs-ag").textContent=fmt(st.agUso)+"/"+fmt(st.agCap); $("cs-ag-w").classList.toggle("mal",st.ratioAg<1);
+  $("cs-ag").textContent=fmt(st.agUso)+"/"+fmt(st.agCap)+(st.sinRedA?" ⚠"+st.sinRedA:"");
+  $("cs-ag-w").title=st.sinRedA?st.sinRedA+" zonas o edificios sin agua: faltan bombas o tuberías (🔌 Redes)":"Agua: consumo / capacidad";
+  $("cs-ag-w").classList.toggle("mal",st.ratioAg<1);
   var r=A.radio(s), sig=r<A.R?culturaPara(r+1):null;
   $("cs-cul").textContent=fmt(s.cultura)+(sig?"/"+fmt(sig):"");
   $("cs-con").textContent=s.conocimiento;
@@ -364,16 +370,32 @@ function herramientas(){
     return '<button type="button" data-g="'+g.k+'" aria-pressed="'+on+'"><span>'+g.ico+'</span><small>'+g.nom+'</small></button>';
   }).join("");
   var g=GRUPOS.filter(function(x){return x.k===j.grupo;})[0];
-  if(g&&g.t){
+  if(g&&g.red){
+    sz.innerHTML=[["e","⚡","Tendido eléctrico","Por encima de calles y campo: une las centrales con zonas separadas."],["a","🚿","Tubería de agua","Bajo tierra: lleva el agua de las bombas hasta las zonas."]].map(function(x){
+      var bloq=x[0]==="e"&&s.era<3, sel=j.herr.k==="r"&&j.herr.t===x[0];
+      return '<button type="button" data-red="'+x[0]+'" class="'+(bloq?'bloq ':'')+(sel?'sel':'')+'" aria-pressed="'+sel+'" title="'+esc(x[3])+'"><span class="cs-ico">'+x[1]+'</span><b>'+x[2]+'</b><small>'+
+        (bloq?'🔒 '+esc(eraNom(3)):A.COSTO_RED[x[0]]+' $ por casilla')+'</small></button>';
+    }).join("")+'<button type="button" data-subsuelo="1" class="'+(j.sub?'sel':'')+'" aria-pressed="'+!!j.sub+'"><span class="cs-ico">⛏️</span><b>Vista subterránea</b><small>'+(j.sub?'encendida':'ver las tuberías')+'</small></button>';
+  } else if(g&&g.t){
     sz.innerHTML=g.t.map(function(t){
       var E=A.EDIF[t], bq=bloqueo(s,t), bloq=!!bq, c=E.costo*(t==="c"&&s.techs.transporte?0.5:1);
       return '<button type="button" data-t="'+t+'" class="'+(bloq?'bloq ':'')+(j.herr.t===t?'sel':'')+'" aria-pressed="'+(j.herr.t===t)+'" title="'+esc(DESC[t])+'">'+
         '<span class="cs-ico z'+t+'">'+ICO[t]+'</span><b>'+esc(E.nom)+'</b><small>'+(bq==="era"?'🔒 '+esc(eraNom(E.era)):bq?'🔒 '+esc(A.TECHS[E.tech].nom):fmt(c)+' $'+(E.mw?' · '+E.mw+' MW':'')+(E.agua?' · '+E.agua+' 💧':''))+'</small></button>';
     }).join("");
-  } else if(j.herr.k==="x")sz.innerHTML='<p class="fine">🧨 Toca o arrastra sobre lo que quieras demoler (no devuelve el dinero).</p>';
+  } else if(j.herr.k==="x")sz.innerHTML='<p class="fine">🧨 Toca o arrastra sobre lo que quieras demoler (no devuelve el dinero).'+(j.sub?' En la vista subterránea se quitan tuberías.':'')+'</p>';
   else sz.innerHTML='<p class="fine">🔍 Toca una casilla para ver por qué crece (o no). Arrastra para moverte; acerca con la rueda o con dos dedos.</p>';
+  Array.prototype.forEach.call(sz.querySelectorAll("[data-red]"),function(b){b.onclick=function(){
+    var t=b.getAttribute("data-red");
+    if(t==="e"&&s.era<3){msg("⚡ El tendido eléctrico llega con la Revolución Industrial: antes no hay electricidad.",4500); panelEpocas(); return;}
+    var sel=j.herr.k==="r"&&j.herr.t===t; j.herr=sel?{k:"info"}:{k:"r",t:t}; j.sub=!sel&&t==="a";
+    if(!sel)msg(t==="e"?"⚡ Tendido eléctrico: toca o arrastra para unir una central con zonas separadas por calles o campo. Las zonas y edificios contiguos ya se pasan la corriente.":
+      "🚿 Tubería: toca o arrastra (va bajo tierra, también bajo calles y edificios) para llevar el agua de una bomba a zonas separadas.",7000);
+    herramientas();
+  };});
+  Array.prototype.forEach.call(sz.querySelectorAll("[data-subsuelo]"),function(b){b.onclick=function(){j.sub=!j.sub; herramientas();};});
   Array.prototype.forEach.call(tz.querySelectorAll("[data-g]"),function(b){b.onclick=function(){
     var k=b.getAttribute("data-g");
+    if(k!=="redes"&&k!=="x")j.sub=false;
     if(k==="x"||k==="info"){j.grupo=null;j.herr={k:k};}
     else{ j.grupo=j.grupo===k?null:k; if(!j.grupo)j.herr={k:"info"}; }
     cierraInfo(); herramientas();
@@ -394,7 +416,17 @@ function motivo(t,dx,dy,gastado){
   var s=J.s;
   if(Math.abs(dx)>A.R||Math.abs(dy)>A.R)return "Fuera de tu territorio.";
   var i=A.idx(dx,dy);
-  if(t==="x")return s.tipo[i]?null:"Aquí no hay nada que demoler.";
+  if(t==="x")return s.tipo[i]||s.cable[i]?null:"Aquí no hay nada que demoler.";
+  if(t==="xa")return s.tubo[i]?null:"Aquí no hay tubería.";
+  if(t==="re"||t==="ra"){
+    if(!A.dentro(s,dx,dy))return "Fuera de tu territorio: la cultura 🎭 lo amplía.";
+    if(terr(s.cx+dx,s.cy+dy)==="w")return "En el agua no se puede.";
+    if(t==="re"){ if(s.era<3)return "El tendido eléctrico llega con la Revolución Industrial."; if(s.cable[i])return "Ya hay tendido aquí.";
+      if(s.tipo[i]&&s.tipo[i]!=="c")return "Lo construido ya conduce la electricidad: no hace falta tendido."; }
+    else if(s.tubo[i])return "Ya hay tubería aquí.";
+    if(s.dinero-(gastado||0)<A.COSTO_RED[t[1]])return "Faltan $: cuesta "+A.COSTO_RED[t[1]]+".";
+    return null;
+  }
   var E=A.EDIF[t];
   if(!A.dentro(s,dx,dy))return "Fuera de tu territorio: la cultura 🎭 lo amplía.";
   if(s.tipo[i])return "Ya hay algo construido.";
@@ -405,11 +437,14 @@ function motivo(t,dx,dy,gastado){
   if(s.dinero-(gastado||0)<A.costo(s,t,dx,dy))return "Faltan $: cuesta "+fmt(A.costo(s,t,dx,dy))+".";
   return null;
 }
-function arrastrable(h){return h.k==="x"||(h.k==="b"&&"cRCI".indexOf(h.t)>=0);}
+function arrastrable(h){return h.k==="x"||h.k==="r"||(h.k==="b"&&"cRCI".indexOf(h.t)>=0);}
+/* la operación de la herramienta: un edificio (una letra), «re»/«ra» tendido o tubería, «x» demoler, «xa» quitar tubería */
+function opDe(h){ if(h.k==="x")return J.sub?"xa":"x"; if(h.k==="r")return "r"+h.t; if(h.k==="b")return h.t; return null; }
+function costoOp(op,dx,dy){ return op.length===2&&op[0]==="r"?A.COSTO_RED[op[1]]:op==="x"||op==="xa"?0:A.costo(J.s,op,dx,dy); }
 /* casillas de un arrastre: las calles en «L», las zonas y la demolición en rectángulo (hasta 12×12) */
 function casillasArrastre(a,b,t){
   var out=[], x, y;
-  if(t==="c"){
+  if(t==="c"||t==="re"||t==="ra"){
     var sx=b.x>=a.x?1:-1, sy=b.y>=a.y?1:-1;
     for(x=a.x;x!==b.x+sx;x+=sx)out.push({x:x,y:a.y});
     for(y=a.y+sy;y!==b.y+sy;y+=sy)if(b.y!==a.y)out.push({x:b.x,y:y});
@@ -425,9 +460,11 @@ function construye(lista,t){
     var dx=c.x-s.cx, dy=c.y-s.cy, m=motivo(t,dx,dy);
     if(m){ult=m;return;}
     if(t==="x"){if(hace("x",dx,dy))n++;}
-    else{var co=A.costo(s,t,dx,dy); if(hace("b",dx,dy,t)){n++;gast+=co;}}
+    else if(t==="xa"){if(hace("x",dx,dy,"a"))n++;}
+    else{var co=costoOp(t,dx,dy); if(t[0]==="r"&&t.length===2?hace("r",dx,dy,t[1]):hace("b",dx,dy,t)){n++;gast+=co;}}
   });
-  if(n){ if(t==="x")SON.quita(); else SON.pon(); if(n>1)msg((t==="x"?"Demoliste ":"Construiste ")+n+" casillas"+(gast?" por "+fmt(gast)+" $":"")+".",2500); }
+  var quita=t==="x"||t==="xa";
+  if(n){ if(quita)SON.quita(); else SON.pon(); if(n>1)msg((quita?"Demoliste ":"Construiste ")+n+" casillas"+(gast?" por "+fmt(gast)+" $":"")+".",2500); }
   else if(ult){SON.no();msg(ult,3500);}
 }
 
@@ -516,7 +553,7 @@ function desbloquea(n){
   if(A.ERAS[n].tope>(A.ERAS[n-1]||{tope:0}).tope)p.push("zonas hasta el nivel "+A.ERAS[n].tope+(n>=4?" (con Rascacielos)":""));
   if(ed.length)p.push("edificios: "+ed.join(", "));
   if(te.length)p.push("tecnologías: "+te.join(", "));
-  if(n===3)p.push("la electricidad: desde ahora las zonas necesitan energía (llega una primera red que cubre lo que ya consumes)");
+  if(n===3)p.push("la electricidad: desde ahora las zonas necesitan energía conectada a una central (llega una primera red que cubre lo que ya consumes) y el tendido eléctrico para unir zonas separadas");
   p.push("+"+A.INFLU+" de influencia cultural");
   return "Trae "+p.join("; ")+".";
 }
@@ -599,8 +636,9 @@ function info(c){
       var habit=t==="R"?A.POB[l]+" habitantes":t==="C"?A.EMPC[l]+" empleos":A.EMPI[l]+" empleos";
       var dem=t==="R"?st.demR:t==="C"?st.demC:st.demI, frena=[];
       if(!A.calle(s,dx,dy))frena.push("no tiene calle al lado");
-      if(st.ratioMW<0.95)frena.push("falta electricidad");
-      if(l>=1&&st.ratioAg<0.95)frena.push("falta agua");
+      var rEc=st.redE[m.redE.comp[i]], rAc=st.redA[m.redA.comp[i]];
+      if(!st.sinLuz&&rEc<0.95)frena.push(rEc<0.05?"no está conectada a ninguna central (usa ⚡ tendido de 🔌 Redes)":"a su red le falta electricidad");
+      if(l>=1&&rAc<0.95)frena.push(rAc<0.05?"no le llega el agua (lleva una 🚿 tubería de 🔌 Redes)":"a su red le falta agua");
       if(dem<=0)frena.push("no hay demanda "+t+" (mira las barras R C I)");
       if(l>=A.tope(s))frena.push("ya llegó al nivel máximo de la "+A.ERAS[s.era].nom+(s.era<5?" (la próxima época lo sube)":""));
       if(m.cont[i]>2&&t!=="I")frena.push("hay mucha contaminación");
@@ -609,7 +647,11 @@ function info(c){
       h+='<span class="cs-cob">'+[["seg","🚓"],["fue","🚒"],["sal","🏥"],["edu","🏫"]].map(function(x){return '<i class="'+(m.cov[x[0]][i]?'si':'no')+'">'+x[1]+'</i>';}).join("")+
         '<i class="'+(m.cont[i]>1.5?'no':'si')+'">🌫️ '+m.cont[i].toFixed(1)+'</i></span>';
     } else h+='<small>'+esc(DESC[t])+'</small><small>Mantenimiento: '+E.mant+' $ por mes.</small>';
+    if(t!=="c"){ var rE2=st.redE[m.redE.comp[i]], rA2=st.redA[m.redA.comp[i]];
+      h+='<span class="cs-cob">'+(st.sinLuz?'':'<i class="'+(rE2>=0.95?'si':'no')+'">⚡ '+(rE2>=0.95?'conectada':Math.round(rE2*100)+' %')+'</i>')+
+        '<i class="'+(rA2>=0.95?'si':'no')+'">💧 '+(rA2>=0.95?'con agua':Math.round(rA2*100)+' %')+'</i></span>'; }
   }
+  if(mio&&i>=0&&(s.cable[i]||s.tubo[i]))h+='<small>'+(s.cable[i]?'⚡ Tendido eléctrico. ':'')+(s.tubo[i]?'🚿 Tubería bajo tierra.':'')+'</small>';
   z.innerHTML='<button type="button" class="cs-x" aria-label="Cerrar">✕</button>'+h; z.hidden=false;
   z.querySelector(".cs-x").onclick=cierraInfo;
 }
@@ -800,10 +842,10 @@ function enlaza(){
     j.arrastre=null;
     if(e.type==="pointercancel")return;
     var h=j.herr;
-    if(a.pinta&&a.movido){construye(casillasArrastre(a.a,a.b,h.k==="x"?"x":h.t),h.k==="x"?"x":h.t);return;}
+    if(a.pinta&&a.movido){construye(casillasArrastre(a.a,a.b,opDe(h)),opDe(h));return;}
     if(a.movido)return;
     var c=a.a;
-    if(h.k==="b"||h.k==="x"){cierraInfo();construye([c],h.k==="x"?"x":h.t);}
+    if(h.k==="b"||h.k==="x"||h.k==="r"){cierraInfo();construye([c],opDe(h));}
     else info(c);
   }
   cv.addEventListener("pointerup",suelta); cv.addEventListener("pointercancel",suelta);
@@ -831,7 +873,7 @@ function enlaza(){
   $("cs-capa").onclick=function(){
     var k=0; for(var i=0;i<CAPAS.length;i++)if(CAPAS[i][0]===j.capa)k=i;
     var c=CAPAS[(k+1)%CAPAS.length]; j.capa=c[0];
-    var z=$("cs-capa-n"); z.hidden=!c[0]; z.innerHTML=c[0]?'🗺️ <b>'+c[1]+'</b> <small>'+(c[0]==="cont"?"rojo = aire contaminado":c[0]==="feliz"?"verde = cerca de parques y cultura":"verde = cubierto · rojo = sin servicio")+'</small>':"";
+    var z=$("cs-capa-n"); z.hidden=!c[0]; z.innerHTML=c[0]?'🗺️ <b>'+c[1]+'</b> <small>'+(c[0]==="cont"?"rojo = aire contaminado":c[0]==="feliz"?"verde = cerca de parques y cultura":c[0]==="luz"?"verde = conectado a una central · rojo = sin electricidad · amarillo = tendido":c[0]==="agua"?"verde = con agua · rojo = sin agua · azul = tubería":"verde = cubierto · rojo = sin servicio")+'</small>':"";
     $("cs-capa").classList.toggle("on",!!c[0]);
   };
   $("cs-full").onclick=function(){var z=$("cs"); var on=!z.classList.contains("full"); z.classList.toggle("full",on); document.body.classList.toggle("cs-full",on);};
@@ -852,7 +894,7 @@ function enlaza(){
   function tecla(e){
     if(J!==j){document.removeEventListener("keydown",tecla);return;}
     if(/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||""))return;
-    if(e.key==="Escape"){if(j.modal)cierraModal();else{j.grupo=null;j.herr={k:"info"};herramientas();}}
+    if(e.key==="Escape"){if(j.modal)cierraModal();else{j.grupo=null;j.herr={k:"info"};j.sub=false;herramientas();}}
     else if(e.key===" "){e.preventDefault(); j.vel=j.vel?0:1; j.pausa=!j.vel; marcaVel();}
     else if(e.key==="+"||e.key==="=")zoom(1.2); else if(e.key==="-")zoom(1/1.2);
   }
@@ -1220,10 +1262,16 @@ function dibuja(now){
   var luces=[], coches={};
   j.cars.forEach(function(cr){var ax=cr.x+s.cx, ay=cr.y+s.cy, bx=cr.nx+s.cx, by=cr.ny+s.cy, key=(bx+by>ax+ay)?bx+","+by:ax+","+ay; (coches[key]=coches[key]||[]).push(cr);});
   var prev=null;
-  if(j.arrastre&&j.arrastre.pinta&&j.arrastre.movido){var tt=j.herr.k==="x"?"x":j.herr.t; prev={}; var gas=0; casillasArrastre(j.arrastre.a,j.arrastre.b,tt).forEach(function(cc){var m=motivo(tt,cc.x-s.cx,cc.y-s.cy,gas); if(!m&&tt!=="x")gas+=A.costo(s,tt,cc.x-s.cx,cc.y-s.cy); prev[cc.x+","+cc.y]=!m;});}
+  if(j.arrastre&&j.arrastre.pinta&&j.arrastre.movido){var tt=opDe(j.herr); prev={}; var gas=0; casillasArrastre(j.arrastre.a,j.arrastre.b,tt).forEach(function(cc){var m=motivo(tt,cc.x-s.cx,cc.y-s.cy,gas); if(!m)gas+=costoOp(tt,cc.x-s.cx,cc.y-s.cy); prev[cc.x+","+cc.y]=!m;});}
   var fuegos={}; s.problemas.forEach(function(p){if(p.k==="incendio"&&p.i>=0)fuegos[p.i]=1;});
   var m=j.capa?A.mapas(s):null;
   if(lejos){ planas(g,s,now); sMax=sMin-1; }   /* de lejos: las ciudades simplificadas, sin el detalle casilla a casilla */
+  var stD=s.est||A.calcula(s), mD=A.mapas(s), avisos=[];
+  if(j.sub&&!lejos){                             /* bajo tierra: el suelo en sombra, lo construido como manchas y las tuberías */
+    g.setTransform(j.dpr,0,0,j.dpr,0,0); g.fillStyle="rgba(42,28,16,.74)"; g.fillRect(0,0,W,H);
+    g.setTransform(k,0,0,k,j.dpr*W/2-c.x*k,j.dpr*H/2-c.y*k);
+    subsuelo(g,s,sMin,sMax,dMin,dMax,ix0,ix1,iy0,iy1,stD,mD); sMax=sMin-1;
+  }
   for(sv=sMin;sv<=sMax;sv++){
     for(dv=dMin;dv<=dMax;dv++){
       if(((sv+dv)&1)!==0)continue;
@@ -1245,11 +1293,18 @@ function dibuja(now){
         if(ter==="f")arbol(g,x,yt+2,hsh(wx,wy,5),0.95);
         else if(ter==="g"&&!vecina&&ii<0&&hsh(wx,wy,9)<0.035)arbol(g,x,yt+2,hsh(wx,wy,5),0.7);
         if(rejilla&&ii>=0&&A.dentro(s,dx,dy)){g.strokeStyle="rgba(255,255,255,.28)"; g.lineWidth=0.5; contorno(g,wx,wy); g.stroke();} }
+      if(ii>=0&&s.cable[ii])poste(g,s,wx,wy,x,yt);
+      if(ii>=0&&tipo&&tipo!=="c"&&(niv||!A.EDIF[tipo].zona)){
+        var Ed=A.EDIF[tipo], luzMal=!stD.sinLuz&&!Ed.mw&&stD.redE[mD.redE.comp[ii]]<0.95, aguaMal=!Ed.agua&&stD.redA[mD.redA.comp[ii]]<0.95;
+        if(luzMal||aguaMal)avisos.push(x,yt,luzMal&&(!aguaMal||Math.floor(now/1000)%2)?"luz":"agua");
+      }
       if(ii>=0&&fuegos[ii])fuego(g,x,yt,now);
       var lista=coches[wx+","+wy]; if(lista)lista.forEach(function(cr){coche(g,cr,s);});
       if(prev){var pv=prev[wx+","+wy]; if(pv!==undefined){g.fillStyle=pv?"rgba(105,240,174,.45)":"rgba(255,82,82,.45)"; contorno(g,wx,wy); g.fill();}}
     }
   }
+  /* los avisos de zonas sin electricidad o sin agua, por encima de todo */
+  for(var av=0;av<avisos.length;av+=3)sinServicio(g,avisos[av],avisos[av+1],avisos[av+2],now);
   /* chispas de crecimiento */
   j.chispas=j.chispas.filter(function(ch){var f=(now-ch.t0)/900; if(f>=1)return false;
     var dx=Math.floor(ch.i/A.LADO)-A.R+s.cx, dy=ch.i%A.LADO-A.R+s.cy, x=(dx-dy)*HW, y=(dx+dy)*HH-20-f*14-altTop(dx,dy)*ALT;
@@ -1257,11 +1312,19 @@ function dibuja(now){
   /* 5) capa de información */
   if(m){
     var kk=j.capa;
-    for(var i=0;i<A.N;i++){ if(!s.tipo[i]&&kk!=="cont")continue;
+    for(var i=0;i<A.N;i++){ if(!s.tipo[i]&&kk!=="cont"&&!(kk==="luz"&&s.cable[i])&&!(kk==="agua"&&s.tubo[i]))continue;
       var ddx=Math.floor(i/A.LADO)-A.R, ddy=i%A.LADO-A.R; if(!A.dentro(s,ddx,ddy))continue;
       var col;
       if(kk==="cont"){var v2=m.cont[i]; if(v2<0.3)continue; col="rgba(229,57,53,"+Math.min(0.75,v2/5)+")";}
       else if(kk==="feliz"){var v3=m.feliz[i]; col=v3>0?"rgba(67,160,71,"+Math.min(0.75,0.2+v3/20)+")":"rgba(0,0,0,.12)";}
+      else if(kk==="luz"||kk==="agua"){
+        var tq=s.tipo[i], Eq=tq?A.EDIF[tq]:null, red=kk==="luz"?"redE":"redA";
+        if(!tq||tq==="c"){ if(kk==="luz"?!s.cable[i]:!s.tubo[i])continue; col=kk==="luz"?"rgba(255,213,79,.75)":"rgba(41,182,246,.7)"; }
+        else if(kk==="luz"&&stD.sinLuz)col="rgba(0,0,0,.15)";
+        else if(kk==="luz"?Eq.mw:Eq.agua)col=kk==="luz"?"rgba(255,160,0,.9)":"rgba(2,136,209,.9)";
+        else if(Eq.zona&&!s.nivel[i]&&kk==="agua")col="rgba(0,0,0,.12)";
+        else col=stD[red][m[red].comp[i]]>=0.95?"rgba(67,160,71,.6)":"rgba(229,57,53,.6)";
+      }
       else col=m.cov[kk][i]?"rgba(67,160,71,.55)":"rgba(229,57,53,.5)";
       g.fillStyle=col; contorno(g,ddx+s.cx,ddy+s.cy); g.fill();
     }
@@ -1298,7 +1361,7 @@ function dibuja(now){
   var hv=j.hover;
   if(hv&&!j.arrastre){
     var h=j.herr, okc=true;
-    if(h.k==="b"||h.k==="x")okc=!motivo(h.k==="x"?"x":h.t,hv.x-s.cx,hv.y-s.cy);
+    if(h.k==="b"||h.k==="x"||h.k==="r")okc=!motivo(opDe(h),hv.x-s.cx,hv.y-s.cy);
     g.strokeStyle=h.k==="info"?"rgba(255,255,255,.9)":okc?"#69f0ae":"#ff5252"; g.lineWidth=1.4; contorno(g,hv.x,hv.y); g.stroke();
   }
   if(j.sel){g.strokeStyle="#ffeb3b"; g.lineWidth=1.6; contorno(g,j.sel.x,j.sel.y); g.stroke();}
@@ -1369,6 +1432,65 @@ function planas(g,s,now){
       g.fill();
     });
   });
+}
+/* un poste del tendido eléctrico con sus cables hacia los postes y edificios vecinos */
+function poste(g,s,wx,wy,x,y){
+  var top=y-12;
+  g.strokeStyle="rgba(25,25,25,.75)"; g.lineWidth=0.45; g.beginPath();
+  [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(v){
+    var nx=wx+v[0], ny=wy+v[1], dx=nx-s.cx, dy=ny-s.cy; if(Math.abs(dx)>A.R||Math.abs(dy)>A.R)return;
+    var k=A.idx(dx,dy), cab=s.cable[k], ed=s.tipo[k]&&s.tipo[k]!=="c"; if(!cab&&!ed)return;
+    if(cab&&(v[0]<0||v[1]<0))return;   /* entre dos postes, el cable lo tiende uno solo */
+    var X=(nx-ny)*HW, Y=(nx+ny)*HH-altTop(nx,ny)*ALT-(cab?12:7);
+    g.moveTo(x,top); g.quadraticCurveTo((x+X)/2,(top+Y)/2+2.5,X,Y);
+  });
+  g.stroke();
+  g.fillStyle="#5d4037"; g.fillRect(x-0.6,top,1.2,12); g.fillRect(x-3,top+0.6,6,0.9);
+  g.fillStyle="#cfd8dc"; g.fillRect(x-2.8,top,0.9,0.9); g.fillRect(x+1.9,top,0.9,0.9);
+}
+/* el aviso que parpadea sobre una zona sin electricidad o sin agua */
+function sinServicio(g,x,y,cual,now){
+  var cy=y-26-Math.abs(Math.sin(now/300))*2;   /* da saltitos para llamar la atención */
+  g.globalAlpha=0.75+0.25*Math.sin(now/200);
+  g.fillStyle="rgba(198,40,40,.94)"; g.beginPath(); g.arc(x,cy,4.4,0,6.283); g.fill();
+  g.strokeStyle="#fff"; g.lineWidth=0.6; g.stroke();
+  g.fillStyle=cual==="luz"?"#ffeb3b":"#81d4fa"; g.beginPath();
+  if(cual==="luz"){g.moveTo(x+0.9,cy-3.1); g.lineTo(x-1.9,cy+0.5); g.lineTo(x-0.1,cy+0.5); g.lineTo(x-0.9,cy+3.1); g.lineTo(x+1.9,cy-0.6); g.lineTo(x+0.1,cy-0.6); g.closePath();}
+  else{g.moveTo(x,cy-3.1); g.quadraticCurveTo(x+2.8,cy+0.6,x,cy+2.8); g.quadraticCurveTo(x-2.8,cy+0.6,x,cy-3.1);}
+  g.fill(); g.globalAlpha=1;
+}
+/* la vista subterránea: lo construido como manchas (verde con agua, rojo sin agua, azul las bombas), las calles
+   apenas marcadas y las tuberías que unen todo */
+function subsuelo(g,s,sMin,sMax,dMin,dMax,ix0,ix1,iy0,iy1,stD,mD){
+  var sv, dv, wx, wy, x, y, celdas=[];
+  for(sv=sMin;sv<=sMax;sv++)for(dv=dMin;dv<=dMax;dv++){
+    if(((sv+dv)&1)!==0)continue;
+    wx=(sv+dv)/2; wy=(sv-dv)/2; x=(wx-wy)*HW; y=(wx+wy)*HH;
+    if(x<ix0-HW||x>ix1+HW||y<iy0-HH||y>iy1+90+MAXA*ALT)continue;
+    var dx=wx-s.cx, dy=wy-s.cy; if(Math.abs(dx)>A.R||Math.abs(dy)>A.R)continue;
+    var i=A.idx(dx,dy), t=s.tipo[i];
+    if(t&&t!=="c"){ var E=A.EDIF[t];
+      g.fillStyle=E.agua?"rgba(41,182,246,.9)":(E.zona&&!s.nivel[i])?"rgba(255,255,255,.12)":stD.redA[mD.redA.comp[i]]>=0.95?"rgba(102,187,106,.6)":"rgba(239,83,80,.65)";
+      contorno(g,wx,wy); g.fill(); }
+    else if(t==="c"){ g.strokeStyle="rgba(230,230,230,.22)"; g.lineWidth=0.6; contorno(g,wx,wy); g.stroke(); }
+    if(s.tubo[i])celdas.push([wx,wy,i]);
+  }
+  /* las tuberías: del centro de cada casilla hacia las vecinas con tubería o con algo construido */
+  [["#01579b",3.4],["#4fc3f7",2]].forEach(function(capa){
+    g.strokeStyle=capa[0]; g.lineWidth=capa[1]; g.lineCap="round"; g.beginPath();
+    celdas.forEach(function(c){
+      var X=(c[0]-c[1])*HW, Y=(c[0]+c[1])*HH-altTop(c[0],c[1])*ALT, solo=true;
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(v){
+        var nx=c[0]+v[0], ny=c[1]+v[1], dx=nx-s.cx, dy=ny-s.cy; if(Math.abs(dx)>A.R||Math.abs(dy)>A.R)return;
+        var k=A.idx(dx,dy); if(!s.tubo[k]&&!(s.tipo[k]&&s.tipo[k]!=="c"))return;
+        solo=false;
+        var X2=(nx-ny)*HW, Y2=(nx+ny)*HH-altTop(nx,ny)*ALT; g.moveTo(X,Y); g.lineTo((X+X2)/2,(Y+Y2)/2);
+      });
+      if(solo){g.moveTo(X-1,Y); g.lineTo(X+1,Y);}
+    });
+    g.stroke();
+  });
+  g.lineCap="butt";
 }
 function coche(g,cr,s){
   var ax=cr.x+s.cx, ay=cr.y+s.cy, bx=cr.nx+s.cx, by=cr.ny+s.cy, f=Math.min(1,cr.t);

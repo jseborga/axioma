@@ -443,6 +443,7 @@ GUIAS.ciudad=[
  a:function(){return pasos([["Calles","En 🛣️ Vías, toca o arrastra para trazar calles. Las zonas solo crecen junto a una calle."],
    ["Zonas","🏘️ Residencial (viviendas), Comercial (tiendas y oficinas) e Industrial (fábricas). Las barras R C I dicen qué hace falta."],
    ["Servicios","⚡ Energía y 💧 agua para que crezcan; policía, bomberos, hospital y escuela para que suban de nivel y la gente esté feliz."],
+   ["Redes","La electricidad y el agua llegan solo a lo conectado: lo construido contiguo se pasa el servicio, pero las calles y el campo cortan. En 🔌 Redes: tendido eléctrico (sobre calles y campo) y tuberías (bajo tierra, con ⛏️ vista subterránea). Un ⚡ o 💧 rojo sobre una zona avisa que no le llega."],
    ["Cultura","Bibliotecas, plazas, teatros, museos y la universidad suman 🎭 cultura: la cultura amplía tu territorio (el círculo punteado)."],
    ["Preguntas","🔬 Investiga tecnologías (eólica, solar, hidroeléctrica, rascacielos…) acertando una pregunta de su tema. Los ⚠️ problemas (apagón, sequía, atasco, incendio…) se resuelven igual, antes de que venza su plazo. La ciudad se detiene mientras respondes y siempre ves la explicación."]]);}},
 {t:"Épocas y encuentros",d:"",

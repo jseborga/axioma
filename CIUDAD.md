@@ -72,6 +72,29 @@ firmarlo se reciben 500 $ y 20 de cultura. Cada ciudad firma sus propios tratado
 Los encuentros los calcula el servidor al guardar cada tramo con el estado de las vecinas en ese momento y los apunta en la
 ciudad (`contactos`). Así la repetición de cada tramo no depende de lo que hagan los demás mientras tanto.
 
+## Redes de electricidad y agua
+
+La electricidad y el agua llegan solo a lo que está **conectado** a una central o a una bomba:
+
+- **Lo construido conduce**: las zonas y los edificios contiguos (en cruz) se pasan la corriente y el agua. Las **calles y el
+  campo cortan** la red.
+- **⚡ Tendido eléctrico** (🔌 Redes, desde la Revolución Industrial, 5 $ por casilla): postes y cables sobre el campo o
+  **encima de una calle**, para unir una central con zonas separadas. Sobre lo construido no hace falta.
+- **🚿 Tubería de agua** (desde la Antigüedad, 8 $ por casilla): va **bajo tierra**, también bajo calles y edificios. Al
+  elegirla se enciende la **⛏️ vista subterránea**: el suelo en sombra, lo construido en verde (con agua) o rojo (sin agua),
+  las bombas en azul y las tuberías.
+- Cada red reparte lo que generan sus centrales o bombas entre lo que tiene conectado: si consume más de lo que genera,
+  cada casilla recibe una parte. Las ayudas (la primera red de la Revolución Industrial y los premios de los problemas) se
+  reparten entre todas las redes según lo que consume cada una.
+- Una zona sin electricidad o sin agua no crece (y puede bajar de nivel) y su gente está menos feliz. Sobre ella salta un
+  aviso **⚡** o **💧** rojo; el marcador cuenta las zonas sin red (⚠) y la ficha de la casilla (🔍) explica qué falta.
+- Capas 🗺️ **Electricidad** y **Red de agua** para ver de un vistazo qué está conectado.
+- Demoler (🧨) quita lo de la superficie y, si no hay nada, el tendido; en la vista subterránea quita tuberías.
+- Las ciudades guardadas antes de las redes reciben tuberías bajo todas sus calles (y tendido sobre ellas si ya tenían
+  electricidad), para que nada se corte.
+
+Las redes son reglas del motor: el servidor las repite igual que el resto de cada tramo.
+
 ## Relieve y modo retro
 
 - **Relieve**: el mundo tiene colinas, laderas y valles (de 0, el agua, a 4 niveles). Cada casilla se inclina según sus cuatro

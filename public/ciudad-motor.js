@@ -10,6 +10,10 @@
    La ciudad atraviesa seis épocas de la historia (se pasa a la siguiente
    con metas y una pregunta de historia) y, cuando su influencia cultural
    toca la de una vecina, se encuentran y pueden firmar un tratado.
+   Redes: la electricidad y el agua llegan solo a lo que está conectado a
+   una central o a una bomba. Las zonas y los edificios contiguos se pasan
+   el servicio; para cruzar calles o campo hacen falta tendido eléctrico
+   (sobre la superficie) y tuberías (bajo tierra).
 
    Determinista: el navegador guarda las acciones de cada tramo de
    juego y el servidor lo repite desde el estado guardado, con la
@@ -105,8 +109,8 @@ var TECHS={
 };
 /* problemas que aparecen según lo que le falta a la ciudad */
 var PROBLEMAS={
-  apagon:  {nom:"Apagón",              tema:"energia",    desc:"La demanda de electricidad supera la generación.", era:3},
-  sequia:  {nom:"Falta de agua",       tema:"agua",       desc:"Las bombas no alcanzan para toda la población."},
+  apagon:  {nom:"Apagón",              tema:"energia",    desc:"Hay zonas sin electricidad: falta generación o conexión a la red.", era:3},
+  sequia:  {nom:"Falta de agua",       tema:"agua",       desc:"Hay zonas sin agua: faltan bombas o tuberías que lleguen."},
   smog:    {nom:"Contaminación",       tema:"ambiente",   desc:"El aire está contaminado cerca de la industria.", era:3},
   incendio:{nom:"Incendio",            tema:"seguridad",  desc:"Un incendio amenaza un barrio sin bomberos.", era:1},
   crimen:  {nom:"Inseguridad",         tema:"seguridad",  desc:"Hay barrios sin cobertura de policía."},
@@ -131,7 +135,8 @@ var ERAS=[
   {k:"moderna",     nom:"Era Moderna",           ico:"🏙️", tope:4, pob:900,  cul:220, con:10},
   {k:"digital",     nom:"Era Digital",           ico:"💻", tope:4, pob:1800, cul:420, con:15}
 ];
-var INFLU=7;                  /* cada época lleva la influencia cultural 7 casillas más lejos */
+var INFLU=7;
+var COSTO_RED={e:5,a:8};      /* tendido eléctrico y tubería, por casilla */                  /* cada época lleva la influencia cultural 7 casillas más lejos */
 
 /* ---------- estado ---------- */
 function idx(dx,dy){return (dx+R)*LADO+(dy+R);}
@@ -142,12 +147,17 @@ function crea(mseed,slot,nombre){
     tipo:new Array(N).fill(""),nivel:new Array(N).fill(0),
     problemas:[],nextProb:1,resueltos:0,fallidos:0,bonoMW:0,bonoAgua:0,bonoLimpio:0,bonoFeliz:0,bonoFelizHasta:0,
     era:0,eraCool:0,contactos:[],tratados:{},tratCool:{},
+    cable:new Array(N).fill(0),tubo:new Array(N).fill(0),redes:1,
     qUsadas:{},est:null,seg:0,segTick:0};
 }
+/* las capas de redes se guardan como la lista de casillas que tienen tendido o tubería */
+function aLista(a){var o=[];for(var i=0;i<N;i++)if(a[i])o.push(i);return o;}
+function deLista(l){var a=new Array(N).fill(0);(l||[]).forEach(function(i){if(i>=0&&i<N)a[i]=1;});return a;}
 function serializa(s){
   var o={}, k;
   for(k in s)if(k!=="ev"&&k!=="r"&&k!=="cache"&&k!=="est")o[k]=s[k];
   o.tipo=s.tipo.map(function(t){return t||".";}).join(""); o.nivel=s.nivel.join("");
+  o.cable=aLista(s.cable||[]); o.tubo=aLista(s.tubo||[]);
   return JSON.stringify(o);
 }
 function deserializa(txt,seg){
@@ -155,6 +165,9 @@ function deserializa(txt,seg){
   /* ciudades de antes de las épocas: industriales si ya tenían centrales, si no, de la Antigüedad */
   if(o.era==null){o.era=/[ewsh]/.test(o.tipo)?3:0; o.eraCool=0; o.contactos=[]; o.tratados={}; o.tratCool={};}
   o.tipo=o.tipo.split("").map(function(c){return c==="."?"":c;}); o.nivel=o.nivel.split("").map(Number);
+  /* ciudades de antes de las redes: tuberías bajo todas sus calles (y tendido, si ya tenían electricidad), para que nada se corte */
+  if(!o.redes){ o.tubo=o.tipo.map(function(t){return t==="c"?1:0;}); o.cable=o.tipo.map(function(t){return t==="c"&&o.era>=3?1:0;}); o.redes=1; }
+  else{ o.cable=deLista(o.cable); o.tubo=deLista(o.tubo); }
   /* cada tramo empieza de cero sus preguntas usadas (las opciones se barajan por tramo) */
   o.seg=seg>>>0; o.segTick=0; o.r=rng(o.seg); o.ev=[]; o.cache=null; o.est=null; o.qUsadas={};
   return o;
@@ -200,24 +213,60 @@ function mapas(s){
   /* las casillas ocupadas y las residenciales: los recorridos de cada paso van solo por ellas */
   var occ=[], res=[];
   for(i=0;i<N;i++){t=s.tipo[i]; if(!t)continue; occ.push(i); if(t==="R")res.push(i);}
-  return s.cache={cov:cov,feliz:feliz,cont:cont,occ:occ,res:res};
+  /* las redes: qué casillas quedan unidas (lo construido conduce; las calles y el campo, solo con tendido o tubería) */
+  var tipo=s.tipo, cable=s.cable, tubo=s.tubo;
+  var redE=componentes(function(i){return cable[i]||(tipo[i]&&tipo[i]!=="c");});
+  var redA=componentes(function(i){return tubo[i]||(tipo[i]&&tipo[i]!=="c");});
+  return s.cache={cov:cov,feliz:feliz,cont:cont,occ:occ,res:res,redE:redE,redA:redA};
+}
+/* grupos de casillas unidas en cruz que cumplen cond (recorrido determinista, de la casilla 0 a la N−1) */
+function componentes(cond){
+  var comp=new Int16Array(N).fill(-1), n=0, pila=[], i0, i;
+  for(i0=0;i0<N;i0++){
+    if(comp[i0]>=0||!cond(i0))continue;
+    comp[i0]=n; pila.push(i0);
+    while(pila.length){
+      i=pila.pop(); var x=Math.floor(i/LADO), y=i%LADO;
+      if(x>0&&comp[i-LADO]<0&&cond(i-LADO)){comp[i-LADO]=n;pila.push(i-LADO);}
+      if(x<LADO-1&&comp[i+LADO]<0&&cond(i+LADO)){comp[i+LADO]=n;pila.push(i+LADO);}
+      if(y>0&&comp[i-1]<0&&cond(i-1)){comp[i-1]=n;pila.push(i-1);}
+      if(y<LADO-1&&comp[i+1]<0&&cond(i+1)){comp[i+1]=n;pila.push(i+1);}
+    }
+    n++;
+  }
+  return {comp:comp,n:n};
 }
 function calcula(s){
   var m=mapas(s), cov=m.cov, i, t, e, l, k, occ=m.occ, res=m.res;
   var st={pob:0,empC:0,empI:0,mwCap:s.bonoMW,mwUso:0,agCap:s.bonoAgua,agUso:0,calles:0,mant:0,cultura:0,edif:0,R:0,C:0,I:0};
+  var cE=m.redE.comp, cA=m.redA.comp, useE=new Float64Array(m.redE.n), capE=new Float64Array(m.redE.n), useA=new Float64Array(m.redA.n), capA=new Float64Array(m.redA.n), u;
   for(k=0;k<occ.length;k++){i=occ[k]; t=s.tipo[i]; e=EDIF[t]; l=s.nivel[i];
     st.mant+=e.mant;
     if(t==="c"){st.calles++;continue;}
-    if(t==="R"){st.pob+=POB[l];st.mwUso+=MW_R[l];st.agUso+=AG_R[l];st.R++;continue;}
-    if(t==="C"){st.empC+=EMPC[l];st.mwUso+=MW_C[l];st.agUso+=AG_C[l];st.C++;continue;}
-    if(t==="I"){st.empI+=EMPI[l];st.mwUso+=MW_I[l];st.agUso+=AG_I[l];st.I++;continue;}
+    if(t==="R"){st.pob+=POB[l];u=MW_R[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_R[l];st.agUso+=u;useA[cA[i]]+=u;st.R++;continue;}
+    if(t==="C"){st.empC+=EMPC[l];u=MW_C[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_C[l];st.agUso+=u;useA[cA[i]]+=u;st.C++;continue;}
+    if(t==="I"){st.empI+=EMPI[l];u=MW_I[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_I[l];st.agUso+=u;useA[cA[i]]+=u;st.I++;continue;}
     st.edif++;
-    if(e.mw)st.mwCap+=e.mw; else st.mwUso+=1;
-    if(e.agua)st.agCap+=e.agua; else st.agUso+=0.5;
+    if(e.mw){st.mwCap+=e.mw;capE[cE[i]]+=e.mw;} else {st.mwUso+=1;useE[cE[i]]+=1;}
+    if(e.agua){st.agCap+=e.agua;capA[cA[i]]+=e.agua;} else {st.agUso+=0.5;useA[cA[i]]+=0.5;}
     if(e.cultura)st.cultura+=e.cultura;
   }
   st.sinLuz=s.era<3;
-  st.ratioMW=st.sinLuz||!st.mwUso?1:Math.min(1,st.mwCap/st.mwUso); st.ratioAg=st.agUso?Math.min(1,st.agCap/st.agUso):1;
+  /* cada red reparte lo que generan sus centrales (o bombas) entre lo que tiene conectado; las ayudas (bonoMW, bonoAgua)
+     se reparten entre todas según lo que consume cada una. Una red sin centrales solo recibe su parte de la ayuda */
+  function reparte(use,cap,bono,total){
+    var r=new Float32Array(use.length), peor=1;
+    for(var c=0;c<use.length;c++){ r[c]=use[c]>0?Math.min(1,(cap[c]+(total>0?bono*use[c]/total:0))/use[c]):1; if(use[c]>0&&r[c]<peor)peor=r[c]; }
+    return {r:r,peor:peor};
+  }
+  var rE=reparte(useE,capE,s.bonoMW,st.mwUso-0), rA=reparte(useA,capA,s.bonoAgua,st.agUso);
+  if(st.sinLuz){for(var c0=0;c0<rE.r.length;c0++)rE.r[c0]=1; rE.peor=1;}
+  st.redE=rE.r; st.redA=rA.r;
+  st.ratioMW=rE.peor; st.ratioAg=rA.peor;
+  /* cuántas zonas o edificios quedan sin servicio por falta de red */
+  st.sinRedE=0; st.sinRedA=0;
+  for(k=0;k<occ.length;k++){i=occ[k]; t=s.tipo[i]; if(t==="c"||(EDIF[t].mw)||(EDIF[t].agua))continue;
+    if(!st.sinLuz&&rE.r[cE[i]]<0.95)st.sinRedE++; if(rA.r[cA[i]]<0.95&&(s.nivel[i]||!EDIF[t].zona))st.sinRedA++;}
   /* demanda RCI */
   var trab=st.pob*0.6, emp=st.empC+st.empI;
   st.demR=Math.round(emp-trab+12); st.demC=Math.round(st.pob*0.25-st.empC+2+4*rutas(s)); st.demI=Math.round(st.pob*0.3-st.empI+6);
@@ -226,7 +275,7 @@ function calcula(s){
   for(k=0;k<res.length;k++){ i=res[k]; if(!s.nivel[i])continue; var w=POB[s.nivel[i]];
     var srv=(cov.seg[i]?1:0)+(cov.fue[i]?1:0)+(cov.sal[i]?1:0)+(cov.edu[i]?1:0);
     if(cov.seg[i])cubiertos.seg+=w; if(cov.fue[i])cubiertos.fue+=w; if(cov.sal[i])cubiertos.sal+=w; if(cov.edu[i])cubiertos.edu+=w;
-    var f=50+6*srv+Math.min(15,m.feliz[i])-4*m.cont[i]-(st.ratioMW<1?15:0)-(st.ratioAg<1?10:0)-3*(s.impuesto-10);
+    var f=50+6*srv+Math.min(15,m.feliz[i])-4*m.cont[i]-(st.redE[cE[i]]<1?15:0)-(st.redA[cA[i]]<1?10:0)-3*(s.impuesto-10);
     suma+=Math.max(0,Math.min(100,f))*w; peso+=w; contMedia+=m.cont[i]*w;}
   var penal=5*s.problemas.length+(s.tick<s.bonoFelizHasta?-s.bonoFeliz:0);
   st.felicidad=peso?Math.max(0,Math.min(100,Math.round(suma/peso-penal))):50;
@@ -259,9 +308,10 @@ function paso(s){
     var des=2+Math.min(6,cache.feliz[i]/3)+srv-cache.cont[i]*(t==="I"?0.2:1)-(s.impuesto-10)*0.3;
     var max=des<2?1:des<4?2:(cache.cov.edu[i]||t==="I"?3:2); if(max===3&&des>=6&&tp===4)max=4; if(max>tp)max=tp;
     var dem=t==="R"?st.demR:t==="C"?st.demC:st.demI;
-    var luz=st.ratioMW>=0.95&&(l<1||st.ratioAg>=0.95);
+    var rE=st.redE[cache.redE.comp[i]], rA=st.redA[cache.redA.comp[i]];
+    var luz=rE>=0.95&&(l<1||rA>=0.95);
     if(conCalle&&luz&&dem>0&&l<max&&azar<0.35){s.nivel[i]=l+1; if(t==="I")cambiaI=true; aviso(s,{tipo:"crece",i:i,l:l+1});}
-    else if(l>0&&(!conCalle||(!st.sinLuz&&st.ratioMW<0.7)||l>max)&&azar<0.2){s.nivel[i]=l-1; if(t==="I")cambiaI=true; aviso(s,{tipo:"decae",i:i});}
+    else if(l>0&&(!conCalle||(!st.sinLuz&&rE<0.7)||l>max)&&azar<0.2){s.nivel[i]=l-1; if(t==="I")cambiaI=true; aviso(s,{tipo:"decae",i:i});}
   }
   if(cambiaI)s.cache=null;
   /* cultura y economía */
@@ -317,12 +367,27 @@ function act(s,a,b,c,d,e,f){
     if(E.era>s.era)return false;
     if(E.junto){var ok=false;[[1,0],[-1,0],[0,1],[0,-1]].forEach(function(v){if(terr(s,b+v[0],c+v[1])===E.junto)ok=true;}); if(!ok)return false;}
     var cc=costo(s,t,b,c); if(s.dinero<cc)return false;
-    s.dinero-=cc; s.tipo[i]=t; s.nivel[i]=0; s.est=null; s.cache=null; aviso(s,{tipo:"construye",i:i,t:t}); return true;
+    s.dinero-=cc; s.tipo[i]=t; s.nivel[i]=0; if(t!=="c")s.cable[i]=0;   /* lo construido ya conduce: el tendido sobra */
+    s.est=null; s.cache=null; aviso(s,{tipo:"construye",i:i,t:t}); return true;
   }
-  if(a==="x"){                       /* demoler */
+  if(a==="r"){                       /* redes: d = «e» tendido eléctrico (sobre el campo o una calle), «a» tubería (bajo tierra) */
+    t=String(d||""); if(!COSTO_RED[t])return false;
+    if(!(b>=-R&&b<=R&&c>=-R&&c<=R)||!dentro(s,b,c))return false;
+    i=idx(b,c); if(terr(s,b,c)==="w")return false;
+    if(t==="e"){ if(s.era<3||s.cable[i]||(s.tipo[i]&&s.tipo[i]!=="c"))return false; }
+    else if(s.tubo[i])return false;
+    if(s.dinero<COSTO_RED[t])return false;
+    s.dinero-=COSTO_RED[t]; if(t==="e")s.cable[i]=1; else s.tubo[i]=1;
+    s.est=null; s.cache=null; aviso(s,{tipo:"red",i:i,k:t}); return true;
+  }
+  if(a==="x"){                       /* demoler: lo de la superficie (o su tendido); con d = «a», la tubería */
     if(!(b>=-R&&b<=R&&c>=-R&&c<=R))return false;
-    i=idx(b,c); if(!s.tipo[i])return false;
-    s.tipo[i]=""; s.nivel[i]=0; s.est=null; s.cache=null; aviso(s,{tipo:"demuele",i:i}); return true;
+    i=idx(b,c);
+    if(d==="a"){ if(!s.tubo[i])return false; s.tubo[i]=0; }
+    else if(s.tipo[i]){ s.tipo[i]=""; s.nivel[i]=0; }
+    else if(s.cable[i]){ s.cable[i]=0; }
+    else return false;
+    s.est=null; s.cache=null; aviso(s,{tipo:"demuele",i:i}); return true;
   }
   if(a==="i"){                       /* impuestos: 6 a 14 % */
     if(!(b>=6&&b<=14))return false; s.impuesto=b; return true;
@@ -396,7 +461,7 @@ function resumen(s){var st=s.est||calcula(s);
   return {puntaje:puntaje(s),pob:st.pob,felicidad:st.felicidad,conocimiento:s.conocimiento,cultura:Math.round(s.cultura),radio:radio(s),
           dinero:Math.round(s.dinero),techs:Object.keys(s.techs).length,resueltos:s.resueltos,temas:s.temas,era:s.era,tratados:rutas(s)};}
 
-G.AxCiudad={TICK:TICK,R:R,LADO:LADO,N:N,SEPARA:SEPARA,MES:MES,MAX_SEG:MAX_SEG,EDIF:EDIF,TECHS:TECHS,PROBLEMAS:PROBLEMAS,TEMAS:TEMAS,ERAS:ERAS,INFLU:INFLU,
+G.AxCiudad={TICK:TICK,R:R,LADO:LADO,N:N,SEPARA:SEPARA,MES:MES,MAX_SEG:MAX_SEG,EDIF:EDIF,TECHS:TECHS,PROBLEMAS:PROBLEMAS,TEMAS:TEMAS,ERAS:ERAS,INFLU:INFLU,COSTO_RED:COSTO_RED,
   influencia:influencia,rutas:rutas,tope:tope,requisitos:requisitos,
   POB:POB,EMPC:EMPC,EMPI:EMPI,
   semilla:semilla,rng:rng,terreno:terreno,centroSlot:centroSlot,crea:crea,serializa:serializa,deserializa:deserializa,
