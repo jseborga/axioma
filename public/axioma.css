@@ -1824,6 +1824,7 @@ body.cs-full{overflow:hidden}
 .cs-mapa canvas{display:block;width:100%;height:min(62vh,560px);touch-action:none;cursor:crosshair}
 .cs.full .cs-mapa canvas{height:100%}
 .cs-mapa canvas.retro{image-rendering:crisp-edges;image-rendering:pixelated}
+.cs-mapa canvas.cs-tx{position:absolute;left:0;top:0;pointer-events:none}
 .cs-izq,.cs-der{position:absolute;top:8px;display:flex;flex-direction:column;gap:6px;z-index:1}
 .cs-izq{left:8px}.cs-der{right:8px}
 .cs-izq button{display:grid;place-items:center;padding:0;line-height:1;font-weight:700;width:36px;height:36px;border-radius:10px;border:0;background:rgba(15,27,45,.82);color:#fff;font-size:17px;cursor:pointer;backdrop-filter:blur(4px)}

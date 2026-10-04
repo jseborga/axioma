@@ -208,7 +208,7 @@ function monta(ent){
     '</div>'+
     '<div class="cs-obj" id="cs-obj"></div>'+
     '<div class="cs-mapa" id="cs-mapa">'+
-      '<canvas id="cs-cv" aria-label="Mapa de la ciudad"></canvas>'+
+      '<canvas id="cs-cv" aria-label="Mapa de la ciudad"></canvas><canvas id="cs-tx" class="cs-tx" aria-hidden="true"></canvas>'+
       '<div class="cs-izq">'+
         '<button type="button" id="cs-zmas" title="Acercar">+</button><button type="button" id="cs-zmenos" title="Alejar">−</button>'+
         '<button type="button" id="cs-centro" title="Volver al centro">🎯</button><button type="button" id="cs-mundo" title="Ver el mundo y las ciudades vecinas">🌐</button><button type="button" id="cs-retro" title="Modo retro: píxeles nítidos">👾</button><button type="button" id="cs-capa" title="Capas de información">🗺️</button>'+
@@ -230,7 +230,7 @@ function monta(ent){
       '<span class="cs-guard" id="cs-guard"></span><button type="button" class="ghost" id="cs-salir">Salir</button></div>'+
   '</div>';
   var cv=$("cs-cv"), ctx=cv.getContext("2d");
-  yo.cv=cv; yo.ctx=ctx;
+  yo.cv=cv; yo.ctx=ctx; yo.tx=$("cs-tx"); yo.gt=yo.tx.getContext("2d");
   if(yo.solo)msg("Este desafío terminó: tu ciudad queda para mirarla.",8000);
   else if(!ent.estado)msg("¡Bienvenida, alcaldía! Empieza por una calle desde el centro (🛣️ Vías) y pon zonas residenciales a su lado.",9000);
   else msg("Bienvenida de nuevo a "+s.nombre+".",4000);
@@ -794,6 +794,10 @@ function tam(){
   cv.classList.toggle("retro",!!j.retro);
   if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
   j.dpr=dpr; j.W=w; j.H=h;
+  /* los textos (nombres, carteles, dinero) van en una capa encima a resolución completa: en modo retro se siguen leyendo */
+  var tx=j.tx; if(tx){var d2=Math.min(2,window.devicePixelRatio||1); j.dtx=d2;
+    if(tx.width!==Math.round(w*d2)||tx.height!==Math.round(h*d2)){tx.width=Math.round(w*d2); tx.height=Math.round(h*d2); tx.style.width=w+"px"; tx.style.height=h+"px";}
+    tx.style.left=cv.offsetLeft+"px"; tx.style.top=cv.offsetTop+"px";}
 }
 function centra(inicio){
   var j=J, s=j.s; tam();
@@ -811,8 +815,10 @@ function casillaEn(ix,iy){
 }
 function zoom(f,px,py){
   var j=J, c=j.cam; if(px==null){px=j.W/2;py=j.H/2;}
+  if(!(f>0)||!isFinite(f))return;
   var p=aMapa(px,py), z=Math.max(ZMIN,Math.min(3,c.z*f));
   c.x=p.x-(px-j.W/2)/z; c.y=p.y-(py-j.H/2)/z; c.z=z;
+  var b=$("cs-mundo"); if(b)b.classList.toggle("on",z<ZMUNDO);   /* con los dedos o la rueda también se entra y se sale del mundo */
 }
 
 /* ---------- toques, ratón y teclado ---------- */
@@ -824,7 +830,7 @@ function enlaza(){
     if(J!==j)return; cv.setPointerCapture&&cv.setPointerCapture(e.pointerId);
     var p=pos(e); j.ptr[e.pointerId]={x:p.x,y:p.y,x0:p.x,y0:p.y,b:e.button};
     var n=Object.keys(j.ptr).length;
-    if(n===2){j.arrastre={pinza:true,d:distP(),m:medioP()};return;}
+    if(n>=2){j.arrastre={pinza:true,d:distP(),m:medioP()};return;}   /* dos dedos (o más): pellizco, nunca construir */
     var c=casillaDe(p), pinta=e.button===0&&arrastrable(j.herr);
     j.arrastre={x0:p.x,y0:p.y,cam:{x:j.cam.x,y:j.cam.y},movido:false,pinta:pinta,a:c,b:c,btn:e.button};
   });
@@ -834,7 +840,10 @@ function enlaza(){
     if(!j.ptr[e.pointerId])return;
     j.ptr[e.pointerId].x=p.x; j.ptr[e.pointerId].y=p.y;
     var a=j.arrastre; if(!a)return;
-    if(a.pinza){var d=distP(), m=medioP(); if(a.d>0)zoom(d/a.d,m.x,m.y); j.cam.x-=(m.x-a.m.x)/j.cam.z; j.cam.y-=(m.y-a.m.y)/j.cam.z; a.d=d; a.m=m; return;}
+    if(a.pinza){
+      /* si ya se levantó un dedo, el pellizco terminó: el que queda no acerca ni aleja (antes la distancia 0 llevaba de golpe al mundo) */
+      if(Object.keys(j.ptr).length<2)return;
+      var d=distP(), m=medioP(); if(a.d>0&&d>0)zoom(d/a.d,m.x,m.y); j.cam.x-=(m.x-a.m.x)/j.cam.z; j.cam.y-=(m.y-a.m.y)/j.cam.z; a.d=d; a.m=m; return;}
     if(Math.abs(p.x-a.x0)+Math.abs(p.y-a.y0)>6)a.movido=true;
     if(a.pinta&&a.btn===0){a.b=casillaDe(p);return;}
     if(a.movido){j.cam.x=a.cam.x-(p.x-a.x0)/j.cam.z; j.cam.y=a.cam.y-(p.y-a.y0)/j.cam.z;}
@@ -843,7 +852,7 @@ function enlaza(){
     if(J!==j)return; var a=j.arrastre;
     delete j.ptr[e.pointerId];
     if(!a)return;
-    if(a.pinza){ if(!Object.keys(j.ptr).length)j.arrastre=null; return; }
+    if(a.pinza){ if(!Object.keys(j.ptr).length)j.arrastre=null; else if(Object.keys(j.ptr).length>=2){a.d=distP(); a.m=medioP();} return; }
     j.arrastre=null;
     if(e.type==="pointercancel")return;
     var h=j.herr;
@@ -1548,23 +1557,26 @@ function dibuja(now){
     g.strokeStyle=h.k==="info"?"rgba(255,255,255,.9)":okc?"#69f0ae":"#ff5252"; g.lineWidth=1.4; contorno(g,hv.x,hv.y); g.stroke();
   }
   if(j.sel){g.strokeStyle="#ffeb3b"; g.lineWidth=1.6; contorno(g,j.sel.x,j.sel.y); g.stroke();}
-  /* 8) nombres de las ciudades vecinas */
-  var fz=9*Math.max(1,0.9/c.z);   /* de lejos los nombres crecen para seguir leyéndose */
+  /* 8) nombres de las ciudades vecinas, en la capa de textos (en píxeles de pantalla, nítidos aunque la ciudad vaya en retro) */
+  g=j.gt||g; g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,g.canvas.width,g.canvas.height);
+  var dt=j.gt?j.dtx:j.dpr; g.setTransform(dt,0,0,dt,0,0);
+  var fz=Math.max(11,Math.min(17,9*c.z));
   g.font="600 "+fz+"px "+FUENTE; g.textAlign="center"; g.textBaseline="middle";
   j.vecinos.concat([{cx:s.cx,cy:s.cy,nombre:s.nombre,jugador:"tú",yo:true,era:s.era}]).forEach(function(v){
     var x=(v.cx-v.cy)*HW, y=(v.cx+v.cy)*HH-(v.yo?(A.radio(s)+1)*HH*1.4:(v.radio+1)*HH*1.4), tx=(v.yo?"🏛️ ":"🏙️ ")+v.nombre+" · "+v.jugador+(lejos&&A.ERAS[v.era]?" · "+A.ERAS[v.era].ico:"");
+    x=(x-c.x)*c.z+W/2; y=(y-c.y)*c.z+H/2;
     var w=g.measureText(tx).width+fz*1.1, hh=fz*1.55;
+    if(x+w/2<0||x-w/2>W||y+hh<0||y-hh>H)return;
     g.fillStyle=v.yo?"rgba(13,71,161,.85)":"rgba(0,0,0,.6)"; g.beginPath(); if(g.roundRect)g.roundRect(x-w/2,y-hh/2,w,hh,hh/2); else g.rect(x-w/2,y-hh/2,w,hh); g.fill();
     g.fillStyle="#fff"; g.fillText(tx,x,y+0.5);
   });
   /* 8b) el cartel de la época nueva */
   if(j.banner){var eb=(now-j.banner.t0)/4500; if(eb>=1)j.banner=null; else{
-    g.setTransform(j.dpr,0,0,j.dpr,0,0); var al=eb<0.1?eb/0.1:eb>0.8?(1-eb)/0.2:1;
+    var al=eb<0.1?eb/0.1:eb>0.8?(1-eb)/0.2:1;
     g.globalAlpha=al; g.fillStyle="rgba(10,16,35,.72)"; g.fillRect(0,H/2-44,W,88);
     g.textAlign="center"; g.textBaseline="middle"; g.fillStyle="#ffd54f"; g.font="800 26px "+FUENTE; g.fillText(j.banner.t,W/2,H/2-10);
     g.fillStyle="#fff"; g.font="500 13px "+FUENTE; g.fillText(j.banner.sub,W/2,H/2+20); g.globalAlpha=1;}}
   /* 9) dinero del mes, flotando */
-  g.setTransform(j.dpr,0,0,j.dpr,0,0);
   g.font="800 15px "+FUENTE; g.textAlign="center";
   j.flot=j.flot.filter(function(f){var e=(now-f.t0)/1800; if(e>=1)return false;
     g.globalAlpha=1-e; g.fillStyle="#fff"; g.fillText(f.t,W/2+1,58-e*24+1); g.fillStyle=f.c; g.fillText(f.t,W/2,58-e*24); g.globalAlpha=1; return true;});

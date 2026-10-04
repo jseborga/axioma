@@ -138,6 +138,11 @@ El valor del suelo es una regla del motor: el servidor la repite igual al valida
   el servidor.
 - **Modo retro** (👾): la ciudad se dibuja a la mitad de resolución y se amplía sin suavizar, con píxeles nítidos como los
   juegos de ciudades de los 90 (además, va más rápido). Viene encendido; el botón lo alterna y el teléfono lo recuerda.
+  Los textos (nombres de las ciudades, el cartel de época, el dinero del mes) van en una capa encima a resolución
+  completa, así que se leen bien también en retro.
+- **Zoom con dos dedos**: el pellizco acerca y aleja siguiendo los dedos (la página no se amplía). Al alejar mucho se pasa
+  a la vista del mundo (el botón 🌐 se marca solo) y al acercar se vuelve a la ciudad. Levantar un dedo antes que el otro
+  termina el pellizco sin saltos, y con dos dedos nunca se construye.
 
 ## Preguntas: investigar y resolver problemas
 
