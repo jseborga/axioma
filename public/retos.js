@@ -509,7 +509,7 @@ function pintaSala(s,fin){
 }
 
 /* se publica antes de atender el enlace: si la sesión ya se conoce, el cambio de modo es inmediato */
-window.AxRetos={abrir:abrir,cerrar:cerrar};
+window.AxRetos={abrir:abrir,cerrar:cerrar,ficha:function(code){AxApp.setMode("reto");verFicha(code);}};
 
 /* ---------- entrada por enlace ---------- */
 (function(){

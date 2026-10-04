@@ -291,9 +291,10 @@ function pasos(items,nota){
 var GUIAS={};
 GUIAS.inicio=[
 {t:"Qué hay en The Final Test",d:"Aprende, compite y demuéstralo. Cambia de sección con el menú de arriba; el botón «?» abre siempre la ayuda de la sección en la que estás.",
- a:function(){return tarjetas([["Educativo","Cursos, bancos de preguntas y cuestionarios de clase con registros."],["Empresas y eventos","Tu marca, convocatorias con premio y QR, y métricas."],
-   ["Concursos","Trivia con premio: te inscribes, juegas una vez y gana quien más acierta."],["Juegos","Axioma, Sudoku, Juegos rápidos y Más juegos en sala."],["Con amigos","Retos con código, premio y penitencia, y el sudoku en pareja."]]);}},
-{t:"Entrar con un código",d:"El cuadro de la portada acepta los códigos de seis caracteres de un curso, de un concurso o convocatoria y de una sala de juego. Los códigos de un reto o de un sudoku en pareja se escriben en su sección (Retos o En pareja). También puedes abrir el enlace o escanear el QR que te pasen.",
+ a:function(){return tarjetas([["Juegos","Axioma, Sudoku, Juegos rápidos y Más juegos en sala."],["Con amigos","Retos con código, premio y penitencia, el sudoku en pareja y tus grupos de amigos con su ranking."],
+   ["Concursos","Trivia con premio: te inscribes, juegas una vez y gana quien más acierta."],["Educativo","Cursos y cuestionarios de clase. Aparece si estás en un curso o tienes el perfil educativo."],["Empresas y eventos","Marca, convocatorias con QR y métricas. Aparece con el perfil de empresa."]],
+   "Al entrar con Google eres jugador. Los perfiles educativo y de empresa los da la administración de la plataforma: se solicitan en «Mis grupos y partidas».");}},
+{t:"Entrar con un código",d:"El cuadro de la portada acepta los códigos de seis caracteres de un curso, de un concurso o convocatoria, de una sala de juego y de un grupo de amigos. Los códigos de un reto o de un sudoku en pareja se escriben en su sección (Retos o En pareja). También puedes abrir el enlace o escanear el QR que te pasen.",
  a:function(){return ico("🔑")+'<p class="tut-note">Ejemplo: <b>K7M2QX</b>. Da igual si lo escribes en minúsculas.</p>';}},
 {t:"¿Hace falta cuenta?",d:"Depende de lo que quieras hacer.",
  a:function(){return tarjetas([["Sin cuenta","Axioma, Sudoku, Juegos rápidos de práctica y salas de juego que admiten apodo."],
@@ -306,7 +307,7 @@ GUIAS.aula=[
  a:function(){return tarjetas([["Estudiante","Entra en el curso con su código y responde los cuestionarios."],["Docente","Crea cursos, bancos y cuestionarios y ve los registros."],["Administración","Registra la institución, su estructura y a sus docentes."]]);}},
 {t:"Si eres estudiante",d:"",
  a:function(){return pasos([["Pide el código del curso","Seis caracteres; también sirve el enlace o el QR que comparta tu docente."],
-   ["Entra en el curso","En Educativo o en el cuadro de la portada. La primera vez escribe tu registro universitario. Si el curso pide aprobación, espera a que el docente te acepte."],
+   ["Entra en el curso","Con el cuadro de la portada (o en Educativo, si ya lo ves). La primera vez escribe tu nombre completo y tu teléfono; el registro universitario es opcional. Si el curso pide aprobación, espera a que el docente te acepte."],
    ["Exámenes","Una sola vez cada uno, con tiempo por pregunta. Si recargas, sigues en la misma pregunta con el mismo reloj. Al cierre ves tus respuestas y las correctas."],
    ["Prácticas","Repítelas cuantas veces quieras mientras estén abiertas: tras cada respuesta ves si acertaste y la correcta. Cuenta tu mejor intento."],
    ["Mi avance","En tu curso ves tus notas, tu promedio de exámenes y tu mejor intento en cada práctica. No hay ranking público."],
@@ -320,7 +321,7 @@ GUIAS.aula=[
    ["Sigue la libreta","Cada estudiante con sus notas y su mejor intento en las prácticas, el promedio y la descarga en Excel. En cada cuestionario, además, la estadística por pregunta."]],
    "Cada estudiante recibe su propia selección al azar: si el banco tiene más preguntas de las que pides, pueden tocarle preguntas distintas, siempre en otro orden y con las opciones barajadas. Con preguntas generales, el número se redondea a 10, 20, 30, 50 o 100.");}},
 {t:"Si administras una institución",d:"",
- a:function(){return pasos([["Registra la institución","Nombre, tipo y, si quieres, el dominio de correo. Queda pendiente hasta que la plataforma la aprueba."],
+ a:function(){return pasos([["Registra la institución","Necesitas el perfil educativo que da la administración de la plataforma (se solicita en «Mis grupos y partidas»). Nombre, tipo y, si quieres, el dominio de correo."],
    ["Define la estructura","Facultades, carreras, materias… los niveles que necesites."],
    ["Suma docentes","Con el enlace para docentes o dándolos de alta por correo. También puedes nombrar auxiliares en cada curso."],
    ["Sigue las métricas","Participación, cuestionarios y cursos activos de toda la institución."]]);}},
@@ -334,7 +335,7 @@ GUIAS.empresas=[
 {t:"Empresas y eventos",d:"Para empresas e instituciones que quieren promocionar un evento o una marca con juegos: una página propia con logo y color, convocatorias con premio que se abren con un QR, y métricas de participación.",
  a:function(){return ico("🏢");}},
 {t:"De cero a tu primera convocatoria",d:"",
- a:function(){return pasos([["Registra tu empresa","Queda pendiente hasta que la plataforma la aprueba."],
+ a:function(){return pasos([["Registra tu empresa","Necesitas el perfil de empresa que da la administración de la plataforma (se solicita en «Mis grupos y partidas»)."],
    ["Personaliza tu marca","Logo, color, lema y la dirección de tu página (?marca=…)."],
    ["Crea una convocatoria","Una trivia con premio, fechas, dificultad y áreas temáticas. Decide si admite invitados sin cuenta de Google."],
    ["Compártela","Con el enlace, el QR o el cartel listo para imprimir."],
@@ -389,6 +390,18 @@ GUIAS.reto=[
 {t:"Detalles importantes",d:"En los retos de sudoku, una ronda que no juegas ese día se pierde, y quien se une tarde no recupera las anteriores. Los días cambian a medianoche UTC, es decir, a las 20:00 en Bolivia. Si al final hay empate en todo, se ordena por nombre.",
  a:function(){return pasos([["Crear","Retos → Crear un reto; te da un código."],["Unirse","Retos → escribe el código → Unirme (con Google)."]],
    '<a href="#" data-guia="sudoku">Cómo se juega el sudoku</a> · <a href="#" data-guia="rapido">Los juegos rápidos</a>');}}
+];
+GUIAS.amigos=[
+{t:"Mis grupos y partidas",d:"Todo lo que juegas con tu cuenta de Google queda guardado, y puedes armar grupos con tus amigos.",
+ a:function(){return ico("👥");}},
+{t:"Grupos de amigos",d:"",
+ a:function(){return pasos([["Crea un grupo","Ponle nombre y comparte su código o su enlace. Hasta 50 personas."],
+   ["Ranking de la semana","3 puntos por cada Axioma diario, 2 por cada sudoku del día y 1 por partida en vivo (+2 si la ganas), en los últimos 7 días."],
+   ["Retos del grupo","Los retos del último mes en los que juega alguien del grupo aparecen en su página."]]);}},
+{t:"Mis partidas",d:"Tus Axiomas diarios, sudokus del día, retos, concursos y partidas en vivo, con tus mejores marcas.",
+ a:function(){return ico("📒");}},
+{t:"Tu perfil",d:"Al entrar con Google eres jugador. Si eres docente o representas a una institución educativa, una empresa o un evento, solicita el perfil: la administración de la plataforma lo revisa y, al aprobarlo, aparece la sección en el menú.",
+ a:function(){return ico("🪪");}}
 ];
 GUIAS.pareja=[
 {t:"Sudoku en pareja",d:"Dos personas resuelven el mismo tablero a la vez, cada una desde su móvil. El tiempo es de la pareja.",

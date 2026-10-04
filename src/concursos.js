@@ -18,7 +18,7 @@
    =========================================================== */
 import { explicaciones } from "./ia.js";
 import { secuencia, secuenciaPool, semilla, CATEGORIAS, fichas, materializa, limpiaAreas, disponibles, hacenFalta, cuentaAreas } from "./preguntas.js";
-import { perfil, puedePremio, rolOrg, accesoCurso, puedeUsarBanco, esInvitado, esAcademica, extrasBanco, datosAlumnos } from "./aula.js";
+import { perfil, puedePremio, rolOrg, accesoCurso, puedeUsarBanco, esInvitado, esAcademica, extrasBanco, datosAlumnos, tienePerfil } from "./aula.js";
 import "../public/banco-formato.js";
 var BF=globalThis.AxBanco;
 
@@ -201,6 +201,9 @@ async function crea(req,env,user,json){
     var r=await rolOrg(env,orgId,user.id);
     if(r!=="admin"&&r!=="docente")return json({error:"forbidden"},null,403);
   }
+  /* la lista pública de concursos es para empresas y eventos: sin institución, hace falta el perfil «empresas»
+     (entre amigos, el concurso va por enlace) */
+  if(aud==="publico"&&!orgId&&(await tienePerfil(env,user,"empresas"))===false)return json({error:"perfil_required",perfil:"empresas"},null,403);
   /* invitados (sin Google, con código): solo en convocatorias abiertas de una institución o empresa */
   var invitados=b.guests===true&&!!orgId&&(aud==="publico"||aud==="enlace");
   if(orgId){

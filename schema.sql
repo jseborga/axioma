@@ -694,3 +694,37 @@ CREATE TABLE IF NOT EXISTS alumno_datos (
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (org_id, user_id)
 );
+
+-- ============================================================
+-- The Final Test · perfiles de la plataforma y grupos de amigos
+-- ============================================================
+-- Quien entra con Google es jugador. La administración de la plataforma
+-- (PLATFORM_ADMINS) da por correo el perfil «educativo» o «empresas»;
+-- también guarda aquí las solicitudes. estado: activo | solicitado | rechazado | retirado
+CREATE TABLE IF NOT EXISTS perfiles_plataforma (
+  email        TEXT NOT NULL,             -- en minúsculas; vale aunque todavía no haya entrado
+  perfil       TEXT NOT NULL,             -- educativo | empresas
+  estado       TEXT NOT NULL,
+  nota         TEXT,                      -- institución, cargo o teléfono (solicitud o nota de la administración)
+  user_id      TEXT,                      -- quien lo solicitó
+  otorgado_por TEXT,
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL,
+  PRIMARY KEY (email, perfil)
+);
+CREATE INDEX IF NOT EXISTS perfiles_estado ON perfiles_plataforma(estado, updated_at);
+-- Grupos de amigos: un código para unirse y un ranking de la semana
+CREATE TABLE IF NOT EXISTS grupos (
+  code       TEXT PRIMARY KEY,
+  nombre     TEXT NOT NULL,
+  owner_id   TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS grupos_owner ON grupos(owner_id);
+CREATE TABLE IF NOT EXISTS grupo_miembros (
+  grupo     TEXT NOT NULL,
+  user_id   TEXT NOT NULL,
+  joined_at INTEGER NOT NULL,
+  PRIMARY KEY (grupo, user_id)
+);
+CREATE INDEX IF NOT EXISTS grupo_miembros_user ON grupo_miembros(user_id);

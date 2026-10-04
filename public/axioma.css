@@ -1726,3 +1726,14 @@ body[data-sub=maraton] .readout{grid-template-columns:repeat(2,1fr)}
 .ia-cab input[type=radio]{flex:none;width:18px;height:18px;margin:0;padding:0;appearance:auto;-webkit-appearance:radio;box-shadow:none;border:0;background:none;accent-color:var(--accent)}
 .ia-prov small{color:var(--ink-2);font-size:12.5px}
 .ia-prov .ia-mod{font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+
+/* ---------- mis grupos y partidas ---------- */
+.am-rank .who{white-space:normal}
+.am-rank .who small{display:block;font-weight:400;color:var(--ink-3);font-size:12.5px;margin-top:2px}
+.am-rank .chip{font-size:10.5px;padding:2px 7px;vertical-align:1px}
+.am-cod{font-size:17px;letter-spacing:.12em}
+.am-lista{list-style:none;margin:4px 0 8px;padding:0}
+.am-lista li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--hair);font-size:14px}
+.am-lista li span{color:var(--ink-2);text-align:right}
+.ini-perfil{text-align:center;margin:14px 0 0}
+.au-inv li small{display:block;color:var(--ink-3);font-size:12.5px}

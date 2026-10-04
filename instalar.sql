@@ -88,3 +88,9 @@ CREATE TABLE IF NOT EXISTS campana_progreso (intento_id INTEGER PRIMARY KEY, cod
 CREATE INDEX IF NOT EXISTS campana_progreso_code ON campana_progreso(code, vence_at);
 CREATE TABLE IF NOT EXISTS ajustes_plataforma (clave TEXT PRIMARY KEY, valor TEXT NOT NULL, updated_at INTEGER NOT NULL, updated_by TEXT);
 CREATE TABLE IF NOT EXISTS alumno_datos (org_id TEXT NOT NULL, user_id TEXT NOT NULL, nombre TEXT, telefono TEXT, updated_at INTEGER NOT NULL, PRIMARY KEY (org_id, user_id));
+CREATE TABLE IF NOT EXISTS perfiles_plataforma (email TEXT NOT NULL, perfil TEXT NOT NULL, estado TEXT NOT NULL, nota TEXT, user_id TEXT, otorgado_por TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (email, perfil));
+CREATE INDEX IF NOT EXISTS perfiles_estado ON perfiles_plataforma(estado, updated_at);
+CREATE TABLE IF NOT EXISTS grupos (code TEXT PRIMARY KEY, nombre TEXT NOT NULL, owner_id TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS grupos_owner ON grupos(owner_id);
+CREATE TABLE IF NOT EXISTS grupo_miembros (grupo TEXT NOT NULL, user_id TEXT NOT NULL, joined_at INTEGER NOT NULL, PRIMARY KEY (grupo, user_id));
+CREATE INDEX IF NOT EXISTS grupo_miembros_user ON grupo_miembros(user_id);

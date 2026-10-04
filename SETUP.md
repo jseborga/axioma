@@ -185,7 +185,7 @@ las pistas usadas.
    | --- | --- | --- |
    | `GOOGLE_CLIENT_ID` | Secret | El ID de cliente de la parte 3 |
    | `SESSION_SECRET` | Secret | La clave que acabas de generar |
-   | `PLATFORM_ADMINS` | Secret | Tu correo de Google (o varios, separados por comas): quién aprueba las instituciones nuevas (Educativo y Empresas) |
+   | `PLATFORM_ADMINS` | Secret | Tu correo de Google (o varios, separados por comas): la **administración de la plataforma** (superadmin), que da los perfiles Educativo y Empresas |
 
    **Añádelas como Secret, no como texto plano.** Los secretos sobreviven a
    todos los despliegues, mientras que las variables de texto pueden quedar
@@ -418,9 +418,9 @@ o pégalo en la consola de D1 (**Workers & Pages → D1 → axioma → Console**
 usa `CREATE … IF NOT EXISTS`, así que se puede ejecutar las veces que haga falta.
 
 Después añade el secreto **`PLATFORM_ADMINS`** con tu correo (parte 4). Con él,
-cada institución nueva queda pendiente hasta que la apruebes en **Educativo →
-Administración de la plataforma**. Sin él, las instituciones se activan al
-registrarse, lo que solo conviene para pruebas.
+solo quien tiene el perfil Educativo o Empresas (que das tú) registra instituciones
+(ver «Perfiles» más abajo). Sin él, cualquiera las registra y se activan al
+momento, lo que solo conviene para pruebas.
 
 Consultas útiles:
 
@@ -607,6 +607,51 @@ CREATE TABLE IF NOT EXISTS alumno_datos (org_id TEXT NOT NULL, user_id TEXT NOT 
 
 Sin ella, los estudiantes se unen igual, pero el docente no verá esos datos.
 
+### Perfiles: superadmin, jugadores, Educativo y Empresas
+
+**Cómo entrar como superadmin.** No hay contraseña aparte: es tu cuenta de Google.
+
+1. En Cloudflare, **Workers & Pages → axioma → Settings → Variables and Secrets**,
+   añade (o revisa) el **Secret** `PLATFORM_ADMINS` con tu correo de Google. Para
+   varias personas, sepáralos con comas.
+2. Vuelve a desplegar (**Deployments → Retry**) para que el secreto llegue a la app.
+3. Abre la app y pulsa **Entrar** con *esa* cuenta de Google.
+4. En el menú de arriba aparece **Plataforma → Administración**: Resumen, **Perfiles**,
+   Instituciones, Usuarios, Repaso e IA.
+
+**Perfiles.** Quien entra con Google es **jugador**: juega, guarda sus partidas,
+hace retos, concursos por enlace y grupos de amigos. Educativo y Empresas no le
+aparecen. La administración de la plataforma da, por correo, el perfil:
+
+| Perfil | Qué abre |
+| --- | --- |
+| **Educativo** | Registrar instituciones educativas (cursos, exámenes, prácticas, libreta). Quedan activas al momento. |
+| **Empresas y eventos** | Registrar empresas, comunidades y eventos (marca, convocatorias con QR, competencias, métricas) y publicar concursos en la lista pública. |
+
+- En **Administración → Perfiles** escribes el correo y eliges el perfil; vale aunque
+  esa persona todavía no haya entrado. Desde **Usuarios**, «Dar perfil» rellena el correo.
+- Cualquier jugador puede **solicitar** un perfil desde **Mis grupos y partidas**
+  (o desde Educativo/Empresas): la solicitud aparece en **Perfiles** con su nota para
+  aprobarla o rechazarla.
+- Sin perfil se siguen viendo las secciones donde ya se participa: un estudiante ve
+  Educativo con sus cursos, y quien administra o enseña en una institución o empresa
+  la sigue gestionando (la designas en **Instituciones**).
+
+Pega esto en la consola de D1 (también está al final de `instalar.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS perfiles_plataforma (email TEXT NOT NULL, perfil TEXT NOT NULL, estado TEXT NOT NULL, nota TEXT, user_id TEXT, otorgado_por TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (email, perfil));
+CREATE INDEX IF NOT EXISTS perfiles_estado ON perfiles_plataforma(estado, updated_at);
+CREATE TABLE IF NOT EXISTS grupos (code TEXT PRIMARY KEY, nombre TEXT NOT NULL, owner_id TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS grupos_owner ON grupos(owner_id);
+CREATE TABLE IF NOT EXISTS grupo_miembros (grupo TEXT NOT NULL, user_id TEXT NOT NULL, joined_at INTEGER NOT NULL, PRIMARY KEY (grupo, user_id));
+CREATE INDEX IF NOT EXISTS grupo_miembros_user ON grupo_miembros(user_id);
+```
+
+Mientras falte `perfiles_plataforma`, todo sigue como antes: cualquiera registra
+una institución y queda pendiente de tu aprobación. Sin `PLATFORM_ADMINS`
+(solo para pruebas), todo el mundo tiene todos los perfiles.
+
 ### Añadir las tablas de las competencias sin fin (maratón)
 
 Para las competencias que se juegan hasta perder (memoria sin fin, maratón de
@@ -775,6 +820,8 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `src/invitados.js` | La API de invitados verificados con código |
 | `src/marcas.js` | La API de marcas, convocatorias, métricas y participantes |
 | `src/plataforma.js` | La API de administración de la plataforma |
+| `src/perfiles.js` | Perfiles (jugador, Educativo, Empresas), grupos de amigos y «Mis partidas» |
+| `public/amigos.js` | Menú según el perfil, «Mis grupos y partidas» y solicitud de perfil |
 | `src/ajustes.js` | Ajustes de la plataforma (nombre, correo de contacto, remitente, verificación) |
 | `src/concursos.js` | La API de los concursos y de los cuestionarios de curso |
 | `src/preguntas.js` | El banco de preguntas de los concursos |

@@ -69,6 +69,17 @@ function dominioOk(org,user){
   return e.endsWith("@"+d)||e.endsWith("."+d);
 }
 export function esInvitado(user){return !!(user&&String(user.id).indexOf("g_")===0);}
+/* perfiles de la plataforma: quien entra con Google es jugador; la administración de la plataforma
+   da el perfil «educativo» (instituciones educativas) o «empresas» (empresas, comunidades y eventos).
+   true: lo tiene · false: no · null: falta la tabla (se sigue como antes: alta pendiente de aprobación) */
+export async function tienePerfil(env,user,p){
+  if(!user||esInvitado(user))return false;
+  if(esAdminPlataforma(env,user)||!String(env.PLATFORM_ADMINS||"").trim())return true;
+  try{
+    var r=await env.DB.prepare("SELECT 1 AS x FROM perfiles_plataforma WHERE email=? AND perfil=? AND estado='activo'").bind(String(user.email||"").toLowerCase(),p).first();
+    return !!r;
+  }catch(e){ return null; }
+}
 function correoOk(e){return /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e);}
 /* altas por correo pendientes: se aplican cuando esa persona entra con Google */
 export async function aceptaInvitaciones(env,user){
@@ -272,11 +283,14 @@ async function creaOrg(env,user,b,json){
   var dom=limpia(b.email_domain,80).toLowerCase().replace(/^@/,"");
   if(name.length<3)return json({error:"bad_name"},null,400);
   if(dom&&!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(dom))return json({error:"bad_domain"},null,400);
+  var conPerfil=await tienePerfil(env,user,esAcademica(kind)?"educativo":"empresas");
+  if(conPerfil===false)return json({error:"perfil_required",perfil:esAcademica(kind)?"educativo":"empresas"},null,403);
   var cuantas=await env.DB.prepare("SELECT COUNT(*) AS n FROM orgs WHERE created_by=?").bind(user.id).first();
   if(cuantas.n>=5&&!esAdminPlataforma(env,user))return json({error:"too_many"},null,400);
   var niveles=Array.isArray(b.levels)&&b.levels.length?b.levels.map(function(x){return limpia(x,30);}).filter(Boolean).slice(0,MAX_NIVELES):KINDS[kind];
   /* con administradores de plataforma configurados, las nuevas quedan pendientes de aprobación */
-  var estado=(esAdminPlataforma(env,user)||!String(env.PLATFORM_ADMINS||"").trim())?"activa":"pendiente";
+  /* con perfil dado por la plataforma queda activa; sin la tabla de perfiles, pendiente de aprobación como antes */
+  var estado=conPerfil===true?"activa":"pendiente";
   var id=codigo(6), now=Date.now();
   await env.DB.batch([
     env.DB.prepare("INSERT INTO orgs(id,name,kind,email_domain,levels,status,teacher_code,created_by,created_at) VALUES(?,?,?,?,?,?,?,?,?)")

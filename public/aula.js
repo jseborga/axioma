@@ -52,7 +52,7 @@ function falloDetalle(e){
 function ERR(e){if(e&&e.error==="few_questions"&&e.needed!==5)return "En esas áreas hay "+e.available+" preguntas y hacen falta "+e.needed+": marca más áreas o elige menos preguntas.";if(e&&e.error==="quota_exceeded")return "Se agotaron los "+e.cuota+" usos de IA de este mes. Pide a la plataforma que amplíe el plan.";
   return {pro_required:"Las ayudas con IA son del plan Pro. Pide a la administración de la plataforma que lo active para tu institución.",
   ia_not_configured:"La IA no está configurada en esta instalación: falta la clave del proveedor (ver Administración de la plataforma → IA).",ia_pdf_unsupported:"El proveedor de IA elegido no lee PDF: pega el texto del documento.",bad_provider:"Proveedor de IA desconocido.",bad_model:"Escribe el identificador del modelo (sin espacios).",settings_not_configured:"Falta la tabla ajustes_plataforma en la base de datos (ver SETUP.md).",ia_failed:"La IA no respondió bien. Inténtalo otra vez en un momento.",
-  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",bad_code:"Ese código no es válido.",bad_prizes:"Revisa los premios por puesto: los rangos no pueden solaparse.",bad_threshold:"Para el premio por puntaje, pon el puntaje y el premio.",bad_game:"Elige un juego.",bad_boards:"No se pudieron preparar los tableros. Inténtalo otra vez.",maraton_not_configured:"Faltan las tablas de las competencias sin fin: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_end:"La duración no es válida.",code_used:"Ese código ya se usó.",code_expired:"Ese código ya venció.",few_questions:"El banco necesita al menos 5 preguntas que no sean de texto libre.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
+  ia_need_input:"Escribe un tema, pega un texto (de al menos unas líneas) o adjunta un archivo.",ia_file_too_big:"El archivo es demasiado grande (máximo 12 MB).",bad_group:"Ese grupo no existe en el curso.",types_not_configured:"Faltan las tablas de tipos de pregunta e imágenes: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_image:"Esa imagen no es válida (usa JPG, PNG o WebP).",image_too_big:"La imagen es demasiado grande incluso reducida.",bad_code:"Ese código no es válido.",bad_prizes:"Revisa los premios por puesto: los rangos no pueden solaparse.",bad_threshold:"Para el premio por puntaje, pon el puntaje y el premio.",bad_game:"Elige un juego.",bad_boards:"No se pudieron preparar los tableros. Inténtalo otra vez.",maraton_not_configured:"Faltan las tablas de las competencias sin fin: pega en D1 el SQL de SETUP.md (o instalar.sql).",bad_end:"La duración no es válida.",perfil_required:"Para registrar una institución o empresa hace falta el perfil que da la administración de la plataforma. Solicítalo desde «Mis grupos y partidas».",perfiles_not_configured:"Faltan las tablas de perfiles y grupos: pega en D1 el SQL de SETUP.md (o instalar.sql).",code_used:"Ese código ya se usó.",code_expired:"Ese código ya venció.",few_questions:"El banco necesita al menos 5 preguntas que no sean de texto libre.",unit_required:"Elige la materia del banco: en una institución educativa cada banco pertenece a una materia.",bad_unit:"Esa materia no existe en la estructura.",too_many:"Has llegado al límite.",not_configured:"Faltan las tablas de la sección Educativo en la base de datos: hay que volver a ejecutar schema.sql (ver SETUP.md).",
   unauthorized:"Tienes que entrar con Google.",profile_required:"Primero completa tu registro.",forbidden:"No tienes permiso para esto.",
   not_found:"No existe o ya no está disponible.",org_pending:"La institución todavía no está aprobada por la administración de la plataforma.",
   org_suspended:"La institución está suspendida.",domain:"Esta institución solo admite cuentas del dominio @"+(e&&e.domain||"")+".",
@@ -89,6 +89,7 @@ function abrir(m){ activo=true; panel.hidden=false; var p=pendiente; pendiente=n
 function cerrar(){ activo=false; panel.hidden=true; }
 document.addEventListener("ax-user",function(){ if(activo&&vista&&vista.render)vista.render(); });
 document.addEventListener("ax-perfil",function(){ if(activo&&vista&&vista.render)vista.render(); });
+document.addEventListener("ax-acceso",function(){ if(activo&&vista&&(vista.render===inicio||vista.render===inicioEmpresas))vista.render(); });
 
 /* ===================== INICIO DEL AULA ===================== */
 function inicio(){
@@ -105,6 +106,7 @@ function inicio(){
   }
   pinta('<h3>Educativo</h3><p class="fine">Cargando…</p>');
   api("/api/orgs").then(function(r){
+    if(!vista||vista.render!==inicio)return;   /* ya se abrió otra pantalla */
     var h='<h3>Educativo</h3><p class="fine">Cursos, bancos de preguntas y cuestionarios de clase. <a href="#" class="guia-link" data-guia="aula">¿Cómo funciona?</a></p>'+
       '<form class="rt-join" id="au-join"><input id="au-code" placeholder="Código de curso o de docente" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Unirme</button></form>'+
       '<p class="msg" id="au-msg"></p>';
@@ -122,14 +124,19 @@ function inicio(){
       return '<button type="button" class="rt-card" data-org="'+o.id+'"><span class="rt-card-top"><b>'+esc(o.name)+'</b>'+chipEstado(o.status)+'</span>'+
         '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+esc(nombreRol(o.role,o.kind))+(o.email_domain?' · @'+esc(o.email_domain):'')+'</small></button>';
     }).join(""):'<p class="fine">No perteneces a ninguna institución.</p>';
-    h+='<div class="actions"><button class="ghost" id="au-nueva">Registrar una institución</button></div>'+
+    var ac=window.AxAcceso?AxAcceso.datos():{crear:{educativo:true}};
+    h+=(ac.crear.educativo?'<div class="actions"><button class="ghost" id="au-nueva">Registrar una institución</button></div>':
+        (ac.solicitudes&&ac.solicitudes.indexOf("educativo")>=0?'<p class="fine">Tu solicitud del perfil educativo está pendiente de aprobación.</p>':
+        '<p class="fine">¿Eres docente o representas a una institución educativa? Para registrarla hace falta el perfil educativo. Si tu institución ya está registrada, pide a su administración el enlace de docente.</p>'+
+        '<div class="actions"><button class="ghost" id="au-pide">Solicitar perfil educativo</button></div><div id="au-sol"></div>'))+
       (r.orgs.length>mias.length?'<p class="fine">Tus empresas y comunidades están en <a href="#" id="au-emp">Empresas y eventos</a>.</p>':'');
     if(r.platform_admin)h+='<div class="actions"><button class="ghost" id="au-plat">Administración de la plataforma'+(r.pending_orgs?' · '+r.pending_orgs+' pendiente'+(r.pending_orgs>1?'s':''):'')+'</button></div>';
     pinta(h);
     var bs=panel.querySelectorAll("[data-curso]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){curso(this.getAttribute("data-curso"));};
     bs=panel.querySelectorAll("[data-org]"); for(i=0;i<bs.length;i++)bs[i].onclick=function(){org(this.getAttribute("data-org"));};
     $("au-rep").onclick=function(){repasos();};
-    $("au-nueva").onclick=crearOrg;
+    if($("au-nueva"))$("au-nueva").onclick=crearOrg;
+    if($("au-pide"))$("au-pide").onclick=function(){AxAcceso.solicitar($("au-sol"),"educativo");this.hidden=true;};
     if($("au-emp"))$("au-emp").onclick=function(e){e.preventDefault();AxApp.setMode("empresas");};
     if($("au-plat"))$("au-plat").onclick=function(){plataforma();};
     $("au-join").onsubmit=function(e){
@@ -1041,18 +1048,23 @@ function inicioEmpresas(){
   }
   pinta(cab+'<p class="fine">Cargando…</p>');
   api("/api/orgs").then(function(r){
+    if(!vista||vista.render!==inicioEmpresas)return;
     var mias=r.orgs.filter(function(o){return !academica(o.kind);});
     var h=cab+'<h4>Tus empresas y comunidades</h4>'+
       (mias.length?mias.map(function(o){
         return '<button type="button" class="rt-card" data-org="'+o.id+'"><span class="rt-card-top"><b>'+esc(o.name)+'</b>'+chipEstado(o.status)+'</span>'+
           '<small>'+esc(TIPOS[o.kind]||o.kind)+' · '+esc(nombreRol(o.role,o.kind))+'</small></button>';}).join(""):
         '<p class="fine">Todavía no administras ninguna. Regístrala o pide a la administración de la plataforma que te dé de alta.</p>')+
-      '<div class="actions"><button class="ghost" id="em-nueva">Registrar una empresa o comunidad</button></div>'+
+      ((window.AxAcceso?AxAcceso.datos():{crear:{empresas:true}}).crear.empresas?'<div class="actions"><button class="ghost" id="em-nueva">Registrar una empresa o comunidad</button></div>':
+        ((AxAcceso.datos().solicitudes||[]).indexOf("empresas")>=0?'<p class="fine">Tu solicitud del perfil de empresa está pendiente de aprobación.</p>':
+        '<p class="fine">Para registrar tu empresa, comunidad o evento hace falta el perfil de empresa que da la administración de la plataforma.</p>'+
+        '<div class="actions"><button class="ghost" id="em-pide">Solicitar perfil de empresa</button></div><div id="em-sol"></div>'))+
       (r.platform_admin?'<div class="actions"><button class="ghost" id="au-plat">Administración de la plataforma'+(r.pending_orgs?' · '+r.pending_orgs+' pendiente'+(r.pending_orgs>1?'s':''):'')+'</button></div>':'')+
       '<h4>Marcas con convocatorias</h4><div id="em-dir"><p class="fine">Cargando…</p></div>';
     pinta(h);
     var bs=panel.querySelectorAll("[data-org]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){org(this.getAttribute("data-org"));};
-    $("em-nueva").onclick=crearOrg;
+    if($("em-nueva"))$("em-nueva").onclick=crearOrg;
+    if($("em-pide"))$("em-pide").onclick=function(){AxAcceso.solicitar($("em-sol"),"empresas");this.hidden=true;};
     if($("au-plat"))$("au-plat").onclick=function(){plataforma();};
     directorio();
   }).catch(function(e){
@@ -1505,16 +1517,58 @@ function adminRepaso(t,o){
 function plataforma(tab,filtro){
   tab=tab||"resumen"; filtro=filtro||{};
   vista={render:function(){plataforma(tab,filtro);}};
-  pinta(atras(nombreSeccion())+'<h3>Administración de la plataforma</h3>'+tabs([["resumen","Resumen"],["orgs","Instituciones"],["usuarios","Usuarios"],["repaso","Repaso"],["ia","IA"]],tab)+'<div id="au-tab"><p class="fine">Cargando…</p></div>');
+  pinta(atras(nombreSeccion())+'<h3>Administración de la plataforma</h3>'+tabs([["resumen","Resumen"],["perfiles","Perfiles"],["orgs","Instituciones"],["usuarios","Usuarios"],["repaso","Repaso"],["ia","IA"]],tab)+'<div id="au-tab"><p class="fine">Cargando…</p></div>');
   $("au-back").onclick=inicio;
   ligaTabs(function(t){plataforma(t);});
   var t=$("au-tab");
   if(tab==="repaso"){adminRepaso(t,null);return;}
   if(tab==="ia"){platIA(t);return;}
+  if(tab==="perfiles"){platPerfiles(t,filtro);return;}
   api("/api/admin/summary").then(function(r){
     if(tab==="resumen")platResumen(t,r);
     else if(tab==="orgs")platOrgs(t,r);
     else platUsuarios(t,r,filtro);
+  }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
+}
+/* perfiles: quien entra con Google es jugador; aquí se da por correo el perfil educativo o de empresa,
+   y se atienden las solicitudes */
+var NOMPERF={educativo:"Educativo",empresas:"Empresas y eventos"};
+function platPerfiles(t,f){
+  api("/api/admin/perfiles").then(function(r){
+    var sol=r.perfiles.filter(function(p){return p.estado==="solicitado";}), act=r.perfiles.filter(function(p){return p.estado==="activo";});
+    var fila=function(p,botones){return '<li><span><b>'+esc(p.nombre||p.email)+'</b>'+(p.nombre?' · '+esc(p.email):'')+' · <span class="chip">'+esc(NOMPERF[p.perfil]||p.perfil)+'</span>'+
+      (p.registrado?'':' · <em>todavía no ha entrado</em>')+(p.nota?'<small>'+esc(p.nota)+'</small>':'')+'</span><span class="po-acc">'+botones(p)+'</span></li>';};
+    var h='<p class="fine">Quien entra con Google es <b>jugador</b>: juega, guarda sus partidas, hace retos y grupos de amigos. '+
+        'Con el perfil <b>Educativo</b> puede registrar instituciones educativas (cursos, exámenes y prácticas); con <b>Empresas y eventos</b>, empresas, comunidades y eventos, y concursos en la lista pública. '+
+        'Quien ya administra o enseña en una institución o empresa la sigue viendo sin perfil.</p>'+
+      '<form class="rt-form au-caja" id="pf-form"><h4>Registrar un perfil</h4>'+
+        '<label>Correo de Google<input type="email" id="pf-email" required maxlength="120" placeholder="docente@gmail.com" value="'+esc(f.email||"")+'"></label>'+
+        '<label>Perfil<select id="pf-perfil"><option value="educativo">Educativo (instituciones educativas)</option><option value="empresas">Empresas y eventos</option></select></label>'+
+        '<label>Nota (opcional)<input id="pf-nota" maxlength="300" placeholder="Institución o empresa, teléfono…"></label>'+
+        '<div class="actions"><button class="primary" type="submit">Dar perfil</button></div>'+
+        '<p class="fine">Vale aunque esa persona todavía no haya entrado: lo tendrá en cuanto entre con ese correo. Si además quieres que administre una institución ya creada, desígnala en «Instituciones».</p>'+
+        '<p class="msg" id="pf-msg">'+(f.nota?esc(f.nota):'')+'</p></form>'+
+      '<h4>Solicitudes'+(sol.length?' · '+sol.length:'')+'</h4>'+
+      (sol.length?'<ul class="au-inv">'+sol.map(function(p){return fila(p,function(x){
+        return '<button type="button" class="primary au-mini" data-pf="otorgar" data-e="'+esc(x.email)+'" data-p="'+x.perfil+'">Aprobar</button>'+
+          '<button type="button" class="ghost au-mini" data-pf="rechazar" data-e="'+esc(x.email)+'" data-p="'+x.perfil+'">Rechazar</button>';});}).join("")+'</ul>':'<p class="fine">No hay solicitudes pendientes.</p>')+
+      '<h4>Con perfil · '+act.length+'</h4>'+
+      (act.length?'<ul class="au-inv">'+act.map(function(p){return fila(p,function(x){
+        return '<button type="button" class="ghost au-mini" data-pf="quitar" data-e="'+esc(x.email)+'" data-p="'+x.perfil+'">Quitar</button>';});}).join("")+'</ul>':'<p class="fine">Todavía nadie tiene perfil.</p>');
+    t.innerHTML=h;
+    if(f.nota)$("pf-msg").className="msg good";
+    $("pf-form").onsubmit=function(e){e.preventDefault();
+      var email=$("pf-email").value.trim();
+      api("/api/admin/perfiles",{email:email,perfil:$("pf-perfil").value,nota:$("pf-nota").value,accion:"otorgar"})
+        .then(function(){plataforma("perfiles",{nota:email+" ya tiene el perfil "+NOMPERF[$("pf-perfil").value]+"."});})
+        .catch(function(er){aviso("pf-msg",ERR(er),true);});};
+    var bs=t.querySelectorAll("[data-pf]"),i;
+    for(i=0;i<bs.length;i++)bs[i].onclick=function(){
+      var a=this.getAttribute("data-pf"), e=this.getAttribute("data-e"), p=this.getAttribute("data-p");
+      if(a==="quitar"&&!confirm("¿Quitar el perfil "+NOMPERF[p]+" a "+e+"? Las instituciones que ya administra no se tocan."))return;
+      api("/api/admin/perfiles",{email:e,perfil:p,accion:a}).then(function(){
+        plataforma("perfiles",{nota:a==="otorgar"?"Aprobado: "+e+" ya tiene el perfil "+NOMPERF[p]+".":a==="rechazar"?"Solicitud rechazada.":"Perfil quitado."});})
+        .catch(function(er){aviso("pf-msg",ERR(er),true);});};
   }).catch(function(e){t.innerHTML='<p class="fine bad">'+esc(ERR(e))+'</p>';});
 }
 /* proveedor y modelo de IA: las claves son Secrets de Cloudflare; aquí se elige cuál usar y se prueba */
@@ -1665,7 +1719,7 @@ function platUsuarios(t,r,f){
         u.users.map(function(x){return '<tr class="'+(x.blocked?"apagada":"")+'"><td>'+esc(x.name)+'<small>'+esc(x.phone||x.email||"—")+'</small></td>'+
           '<td>'+(x.type==="invitado"?'Invitado<small>'+(x.verified_by==="prueba"?"código de prueba":"verificado")+'</small>':'Google')+(x.blocked?'<small>Bloqueado: '+esc(x.block_reason)+'</small>':'')+'</td>'+
           '<td><small>'+esc(x.orgs||"—")+'</small></td><td>'+x.entries+'</td><td>'+fecha(x.last_seen)+'</td>'+
-          '<td class="po-acc">'+(x.type==="google"&&x.email&&!x.blocked?'<button type="button" class="ghost au-mini" data-dg="'+esc(x.email)+'">Designar</button>':'')+
+          '<td class="po-acc">'+(x.type==="google"&&x.email&&!x.blocked?'<button type="button" class="ghost au-mini" data-pfu="'+esc(x.email)+'">Dar perfil</button><button type="button" class="ghost au-mini" data-dg="'+esc(x.email)+'">Designar</button>':'')+
             '<button type="button" class="ghost au-mini" data-bl="'+esc(x.id)+'" data-v="'+(x.blocked?0:1)+'">'+(x.blocked?"Desbloquear":"Bloquear")+'</button></td></tr>'+
           (x.type==="google"&&x.email?'<tr class="po-dg" hidden data-dgf="'+esc(x.email)+'"><td colspan="6"><form class="rt-join au-invita"><span class="po-dg-t">Designar a '+esc(x.name)+' en</span>'+
             '<select aria-label="Institución">'+r.orgs.map(function(o){return '<option value="'+o.id+'" data-k="'+o.kind+'">'+esc(o.name)+'</option>';}).join("")+'</select>'+
@@ -1678,7 +1732,9 @@ function platUsuarios(t,r,f){
     $("pu-lista").innerHTML=h;
     if(f.nota){aviso("pu-msg",f.nota);delete f.nota;}
     if($("pu-mas"))$("pu-mas").onclick=function(){plataforma("usuarios",Object.assign({},f,{offset:(f.offset||0)+100}));};
-    var dg=$("pu-lista").querySelectorAll("[data-dg]"),n;
+    var dg=$("pu-lista").querySelectorAll("[data-pfu]"),n;
+    for(n=0;n<dg.length;n++)dg[n].onclick=function(){plataforma("perfiles",{email:this.getAttribute("data-pfu")});};
+    dg=$("pu-lista").querySelectorAll("[data-dg]");
     for(n=0;n<dg.length;n++)dg[n].onclick=function(){
       var fila=$("pu-lista").querySelector('[data-dgf="'+this.getAttribute("data-dg")+'"]'); fila.hidden=!fila.hidden;};
     var fs=$("pu-lista").querySelectorAll("[data-dgf] form");
@@ -1699,7 +1755,7 @@ function platUsuarios(t,r,f){
 
 /* se publica antes de atender el enlace: si la sesión ya se conoce, el cambio de modo es inmediato */
 window.AxAula={abrir:abrir,cerrar:cerrar,repasos:function(){activo=true;panel.hidden=false;repasos();},curso:function(code){activo=true;panel.hidden=false;curso(code);},
-  org:function(id,tab){activo=true;panel.hidden=false;org(id,tab);}};
+  org:function(id,tab){activo=true;panel.hidden=false;org(id,tab);},plataforma:function(tab){pendiente=function(){plataforma(tab||"perfiles");};AxApp.setMode("aula");}};
 
 /* ---------- enlaces: ?curso=CÓDIGO y ?docente=CÓDIGO ---------- */
 (function(){

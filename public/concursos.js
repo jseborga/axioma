@@ -50,7 +50,7 @@ function ERR(e){if(e&&e.error==="practice_mode")return "Esta es una práctica: e
   not_registered:"Primero tienes que inscribirte.",not_started:"El concurso todavía no ha empezado.",bad_name:"Ponle un nombre.",
   bad_end:"El concurso tiene que durar entre 5 minutos y 31 días.",bad_start:"La fecha de inicio no es válida.",
   too_many:"Tienes demasiados concursos abiertos a la vez.",forbidden:"Solo quien lo organiza puede hacer eso.",
-  profile_required:"Antes tienes que completar tu registro.",no_attempts:"Ya usaste todos tus intentos.",bad_result:"El resultado no es válido.",bad_time:"El tiempo no cuadra con el reloj del servidor.",busy:"Ya tienes una partida abriéndose.",already:"Esa partida ya estaba registrada.",too_fast:"Demasiado rápido: tómate un momento.",maraton_not_configured:"Faltan las tablas de las competencias sin fin en la base de datos (ver SETUP.md).",bad_move:"Esa jugada no es válida.",edu_no_contests:"Las instituciones educativas no organizan concursos: usa exámenes y prácticas en sus cursos.",edu_bank:"Los bancos de las instituciones educativas son solo para sus exámenes y prácticas.",restricted:"Es solo para los miembros de su curso o institución.",
+  profile_required:"Antes tienes que completar tu registro.",no_attempts:"Ya usaste todos tus intentos.",bad_result:"El resultado no es válido.",bad_time:"El tiempo no cuadra con el reloj del servidor.",busy:"Ya tienes una partida abriéndose.",already:"Esa partida ya estaba registrada.",too_fast:"Demasiado rápido: tómate un momento.",maraton_not_configured:"Faltan las tablas de las competencias sin fin en la base de datos (ver SETUP.md).",bad_move:"Esa jugada no es válida.",perfil_required:"Para publicarlo en la lista pública hace falta el perfil de empresa. Hazlo privado y comparte el enlace.",edu_no_contests:"Las instituciones educativas no organizan concursos: usa exámenes y prácticas en sus cursos.",edu_bank:"Los bancos de las instituciones educativas son solo para sus exámenes y prácticas.",restricted:"Es solo para los miembros de su curso o institución.",
   consent_required:"Tienes menos de 18 años: para los concursos abiertos con premio hace falta el consentimiento de tu tutor o de tu institución.",
   org_pending:"La institución todavía no está aprobada.",
   google_required:"Esta convocatoria es para cuentas de Google: sal de la sesión de invitado y entra con Google.",
@@ -147,7 +147,9 @@ function crearForm(){
     '<label>Dura<select id="c-dur"><option value="30">30 minutos</option><option value="60">1 hora</option><option value="180">3 horas</option><option value="1440" selected>1 día</option><option value="4320">3 días</option><option value="10080">1 semana</option><option value="x">Hasta fecha y hora…</option></select></label></div>'+
     '<div class="rt-2"><label id="c-ini-f-l" hidden>Fecha de inicio<input type="datetime-local" id="c-ini-f"></label>'+
     '<label id="c-fin-f-l" hidden>Fecha de cierre<input type="datetime-local" id="c-fin-f"></label></div>'+
-    '<label>Visibilidad<select id="c-pub"><option value="1">Público: aparece en la lista de concursos</option><option value="0">Privado: solo con el código o el enlace</option></select></label>'+
+    ((window.AxAcceso?AxAcceso.datos():{crear:{empresas:true}}).crear.empresas?
+      '<label>Visibilidad<select id="c-pub"><option value="1">Público: aparece en la lista de concursos</option><option value="0">Privado: solo con el código o el enlace</option></select></label>':
+      '<input type="hidden" id="c-pub" value="0"><p class="fine">El concurso será <b>privado</b>: se entra con el código o el enlace que compartas. Para publicarlo en la lista de concursos hace falta el perfil de empresa (se solicita en «Mis grupos y partidas»).</p>')+
     '<p class="fine" id="c-resumen"></p>'+
     '<div class="actions"><button class="primary" type="submit" id="c-go">Publicar el concurso</button></div><p class="msg" id="c-msg"></p></form>');
   $("cq-back").onclick=inicio;

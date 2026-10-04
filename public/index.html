@@ -42,8 +42,8 @@
       <div class="modemenu" id="mode-menu" role="menu" hidden>
         <button role="menuitemradio" id="t-inicio" aria-checked="true" type="button"><b>Inicio</b><small>Todo lo que hay en The Final Test</small></button>
         <p class="menu-cap">Aprender y competir</p>
-        <button role="menuitemradio" id="t-aula" aria-checked="false" type="button"><b>Educativo</b><small>Instituciones, cursos, bancos y cuestionarios</small></button>
-        <button role="menuitemradio" id="t-empresas" aria-checked="false" type="button"><b>Empresas y eventos</b><small>Tu marca, tus convocatorias con QR y tus métricas</small></button>
+        <button role="menuitemradio" id="t-aula" aria-checked="false" type="button" hidden><b>Educativo</b><small>Instituciones, cursos, bancos y cuestionarios</small></button>
+        <button role="menuitemradio" id="t-empresas" aria-checked="false" type="button" hidden><b>Empresas y eventos</b><small>Tu marca, tus convocatorias con QR y tus métricas</small></button>
         <button role="menuitemradio" id="t-concurso" aria-checked="false" type="button"><b>Concursos de trivia</b><small>Inscríbete, juega una vez y gana el premio</small></button>
         <p class="menu-cap">Axioma · lógica</p>
         <button role="menuitemradio" id="t-day"   aria-checked="false" type="button"><b>Axioma diario</b><small>El reto de hoy, igual para todos</small></button>
@@ -56,6 +56,9 @@
         <p class="menu-cap">Con amigos</p>
         <button role="menuitemradio" id="t-reto"  aria-checked="false" type="button"><b>Retos</b><small>Concursos con código, premio y penitencia</small></button>
         <button role="menuitemradio" id="t-pareja" aria-checked="false" type="button"><b>En pareja</b><small>Un sudoku a cuatro manos, en tiempo real</small></button>
+        <button role="menuitemradio" id="t-amigos" aria-checked="false" type="button"><b>Mis grupos y partidas</b><small>Tus amigos, su ranking de la semana y lo que has jugado</small></button>
+        <p class="menu-cap" id="t-plat-cap" hidden>Plataforma</p>
+        <button role="menuitem" id="t-plat" type="button" hidden><b>Administración</b><small>Perfiles, instituciones, usuarios e IA</small></button>
       </div>
     </div>
     <button class="iconbtn" data-tut type="button" aria-label="Ayuda: cómo funciona esta sección" title="Ayuda">
@@ -149,6 +152,8 @@
   <section class="inicio" id="inicio-panel" hidden aria-label="Inicio"></section>
 
   <section class="panel retos aula" id="aula-panel" hidden aria-live="polite" aria-label="Educativo"></section>
+
+  <section class="panel retos aula" id="amigos-panel" hidden aria-live="polite" aria-label="Mis grupos y partidas"></section>
 
   <section class="marca" id="marca-panel" hidden aria-live="polite" aria-label="Marca"></section>
 
@@ -277,6 +282,7 @@
 <script src="juegos/especial-ui.js"></script>
 <script src="juegos/bingo-ui.js"></script>
 <script src="juegos/adultos-ui.js"></script>
+<script src="amigos.js"></script>
 <script src="inicio.js"></script>
 </body>
 </html>

@@ -13,7 +13,8 @@ Excel.
 
 | Rol | Qué puede hacer |
 | --- | --- |
-| **Administración de la plataforma** | Aprobar, dejar pendiente o suspender instituciones. Se define con el secreto `PLATFORM_ADMINS` (ver [SETUP.md](SETUP.md)). |
+| **Administración de la plataforma** | Da los perfiles Educativo y Empresas, y aprueba, deja pendiente o suspende instituciones. Se define con el secreto `PLATFORM_ADMINS` (ver [SETUP.md](SETUP.md)). |
+| **Jugador** | Cualquiera que entra con Google: juega, guarda sus partidas y hace grupos de amigos. Para registrar una institución necesita el perfil **Educativo**, que da la plataforma (se solicita en «Mis grupos y partidas»). |
 | **Administración de la institución** | Quien la registra. Cambia la estructura y los ajustes, gestiona miembros y roles, marca el consentimiento de menores y ve todos los cursos, bancos y registros. |
 | **Docente** | Entra con el enlace de docentes. Crea cursos, bancos de preguntas y cuestionarios, y ve los registros de sus cursos. |
 | **Auxiliar** | El docente lo nombra dentro de un curso. Crea cuestionarios en ese curso y ve sus registros. |
@@ -40,10 +41,11 @@ primera vez y de nuevo cuando una acción lo exige.
 ## Institución
 
 1. **Educativo → Registrar una institución.** Nombre, tipo, dominio de correo opcional
-   y estructura.
-2. Si hay `PLATFORM_ADMINS`, la institución queda **pendiente** hasta que la
-   plataforma la apruebe. Mientras tanto se puede preparar la estructura, pero no
-   abrir cursos. Sin `PLATFORM_ADMINS`, se activa al momento.
+   y estructura. Hace falta el perfil **Educativo**, que da la administración de la
+   plataforma; con él la institución queda activa al momento. Sin perfil, Educativo
+   solo muestra tus cursos y el botón para solicitarlo.
+2. La plataforma puede dejar una institución **pendiente** o **suspenderla**: pendiente,
+   se puede preparar la estructura, pero no abrir cursos.
 3. Con **dominio** (por ejemplo `umsa.bo`) solo entran cuentas de ese correo.
 
 ### Estructura configurable

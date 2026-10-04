@@ -18,9 +18,16 @@ docente, concursos de trivia con premio y juegos de lógica, en una sola app.
   que se comparten con un QR y se juegan sin trámites (con Google o como invitado
   verificado por código), métricas y exportación de participantes. Ver
   [EMPRESAS.md](EMPRESAS.md).
-- **Administración de la plataforma**: aprobar y dar de alta instituciones y
-  empresas con su administración, métricas globales y por institución, y usuarios
-  con búsqueda y bloqueo.
+- **Perfiles**: quien entra con Google es **jugador** (juegos, retos, grupos de
+  amigos y su historial de partidas). Las secciones Educativo y Empresas aparecen
+  con el perfil que da la administración de la plataforma, que también atiende las
+  solicitudes. Ver «Perfiles» en [SETUP.md](SETUP.md).
+- **Mis grupos y partidas**: grupos de amigos con código y enlace, ranking de la
+  semana (Axioma diario, sudoku del día y partidas en vivo) y los retos del grupo;
+  y el historial de todo lo jugado con tu cuenta.
+- **Administración de la plataforma** (secreto `PLATFORM_ADMINS`): perfiles, alta y
+  aprobación de instituciones y empresas con su administración, métricas globales
+  y por institución, usuarios con búsqueda y bloqueo, repaso e IA.
 - **Axioma**, el puzle de deducción con el que empezó el proyecto, es ahora uno de
   los juegos: no solo resuelves el tablero, descubres qué regla lo gobierna.
 - Sin azar, sin adivinar, sin cuenta. Cada tablero se genera y verifica en el dispositivo con solución única.

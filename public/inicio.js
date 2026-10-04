@@ -23,6 +23,7 @@ var ICONO={
   empresa:'<svg viewBox="0 0 24 24"><path d="M4 21V5.5L12 3l8 2.5V21h-6v-4h-4v4H4zm3-13v2h2V8H7zm4 0v2h2V8h-2zm4 0v2h2V8h-2zM7 12v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z"/></svg>',
   rapido:'<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
   juegos:'<svg viewBox="0 0 24 24"><path d="M7 6h10a5 5 0 0 1 4.9 6l-.9 4.4a2.7 2.7 0 0 1-4.6 1.3L14.2 15H9.8l-2.2 2.7a2.7 2.7 0 0 1-4.6-1.3L2.1 12A5 5 0 0 1 7 6zm0 3v1.5H5.5V12H7v1.5h1.5V12H10v-1.5H8.5V9H7zm9.5 0a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2zm-2 2.4a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2z"/></svg>',
+  grupo:'<svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.2"/><circle cx="5" cy="9.5" r="2.4" opacity=".55"/><circle cx="19" cy="9.5" r="2.4" opacity=".55"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6H6z"/><path d="M1 19.5c0-2.4 1.8-4.3 4-4.3.6 0 1.1.1 1.6.3A7.6 7.6 0 0 0 4.9 19.5H1zm22 0h-3.9a7.6 7.6 0 0 0-1.7-4c.5-.2 1-.3 1.6-.3 2.2 0 4 1.9 4 4.3z" opacity=".55"/></svg>',
   reto:'<svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6H2zm15.5 0c0-2-.7-3.7-1.9-5 .5-.1.9-.1 1.4-.1 3.1 0 5 2.2 5 5.1h-4.5z"/></svg>'
 };
 
@@ -33,16 +34,17 @@ function tarjeta(modo,icono,titulo,texto,extra,clase){
 
 function abrir(){
   panel.hidden=false;
-  var u=user();
+  var u=user(), ac=window.AxAcceso?AxAcceso.datos():{ver:{educativo:true,empresas:true}};
   panel.innerHTML=
     '<div class="ini-hero"><h2>Aprende, compite y demuéstralo.</h2>'+
     '<p>Cuestionarios de clase con registros para el docente, concursos de trivia con premio y juegos de lógica, en un mismo lugar. <a href="#" class="guia-link" data-guia="inicio">¿Cómo funciona?</a></p>'+
     '<form class="rt-join ini-codigo" id="ini-form"><input id="ini-code" placeholder="Código de curso, concurso o sala" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false"><button type="submit" class="primary">Entrar</button></form>'+
     '<p class="msg" id="ini-msg"></p></div>'+
     '<div class="ini-grid">'+
-      tarjeta("aula","aula","Educativo","Instituciones, cursos por paralelo, bancos de preguntas y cuestionarios de parcial con registros y Excel.",'<span id="ini-aula">'+(u&&!u.guest?"Tus cursos…":"Para universidades e institutos")+'</span>',"grande")+
-      tarjeta("empresas","empresa","Empresas y eventos","Tu marca, convocatorias con premio que se abren con un QR y se juegan sin trámites, y métricas.",'<span id="ini-emp">Cargando…</span>',"grande")+
+      (ac.ver.educativo?tarjeta("aula","aula","Educativo","Instituciones, cursos por paralelo, bancos de preguntas y cuestionarios de parcial con registros y Excel.",'<span id="ini-aula">'+(u&&!u.guest?"Tus cursos…":"Para universidades e institutos")+'</span>',"grande"):'')+
+      (ac.ver.empresas?tarjeta("empresas","empresa","Empresas y eventos","Tu marca, convocatorias con premio que se abren con un QR y se juegan sin trámites, y métricas.",'<span id="ini-emp">Cargando…</span>',"grande"):'')+
       tarjeta("concurso","concurso","Concursos de trivia","Te inscribes, juegas una sola vez y al cierre se publica el ranking y el ganador.",'<span id="ini-conc">Cargando…</span>',"grande")+
+      (ac.ver.educativo&&ac.ver.empresas?'':tarjeta("amigos","grupo","Mis grupos y partidas","Tus amigos con su ranking de la semana, y todo lo que has jugado guardado en tu cuenta.",u&&!u.guest?"Crea tu grupo":"Entra con Google","grande"))+
     '</div>'+
     '<h4 class="ini-cap">Juegos de lógica</h4>'+
     '<div class="ini-grid">'+
@@ -55,9 +57,12 @@ function abrir(){
       tarjeta("juegos","juegos","Más juegos","Gomoku, Hex, Dudo, trivia en vivo con proyector, sorteos, subastas y más.")+
       tarjeta("reto","reto","Retos","Concursos con código, premio para el primero y penitencia para el último.")+
       tarjeta("pareja","sudoku","En pareja","Un sudoku a cuatro manos, cada uno desde su móvil.")+
-    '</div>';
+      (ac.ver.educativo&&ac.ver.empresas?tarjeta("amigos","grupo","Mis grupos y partidas","Tus amigos, su ranking de la semana y tu historial."):'')+
+    '</div>'+
+    (u&&!u.guest&&!(ac.ver.educativo&&ac.ver.empresas)&&ac.tabla!==false?'<p class="fine ini-perfil">¿Eres docente, institución educativa o empresa? <a href="#" id="ini-perfil">Solicita tu perfil</a> para registrarla.</p>':'');
   var bs=panel.querySelectorAll("[data-modo]"),i;
   for(i=0;i<bs.length;i++)bs[i].onclick=function(){ir(this.getAttribute("data-modo"));};
+  if($("ini-perfil"))$("ini-perfil").onclick=function(e){e.preventDefault();ir("amigos");};
   $("ini-form").onsubmit=function(e){
     e.preventDefault();
     var c=$("ini-code").value.trim().toUpperCase(), msg=$("ini-msg");
@@ -68,17 +73,18 @@ function abrir(){
       .catch(function(){ return get("/api/contests/"+c).then(function(){ir("concurso");if(window.AxConcursos)AxConcursos.ficha(c);},function(er){
         if(er&&er.error==="restricted"){ir("concurso");if(window.AxConcursos)AxConcursos.ficha(c);return;}
         return get("/api/salas/"+c).then(function(){ir("juegos");if(window.AxSala)AxSala.entra(c,false);},function(){
-          msg.className="msg bad"; msg.textContent="No hay ningún curso, concurso ni sala con ese código."; }); }); });
+          return get("/api/grupos/"+c).then(function(){ir("amigos");if(window.AxAmigos)AxAmigos.grupo(c);},function(){
+          msg.className="msg bad"; msg.textContent="No hay ningún curso, concurso, sala ni grupo con ese código."; }); }); }); });
   };
   get("/api/contests").then(function(r){
     var n=r.open.filter(function(c){return c.state==="abierto";}).length;
     $("ini-conc").textContent=n?(n===1?"1 abierto ahora":n+" abiertos ahora"):"Ninguno abierto: crea el primero";
   }).catch(function(){ $("ini-conc").textContent="Ver concursos"; });
-  get("/api/brands").then(function(r){
+  if(ac.ver.empresas)get("/api/brands").then(function(r){
     var n=r.brands.reduce(function(a,b){return a+b.open;},0), e=$("ini-emp"); if(!e)return;
     e.textContent=n?(n===1?"1 convocatoria abierta":n+" convocatorias abiertas"):(r.brands.length?r.brands.length+(r.brands.length===1?" marca":" marcas"):"Registra tu empresa");
   }).catch(function(){ var e=$("ini-emp"); if(e)e.textContent="Registra tu empresa"; });
-  if(u&&!u.guest)get("/api/orgs").then(function(r){
+  if(u&&!u.guest&&ac.ver.educativo)get("/api/orgs").then(function(r){
     var activos=r.courses.filter(function(c){return !c.archived&&c.status==="activo";});
     var abiertos=activos.reduce(function(s,c){return s+(c.open||0);},0);
     $("ini-aula").textContent=activos.length?(activos.length+(activos.length===1?" curso":" cursos")+(abiertos?" · "+abiertos+" cuestionario"+(abiertos>1?"s":"")+" abierto"+(abiertos>1?"s":""):"")):
@@ -88,6 +94,7 @@ function abrir(){
 function cerrar(){ panel.hidden=true; }
 document.addEventListener("ax-user",function(){ if(!panel.hidden)abrir(); });
 document.addEventListener("ax-perfil",function(){ if(!panel.hidden)abrir(); });
+document.addEventListener("ax-acceso",function(){ if(!panel.hidden)abrir(); });
 
 window.AxInicio={abrir:abrir,cerrar:cerrar};
 /* app.js elige la portada antes de que se cargue este archivo */

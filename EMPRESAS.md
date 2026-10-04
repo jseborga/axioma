@@ -18,9 +18,11 @@ Hay dos caminos:
    el tipo y el correo de su responsable. Queda activa al momento. Si esa persona
    ya tiene cuenta, es administradora ya; si no, lo será en cuanto entre con Google
    con ese correo.
-2. **Se registra sola.** Desde **Empresas y eventos → Registrar una empresa o
-   comunidad**. Si hay administración de plataforma (`PLATFORM_ADMINS`), queda
-   pendiente hasta que la aprueben.
+2. **Se registra sola**, con el perfil **Empresas y eventos** que da la
+   administración de la plataforma (en **Administración → Perfiles**, por correo, o
+   aprobando la solicitud que la persona envía desde «Mis grupos y partidas»). Con
+   el perfil, **Empresas y eventos → Registrar una empresa o comunidad** la deja
+   activa al momento. Sin perfil, la sección Empresas no aparece en el menú.
 
 Su administración puede dar de alta a más personas por correo en **Miembros**,
 como administración o como *organizador* (puede crear bancos y convocatorias).
