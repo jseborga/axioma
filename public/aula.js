@@ -1143,9 +1143,14 @@ function crearCampana(o){
   pinta(atras(o.name)+'<h3>Nueva competencia</h3><p class="rt-meta">'+esc(o.name)+'</p>'+
     '<form class="rt-form" id="cp-form">'+
     '<label>Nombre<input id="cp-n" maxlength="60" required placeholder="Desafío de reflejos de aniversario"></label>'+
-    '<label>Juego<select id="cp-j"><optgroup label="Juegos rápidos">'+Object.keys(J).map(function(k){return '<option value="'+k+'">'+J[k].icono+' '+J[k].nom+' · '+J[k].dur+'</option>';}).join("")+'</optgroup>'+
-      (XM?'<optgroup label="Sin fin: se juega hasta perder">'+Object.keys(MJ).map(function(k){return '<option value="'+k+'">'+MJ[k].icono+' '+MJ[k].nom+'</option>';}).join("")+'</optgroup>':'')+'</select></label>'+
+    '<label>Juego<select id="cp-j"><optgroup label="Juegos rápidos">'+Object.keys(J).filter(function(k){return k.indexOf("granja")<0;}).map(function(k){return '<option value="'+k+'">'+J[k].icono+' '+J[k].nom+' · '+J[k].dur+'</option>';}).join("")+'</optgroup>'+
+      (J.granja?'<optgroup label="Arcade"><option value="granja">🚜 Granja Express · 3 min</option></optgroup>':'')+
+      (XM?'<optgroup label="Sin fin: se juega hasta perder">'+Object.keys(MJ).map(function(k){return '<option value="'+k+'">'+MJ[k].icono+' '+MJ[k].nom+'</option>';}).join("")+
+        (J.granja_sinfin?'<option value="granja_sinfin">🚜 Granja sin fin</option>':'')+'</optgroup>':'')+'</select></label>'+
     '<p class="fine" id="cp-jd"></p>'+
+    '<div id="cp-gx" hidden><p class="fine">Tu marca en la granja: el camión de reparto lleva tu logo y tu color. Si quieres, pon el nombre de tus productos (opcional):</p>'+
+      '<div class="rt-2"><label>En lugar de «Pan»<input id="cp-gp" maxlength="24" placeholder="Pan de la casa"></label><label>En lugar de «Jugo»<input id="cp-gj" maxlength="24" placeholder="Jugo Natural"></label></div>'+
+      '<label>En lugar de «Torta»<input id="cp-gk" maxlength="24" placeholder="Torta de aniversario"></label></div>'+
     (XM?'<div class="cp-mar" id="cp-mar" hidden><label>Vidas<select id="cp-mv"></select></label><label id="cp-mrl">Reloj inicial<select id="cp-mr"></select></label>'+
       '<label id="cp-mxl">Por tablero resuelto<select id="cp-mx"></select></label></div>':'')+
     '<div class="rt-2"><label>Intentos por persona<select id="cp-i"><option value="1">1 (una sola vez)</option><option value="2">2</option><option value="3" selected>3</option><option value="5">5</option><option value="10">10</option><option value="0">Libres</option></select></label>'+
@@ -1167,7 +1172,9 @@ function crearCampana(o){
   function juego(){var k=$("cp-j").value, mar=!!MJ[k], j=J[k]||MJ[k]||{};
     $("cp-jd").textContent=(j.desc||"")+(j.orden==="menos"?" Gana quien haga menos milisegundos.":k==="memoria_inf"?" Gana quien recuerde la secuencia más larga.":" Gana quien haga más puntos.");
     $("cp-ul").firstChild.textContent=j.orden==="menos"?"Milisegundos máximos":k==="memoria_inf"?"Casillas mínimas":"Puntos mínimos";
-    $("cp-u").placeholder=j.orden==="menos"?"350":({trivia:"1200",memoria:"8",calculo:"20",memoria_inf:"10",sudoku_mar:"300",axioma_mar:"150"}[k]||"100");
+    $("cp-u").placeholder=j.orden==="menos"?"350":({trivia:"1200",memoria:"8",calculo:"20",memoria_inf:"10",sudoku_mar:"300",axioma_mar:"150",granja:"1200",granja_sinfin:"1500"}[k]||"100");
+    $("cp-gx").hidden=k.indexOf("granja")!==0;
+    if(k.indexOf("granja")===0)$("cp-ul").firstChild.textContent="Monedas mínimas";
     if(!XM)return;
     $("cp-mar").hidden=!mar; if(!mar)return;
     var R=XM.REGLAS[k];
@@ -1185,6 +1192,7 @@ function crearCampana(o){
       umbral:$("cp-u").value===""?null:+$("cp-u").value,umbral_premio:$("cp-up").value,description:$("cp-desc").value,
       publico:$("cp-pub").checked,guests:$("cp-inv").checked,ranking:$("cp-rk").checked};
     if(MJ[k])datos.reglas={vidas:+$("cp-mv").value,reloj:+$("cp-mr").value,extra:+$("cp-mx").value};
+    if(k.indexOf("granja")===0)datos.productos={p:$("cp-gp").value,j:$("cp-gj").value,k:$("cp-gk").value};
     /* sudoku y Axioma sin fin: los tableros (con su solución) se preparan aquí y los guarda el servidor */
     (XM&&XM.plan(k)?preparaTableros(k,function(n,t){aviso("cp-msg","Preparando los tableros… "+n+" de "+t);}):Promise.resolve(null)).then(function(lote){
       if(lote)datos.tableros=lote;

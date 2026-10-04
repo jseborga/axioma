@@ -655,6 +655,7 @@ function juegaCampana(c){
   /* el panel de los juegos rápidos se muestra en lugar de la ficha mientras dura la partida */
   panel.hidden=true; document.body.setAttribute("data-game","rapido");
   RUI.jugar({juego:c.juego,sub:c.intentos?"Intento "+((c.me?c.me.intentos:0)+1)+" de "+c.intentos:"Competencia",titulo:c.name+" · "+c.org_name,
+    marca:{color:c.brand&&c.brand.color||"",logo:c.brand&&c.brand.logo||"",productos:c.productos||null},   /* Granja Express: el camión y los productos de la empresa */
     nota:"El tiempo empieza a contar al pulsar Empezar. Cuenta tu mejor marca"+(c.intentos?" de tus "+c.intentos+" intentos.":"."),
     pedirDatos:function(){
       var fn=function(){return api("/api/campanas/"+c.code+"/empezar",{});};

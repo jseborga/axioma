@@ -16,6 +16,7 @@
      /api/brands/*, /api/orgs/:id/(brand|contests|metrics|participants) → marcas, en marcas.js
      /api/admin/(summary|users…)  → administración de la plataforma, en plataforma.js
      /api/salas/*                 → salas de juego en vivo (Durable Object), en sala.js
+     /api/granja/*               → Granja Express: la granja del día y su ranking, en granja.js
      /api/acceso, /api/grupos/*, /api/actividad, /api/admin/perfiles → perfiles, grupos de amigos y partidas, en perfiles.js
    Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET y las de ajustes.js. Binding D1: DB.
    =========================================================== */
@@ -33,6 +34,7 @@ import { handleMarcas } from "./marcas.js";
 import { handlePlataforma } from "./plataforma.js";
 import { handleSalas } from "./sala.js";
 import { handlePerfiles } from "./perfiles.js";
+import { handleGranja } from "./granja.js";
 
 var COOKIE="ax_session";
 var SESSION_DAYS=30;
@@ -73,6 +75,8 @@ export async function handleApi(req,env,url){
       return await handleMisPreguntas(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/ia\//.test(path)||/^\/admin\/(planes|ia)(\/|$)/.test(path))
       return await handleIA(req,env,url,path,{json:json,user:await currentUser(req,env)});
+    if(/^\/granja\//.test(path))
+      return await handleGranja(req,env,url,path,{json:json,dayNumber:dayNumber,user:await currentUser(req,env)});
     if(/^\/(acceso|grupos|actividad)(\/|$)/.test(path)||path==="/admin/perfiles")
       return await handlePerfiles(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/admin\/(summary|users)(\/|$)/.test(path)||(path==="/admin/orgs"&&req.method==="POST")||/^\/admin\/orgs\/[A-Z0-9]{6}\/admins$/.test(path))

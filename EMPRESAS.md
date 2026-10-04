@@ -105,6 +105,13 @@ Los menores de 18 años solo juegan por premios si la empresa confirma el
 consentimiento de su tutor, como en las convocatorias con premio. Tablas:
 `campanas`, `campana_intentos` y `campana_cupones` (ver SETUP.md).
 
+### Granja Express con tu marca
+
+En **Nueva competencia**, el grupo «Arcade» trae **Granja Express** (3 minutos) y el
+grupo «Sin fin», **Granja sin fin**. El camión de reparto lleva el logo y el color de tu
+marca, y puedes poner el nombre de tus productos en lugar de «Pan», «Jugo» y «Torta».
+El premio por puntaje se mide en monedas. Ver [GRANJA.md](GRANJA.md).
+
 ### Competencias sin fin (maratón): se juega hasta perder
 
 En **Nueva competencia**, el grupo «Sin fin» del juego tiene tres opciones en las

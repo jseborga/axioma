@@ -14,7 +14,7 @@ if(!panel||!R)return;
 var timers=[], tick=null, teclas=null;
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function espera(ms,f){var t=setTimeout(f,ms);timers.push(t);return t;}
-function limpia(){timers.forEach(clearTimeout);timers=[];if(tick){clearInterval(tick);tick=null;}
+function limpia(){timers.forEach(clearTimeout);timers=[];if(tick){clearInterval(tick);tick=null;}if(window.AxGranjaUI)AxGranjaUI.para();
   if(teclas){document.removeEventListener("keydown",teclas);teclas=null;}}
 function pinta(h){panel.innerHTML=h;}
 function guarda(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem("axr_"+k)||"null");localStorage.setItem("axr_"+k,JSON.stringify(v));}catch(e){return null}}
@@ -41,6 +41,7 @@ function practica(){
   var h='<h3>Juegos rápidos</h3>'+
     '<p class="fine">Cinco juegos cortos, de 30 segundos a 2 minutos. Practica aquí cuando quieras; para competir con premio, crea un reto con uno de ellos. <a href="#" data-guia="rapido">¿Cómo funciona?</a></p>';
   Object.keys(R.JUEGOS).forEach(function(k){
+    if(k==="granja_sinfin")return;          /* la granja tiene su propia portada (práctica, del día y sin fin) */
     var j=R.JUEGOS[k], b=guarda("best_"+k);
     h+='<button type="button" class="rt-card rp-card" data-j="'+k+'"><span class="rt-card-top"><b>'+j.icono+' '+esc(j.nom)+'</b><span class="chip">'+j.dur+'</span></span>'+
        '<small>'+esc(j.desc)+(b?' · <b>Mejor: '+esc(R.formato(k,b.score,b.seconds))+'</b>':'')+'</small></button>';
@@ -48,7 +49,7 @@ function practica(){
   if(window.AxFiesta)h+=AxFiesta.tarjetas();          /* juegos en grupo con un solo teléfono */
   pinta(h);
   var bs=panel.querySelectorAll(".rp-card[data-j]"),i;
-  for(i=0;i<bs.length;i++)bs[i].onclick=function(){intro(this.getAttribute("data-j"),null);};
+  for(i=0;i<bs.length;i++)bs[i].onclick=function(){var k=this.getAttribute("data-j"); if(k==="granja"&&window.AxApp){AxApp.setMode("granja");return;} intro(k,null);};
   var fs=panel.querySelectorAll("[data-fiesta]");
   for(i=0;i<fs.length;i++)fs[i].onclick=function(){AxFiesta.abre(this.getAttribute("data-fiesta"),practica);};
 }
@@ -241,6 +242,12 @@ JUEGO.numeros=function(d,cfg,done){
       $("rp-sub").textContent="Siguiente: "+sig;
     }else{f++;b.classList.add("mal");espera(250,function(){b.classList.remove("mal");});}
   };
+};
+
+/* Granja Express: el lienzo de 8 bits vive en granja-ui.js */
+JUEGO.granja=JUEGO.granja_sinfin=function(d,cfg,done){
+  pinta(cab(d.modo==="sinfin"?"granja_sinfin":"granja",cfg?cfg.sub:null));
+  AxGranjaUI.monta(panel,d,cfg,done);
 };
 
 /* ---------- API ---------- */

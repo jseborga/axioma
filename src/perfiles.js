@@ -15,7 +15,7 @@
 
      GET  /api/grupos                       mis grupos
      POST /api/grupos                       { nombre } crear (devuelve el código)
-     GET  /api/grupos/:code                 ficha: miembros, ranking de la semana y retos recientes
+     GET  /api/grupos/:code                 ficha: miembros, ranking de la semana (Axioma, sudoku, granja, en vivo) y retos recientes
      POST /api/grupos/:code                 { nombre } renombrar (quien lo creó)
      POST /api/grupos/:code/unirme | salir | borrar
      POST /api/grupos/:code/quitar          { user_id } (quien lo creó)
@@ -168,8 +168,14 @@ async function fichaGrupo(env,user,code,json){
   filas(1).forEach(function(s){var x=por[s.user_id]; if(x){x.axioma=s.dias;x.movs=s.movs;x.hoy=!!s.hoy;}});
   filas(2).forEach(function(s){var x=por[s.user_id]; if(x)x.sudoku=s.tableros;});
   filas(3).forEach(function(s){var x=por[s.user_id]; if(x){x.salas=s.partidas;x.victorias=s.victorias||0;}});
-  /* puntos de la semana: 3 por Axioma diario, 2 por sudoku del día, 1 por partida y 2 más por victoria */
-  out.personas.forEach(function(x){x.puntos=x.axioma*3+x.sudoku*2+x.salas+x.victorias*2;});
+  /* Granja Express del día (si ya está su tabla): días jugados y mejor marca de la semana */
+  out.personas.forEach(function(x){x.granja=0;x.granja_mejor=0;});
+  try{
+    var gj=await env.DB.prepare("SELECT g.user_id,COUNT(*) AS dias,MAX(g.best) AS mejor FROM granja_dia g JOIN grupo_miembros m ON m.user_id=g.user_id AND m.grupo=? WHERE g.day>=? AND g.best IS NOT NULL GROUP BY g.user_id").bind(code,desde).all();
+    (gj.results||[]).forEach(function(s){var x=por[s.user_id]; if(x){x.granja=s.dias;x.granja_mejor=s.mejor||0;}});
+  }catch(e){}
+  /* puntos de la semana: 3 por Axioma diario, 2 por sudoku del día, 2 por granja del día, 1 por partida y 2 más por victoria */
+  out.personas.forEach(function(x){x.puntos=x.axioma*3+x.sudoku*2+x.granja*2+x.salas+x.victorias*2;});
   out.ranking=out.personas.slice().sort(function(a,b){return b.puntos-a.puntos||b.axioma-a.axioma||a.movs-b.movs||a.nombre.localeCompare(b.nombre);})
     .map(function(x){return x.id;});
   out.retos=filas(4).map(function(e){return {code:e.code,nombre:e.name,juego:e.game,rondas:e.rounds,del_grupo:e.del_grupo,yo:!!e.yo,creado:e.created_at*1000};});
@@ -227,10 +233,12 @@ async function actividad(env,user,json){
       "WHERE j.user_id=? ORDER BY j.created_at DESC LIMIT 20",uid)
   ];
   var r=await env.DB.batch(ops), f=function(i){return r[i].results||[];};
-  var ax=f(0)[0]||{};
+  var ax=f(0)[0]||{}, granja=[];
+  try{granja=((await env.DB.prepare("SELECT day,best,entregas,nivel,intentos FROM granja_dia WHERE user_id=? AND best IS NOT NULL ORDER BY day DESC LIMIT 10").bind(uid).all()).results)||[];}catch(e){}
   return json({
     axioma:{resueltos:ax.n||0,mejor:ax.mejor,ultimo:ax.ultimo,hoy:dia(),recientes:f(1)},
     sudoku:{niveles:f(2),recientes:f(3)},
+    granja:granja.map(function(g){return {dia:g.day,monedas:g.best,entregas:g.entregas,nivel:g.nivel,intentos:g.intentos};}),
     retos:f(4).map(function(e){return {code:e.code,nombre:e.name,juego:e.game,rondas:e.rounds,jugadas:e.jugadas,jugadores:e.jugadores,creado:e.created_at*1000};}),
     concursos:f(5).map(function(c){return {code:c.code,nombre:c.name,aciertos:c.correct,errores:c.errors,terminado:!!c.finished_at,
       fecha:c.joined_at,cierra:c.ends_at,cuestionario:c.kind==="cuestionario"};}),

@@ -652,6 +652,20 @@ Mientras falte `perfiles_plataforma`, todo sigue como antes: cualquiera registra
 una institución y queda pendiente de tu aprobación. Sin `PLATFORM_ADMINS`
 (solo para pruebas), todo el mundo tiene todos los perfiles.
 
+### Añadir la tabla de Granja Express
+
+El arcade **Granja Express** guarda en una tabla la mejor partida de cada persona en
+la granja del día (para su ranking). Pega esto en la consola de D1 (también está al
+final de `instalar.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS granja_dia (user_id TEXT NOT NULL, day INTEGER NOT NULL, best INTEGER, seconds INTEGER NOT NULL DEFAULT 0, entregas INTEGER NOT NULL DEFAULT 0, nivel INTEGER NOT NULL DEFAULT 0, intentos INTEGER NOT NULL DEFAULT 0, started_at INTEGER, updated_at INTEGER NOT NULL, PRIMARY KEY (user_id, day));
+CREATE INDEX IF NOT EXISTS granja_dia_rank ON granja_dia(day, best, updated_at);
+```
+
+Sin ella, la práctica, los retos y las competencias de la granja funcionan igual; solo
+la granja del día avisa de que falta la tabla. Ver [GRANJA.md](GRANJA.md).
+
 ### Añadir las tablas de las competencias sin fin (maratón)
 
 Para las competencias que se juegan hasta perder (memoria sin fin, maratón de
@@ -820,6 +834,9 @@ El archivo `.dev.vars` está excluido del repositorio y nunca debe subirse.
 | `src/invitados.js` | La API de invitados verificados con código |
 | `src/marcas.js` | La API de marcas, convocatorias, métricas y participantes |
 | `src/plataforma.js` | La API de administración de la plataforma |
+| `src/granja.js` | Granja Express: la granja del día y su ranking (repite cada partida) |
+| `public/granja-motor.js` | Granja Express: simulación determinista (navegador y servidor) |
+| `public/granja-ui.js` | Granja Express: lienzo de 8 bits, sonido y portada |
 | `src/perfiles.js` | Perfiles (jugador, Educativo, Empresas), grupos de amigos y «Mis partidas» |
 | `public/amigos.js` | Menú según el perfil, «Mis grupos y partidas» y solicitud de perfil |
 | `src/ajustes.js` | Ajustes de la plataforma (nombre, correo de contacto, remitente, verificación) |

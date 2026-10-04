@@ -29,8 +29,9 @@
    =========================================================== */
 import "../public/rapidos-motor.js";
 import "../public/maraton-motor.js";
+import "../public/granja-motor.js";
 import { perfil, puedePremio, rolOrg, esInvitado, esAcademica, esAdminPlataforma } from "./aula.js";
-var R=globalThis.AxRapidos, X=globalThis.AxMaraton;
+var R=globalThis.AxRapidos, X=globalThis.AxMaraton, GX=globalThis.AxGranja;
 
 var ALFABETO="ABCDEFGHJKLMNPQRSTUVWXYZ23456789", DIA=86400000, TOL=1500;
 var MIN_MS=10*60000, MAX_MS=92*DIA, MAX_ABIERTAS=30, TOP=50;
@@ -54,6 +55,10 @@ async function carga(env,code){
   if(c&&X.es(c.juego)){
     var m=await env.DB.prepare("SELECT reglas FROM campana_maraton WHERE code=?").bind(code).first();
     c.reglas=m?JSON.parse(m.reglas):X.reglas(c.juego,{});
+  }
+  /* Granja Express: los productos de la empresa (nombres de pan, jugo y torta) */
+  if(c&&GX.es(c.juego)){
+    try{var g=await env.DB.prepare("SELECT reglas FROM campana_maraton WHERE code=?").bind(code).first(); c.productos=g?(JSON.parse(g.reglas).productos||null):null;}catch(e){c.productos=null;}
   }
   return c;
 }
@@ -97,7 +102,7 @@ async function asignaPremios(env,c){
 }
 function publica(c,now){
   return {code:c.code,name:c.nombre,description:c.descripcion||"",juego:c.juego,juego_nombre:(J(c.juego)||{}).nom||c.juego,
-    maraton:X.es(c.juego)?(c.reglas||null):null,orden:orden(c.juego),intentos:c.intentos,publico:!!c.publico,guests:!!c.invitados,ranking_visible:!!c.ranking,
+    maraton:X.es(c.juego)?(c.reglas||null):null,productos:c.productos||null,orden:orden(c.juego),intentos:c.intentos,publico:!!c.publico,guests:!!c.invitados,ranking_visible:!!c.ranking,
     premios:c.premiosList,umbral:c.umbral,umbral_premio:c.umbral_premio||"",starts_at:c.starts_at,ends_at:c.ends_at,state:estado(c,now)};
 }
 
@@ -118,6 +123,11 @@ async function crea(req,env,user,json){
     maraton={reglas:X.reglas(juego,b.reglas),lote:null};
     if(X.plan(juego)){ if(!X.loteOk(juego,b.tableros))return json({error:"bad_boards"},null,400); maraton.lote=X.limpiaLote(juego,b.tableros); }
   }
+  var productos=null;
+  if(GX.es(juego)&&b.productos&&typeof b.productos==="object"){
+    productos={}; ["p","j","k"].forEach(function(k){var v=limpia(b.productos[k],24); if(v)productos[k]=v;});
+    if(!Object.keys(productos).length)productos=null;
+  }
   var intentos=Math.max(0,Math.min(50,parseInt(b.intentos,10)||0));
   var ini=parseInt(b.starts_at,10)||now, fin=parseInt(b.ends_at,10);
   if(ini<now-120000||ini>now+120*DIA)return json({error:"bad_start"},null,400);
@@ -137,7 +147,8 @@ async function crea(req,env,user,json){
   var ins=env.DB.prepare("INSERT INTO campanas(code,org_id,owner_id,nombre,descripcion,juego,intentos,publico,invitados,ranking,premios,umbral,umbral_premio,seed,starts_at,ends_at,created_at) "+
     "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(code,orgId,user.id,nombre,limpia(b.description,300)||null,juego,intentos,b.publico===false?0:1,b.guests===false?0:1,
     b.ranking===false?0:1,premios.length?JSON.stringify(premios):null,umbral,up||null,crypto.getRandomValues(new Uint32Array(1))[0],ini,fin,now);
-  if(maraton)await env.DB.batch([env.DB.prepare("INSERT INTO campana_maraton(code,reglas,tableros) VALUES(?,?,?)")
+  if(productos)await env.DB.batch([env.DB.prepare("INSERT INTO campana_maraton(code,reglas,tableros) VALUES(?,?,?)").bind(code,JSON.stringify({productos:productos}),null),ins]);
+  else if(maraton)await env.DB.batch([env.DB.prepare("INSERT INTO campana_maraton(code,reglas,tableros) VALUES(?,?,?)")
     .bind(code,JSON.stringify(maraton.reglas),maraton.lote?JSON.stringify(maraton.lote):null),ins]);
   else await ins.run();
   return json({ok:true,code:code});
@@ -219,7 +230,8 @@ async function termina(req,env,user,code,iid,json){
   if(!res)return json({error:"bad_result"},null,400);
   var realMs=now-t.started_at, declarado=res.seconds*1000;
   /* lo que declara el jugador no puede ser más rápido que el reloj del servidor */
-  if(c.juego==="numeros"){ if(res.score-(parseInt(b.envio.f,10)||0)*1000<realMs-TOL-MARGEN.numeros)return json({error:"bad_time"},null,400); }
+  if(GX.es(c.juego)){ if(!GX.tiempoOk(res,realMs))return json({error:"bad_time"},null,400); }
+  else if(c.juego==="numeros"){ if(res.score-(parseInt(b.envio.f,10)||0)*1000<realMs-TOL-MARGEN.numeros)return json({error:"bad_time"},null,400); }
   else if(c.juego==="calculo"){
     var resp=Array.isArray(b.envio.r)?b.envio.r:[], fallos=0, todas=resp.length>=datos.p.length;
     resp.forEach(function(v,k){if(v!=null&&datos.p[k]&&+v!==datos.p[k].r)fallos++;});

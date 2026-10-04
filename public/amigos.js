@@ -135,7 +135,7 @@ function formSolicitud(z,p,listo){
 function solicitar(z,p){formSolicitud(z,p);}
 
 /* ===================== GRUPO ===================== */
-var JUEGO={sudoku:"Sudoku",trivia:"Trivia",memoria:"Memoria",calculo:"Cálculo",reflejos:"Reflejos",numeros:"Del 1 al 25"};
+var JUEGO={sudoku:"Sudoku",trivia:"Trivia",memoria:"Memoria",calculo:"Cálculo",reflejos:"Reflejos",numeros:"Del 1 al 25",granja:"Granja Express",granja_sinfin:"Granja sin fin"};
 function enlace(code){return location.origin+location.pathname+"?grupo="+code;}
 function grupo(code,nota){
   var yo=vista=function(){grupo(code);};
@@ -156,15 +156,15 @@ function grupo(code,nota){
     h+=(nota?'<p class="msg good">'+esc(nota)+'</p>':'')+
       '<div class="au-caja"><p class="fine">Código <b class="am-cod">'+g.code+'</b> · '+g.miembros+' de '+g.max+'</p>'+
       '<div class="actions"><button class="ghost" id="am-copia">Copiar enlace de invitación</button>'+(navigator.share?'<button class="ghost" id="am-comp">Compartir</button>':'')+'</div><p class="msg" id="am-msg"></p></div>'+
-      '<h4>Ranking de la semana</h4><p class="fine">3 puntos por cada Axioma diario, 2 por cada sudoku del día y 1 por partida en vivo (+2 si la ganas). Últimos 7 días.</p>'+
+      '<h4>Ranking de la semana</h4><p class="fine">3 puntos por cada Axioma diario, 2 por cada sudoku del día, 2 por cada granja del día y 1 por partida en vivo (+2 si la ganas). Últimos 7 días.</p>'+
       '<ol class="rank-list am-rank">'+g.ranking.map(function(id,i){var p=por[id];
         return '<li'+(p.yo?' class="me"':'')+'><span class="pos">'+(i+1)+'</span>'+
           (p.foto?'<img src="'+esc(p.foto)+'" alt="" referrerpolicy="no-referrer">':'<span class="noimg"></span>')+
           '<span class="who">'+esc(p.nombre)+(p.yo?' <em>(tú)</em>':'')+(p.hoy?' <span class="chip activo" title="Ya resolvió el Axioma de hoy">hoy ✓</span>':'')+
-            '<small>Axioma '+p.axioma+(p.axioma?' ('+p.movs+' mov)':'')+' · sudoku '+p.sudoku+' · en vivo '+p.salas+(p.victorias?' ('+p.victorias+' 🏆)':'')+'</small></span>'+
+            '<small>Axioma '+p.axioma+(p.axioma?' ('+p.movs+' mov)':'')+' · sudoku '+p.sudoku+' · granja '+(p.granja||0)+(p.granja_mejor?' (mejor '+p.granja_mejor+')':'')+' · en vivo '+p.salas+(p.victorias?' ('+p.victorias+' 🏆)':'')+'</small></span>'+
           '<span class="pts"><b>'+p.puntos+'</b> pts</span>'+
           (g.mio&&!p.yo?'<button type="button" class="ghost au-mini" data-quita="'+esc(p.id)+'" title="Quitar del grupo">✕</button>':'')+'</li>';}).join("")+'</ol>'+
-      '<div class="actions"><button class="primary" id="am-axioma">Jugar el Axioma de hoy</button><button class="ghost" id="am-sud">Sudoku del día</button>'+
+      '<div class="actions"><button class="primary" id="am-axioma">Jugar el Axioma de hoy</button><button class="ghost" id="am-sud">Sudoku del día</button><button class="ghost" id="am-granja">Granja del día</button>'+
         '<button class="ghost" id="am-reto">Crear un reto para el grupo</button><button class="ghost" id="am-sala">Jugar en vivo</button></div>'+
       '<h4>Retos del grupo</h4>'+
       (g.retos.length?g.retos.map(function(r){
@@ -180,6 +180,7 @@ function grupo(code,nota){
     if($("am-comp"))$("am-comp").onclick=function(){navigator.share({title:g.nombre,text:"Únete a mi grupo «"+g.nombre+"» en The Final Test",url:enlace(g.code)}).catch(function(){});};
     $("am-axioma").onclick=function(){AxApp.setMode("day");};
     $("am-sud").onclick=function(){AxApp.setMode("sud");};
+    $("am-granja").onclick=function(){AxApp.setMode("granja");};
     $("am-reto").onclick=function(){AxApp.setMode("reto");};
     $("am-sala").onclick=function(){AxApp.setMode("juegos");};
     var bs=panel.querySelectorAll("[data-reto]"),i; for(i=0;i<bs.length;i++)bs[i].onclick=function(){if(window.AxRetos)AxRetos.ficha(this.getAttribute("data-reto"));};
@@ -210,7 +211,7 @@ function historial(){
     var ax=r.axioma, sudT=r.sudoku.niveles.reduce(function(s,x){return s+x.n;},0);
     var h='<button type="button" class="rt-back" id="am-back">‹ Mis grupos</button><h3>Mis partidas</h3>'+
       '<p class="fine">Todo lo que juegas con tu cuenta queda guardado: el Axioma diario, los sudokus del día, tus retos, concursos y partidas en vivo.</p>'+
-      '<div class="mt-kpis">'+kpi(ax.resueltos,"Axioma diario",ax.resueltos?"mejor: "+ax.mejor+" movidas":"")+kpi(sudT,"sudokus del día","")+
+      '<div class="mt-kpis">'+kpi(ax.resueltos,"Axioma diario",ax.resueltos?"mejor: "+ax.mejor+" movidas":"")+kpi(sudT,"sudokus del día","")+kpi((r.granja||[]).length,"granjas del día",(r.granja||[]).length?"mejor: "+Math.max.apply(null,r.granja.map(function(g){return g.monedas;}))+" monedas":"")+
         kpi(r.retos.length,"retos","")+kpi(r.salas.length,"partidas en vivo",r.salas.filter(function(s){return s.puesto===1;}).length+" ganadas")+'</div>';
     h+='<h4>Axioma diario</h4>'+(ax.recientes.length?'<ul class="am-lista">'+ax.recientes.map(function(s){
         return '<li><b>Reto nº '+s.day+'</b>'+(s.day===ax.hoy?' <span class="chip activo">hoy</span>':'')+'<span>'+s.moves+' movidas'+(s.hints?' · '+s.hints+' pista'+(s.hints>1?'s':''):'')+(s.seconds?' · '+reloj(s.seconds):'')+'</span></li>';}).join("")+'</ul>':
@@ -218,6 +219,9 @@ function historial(){
     h+='<h4>Sudoku</h4>'+(r.sudoku.niveles.length?'<p class="fine">'+r.sudoku.niveles.map(function(x){return esc(NIV[x.level]||x.level)+': '+x.n+' (mejor '+reloj(x.mejor)+')';}).join(" · ")+'</p>'+
       '<ul class="am-lista">'+r.sudoku.recientes.map(function(s){return '<li><b>Día '+s.day+' · '+esc(NIV[s.level]||"")+'</b><span>'+reloj(s.seconds)+(s.errors?' · '+s.errors+' error'+(s.errors>1?'es':''):'')+'</span></li>';}).join("")+'</ul>':
       '<p class="fine">Sin sudokus del día todavía.</p>');
+    h+='<h4>Granja Express</h4>'+((r.granja||[]).length?'<ul class="am-lista">'+r.granja.map(function(g){
+        return '<li><b>Granja del día '+g.dia+'</b><span>'+g.monedas+' monedas · '+g.entregas+' pedidos · nivel '+g.nivel+(g.intentos>1?' · '+g.intentos+' partidas':'')+'</span></li>';}).join("")+'</ul>':
+      '<p class="fine">Todavía no has jugado la granja del día.</p>');
     h+='<h4>Retos</h4>'+(r.retos.length?r.retos.map(function(e){
         return '<button type="button" class="rt-card" data-reto="'+e.code+'"><span class="rt-card-top"><b>'+esc(e.nombre)+'</b><span class="chip">'+esc(JUEGO[e.juego]||e.juego)+'</span></span>'+
           '<small>'+e.jugadas+' de '+e.rondas+' rondas jugadas · '+e.jugadores+' jugadores · '+fecha(e.creado)+'</small></button>';}).join(""):'<p class="fine">Sin retos todavía.</p>');

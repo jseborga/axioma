@@ -94,3 +94,5 @@ CREATE TABLE IF NOT EXISTS grupos (code TEXT PRIMARY KEY, nombre TEXT NOT NULL, 
 CREATE INDEX IF NOT EXISTS grupos_owner ON grupos(owner_id);
 CREATE TABLE IF NOT EXISTS grupo_miembros (grupo TEXT NOT NULL, user_id TEXT NOT NULL, joined_at INTEGER NOT NULL, PRIMARY KEY (grupo, user_id));
 CREATE INDEX IF NOT EXISTS grupo_miembros_user ON grupo_miembros(user_id);
+CREATE TABLE IF NOT EXISTS granja_dia (user_id TEXT NOT NULL, day INTEGER NOT NULL, best INTEGER, seconds INTEGER NOT NULL DEFAULT 0, entregas INTEGER NOT NULL DEFAULT 0, nivel INTEGER NOT NULL DEFAULT 0, intentos INTEGER NOT NULL DEFAULT 0, started_at INTEGER, updated_at INTEGER NOT NULL, PRIMARY KEY (user_id, day));
+CREATE INDEX IF NOT EXISTS granja_dia_rank ON granja_dia(day, best, updated_at);

@@ -728,3 +728,22 @@ CREATE TABLE IF NOT EXISTS grupo_miembros (
   PRIMARY KEY (grupo, user_id)
 );
 CREATE INDEX IF NOT EXISTS grupo_miembros_user ON grupo_miembros(user_id);
+
+-- ============================================================
+-- The Final Test · Granja Express: la granja del día
+-- ============================================================
+-- Una fila por persona y día: su mejor partida (repetida y comprobada por
+-- el servidor) y la partida abierta (started_at) mientras se juega.
+CREATE TABLE IF NOT EXISTS granja_dia (
+  user_id    TEXT NOT NULL,
+  day        INTEGER NOT NULL,          -- número del día (el mismo que el reto diario)
+  best       INTEGER,                   -- mejores monedas (NULL hasta terminar una)
+  seconds    INTEGER NOT NULL DEFAULT 0,
+  entregas   INTEGER NOT NULL DEFAULT 0,
+  nivel      INTEGER NOT NULL DEFAULT 0,
+  intentos   INTEGER NOT NULL DEFAULT 0,
+  started_at INTEGER,                   -- partida en curso (ms)
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, day)
+);
+CREATE INDEX IF NOT EXISTS granja_dia_rank ON granja_dia(day, best, updated_at);

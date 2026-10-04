@@ -34,6 +34,7 @@ docente, concursos de trivia con premio y juegos de lógica, en una sola app.
 - Tres modos: **Diario** (el mismo tablero para todo el mundo), **Flash** (rápido, 4×4) y **Libre** (niveles progresivos).
 - **Sudoku** aparte, con cinco niveles, tablero del día para cada uno y ranking por tiempo. Solo entra la cifra correcta: dos fallos gratis y luego 30 s cada uno; cada pista 1 min, tres como máximo. En **Ultra** no hay ninguna ayuda: se comprueba solo al completar.
 - **Concursos de trivia**: más de mil preguntas en 19 áreas temáticas a elegir, con un «¿Sabías que…?» en cada una y sin repetir preguntas a la misma persona durante 60 días. Convocatorias con premio, fechas, dificultad y errores admitidos. Cada persona se inscribe y juega una vez; al cierre se publica el ranking con el ganador. Las preguntas y respuestas viven solo en el servidor.
+- **Granja Express**: arcade retro de 8 bits de estrategia y velocidad: siembra, fabrica y entrega pedidos en 3 minutos, subiendo de nivel durante la partida. Granja del día con ranking, práctica, sin fin, retos y competencias de empresas con su marca en el camión. El servidor repite cada partida para validar las monedas. Ver [GRANJA.md](GRANJA.md).
 - **Juegos rápidos**: trivia, memoria, cálculo, reflejos y del 1 al 25, cortos, de 30 segundos a 2 minutos. Para practicar sin cuenta o para retos.
 - **Juegos en grupo con un solo teléfono** (en Juegos rápidos): La gran prueba (preguntas, mímica, describir, dibujar y retos por equipos), Frente, Tabú, El impostor, Pasa la bomba y Basta. Se juega en persona pasándose el teléfono, sin cuenta ni conexión.
 - **Retos**: concursos entre amigos con código y enlace: un sudoku al día o varias rondas seguidas de un juego rápido, premio para el primero, penitencia (o ruleta de penitencias) para el último, y clasificación individual, por equipos o por parejas. La trivia puede jugarse con **tus propias preguntas** (*Mis preguntas*, desde Excel o texto). El servidor genera o guarda las rondas, cronometra y puntúa.
@@ -114,6 +115,7 @@ ranking, sigue el apartado de desarrollo local de [SETUP.md](SETUP.md).
 | [SETUP.md](SETUP.md) | Puesta en marcha: Cloudflare, base de datos, inicio de sesión y estadísticas |
 | [COMO-JUGAR.md](COMO-JUGAR.md) | Qué es el juego, cómo empezar y una guía visual paso a paso |
 | [EMPRESAS.md](EMPRESAS.md) | Empresas y eventos: marca, convocatorias con QR, invitados verificados, métricas y administración |
+| [GRANJA.md](GRANJA.md) | Granja Express: el arcade retro de estrategia y velocidad, sus modos y cómo se valida cada partida |
 | [JUEGOS.md](JUEGOS.md) | Más juegos: salas en vivo, proyector, sorteo y subasta, juegos +18, costes y aspectos legales |
 | [AULA.md](AULA.md) | Instituciones, roles, cursos, bancos de preguntas, cuestionarios y registros |
 | [CONCURSOS.md](CONCURSOS.md) | Concursos de trivia con premio: cómo se crean, se juegan y se decide el ganador |
