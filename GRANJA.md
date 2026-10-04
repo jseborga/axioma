@@ -57,10 +57,12 @@ La simulación avanza con el reloj real aunque la pestaña quede en segundo plan
 
 ## Técnica
 
-- Lienzo de **192×246 píxeles** escalado sin suavizar (`image-rendering: pixelated`):
-  nítido y ligero en cualquier móvil.
-- Sprites de 10×10 y una fuente de 3×5 dibujados por código; edificios y vehículos
-  también. Sin imágenes ni librerías: el juego son unos 40 KB y funciona sin conexión.
+- Pantalla ordenada por secciones en el orden en que se juega: **pedidos** (lo que hay
+  que entregar, con «tengo/falta» por producto), **campo** (parcelas y semillas),
+  **fábricas** (cada una muestra su receta: entradas → salida) y **granero**.
+- Lienzo lógico de 192×284 con tantos píxeles reales como la pantalla: los sprites de
+  8 bits (10×10, dibujados por código, igual que edificios y vehículos) quedan nítidos y
+  los textos se leen. Sin imágenes ni librerías: unos 40 KB, funciona sin conexión.
 - Sonido de 8 bits con WebAudio (se puede silenciar).
 
 ## Base de datos

@@ -1740,7 +1740,7 @@ body[data-sub=maraton] .readout{grid-template-columns:repeat(2,1fr)}
 
 /* ---------- Granja Express (arcade de 8 bits) ---------- */
 .gx{margin:6px auto 0;max-width:480px}
-.gx canvas{display:block;width:100%;height:auto;aspect-ratio:192/246;image-rendering:pixelated;image-rendering:crisp-edges;
+.gx canvas{display:block;width:100%;height:auto;aspect-ratio:192/284;image-rendering:pixelated;image-rendering:crisp-edges;
   background:#1d2b53;border-radius:10px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .gx-bar{display:flex;align-items:center;gap:6px;margin:8px 0 0}
 .gx-msg{flex:1;min-width:0;font-size:13.5px;line-height:1.3;color:var(--ink-2)}

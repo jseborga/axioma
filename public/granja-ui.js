@@ -1,8 +1,10 @@
 /* ===========================================================
    THE FINAL TEST · Granja Express · pantalla
-   Un lienzo de 192×246 píxeles escalado sin suavizar: todo se
-   dibuja por código (sprites de 10×10, fuente de 3×5) y el sonido
-   son pitidos de 8 bits con WebAudio. Sin imágenes ni librerías.
+   Arte de 8 bits sobre un lienzo lógico de 192×284 con tantos
+   píxeles reales como la pantalla: los sprites (10×10, dibujados por
+   código) quedan nítidos y los textos se leen. Por secciones, de arriba
+   abajo, en el orden en que se juega: pedidos, campo, fábricas y
+   granero. Sonido de 8 bits con WebAudio. Sin imágenes ni librerías.
      AxGranjaUI.monta(contenedor, datos, cfg, done)  una partida
      AxGranjaUI.para()                               la detiene
      AxGranjaUI.portada()                            menú (práctica, del día, sin fin)
@@ -12,7 +14,7 @@
 var A=window.AxGranja, R=window.AxRapidos;
 if(!A||!R)return;
 var $=function(id){return document.getElementById(id)};
-var W=192, H=246;
+var W=192, H=284;
 
 /* ---------- paleta (estilo 8 bits) ---------- */
 var P={k:"#000000",U:"#1d2b53",R:"#7e2553",G:"#008751",O:"#ab5236",D:"#5f574f",W:"#c2c3c7",w:"#fff1e8",
@@ -35,27 +37,11 @@ var SPR={
  lock:["..WWW..",".W...W.",".W...W.","yyyyyyy","yyyDyyy","yyyDyyy","yyyyyyy"],
  estrella:["...y...","...y...","yyyyyyy",".yyyyy.","..yyy..",".yy.yy.","y.....y"]
 };
-var cache={};
 function sprite(ctx,id,x,y,esc){
   var s=SPR[id]; if(!s)return; esc=esc||1;
   for(var f=0;f<s.length;f++)for(var c=0;c<s[f].length;c++){var ch=s[f][c]; if(ch===".")continue; ctx.fillStyle=P[ch]; ctx.fillRect(x+c*esc,y+f*esc,esc,esc);}
 }
 
-/* ---------- fuente de 3×5 ---------- */
-var FUENTE={"0":[7,5,5,5,7],"1":[2,6,2,2,7],"2":[7,1,7,4,7],"3":[7,1,3,1,7],"4":[5,5,7,1,1],"5":[7,4,7,1,7],"6":[7,4,7,5,7],"7":[7,1,1,2,2],"8":[7,5,7,5,7],"9":[7,5,7,1,7],
- A:[2,5,7,5,5],B:[6,5,6,5,6],C:[3,4,4,4,3],D:[6,5,5,5,6],E:[7,4,6,4,7],F:[7,4,6,4,4],G:[3,4,5,5,3],H:[5,5,7,5,5],I:[7,2,2,2,7],J:[1,1,1,5,2],K:[5,5,6,5,5],L:[4,4,4,4,7],M:[5,7,7,5,5],
- N:[6,5,5,5,5],O:[2,5,5,5,2],P:[6,5,6,4,4],Q:[2,5,5,6,3],R:[6,5,6,5,5],S:[3,4,2,1,6],T:[7,2,2,2,2],U:[5,5,5,5,7],V:[5,5,5,5,2],W:[5,5,7,7,5],X:[5,5,2,5,5],Y:[5,5,2,2,2],Z:[7,1,2,4,7],
- ":":[0,2,0,2,0],"/":[1,1,2,4,4],"+":[0,2,7,2,0],"-":[0,0,7,0,0],"!":[2,2,2,0,2],".":[0,0,0,0,2],"x":[0,5,2,5,0]," ":[0,0,0,0,0]};
-function letra(c){return c.replace(/[ÁÀ]/g,"A").replace(/[ÉÈ]/g,"E").replace(/[ÍÌ]/g,"I").replace(/[ÓÒ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N");}
-function ancho(t,esc){return String(t).length*4*(esc||1)-(esc||1);}
-function texto(ctx,t,x,y,col,esc,sombra){
-  t=letra(String(t).toUpperCase()); esc=esc||1;
-  if(sombra){texto(ctx,t,x+esc,y+esc,"#000",esc);}
-  ctx.fillStyle=col||P.w;
-  for(var i=0;i<t.length;i++){var g=FUENTE[t[i]]||FUENTE[" "];
-    for(var f=0;f<5;f++)for(var b=0;b<3;b++)if(g[f]&(4>>b))ctx.fillRect(x+(i*4+b)*esc,y+f*esc,esc,esc);}
-}
-function centrado(ctx,t,cx,y,col,esc,sombra){texto(ctx,t,Math.round(cx-ancho(t,esc)/2),y,col,esc,sombra);}
 function reloj(ticks){var s=Math.max(0,Math.ceil(ticks/10)),m=Math.floor(s/60),g=s%60;return m+":"+(g<10?"0":"")+g;}
 
 /* ---------- sonido de 8 bits ---------- */
@@ -106,21 +92,36 @@ function vehiculo(ctx,i,x,y,color,logo){
   else{ctx.fillRect(x+1,y+4,10,3);ctx.fillStyle=P.w;ctx.fillRect(x+5,y,1,4);ctx.fillRect(x+6,y+1,3,2);}
 }
 
-/* ---------- disposición ---------- */
+/* ---------- disposición (coordenadas lógicas de 192 de ancho) ---------- */
+var Y={hud:0,ped:21,campo:89,fab:150,gra:244};
 var Z={
-  pedido:function(i){return {x:2+i*47.5|0,y:19,w:46,h:58};},
-  parcela:function(i){return {x:4+(i%3)*32,y:82+Math.floor(i/3)*32,w:30,h:30};},
-  semilla:function(i){return {x:104,y:84+i*20,w:84,h:18};},
-  fabrica:function(i){return {x:2+i*38,y:150,w:36,h:56};},
-  item:function(i){return {x:2+Math.round(i*23.6),y:219,w:22,h:22};},
-  vender:{x:146,y:209,w:44,h:9}
+  pedido:function(i,n){var w=(186-(n-1)*3)/n; return {x:3+Math.round(i*(w+3)),y:29,w:Math.floor(w),h:56};},
+  descarta:function(z){return {x:z.x+z.w-11,y:z.y+1,w:10,h:10};},
+  parcela:function(i){return {x:3+i*31,y:97,w:29,h:30};},
+  semilla:function(i){return {x:3+i*62,y:130,w:60,h:16};},
+  fabrica:function(i){return {x:3+(i%2)*94,y:158+Math.floor(i/2)*28,w:92,h:26};},
+  item:function(i){return {x:3+Math.round(i*23.3),y:255,w:22,h:25};},
+  vender:{x:146,y:243,w:43,h:10}
 };
 function dentro(r,x,y){return x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h;}
 var ORDEN_ITEMS=["t","m","z","h","p","u","j","k"];
+var FUENTE_UI="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif";
+var CU={fondo:"#1d2b53",hud:"#141b38",card:"#2a3770",card2:"#3b4a8c",osc:"#151d3b",titulo:"#9fb0e8",pista:"#7181bd",ok:"#0d6b3d"};
+
+/* sprites como lienzos pequeños: se dibujan escalados sin suavizar */
+var LIENZO={};
+function lienzo(id){
+  if(LIENZO[id])return LIENZO[id];
+  var s=SPR[id]; if(!s)return null;
+  var c=document.createElement("canvas"); c.width=s[0].length; c.height=s.length;
+  var x=c.getContext("2d"); sprite(x,id,0,0,1); LIENZO[id]=c; return c;
+}
+function spr(ctx,id,x,y,esc,alfa){var c=lienzo(id); if(!c)return; esc=esc||1;
+  if(alfa!=null)ctx.globalAlpha=alfa; ctx.imageSmoothingEnabled=false; ctx.drawImage(c,Math.round(x),Math.round(y),c.width*esc,c.height*esc); if(alfa!=null)ctx.globalAlpha=1;}
 
 /* ===================== UNA PARTIDA ===================== */
 var J=null;   /* la partida en curso */
-function para(){ if(J){J.vivo=false; if(J.raf)cancelAnimationFrame(J.raf); J=null;} }
+function para(){ if(J){J.vivo=false; if(J.raf)cancelAnimationFrame(J.raf); if(J.fuera)J.fuera(); J=null;} }
 
 function monta(cont,datos,cfg,done){
   para();
@@ -129,7 +130,7 @@ function monta(cont,datos,cfg,done){
   ORDEN_ITEMS.forEach(function(k){nombres[k]=(marca.productos&&marca.productos[k])||A.ITEMS[k].nom;});
   cont.insertAdjacentHTML("beforeend",
     '<div class="gx" id="gx"><canvas id="gx-cv" width="'+W+'" height="'+H+'" aria-label="Granja Express: tablero de juego"></canvas>'+
-    '<div class="gx-bar"><span class="gx-msg" id="gx-msg">Toca una parcela para sembrar.</span>'+
+    '<div class="gx-bar"><span class="gx-msg" id="gx-msg">Elige una semilla y toca una parcela para sembrar.</span>'+
     '<button type="button" class="ghost au-mini" id="gx-son" title="Sonido">'+(mudo?"🔇":"🔊")+'</button>'+
     '<button type="button" class="ghost au-mini" id="gx-fin">'+(datos.modo==="sinfin"?"Plantarme":"Terminar")+'</button></div>'+
     '<details class="gx-ley"><summary>Recetas y precios</summary><ul>'+
@@ -138,12 +139,19 @@ function monta(cont,datos,cfg,done){
       '<li>Cultivos: '+A.CULTIVOS.map(function(k){return esc(nombres[k])+' '+(A.ITEMS[k].crece/10)+' s';}).join(", ")+'. Cada parcela da 2.</li>'+
       '<li>Niveles: '+A.NIVELES.slice(2).map(function(n,i){return 'nivel '+(i+2)+' con '+n+' monedas';}).join(", ")+'.</li>'+
       '<li>Entregar rápido suma monedas; encadenar entregas (menos de 8 s entre una y otra) da combo. «Vender» saca del granero a mitad de precio.</li></ul></details></div>');
-  var cv=$("gx-cv"), ctx=cv.getContext("2d");
-  ctx.imageSmoothingEnabled=false;
-  var s=A.crea(datos.seed,datos.modo), log=[], semilla="t", vender=false, flot=[], aviso={t:"",hasta:0}, banner=null, temblor=0, mal=null;
+  var cv=$("gx-cv"), ctx=cv.getContext("2d"), K=2;
+  /* el lienzo tiene tantos píxeles como la pantalla: los sprites quedan nítidos y el texto se lee */
+  function ajusta(){
+    var r=cv.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+    K=Math.max(2,Math.min(8,Math.round((r.width||W*2)*dpr/W)));
+    if(cv.width!==W*K){cv.width=W*K;cv.height=H*K;}
+  }
+  ajusta();
+  window.addEventListener("resize",ajusta);
+  var s=A.crea(datos.seed,datos.modo), log=[], semilla="t", vender=false, flot=[], banner=null, temblor=0, mal=null;
   var logo=null;
   if(marca.logo){logo=new Image();logo.src=marca.logo;}
-  J={vivo:true,raf:0};
+  J={vivo:true,raf:0,fuera:function(){window.removeEventListener("resize",ajusta);}};
   var yo=J, t0=0, inicio=performance.now()+3200;   /* cuenta atrás de 3 s */
 
   function msg(t){var m=$("gx-msg"); if(m)m.textContent=t;}
@@ -154,38 +162,39 @@ function monta(cont,datos,cfg,done){
     return true;
   }
   function falta(de){return Object.keys(de).filter(function(k){return (s.granero[k]||0)<de[k];}).map(function(k){return (de[k]-(s.granero[k]||0))+' '+nombres[k];}).join(", ");}
+  function andenes(){return A.ANDENES[s.nivel];}
 
   /* ---------- toques ---------- */
   cv.addEventListener("pointerdown",function(e){
     if(!yo.vivo||s.fin||performance.now()<inicio)return;
     e.preventDefault();
-    var r=cv.getBoundingClientRect(), x=(e.clientX-r.left)*W/r.width, y=(e.clientY-r.top)*H/r.height, i, z;
-    for(i=0;i<4;i++){z=Z.pedido(i); if(!dentro(z,x,y))continue;
-      if(i>=A.ANDENES[s.nivel]){msg("Ese andén se abre en el nivel "+(i===2?2:4)+".");SON.no();return;}
+    var r=cv.getBoundingClientRect(), x=(e.clientX-r.left)*W/r.width, y=(e.clientY-r.top)*H/r.height, i, z, n=andenes();
+    for(i=0;i<n;i++){z=Z.pedido(i,n); if(!dentro(z,x,y))continue;
       var o=s.pedidos[i].p; if(!o){msg("Está llegando un pedido…");return;}
-      if(x>z.x+z.w-10&&y<z.y+10){ if(hace("x",i)){msg("Pedido descartado: el andén tarda 8 s en llenarse.");SON.vende();} return; }
+      if(dentro(Z.descarta(z),x,y)){ if(hace("x",i)){msg("Pedido descartado: el andén tarda 8 s en llenarse.");SON.vende();} return; }
       if(hace("e",i))return;
-      msg("Faltan: "+o.items.filter(function(it){return (s.granero[it[0]]||0)<it[1];}).map(function(it){return (it[1]-(s.granero[it[0]]||0))+" "+nombres[it[0]];}).join(", ")+".");
+      msg("Para este pedido faltan: "+o.items.filter(function(it){return (s.granero[it[0]]||0)<it[1];}).map(function(it){return (it[1]-(s.granero[it[0]]||0))+" "+nombres[it[0]];}).join(", ")+".");
       mal={k:"p"+i,t:performance.now()}; SON.no(); return;}
     for(i=0;i<A.PARCELAS;i++){z=Z.parcela(i); if(!dentro(z,x,y))continue;
       var pc=s.parcelas[i];
       if(!pc.c){ if(hace("s",i,semilla))return; msg(A.ITEMS[semilla].nivel>s.nivel?nombres[semilla]+" se desbloquea en el nivel "+A.ITEMS[semilla].nivel+".":"No se puede sembrar."); SON.no(); return; }
       if(s.tick-pc.t0>=A.ITEMS[pc.c].crece){ if(hace("c",i))return; msg("El granero está lleno: entrega un pedido o vende algo."); mal={k:"g",t:performance.now()}; SON.no(); return; }
-      msg(nombres[pc.c]+": faltan "+Math.ceil((A.ITEMS[pc.c].crece-(s.tick-pc.t0))/10)+" s."); return;}
+      msg(nombres[pc.c]+": le faltan "+Math.ceil((A.ITEMS[pc.c].crece-(s.tick-pc.t0))/10)+" s para cosechar."); return;}
     for(i=0;i<3;i++){z=Z.semilla(i); if(!dentro(z,x,y))continue;
       var k=A.CULTIVOS[i]; if(A.ITEMS[k].nivel>s.nivel){msg(nombres[k]+" se desbloquea en el nivel "+A.ITEMS[k].nivel+".");SON.no();return;}
-      semilla=k; msg("Ahora siembras "+nombres[k]+"."); return;}
+      semilla=k; msg("Semilla elegida: "+nombres[k]+". Toca una parcela vacía."); return;}
     for(i=0;i<A.FABRICAS.length;i++){z=Z.fabrica(i); if(!dentro(z,x,y))continue;
       var d=A.FABRICAS[i];
       if(d.nivel>s.nivel){msg(d.nom+" se abre en el nivel "+d.nivel+".");SON.no();return;}
       if(hace("f",i))return;
       msg(s.fabricas[i].cola.length>=A.COLA?d.nom+": la cola está llena (3).":d.nom+": faltan "+falta(d.de)+".");
       mal={k:"f"+i,t:performance.now()}; SON.no(); return;}
-    if(dentro(Z.vender,x,y)){vender=!vender; msg(vender?"Toca un producto del granero para venderlo a mitad de precio.":"Venta cerrada."); return;}
+    if(dentro(Z.vender,x,y)){vender=!vender; msg(vender?"Modo venta: toca un producto del granero para venderlo a mitad de precio.":"Venta cerrada."); return;}
     for(i=0;i<ORDEN_ITEMS.length;i++){z=Z.item(i); if(!dentro(z,x,y))continue;
       var it=ORDEN_ITEMS[i];
+      if(A.ITEMS[it].nivel>s.nivel){msg(nombres[it]+" aparece en el nivel "+A.ITEMS[it].nivel+".");return;}
       if(vender){ if(!hace("v",0,it)){msg("No tienes "+nombres[it]+".");SON.no();} return; }
-      msg(nombres[it]+": "+(s.granero[it]||0)+" en el granero. Se vende a "+Math.max(1,Math.floor(A.ITEMS[it].valor/2))+" (toca «Vender»)."); return;}
+      msg(nombres[it]+": tienes "+(s.granero[it]||0)+". Se vende a "+Math.max(1,Math.floor(A.ITEMS[it].valor/2))+" (toca «Vender»)."); return;}
   });
   $("gx-son").onclick=function(){mudo=!mudo; try{localStorage.setItem("gx_mudo",mudo?"1":"0");}catch(e){} this.textContent=mudo?"🔇":"🔊";};
   $("gx-fin").onclick=function(){
@@ -196,7 +205,7 @@ function monta(cont,datos,cfg,done){
 
   function termina(motivo){
     if(!yo.vivo)return;
-    yo.vivo=false; cancelAnimationFrame(yo.raf);
+    yo.vivo=false; cancelAnimationFrame(yo.raf); yo.fuera();
     var envio={a:log,fin:s.tick};
     dibuja(performance.now(),motivo||s.motivo);
     SON.fin();
@@ -205,117 +214,155 @@ function monta(cont,datos,cfg,done){
 
   /* ---------- eventos del motor: sonido y animación ---------- */
   function eventos(){
-    var now=performance.now();
+    var now=performance.now(), n=andenes();
     s.ev.forEach(function(e){
       if(e.tipo==="siembra")SON.siembra();
-      else if(e.tipo==="cosecha"){SON.cosecha();var z=Z.parcela(e.i);flota("+2",z.x+9,z.y+8,P.w);}
+      else if(e.tipo==="cosecha"){SON.cosecha();var z=Z.parcela(e.i);flota("+2",z.x+10,z.y+14,P.w);}
       else if(e.tipo==="fabrica")SON.fabrica();
-      else if(e.tipo==="hecho"){SON.hecho();var f=Z.fabrica(e.f);flota("+1",f.x+12,f.y+20,P.g);}
-      else if(e.tipo==="entrega"){SON.entrega(e.combo);var z2=Z.pedido(e.i);flota("+"+e.monedas,z2.x+10,z2.y+22,P.y);
-        if(e.combo)flota("COMBO X"+(1+e.combo/10).toFixed(1).replace(".0",""),z2.x+2,z2.y+34,P.o);
+      else if(e.tipo==="hecho"){SON.hecho();var f=Z.fabrica(e.f);flota("+1 "+nombres[e.k],f.x+26,f.y+4,P.g);}
+      else if(e.tipo==="entrega"){SON.entrega(e.combo);var z2=Z.pedido(Math.min(e.i,n-1),n);flota("+"+e.monedas,z2.x+z2.w/2-6,z2.y+20,P.y);
+        if(e.combo)flota("COMBO ×"+(1+e.combo/10).toFixed(1).replace(".0",""),z2.x+4,z2.y+34,P.o);
         msg("¡Entregado! +"+e.monedas+" monedas"+(e.combo?" · combo "+e.combo:"")+".");}
       else if(e.tipo==="perdido"){SON.perdido();temblor=now+400;msg("¡Se fue un pedido! Te quedan "+s.vidas+(s.vidas===1?" vida.":" vidas."));}
-      else if(e.tipo==="nivel"){SON.nivel();banner={t:"NIVEL "+e.n,t0:now};
-        msg({2:"Nivel 2: zanahoria, gallinero, jugos y un tercer andén.",3:"Nivel 3: la pastelería ya hace tortas.",4:"Nivel 4: llega el barco, un cuarto andén."}[e.n]||"");}
-      else if(e.tipo==="vende"){SON.vende();flota("+"+e.monedas,Z.vender.x+10,Z.vender.y,P.y);}
+      else if(e.tipo==="nivel"){SON.nivel();banner={t:"¡NIVEL "+e.n+"!",t0:now};
+        msg({2:"Nivel 2: zanahoria, gallinero, jugos y un tercer pedido a la vez.",3:"Nivel 3: la pastelería ya hace tortas.",4:"Nivel 4: llega el barco, un cuarto pedido a la vez."}[e.n]||"");}
+      else if(e.tipo==="vende"){SON.vende();flota("+"+e.monedas,Z.vender.x+10,Z.vender.y-2,P.y);}
       else if(e.tipo==="lleno")msg("El granero está lleno: lo fabricado espera en la fábrica.");
     });
     s.ev.length=0;
   }
 
   /* ---------- dibujo ---------- */
-  function caja(x,y,w,h,col,borde){ctx.fillStyle=col;ctx.fillRect(x,y,w,h);if(borde){ctx.fillStyle=borde;ctx.fillRect(x,y,w,1);ctx.fillRect(x,y+h-1,w,1);ctx.fillRect(x,y,1,h);ctx.fillRect(x+w-1,y,1,h);}}
+  function caja(x,y,w,h,col,borde,gr){ctx.fillStyle=col;ctx.fillRect(x,y,w,h);if(borde){gr=gr||1;ctx.fillStyle=borde;ctx.fillRect(x,y,w,gr);ctx.fillRect(x,y+h-gr,w,gr);ctx.fillRect(x,y,gr,h);ctx.fillRect(x+w-gr,y,gr,h);}}
+  function tx(t,x,y,o){o=o||{};ctx.font=(o.peso||700)+" "+(o.t||7)+"px "+FUENTE_UI;ctx.textBaseline="top";ctx.textAlign=o.al||"left";
+    if(o.sombra){ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillText(t,x+0.6,y+0.6);} ctx.fillStyle=o.c||P.w;ctx.fillText(t,x,y);}
+  function seccion(y,titulo,pista){tx(titulo,3,y,{t:6.5,c:CU.titulo,peso:800}); if(pista)tx(pista,189,y+0.5,{t:5.5,c:CU.pista,al:"right",peso:600});}
+  function barra(x,y,w,h,fr,col){ctx.fillStyle=CU.osc;ctx.fillRect(x,y,w,h);ctx.fillStyle=col;ctx.fillRect(x,y,Math.max(0,Math.round(w*Math.min(1,fr)*4)/4),h);}
+  function late(now,ms){return (now/(ms||200)|0)%2===0;}
+
   function dibuja(now,final){
-    var tk=s.tick, i, z, dx=0;
-    if(now<temblor){dx=Math.round(Math.sin(now/25)*2);}
-    ctx.setTransform(1,0,0,1,dx,0);
-    ctx.fillStyle=FONDO; ctx.fillRect(-4,0,W+8,H);
-    /* marcador */
-    sprite(ctx,"moneda",2,2); texto(ctx,s.monedas,10,2,P.y,2);
-    sprite(ctx,"estrella",86,3); texto(ctx,"N"+s.nivel,95,4,P.w);
-    for(i=0;i<A.VIDAS;i++)sprite(ctx,i<s.vidas?"vida":"vida0",112+i*9,3);
-    var quedan=s.modo==="sinfin"?tk:A.DUR-tk;
-    var rt=reloj(quedan); texto(ctx,rt,W-2-ancho(rt,2),2,s.modo!=="sinfin"&&quedan<300&&(tk%10<5)?P.r:P.w,2);
-    /* barra de nivel */
+    var tk=s.tick, i, z, dx=0, n=andenes();
+    if(now<temblor){dx=Math.sin(now/25)*2;}
+    ctx.setTransform(K,0,0,K,Math.round(dx*K),0);
+    ctx.imageSmoothingEnabled=false;
+    ctx.fillStyle=CU.fondo; ctx.fillRect(-4,0,W+8,H);
+
+    /* ===== marcador ===== */
+    caja(-4,0,W+8,19,CU.hud);
+    spr(ctx,"moneda",3,3.5,2); tx(String(s.monedas),18,3,{t:11,c:P.y,peso:800});
+    for(i=0;i<A.VIDAS;i++)spr(ctx,i<s.vidas?"vida":"vida0",62+i*9,6.5);
     var de=A.NIVELES[s.nivel]||0, a=A.NIVELES[s.nivel+1];
-    caja(2,14,W-4,3,P.U); if(a){ctx.fillStyle=P.o;ctx.fillRect(2,14,Math.round((W-4)*Math.min(1,(s.monedas-de)/(a-de))),3);} else {ctx.fillStyle=P.g;ctx.fillRect(2,14,W-4,3);}
-    /* pedidos */
-    for(i=0;i<4;i++){
-      z=Z.pedido(i); var abierto=i<A.ANDENES[s.nivel], o=s.pedidos[i].p;
-      var sac=mal&&mal.k==="p"+i&&now-mal.t<300?Math.round(Math.sin(now/20)*2):0;
-      if(!abierto){caja(z.x,z.y,z.w,z.h,"#151d3b");sprite(ctx,"lock",z.x+19,z.y+18);centrado(ctx,"NIVEL "+(i===2?2:4),z.x+z.w/2,z.y+30,P.s);continue;}
-      var ok=o&&A.puedeEntregar(s,i);
-      caja(z.x+sac,z.y,z.w,z.h,PANEL,ok?((now/180|0)%2?P.g:P.y):PANEL2);
-      vehiculo(ctx,i,z.x+3+sac,z.y+3,i===0&&marca.color?marca.color:null,i===0?logo:null);
-      if(!o){var pts=".".repeat(1+((now/300|0)%3)); centrado(ctx,pts,z.x+z.w/2,z.y+28,P.s); continue;}
-      texto(ctx,"x",z.x+z.w-7+sac,z.y+3,P.r);
-      o.items.forEach(function(it,n){
-        var yy=z.y+13+n*13, tengo=(s.granero[it[0]]||0)>=it[1];
-        sprite(ctx,it[0],z.x+3+sac,yy);
-        texto(ctx,it[1],z.x+16+sac,yy+3,tengo?P.g:P.w);
-        if(tengo){ctx.fillStyle=P.g;ctx.fillRect(z.x+24+sac,yy+5,1,1);ctx.fillRect(z.x+25+sac,yy+6,1,1);ctx.fillRect(z.x+26+sac,yy+5,1,1);ctx.fillRect(z.x+27+sac,yy+4,1,1);ctx.fillRect(z.x+28+sac,yy+3,1,1);}
+    tx("Nivel "+s.nivel,92,2.5,{t:6.5});
+    tx(a?(s.monedas)+"/"+a:"máx.",150,3,{t:5.5,c:CU.pista,al:"right",peso:600});
+    barra(92,11,58,4,a?(s.monedas-de)/(a-de):1,a?P.o:P.g);
+    var quedan=s.modo==="sinfin"?tk:A.DUR-tk, urge=s.modo!=="sinfin"&&quedan<300;
+    tx(reloj(quedan),189,3,{t:11,c:urge&&late(now,250)?P.r:P.w,al:"right",peso:800});
+
+    /* ===== pedidos ===== */
+    seccion(Y.ped,"PEDIDOS","toca un pedido completo para entregarlo");
+    for(i=0;i<n;i++){
+      z=Z.pedido(i,n); var o=s.pedidos[i].p, ancho2=z.w>=60;
+      var sac=mal&&mal.k==="p"+i&&now-mal.t<300?Math.sin(now/20)*2:0, zx=z.x+sac;
+      if(!o){caja(zx,z.y,z.w,z.h,CU.osc);
+        var vx=zx+z.w-((now/12)%(z.w+14)); vehiculo(ctx,i,Math.max(zx+2,Math.min(zx+z.w-14,vx)),z.y+18,i===0&&marca.color?marca.color:null,i===0?logo:null);
+        tx("Llegando"+".".repeat(1+((now/300|0)%3)),zx+z.w/2,z.y+34,{t:6,c:CU.pista,al:"center",peso:600}); continue;}
+      var ok=A.puedeEntregar(s,i), fr=Math.max(0,(o.vence-tk)/(o.vence-o.t0)), urgente=fr<0.25;
+      caja(zx,z.y,z.w,z.h,ok?CU.ok:CU.card,ok?(late(now,180)?P.g:P.y):urgente&&late(now,200)?P.r:CU.card2,ok?1.5:1);
+      vehiculo(ctx,i,zx+3,z.y+3,i===0&&marca.color?marca.color:null,i===0?logo:null);
+      tx(reloj(o.vence-tk),zx+18,z.y+2.5,{t:6,c:urgente?P.r:CU.titulo,peso:700});
+      var dz=Z.descarta({x:zx,y:z.y,w:z.w}); caja(dz.x,dz.y,dz.w,dz.h,"rgba(255,0,77,.18)"); tx("✕",dz.x+dz.w/2,dz.y+1.2,{t:7,c:"#ff6b8f",al:"center"});
+      o.items.forEach(function(it,m){
+        var yy=z.y+13+m*11, tengo=s.granero[it[0]]||0, ya=tengo>=it[1];
+        spr(ctx,it[0],zx+3,yy);
+        tx(Math.min(tengo,it[1])+"/"+it[1],zx+15,yy+1.5,{t:7,c:ya?P.g:P.w});
+        if(ancho2)tx(nombres[it[0]],zx+33,yy+2,{t:5.5,c:CU.pista,peso:600});
       });
-      sprite(ctx,"moneda",z.x+28+sac,z.y+44); texto(ctx,o.premio,z.x+3+sac,z.y+45,P.y);
-      var fr=Math.max(0,(o.vence-tk)/(o.vence-o.t0)), col=fr>0.5?P.g:fr>0.25?P.y:P.r;
-      if(fr<0.25&&(tk%6<3))col=P.w;
-      caja(z.x+2,z.y+z.h-5,z.w-4,3,"#151d3b"); ctx.fillStyle=col; ctx.fillRect(z.x+2,z.y+z.h-5,Math.round((z.w-4)*fr),3);
+      spr(ctx,"moneda",zx+3,z.y+z.h-11); tx(String(o.premio),zx+11,z.y+z.h-12,{t:7,c:P.y});
+      if(ok)tx(ancho2?"¡ENTREGAR!":"¡LISTO!",zx+z.w-3,z.y+z.h-11.5,{t:6,c:"#fff",al:"right",peso:800});
+      barra(zx+2,z.y+z.h-3,z.w-4,2,fr,fr>0.5?P.g:fr>0.25?P.y:P.r);
     }
-    /* campo */
-    caja(2,80,98,68,P.G);
+
+    /* ===== campo ===== */
+    seccion(Y.campo,"CAMPO","1 elige semilla · 2 toca una parcela");
     for(i=0;i<A.PARCELAS;i++){
       z=Z.parcela(i); var pc=s.parcelas[i];
-      caja(z.x,z.y,z.w,z.h,P.B); ctx.fillStyle=P.O; for(var f=0;f<4;f++)ctx.fillRect(z.x+2,z.y+4+f*7,z.w-4,2);
-      if(!pc.c){ if(semilla&&A.ITEMS[semilla].nivel<=s.nivel&&(now/500|0)%2){ctx.fillStyle="rgba(255,241,232,.25)";ctx.fillRect(z.x+13,z.y+10,4,10);ctx.fillRect(z.x+10,z.y+13,10,4);} continue; }
+      caja(z.x,z.y,z.w,z.h,P.B); ctx.fillStyle="#7a4a24"; for(var f=0;f<4;f++)ctx.fillRect(z.x+2,z.y+4+f*7,z.w-4,2);
+      if(!pc.c){
+        if(A.ITEMS[semilla].nivel<=s.nivel){spr(ctx,semilla,z.x+9.5,z.y+6,1,late(now,500)?0.45:0.25); tx("+",z.x+z.w/2,z.y+17,{t:8,c:"rgba(255,241,232,.7)",al:"center"});}
+        continue;
+      }
       var cre=(tk-pc.t0)/A.ITEMS[pc.c].crece;
-      if(cre>=1){var bote=(now/150|0)%2; sprite(ctx,pc.c,z.x+4,z.y+8-bote); sprite(ctx,pc.c,z.x+16,z.y+10+bote-1);
-        if((now/250|0)%3===0){ctx.fillStyle=P.w;ctx.fillRect(z.x+26,z.y+3,1,3);ctx.fillRect(z.x+25,z.y+4,3,1);}}
-      else{ var cc=pc.c==="t"?P.y:pc.c==="m"?P.g:P.o, alto=Math.max(1,Math.round(cre*9));
-        for(var q=0;q<3;q++){ctx.fillStyle=P.g;ctx.fillRect(z.x+6+q*8,z.y+22-alto,2,alto); if(cre>0.6){ctx.fillStyle=cc;ctx.fillRect(z.x+5+q*8,z.y+22-alto,4,2);}}
-        ctx.fillStyle="#151d3b"; ctx.fillRect(z.x+2,z.y+z.h-4,z.w-4,2); ctx.fillStyle=P.g; ctx.fillRect(z.x+2,z.y+z.h-4,Math.round((z.w-4)*cre),2);
+      if(cre>=1){
+        caja(z.x,z.y,z.w,z.h,"rgba(255,236,39,.12)",late(now,220)?P.y:"#e8b400",1);
+        spr(ctx,pc.c,z.x+4.5,z.y+3+(late(now,160)?0:1),2);
+        tx("¡Cosechar!",z.x+z.w/2,z.y+z.h-7,{t:4.6,c:P.y,al:"center",peso:800});
+      }else{
+        var cc=pc.c==="t"?P.y:pc.c==="m"?P.g:P.o, alto=Math.max(1,Math.round(cre*11));
+        for(var q=0;q<3;q++){ctx.fillStyle=P.G;ctx.fillRect(z.x+5+q*8,z.y+21-alto,2,alto); if(cre>0.55){ctx.fillStyle=cc;ctx.fillRect(z.x+4+q*8,z.y+21-alto,4,2);}}
+        barra(z.x+2,z.y+z.h-4,z.w-4,2,cre,P.g);
+        tx(Math.ceil((A.ITEMS[pc.c].crece-(tk-pc.t0))/10)+" s",z.x+z.w-2,z.y+1.5,{t:5,c:P.w,al:"right",peso:700});
       }
     }
-    /* semillas */
     for(i=0;i<3;i++){
-      z=Z.semilla(i); var k=A.CULTIVOS[i], abre=A.ITEMS[k].nivel<=s.nivel;
-      caja(z.x,z.y,z.w,z.h,abre?PANEL:"#151d3b",semilla===k&&abre?P.y:null);
-      if(abre){sprite(ctx,k,z.x+3,z.y+4); texto(ctx,nombres[k].slice(0,11),z.x+16,z.y+4,P.w); texto(ctx,(A.ITEMS[k].crece/10)+"S",z.x+16,z.y+11,P.s);}
-      else{sprite(ctx,"lock",z.x+4,z.y+5); texto(ctx,"NIVEL "+A.ITEMS[k].nivel,z.x+16,z.y+7,P.s);}
+      z=Z.semilla(i); var k=A.CULTIVOS[i], abre=A.ITEMS[k].nivel<=s.nivel, sel=semilla===k&&abre;
+      caja(z.x,z.y,z.w,z.h,abre?(sel?CU.card2:CU.card):CU.osc,sel?P.y:null);
+      if(abre){spr(ctx,k,z.x+3,z.y+3); tx(nombres[k],z.x+15,z.y+2,{t:6,c:P.w}); tx((A.ITEMS[k].crece/10)+" s · da 2",z.x+15,z.y+9,{t:4.8,c:CU.pista,peso:600});}
+      else{spr(ctx,"lock",z.x+4,z.y+4.5); tx("Nivel "+A.ITEMS[k].nivel,z.x+15,z.y+5,{t:5.5,c:CU.pista,peso:600});}
     }
-    /* fábricas */
+
+    /* ===== fábricas ===== */
+    seccion(Y.fab,"FÁBRICAS","toca para fabricar · hasta 3 en cola");
     for(i=0;i<A.FABRICAS.length;i++){
       z=Z.fabrica(i); var d=A.FABRICAS[i], fb=s.fabricas[i], ab=d.nivel<=s.nivel;
-      var sf=mal&&mal.k==="f"+i&&now-mal.t<300?Math.round(Math.sin(now/20)*2):0;
-      if(!ab){caja(z.x,z.y,z.w,z.h,"#151d3b");sprite(ctx,"lock",z.x+14,z.y+14);centrado(ctx,"NIVEL "+d.nivel,z.x+z.w/2,z.y+26,P.s);continue;}
-      var listo=A.hay(s,d.de)&&fb.cola.length<A.COLA;
-      caja(z.x+sf,z.y,z.w,z.h,PANEL,listo?P.u:PANEL2);
-      edificio(ctx,d.id,z.x+7+sf,z.y+7,fb.cola.length?now:0);
-      for(var c=0;c<A.COLA;c++){ctx.fillStyle=c<fb.cola.length?P.y:"#151d3b";ctx.fillRect(z.x+6+c*9+sf,z.y+26,7,3);}
-      if(fb.cola.length){var fp=Math.min(1,(tk-fb.t0)/d.dura); caja(z.x+3,z.y+31,z.w-6,3,"#151d3b"); ctx.fillStyle=P.g; ctx.fillRect(z.x+3,z.y+31,Math.round((z.w-6)*fp),3);}
-      if(fb.lista&&(now/300|0)%2)centrado(ctx,"LLENO",z.x+z.w/2,z.y+31,P.r);
-      sprite(ctx,d.da,z.x+13+sf,z.y+38);
-      if(!listo&&fb.cola.length<A.COLA){ctx.fillStyle="rgba(29,43,83,.55)";ctx.fillRect(z.x+13,z.y+38,10,10);}
+      var sf=mal&&mal.k==="f"+i&&now-mal.t<300?Math.sin(now/20)*2:0, fx=z.x+sf;
+      if(!ab){caja(fx,z.y,z.w,z.h,CU.osc); spr(ctx,"lock",fx+6,z.y+9.5); tx(d.nom,fx+17,z.y+5,{t:6,c:CU.pista}); tx("Se abre en el nivel "+d.nivel,fx+17,z.y+13,{t:5,c:CU.pista,peso:600}); continue;}
+      var puede=A.hay(s,d.de)&&fb.cola.length<A.COLA;
+      caja(fx,z.y,z.w,z.h,CU.card,puede?P.u:CU.card2);
+      ctx.save(); ctx.translate(fx+1,z.y+7); edificio(ctx,d.id,0,0,fb.cola.length?now:0); ctx.restore();
+      tx(d.nom,fx+25,z.y+2,{t:6});
+      /* receta: entradas → salida */
+      var rx=fx+25, ks=Object.keys(d.de);
+      ks.forEach(function(kk){var cant=d.de[kk], tiene=(s.granero[kk]||0)>=cant;
+        tx(String(cant),rx,z.y+13,{t:5.5,c:tiene?P.w:"#ff6b8f"}); spr(ctx,kk,rx+3.5,z.y+10.5,1); rx+=15;});
+      tx("→",rx-0.5,z.y+12,{t:6,c:CU.titulo}); spr(ctx,d.da,rx+6,z.y+10.5,1);
+      for(var c2=0;c2<A.COLA;c2++){ctx.fillStyle=c2<fb.cola.length?P.y:CU.osc;ctx.fillRect(fx+z.w-17+c2*5,z.y+3,4,4);}
+      if(fb.cola.length)barra(fx+2,z.y+z.h-3,z.w-4,2,(tk-fb.t0)/d.dura,P.g);
+      if(fb.lista&&late(now,300))tx("GRANERO LLENO",fx+z.w-3,z.y+11,{t:4.8,c:P.r,al:"right",peso:800});
     }
-    /* granero */
-    var lleno=A.total(s)>=A.GRANERO, gm=mal&&mal.k==="g"&&now-mal.t<500;
-    texto(ctx,"GRANERO "+A.total(s)+"/"+A.GRANERO,2,210,lleno||gm?((now/200|0)%2?P.r:P.w):P.w);
-    caja(Z.vender.x,Z.vender.y,Z.vender.w,Z.vender.h,vender?P.r:PANEL); centrado(ctx,"VENDER",Z.vender.x+Z.vender.w/2,Z.vender.y+2,P.w);
+    /* la casilla libre: qué trae el siguiente nivel */
+    z=Z.fabrica(5); caja(z.x,z.y,z.w,z.h,CU.osc);
+    var sig={2:"Zanahoria, gallinero y jugos",3:"Pastelería: tortas",4:"Un cuarto pedido a la vez"}[s.nivel+1];
+    if(sig){tx("Nivel "+(s.nivel+1)+" con "+A.NIVELES[s.nivel+1]+" monedas",z.x+4,z.y+5,{t:5.5,c:CU.titulo}); tx(sig,z.x+4,z.y+14,{t:5.5,c:CU.pista,peso:600});}
+    else{tx("¡Granja completa!",z.x+4,z.y+5,{t:6,c:P.g}); tx("Entrega rápido y encadena combos",z.x+4,z.y+14,{t:5,c:CU.pista,peso:600});}
+
+    /* ===== granero ===== */
+    var tot=A.total(s), lleno=tot>=A.GRANERO, gm=mal&&mal.k==="g"&&now-mal.t<600;
+    seccion(Y.gra,"GRANERO");
+    tx(tot+"/"+A.GRANERO,42,Y.gra,{t:6.5,c:lleno||gm?(late(now,200)?P.r:P.w):P.w});
+    caja(Z.vender.x,Z.vender.y,Z.vender.w,Z.vender.h,vender?P.r:CU.card,vender?"#fff":CU.card2);
+    tx(vender?"Vendiendo…":"Vender",Z.vender.x+Z.vender.w/2,Z.vender.y+2,{t:5.5,al:"center"});
     for(i=0;i<ORDEN_ITEMS.length;i++){
-      z=Z.item(i); var it=ORDEN_ITEMS[i], n=s.granero[it]||0, vis=A.ITEMS[it].nivel<=s.nivel;
-      caja(z.x,z.y,z.w,z.h,vender&&n?"#5a1630":PANEL);
-      if(!vis){sprite(ctx,"lock",z.x+8,z.y+7);continue;}
-      sprite(ctx,it,z.x+6,z.y+2); if(!n){ctx.fillStyle="rgba(41,54,111,.6)";ctx.fillRect(z.x+6,z.y+2,10,10);}
-      centrado(ctx,n,z.x+z.w/2,z.y+15,n?P.w:P.s);
+      z=Z.item(i); var it=ORDEN_ITEMS[i], cnt=s.granero[it]||0, vis=A.ITEMS[it].nivel<=s.nivel;
+      caja(z.x,z.y,z.w,z.h,vender&&cnt?"#5a1630":CU.card);
+      if(!vis){spr(ctx,"lock",z.x+7.5,z.y+8,1,0.5);continue;}
+      spr(ctx,it,z.x+6,z.y+2,1,cnt?1:0.35);
+      tx(String(cnt),z.x+z.w/2,z.y+14,{t:7,c:cnt?P.w:CU.pista,al:"center"});
+      if(vender&&cnt)tx("+"+Math.max(1,Math.floor(A.ITEMS[it].valor/2)),z.x+z.w-1,z.y+1,{t:4.5,c:P.y,al:"right"});
     }
-    /* combo */
-    if(s.combo&&tk-s.ultEntrega<A.COMBO_T){caja(2,244,Math.round((W-4)*(1-(tk-s.ultEntrega)/A.COMBO_T)),2,P.o);}
+    if(s.combo&&tk-s.ultEntrega<A.COMBO_T){barra(3,H-3,186,2,1-(tk-s.ultEntrega)/A.COMBO_T,P.o);}
+
     /* textos que flotan */
-    flot=flot.filter(function(f){var e=now-f.t0; if(e>900)return false; texto(ctx,f.t,f.x,Math.round(f.y-e/60),f.c,1,true); return true;});
+    flot=flot.filter(function(f){var e=now-f.t0; if(e>900)return false; tx(f.t,f.x,f.y-e/60,{t:7,c:f.c,sombra:true,peso:800}); return true;});
     /* cartel de nivel */
-    if(banner&&now-banner.t0<1600){caja(0,104,W,26,"rgba(0,0,0,.65)"); centrado(ctx,banner.t,W/2,108,(now/120|0)%2?P.y:P.o,3,true);}
+    if(banner&&now-banner.t0<1600){caja(-4,110,W+8,30,"rgba(0,0,0,.7)"); tx(banner.t,W/2,114,{t:18,c:late(now,120)?P.y:P.o,al:"center",peso:900,sombra:true});}
     /* cuenta atrás y final */
-    if(now<inicio){var n2=Math.ceil((inicio-now)/1000); caja(0,0,W,H,"rgba(0,0,0,.55)"); centrado(ctx,n2>3?"3":String(n2),W/2,100,P.y,6,true); centrado(ctx,"PREPARATE",W/2,150,P.w,2,true);}
-    if(final){caja(0,0,W,H,"rgba(0,0,0,.65)"); centrado(ctx,final==="vidas"?"SIN VIDAS":final==="plantado"?"FIN":"TIEMPO!",W/2,90,P.r,3,true);
-      centrado(ctx,s.monedas+" MONEDAS",W/2,120,P.y,2,true); centrado(ctx,s.entregas+" PEDIDOS  NIVEL "+s.nivel,W/2,140,P.w,1,true);}
+    if(now<inicio){var n2=Math.min(3,Math.ceil((inicio-now)/1000)); caja(-4,0,W+8,H,"rgba(0,0,0,.6)");
+      tx(String(n2),W/2,92,{t:48,c:P.y,al:"center",peso:900,sombra:true}); tx("¡Prepárate!",W/2,150,{t:12,al:"center",sombra:true});
+      tx("Siembra · fabrica · entrega",W/2,168,{t:7,c:CU.titulo,al:"center"});}
+    if(final){caja(-4,0,W+8,H,"rgba(0,0,0,.7)");
+      tx(final==="vidas"?"¡Sin vidas!":final==="plantado"?"Fin":"¡Tiempo!",W/2,92,{t:20,c:P.r,al:"center",peso:900,sombra:true});
+      tx(s.monedas+" monedas",W/2,124,{t:14,c:P.y,al:"center",peso:800,sombra:true});
+      tx(s.entregas+" pedidos · nivel "+s.nivel,W/2,146,{t:8,al:"center",sombra:true});}
     ctx.setTransform(1,0,0,1,0,0);
   }
 
@@ -324,7 +371,7 @@ function monta(cont,datos,cfg,done){
   function cuadro(now){
     if(!yo.vivo)return;
     if(now<inicio){var n=Math.ceil((inicio-now)/1000); if(n<cont3&&n>0){cont3=n;SON.cuenta();} dibuja(now); yo.raf=requestAnimationFrame(cuadro); return;}
-    if(!t0){t0=inicio;SON.ya();msg(datos.modo==="sinfin"?"Sin reloj: aguanta hasta que se te escapen tres pedidos.":"¡A trabajar! Tres minutos.");}
+    if(!t0){t0=inicio;SON.ya();msg(datos.modo==="sinfin"?"Sin reloj: aguanta hasta que se te escapen tres pedidos.":"¡A trabajar! Elige una semilla y toca una parcela.");}
     var meta=Math.floor((now-t0)/A.TICK);
     while(s.tick<meta&&!s.fin){A.paso(s);}
     eventos();
@@ -417,5 +464,5 @@ function resultado(juego,res,linea,otra,conRanking){
   if(conRanking)ranking($("gx-rank"));
 }
 
-window.AxGranjaUI={monta:monta,para:para,portada:portada,texto:texto,sprite:sprite};
+window.AxGranjaUI={monta:monta,para:para,portada:portada,sprite:sprite};
 })();
