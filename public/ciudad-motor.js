@@ -63,6 +63,30 @@ function terreno(seed,x,y){
   return "g";
 }
 
+/* ---------- recursos estratégicos: yacimientos fijos del mundo ----------
+   Vetas que salen de la semilla del mundo (las mismas para todos). Junto a cada ciudad hay siempre piedra y hierro
+   a mano, carbón y petróleo un poco más lejos y litio en un salar junto al lago. El oro es raro. */
+var RECURSOS={
+  piedra:  {nom:"Piedra",   ico:"🪨", era:0, precio:5,  prod:8, consumo:2, ciclo:9,  color:"#9e9e9e", bono:"Construir cuesta un 10 % menos."},
+  oro:     {nom:"Oro",      ico:"🥇", era:0, precio:55, prod:1, consumo:0, ciclo:13, color:"#f2c94c", aereo:true, bono:"Con 20 o más en reserva, la calificación crediticia mejora un escalón."},
+  hierro:  {nom:"Hierro",   ico:"⛓️", era:1, precio:12, prod:5, consumo:3, ciclo:8,  color:"#a0522d", bono:"La industria rinde un 20 % más."},
+  carbon:  {nom:"Carbón",   ico:"⚫", era:3, precio:10, prod:6, consumo:3, ciclo:7,  color:"#2b2b2b", bono:"Las centrales térmicas dan un 25 % más de energía."},
+  petroleo:{nom:"Petróleo", ico:"🛢️", era:3, precio:24, prod:4, consumo:2, ciclo:6,  color:"#141414", bono:"El comercio rinde un 10 % más (transporte y combustible)."},
+  litio:   {nom:"Litio",    ico:"🔋", era:5, precio:42, prod:3, consumo:1, ciclo:10, color:"#dff3f2", aereo:true, bono:"Las plantas solares y eólicas dan un 30 % más (baterías)."}
+};
+var RORDEN=["oro","litio","petroleo","carbon","hierro","piedra"];
+var RVETA={oro:[3,0.92,0.3,101],litio:[4,0.9,0.5,103],petroleo:[6,0.9,0.4,107],carbon:[5,0.87,0.5,109],hierro:[4,0.86,0.5,113],piedra:[5,0.83,0.5,127]};   /* escala, umbral, densidad, semilla */
+var RFIJO={"-4,4":"piedra","-5,4":"piedra","-4,5":"piedra","5,4":"hierro","5,3":"hierro","-8,-5":"carbon","-9,-5":"carbon","-3,-9":"petroleo","11,-6":"litio","12,-6":"litio"};
+function yacimiento(seed,x,y){
+  if(terreno(seed,x,y)==="w")return null;
+  var sx=Math.round(x/SEPARA)*SEPARA, sy=Math.round(y/SEPARA)*SEPARA, f=RFIJO[(x-sx)+","+(y-sy)];
+  if(f)return f;
+  if(Math.max(Math.abs(x-sx),Math.abs(y-sy))<=3)return null;      /* el centro de cada ranura queda libre para la ciudad */
+  for(var k=0;k<RORDEN.length;k++){ var r=RORDEN[k], v=RVETA[r];
+    if(ruido(seed+v[3],x,y,v[0])>v[1]&&hash2(seed+v[3]*3,x,y)<v[2])return r; }
+  return null;
+}
+
 /* ---------- lo que se construye ---------- */
 var EDIF={
   c:{nom:"Carretera",      costo:10,  mant:0,   grupo:"vias", era:0},
@@ -85,7 +109,11 @@ var EDIF={
   T:{nom:"Teatro",         costo:750, mant:4,   grupo:"cultura", radio:8, cultura:2, tech:"artes", feliz:4, era:0},
   P:{nom:"Parque",         costo:80,  mant:0.4, grupo:"cultura", radio:3, feliz:6, limpia2:2, era:0},
   Z:{nom:"Plaza",          costo:160, mant:0.6, grupo:"cultura", radio:4, feliz:4, cultura:0.5, era:0},
-  O:{nom:"Monumento",      costo:3000,mant:6,   grupo:"cultura", radio:12, feliz:8, cultura:8, tech:"patrimonio", era:2}
+  O:{nom:"Monumento",      costo:3000,mant:6,   grupo:"cultura", radio:12, feliz:8, cultura:8, tech:"patrimonio", era:2},
+  m:{nom:"Mina",           costo:600, mant:4,   grupo:"recursos", cont:3, rcont:3, emp:15, era:0},
+  K:{nom:"Puerto",         costo:1800,mant:8,   grupo:"recursos", junto:"w", emp:20, carga:30, era:1},
+  A:{nom:"Aeropuerto",     costo:6000,mant:24,  grupo:"recursos", cont:2, rcont:4, emp:40, carga:80, era:4},
+  X:{nom:"Cuartel",        costo:2500,mant:14,  grupo:"servicios", radio:14, srv:"seg", emp:10, orden:30, era:1}
 };
 /* por nivel de desarrollo (0 = zona vacía) */
 var POB=[0,8,25,60,120], EMPC=[0,5,15,35,70], EMPI=[0,8,20,40,60];
@@ -105,7 +133,10 @@ var TECHS={
   rascacielos:{nom:"Rascacielos",        tema:"urbanismo",  desc:"Las zonas pueden llegar al nivel 4.", req:["superior"], era:4},
   reciclaje:{nom:"Reciclaje",            tema:"ambiente",   desc:"Un 30 % menos de contaminación.", era:4},
   salud:    {nom:"Salud pública",        tema:"salud",      desc:"Hospitales con más alcance y menos enfermedades.", era:1},
-  fiscal:   {nom:"Impuestos inteligentes",tema:"economia",  desc:"Un 10 % más de recaudación.", era:2}
+  fiscal:   {nom:"Impuestos inteligentes",tema:"economia",  desc:"Un 10 % más de recaudación.", era:2},
+  logistica:{nom:"Comercio internacional",tema:"economia",  desc:"Un 25 % más de capacidad de exportación y mejores precios.", era:2},
+  mineria:  {nom:"Minería moderna",      tema:"ingenieria", desc:"Las minas producen un 30 % más.", era:3},
+  dialogo:  {nom:"Mediación social",     tema:"civica",     desc:"El malestar baja más rápido y los acuerdos duran más.", era:2}
 };
 /* problemas que aparecen según lo que le falta a la ciudad */
 var PROBLEMAS={
@@ -120,10 +151,13 @@ var PROBLEMAS={
   escuela: {nom:"Falta de escuelas",   tema:"educacion",  desc:"Muchos niños no tienen escuela cerca.", era:1},
   puente:  {nom:"Puente dañado",       tema:"ingenieria", desc:"Una estructura necesita una evaluación técnica."},
   plan:    {nom:"Plan urbano",         tema:"urbanismo",  desc:"El concejo pide una decisión de urbanismo."},
-  feria:   {nom:"Feria cultural",      tema:"cultura",    desc:"¡Oportunidad! Una feria puede atraer visitantes."}
+  feria:   {nom:"Feria cultural",      tema:"cultura",    desc:"¡Oportunidad! Una feria puede atraer visitantes."},
+  protesta:{nom:"Protesta ciudadana",  tema:"civica",     desc:"La gente sale a la calle a reclamar: el comercio vende menos.", disc:true},
+  huelga:  {nom:"Huelga general",      tema:"economia",   desc:"Paran fábricas y minas: producen la mitad mientras dure.", disc:true, era:3},
+  disturbios:{nom:"Disturbios",        tema:"seguridad",  desc:"El malestar desborda: si no se calma, se dañan edificios.", disc:true}
 };
 var TEMAS={energia:"Energía",agua:"Agua",transporte:"Transporte",urbanismo:"Urbanismo",ambiente:"Ambiente",salud:"Salud",
-           seguridad:"Seguridad",educacion:"Educación",economia:"Economía",cultura:"Cultura",ingenieria:"Ingeniería",historia:"Historia"};
+           seguridad:"Seguridad",educacion:"Educación",economia:"Economía",cultura:"Cultura",ingenieria:"Ingeniería",historia:"Historia",civica:"Cívica"};
 /* las épocas: cada una sube el nivel máximo de las zonas y desbloquea edificios y tecnologías.
    Para pasar a la siguiente hay que llegar a sus metas y acertar una pregunta de historia.
    Antes de la Revolución Industrial no hace falta electricidad. */
@@ -251,7 +285,7 @@ var RIQ_R=[1,1.2,1.45], RIQ_C=[1,1.25,1.6];
 function riqueza(v){return v<0.42?0:v<0.66?1:2;}
 function calcula(s){
   var m=mapas(s), cov=m.cov, i, t, e, l, k, occ=m.occ, res=m.res;
-  var st={pob:0,empC:0,empI:0,pobPond:0,empCPond:0,pobRica:0,mwCap:s.bonoMW,mwUso:0,agCap:s.bonoAgua,agUso:0,calles:0,mant:0,cultura:0,edif:0,R:0,C:0,I:0};
+  var st={pob:0,empC:0,empI:0,pobPond:0,empCPond:0,pobRica:0,puertos:0,aero:0,cuartel:0,minas:0,mwCap:s.bonoMW,mwUso:0,agCap:s.bonoAgua,agUso:0,calles:0,mant:0,cultura:0,edif:0,R:0,C:0,I:0};
   var cE=m.redE.comp, cA=m.redA.comp, useE=new Float64Array(m.redE.n), capE=new Float64Array(m.redE.n), useA=new Float64Array(m.redA.n), capA=new Float64Array(m.redA.n), u;
   for(k=0;k<occ.length;k++){i=occ[k]; t=s.tipo[i]; e=EDIF[t]; l=s.nivel[i];
     st.mant+=e.mant;
@@ -260,7 +294,9 @@ function calcula(s){
     if(t==="C"){st.empC+=EMPC[l]; st.empCPond+=EMPC[l]*RIQ_C[riqueza(m.valor[i])];u=MW_C[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_C[l];st.agUso+=u;useA[cA[i]]+=u;st.C++;continue;}
     if(t==="I"){st.empI+=EMPI[l];u=MW_I[l];st.mwUso+=u;useE[cE[i]]+=u;u=AG_I[l];st.agUso+=u;useA[cA[i]]+=u;st.I++;continue;}
     st.edif++;
-    if(e.mw){st.mwCap+=e.mw;capE[cE[i]]+=e.mw;} else {st.mwUso+=1;useE[cE[i]]+=1;}
+    if(e.emp)st.empI+=e.emp;
+    if(t==="K")st.puertos++; else if(t==="A")st.aero++; else if(t==="X")st.cuartel++; else if(t==="m")st.minas++;
+    if(e.mw){var mw=e.mw*(t==="e"&&activo(s,"carbon")?1.25:(t==="w"||t==="s")&&activo(s,"litio")?1.3:1); st.mwCap+=mw;capE[cE[i]]+=mw;} else {st.mwUso+=1;useE[cE[i]]+=1;}
     if(e.agua){st.agCap+=e.agua;capA[cA[i]]+=e.agua;} else {st.agUso+=0.5;useA[cA[i]]+=0.5;}
     if(e.cultura)st.cultura+=e.cultura;
   }
@@ -282,7 +318,7 @@ function calcula(s){
     if(!st.sinLuz&&rE.r[cE[i]]<0.95)st.sinRedE++; if(rA.r[cA[i]]<0.95&&(s.nivel[i]||!EDIF[t].zona))st.sinRedA++;}
   /* demanda RCI */
   var trab=st.pob*0.6, emp=st.empC+st.empI;
-  st.demR=Math.round(emp-trab+12); st.demC=Math.round(st.pob*0.25-st.empC+2+4*rutas(s)); st.demI=Math.round(st.pob*0.3-st.empI+6);
+  st.demR=Math.round(emp-trab+12); st.demC=Math.round(st.pob*0.25-st.empC+2+4*rutas(s)+10*Math.min(1,st.aero)); st.demI=Math.round(st.pob*0.3-st.empI+6);
   /* felicidad: promedio en las zonas residenciales, pesado por población */
   var suma=0, peso=0, cubiertos={seg:0,fue:0,sal:0,edu:0}, contMedia=0;
   for(k=0;k<res.length;k++){ i=res[k]; if(!s.nivel[i])continue; var w=POB[s.nivel[i]];
@@ -290,7 +326,7 @@ function calcula(s){
     if(cov.seg[i])cubiertos.seg+=w; if(cov.fue[i])cubiertos.fue+=w; if(cov.sal[i])cubiertos.sal+=w; if(cov.edu[i])cubiertos.edu+=w;
     var f=50+6*srv+Math.min(15,m.feliz[i])-4*m.cont[i]-(st.redE[cE[i]]<1?15:0)-(st.redA[cA[i]]<1?10:0)-3*(s.impuesto-10);
     suma+=Math.max(0,Math.min(100,f))*w; peso+=w; contMedia+=m.cont[i]*w;}
-  var penal=5*s.problemas.length+(s.tick<s.bonoFelizHasta?-s.bonoFeliz:0);
+  var penal=5*s.problemas.length+(s.tick<s.bonoFelizHasta?-s.bonoFeliz:0)+(st.cuartel?2:0);   /* un cuartel en la ciudad inquieta un poco */
   st.felicidad=peso?Math.max(0,Math.min(100,Math.round(suma/peso-penal))):50;
   st.cob={seg:peso?cubiertos.seg/peso:1,fue:peso?cubiertos.fue/peso:1,sal:peso?cubiertos.sal/peso:1,edu:peso?cubiertos.edu/peso:1};
   st.contMedia=peso?contMedia/peso:0;
@@ -334,13 +370,18 @@ function paso(s){
     s.dinero=Math.round((s.dinero+ing-gas-pg.tot)*100)/100;
     /* si después de pagar la deuda la caja queda en rojo, el banco lo anota como impago: la calificación baja un año */
     if(pg.tot>0&&s.dinero<0){s.impagos=(s.impagos||0)+1; s.impagoHasta=s.tick+12*MES; aviso(s,{tipo:"impago"});}
-    aviso(s,{tipo:"mes",ing:ing,gas:gas,deuda:pg.tot,intereses:pg.int});
+    var ex=mesRecursos(s,st);
+    aviso(s,{tipo:"mes",ing:ing,gas:gas,deuda:pg.tot,intereses:pg.int,exp:ex.ingreso,u:ex.unidades});
+    malestarMes(s,st);
   }
   /* problemas: vencen o aparecen */
   s.problemas=s.problemas.filter(function(p){
     if(s.tick<p.vence)return true;
     s.fallidos++; s.dinero-=300; s.bonoFeliz=-8; s.bonoFelizHasta=s.tick+120;
     if(p.k==="incendio"&&p.i>=0&&s.tipo[p.i]){s.nivel[p.i]=0;s.cache=null;}
+    if(PROBLEMAS[p.k].disc){ s.malestar=Math.min(100,(s.malestar||0)+5);
+      if(p.k==="disturbios"){ var zon=[]; for(var q=0;q<N;q++)if((s.tipo[q]==="R"||s.tipo[q]==="C")&&s.nivel[q]>0)zon.push(q);
+        for(var z=0;z<3&&zon.length;z++){var w=zon.splice(Math.floor(s.r()*zon.length),1)[0]; s.nivel[w]--;} s.dinero-=200; s.cache=null; } }
     aviso(s,{tipo:"vence",k:p.k}); return false;
   });
   if(s.segTick%120===60&&s.problemas.length<2)nuevoProblema(s,st);
@@ -363,9 +404,71 @@ function nuevoProblema(s,st){
   s.problemas.push(p); aviso(s,{tipo:"problema",p:p});
 }
 function premio(s,k){
+  /* calmar el malestar dialogando: baja de verdad, y la gente queda más contenta */
+  if(PROBLEMAS[k].disc){ s.malestar=Math.max(0,(s.malestar||0)-(k==="disturbios"?30:k==="huelga"?22:25)*(s.techs.dialogo?1.3:1)); s.bonoFeliz=6; s.bonoFelizHasta=s.tick+240; return; }
   if(k==="apagon")s.bonoMW+=10; else if(k==="sequia")s.bonoAgua+=15; else if(k==="smog"){s.bonoLimpio=Math.min(3,s.bonoLimpio+1);s.cache=null;}
   else if(k==="feria")s.cultura+=15; else{ s.bonoFeliz=6; s.bonoFelizHasta=s.tick+240; }
   s.dinero+=400;
+}
+
+/* ---------- recursos y comercio exterior ----------
+   Cada mina saca cada mes lo que da su yacimiento. Lo que se guarda en «reserva estratégica» da un bono mientras
+   haya existencias (y se gasta un poco cada mes); lo demás se exporta solo, hasta la capacidad de exportación,
+   al precio del mercado, que sube y baja. Puertos y aeropuertos exportan mucho más; el aeropuerto paga mejor el
+   oro y el litio (carga aérea), y cada ruta comercial con una vecina abre mercado. */
+function hayProblema(s,k){for(var i=0;i<s.problemas.length;i++)if(s.problemas[i].k===k)return true; return false;}
+function activo(s,r){ if(!s.reserva||!s.reserva[r]||!s.stock)return false; var q=s.stock[r]||0; return r==="oro"?q>=20:q>=RECURSOS[r].consumo; }
+function frac(x){return x-Math.floor(x);}
+function precioMes(s,r,mes){ var R=RECURSOS[r], v=RVETA[r][3];
+  var tri=1-4*Math.abs(frac(mes/R.ciclo+hash2(s.mseed,v,1))-0.5), sh=hash2(s.mseed^v,Math.floor(mes/4),7)-0.5;
+  return r2(R.precio*(1+0.3*tri+0.3*sh)); }
+function precio(s,r){return precioMes(s,r,Math.floor(s.tick/MES));}
+function precioVenta(s,r){ var st=s.est||calcula(s);
+  return r2(precio(s,r)*(1+0.05*Math.min(5,rutas(s)))*(st.aero&&RECURSOS[r].aereo?1.2:1)*(s.techs.logistica?1.08:1)); }
+function capacidad(s){ var st=s.est||calcula(s); return Math.round((10+30*st.puertos+80*Math.min(2,st.aero)+10*Math.min(5,rutas(s)))*(s.techs.logistica?1.25:1)); }
+function mesRecursos(s,st){
+  var m=mapas(s), r, i, k, out={ingreso:0,unidades:0}, huelga=hayProblema(s,"huelga");
+  s.stock=s.stock||{};
+  /* producción de las minas (desde la industria necesitan electricidad) */
+  for(k=0;k<m.occ.length;k++){ i=m.occ[k]; if(s.tipo[i]!=="m")continue;
+    r=yacimiento(s.mseed,s.cx+Math.floor(i/LADO)-R,s.cy+i%LADO-R); if(!r||RECURSOS[r].era>s.era)continue;
+    var luz=st.sinLuz||st.redE[m.redE.comp[i]]>=0.95;
+    s.stock[r]=(s.stock[r]||0)+Math.round(RECURSOS[r].prod*(luz?1:0.5)*(huelga?0.5:1)*(s.techs.mineria?1.3:1)); }
+  /* las reservas estratégicas gastan un poco cada mes */
+  for(k=0;k<RORDEN.length;k++){ r=RORDEN[k]; if(activo(s,r)&&RECURSOS[r].consumo)s.stock[r]-=RECURSOS[r].consumo; }
+  /* lo demás se exporta, hasta la capacidad que quede este mes */
+  var cap=Math.max(0,capacidad(s)-(s.vendido||0));
+  for(k=0;k<RORDEN.length&&cap>0;k++){ r=RORDEN[k]; if(s.reserva&&s.reserva[r])continue; var q=Math.min(s.stock[r]||0,cap); if(q<=0)continue;
+    var v=r2(q*precioVenta(s,r)); s.stock[r]-=q; cap-=q; out.ingreso=r2(out.ingreso+v); out.unidades+=q; }
+  s.dinero=r2(s.dinero+out.ingreso); s.vendido=0;
+  return out;
+}
+/* ---------- malestar social y orden público ----------
+   El malestar sube con la infelicidad, el desempleo, los impuestos altos, la desigualdad y la represión, y baja
+   cuando se resuelven sus causas. Protestar es un derecho: la policía no la evita. Si el malestar desborda la
+   capacidad de mantener el orden (policía y ejército) hay disturbios. Dialogar (acertar una pregunta) lo baja de
+   verdad; imponer el orden termina el conflicto enseguida, pero deja resentimiento. */
+function ordenDe(s,st){st=st||s.est||calcula(s); return Math.round((st.cob?st.cob.seg:0)*30+(st.cuartel?EDIF.X.orden:0));}
+function causas(s,st){
+  st=st||s.est||calcula(s);
+  var trab=st.pob*0.6, emp=st.empC+st.empI, des=trab>0?Math.max(0,(trab-emp)/trab):0, rica=st.pob?st.pobRica/st.pob:0;
+  var otros=s.problemas.filter(function(p){return !PROBLEMAS[p.k].disc;}).length;
+  return {felicidad:Math.round(0.9*Math.max(0,62-st.felicidad)), desempleo:Math.round(70*des), impuestos:4*Math.max(0,s.impuesto-10),
+    desigualdad:st.pob>150?Math.round(30*rica*(1-rica)):0, problemas:4*otros, represion:(s.represionHasta||0)>s.tick?10:0, des:des};
+}
+function malestarMes(s,st){
+  var c=causas(s,st), obj=Math.min(100,c.felicidad+c.desempleo+c.impuestos+c.desigualdad+c.problemas+c.represion), m=s.malestar||0;
+  m+=(obj-m)*(s.techs.dialogo&&obj<m?0.5:0.35); s.malestar=Math.round(Math.max(0,Math.min(100,m))*10)/10;
+  if(st.pob<60)return;
+  var orden=ordenDe(s,st);
+  if(s.malestar>=50)discordia(s,"protesta");
+  if(s.malestar>=60&&s.era>=3&&(c.des>0.12||s.impuesto>=12))discordia(s,"huelga");
+  if(s.malestar-orden*0.5>=55)discordia(s,"disturbios");
+}
+function discordia(s,k){
+  if(hayProblema(s,k))return;
+  var p={id:s.nextProb++,k:k,desde:s.tick,vence:s.tick+(k==="disturbios"?90:150),i:-1,intentos:0};
+  s.problemas.push(p); aviso(s,{tipo:"problema",p:p});
 }
 
 /* ---------- deuda pública: pedir prestado para invertir, como una alcaldía real ----------
@@ -381,7 +484,9 @@ var DEUDA={
 var CALIF=["AAA","AA","A","BBB","BB","B"], PRIMA=[0,0.005,0.01,0.02,0.04,0.07];
 function r2(x){return Math.round(x*100)/100;}
 function ingresos(s,st){
-  return (st.pobPond*0.12+st.empCPond*0.15+st.empI*0.12)*(s.impuesto/10)*(s.techs.fiscal?1.1:1)*(1+0.08*Math.min(5,rutas(s)));
+  var huelga=hayProblema(s,"huelga"), protesta=hayProblema(s,"protesta"), mal=(s.malestar||0);
+  var ind=st.empI*0.12*(activo(s,"hierro")?1.2:1)*(huelga?0.5:1), com=st.empCPond*0.15*(activo(s,"petroleo")?1.1:1)*(protesta?0.85:1)*(1-mal/500);
+  return (st.pobPond*0.12+com+ind)*(s.impuesto/10)*(s.techs.fiscal?1.1:1)*(1+0.08*Math.min(5,rutas(s)))*(1+0.06*Math.min(1,st.aero||0));
 }
 function deudaViva(s){var t=0; (s.deuda||[]).forEach(function(d){t+=d.cap;}); return r2(t);}
 /* lo que toca pagar el próximo mes (intereses + capital) */
@@ -393,6 +498,7 @@ function calificacion(s,st){
   if((s.impagoHasta||0)>s.tick)n+=2;
   if(s.dinero<0)n++;
   if(n>0&&((s.temas.economia||[0])[0]>=3))n--;   /* una alcaldía que sabe de economía inspira confianza */
+  if(n>0&&activo(s,"oro"))n--;                    /* las reservas de oro respaldan a la ciudad */
   return Math.min(5,n);
 }
 /* lo que ofrece el banco (o el mercado, para los bonos) hoy: tasa, cuánto se puede pedir y por qué no */
@@ -422,7 +528,7 @@ function pagaDeuda(s){
 }
 
 /* ---------- acciones ---------- */
-function costo(s,t,dx,dy){var e=EDIF[t]; var c=e.costo*(t==="c"&&s.techs.transporte?0.5:1); if(terr(s,dx,dy)==="f")c+=15; return c;}
+function costo(s,t,dx,dy){var e=EDIF[t]; var c=e.costo*(t==="c"&&s.techs.transporte?0.5:1); if(terr(s,dx,dy)==="f")c+=15; if(activo(s,"piedra"))c=Math.round(c*0.9*100)/100; return c;}
 function act(s,a,b,c,d,e,f){
   var i, t;
   if(a==="b"){                       /* construir: b,c = casilla; d = qué */
@@ -433,6 +539,7 @@ function act(s,a,b,c,d,e,f){
     if(E.tech&&!s.techs[E.tech])return false;
     if(E.era>s.era)return false;
     if(E.junto){var ok=false;[[1,0],[-1,0],[0,1],[0,-1]].forEach(function(v){if(terr(s,b+v[0],c+v[1])===E.junto)ok=true;}); if(!ok)return false;}
+    if(t==="m"){var yr=yacimiento(s.mseed,s.cx+b,s.cy+c); if(!yr||RECURSOS[yr].era>s.era)return false;}
     var cc=costo(s,t,b,c); if(s.dinero<cc)return false;
     s.dinero-=cc; s.tipo[i]=t; s.nivel[i]=0; if(t!=="c")s.cable[i]=0;   /* lo construido ya conduce: el tendido sobra */
     s.est=null; s.cache=null; aviso(s,{tipo:"construye",i:i,t:t}); return true;
@@ -470,6 +577,21 @@ function act(s,a,b,c,d,e,f){
     var dd=(s.deuda||[]).filter(function(x){return x.id===b;})[0]; if(!dd)return false;
     var cst=r2(dd.cap*(1+DEUDA[dd.k].comision)); if(s.dinero<cst)return false;
     s.dinero=r2(s.dinero-cst); s.deuda=s.deuda.filter(function(x){return x!==dd;}); s.est=null; aviso(s,{tipo:"devuelta",k:dd.k,costo:cst}); return true;
+  }
+  if(a==="s"){                       /* vender ya: b unidades del recurso d, dentro de la capacidad de exportación del mes */
+    var RR=RECURSOS[d]; if(!RR||!(b>=1&&b<=1e6))return false; s.stock=s.stock||{};
+    if((s.stock[d]||0)<b||b>capacidad(s)-(s.vendido||0))return false;
+    var vv=r2(b*precioVenta(s,d)); s.stock[d]-=b; s.vendido=(s.vendido||0)+b; s.dinero=r2(s.dinero+vv); aviso(s,{tipo:"venta",r:d,q:b,monto:vv}); return true;
+  }
+  if(a==="g"){                       /* política de un recurso: b=1 reserva estratégica, b=0 exportar */
+    if(!RECURSOS[d]||(b!==0&&b!==1))return false; s.reserva=s.reserva||{}; s.reserva[d]=b===1; s.est=null; s.cache=null; return true;
+  }
+  if(a==="o"){                       /* imponer el orden en una protesta, huelga o disturbio (b = el problema) */
+    var po=s.problemas.filter(function(x){return x.id===b;})[0]; if(!po||!PROBLEMAS[po.k].disc)return false;
+    if(ordenDe(s)<15||s.dinero<200)return false;
+    s.dinero-=200; s.problemas=s.problemas.filter(function(x){return x!==po;});
+    s.malestar=Math.max(0,(s.malestar||0)-8); s.bonoFeliz=-6; s.bonoFelizHasta=s.tick+240; s.represion=(s.represion||0)+1; s.represionHasta=s.tick+12*MES;
+    s.est=null; aviso(s,{tipo:"orden",k:po.k}); return true;
   }
   if(a==="n"){ s.nombre=String(d||"").replace(/\s+/g," ").trim().slice(0,30)||s.nombre; return true; }
   if(a==="q"){                       /* pregunta: b opción, c no se usa, d id, e «t:tech» o «p:problema», f si acertó */
@@ -538,9 +660,11 @@ function repite(estado,nuevo,seg,envio){
 }
 function resumen(s){var st=s.est||calcula(s);
   return {puntaje:puntaje(s),pob:st.pob,felicidad:st.felicidad,conocimiento:s.conocimiento,cultura:Math.round(s.cultura),radio:radio(s),
-          dinero:Math.round(s.dinero),deuda:Math.round(deudaViva(s)),techs:Object.keys(s.techs).length,resueltos:s.resueltos,temas:s.temas,era:s.era,tratados:rutas(s)};}
+          dinero:Math.round(s.dinero),deuda:Math.round(deudaViva(s)),malestar:Math.round(s.malestar||0),techs:Object.keys(s.techs).length,resueltos:s.resueltos,temas:s.temas,era:s.era,tratados:rutas(s)};}
 
 G.AxCiudad={TICK:TICK,R:R,LADO:LADO,N:N,SEPARA:SEPARA,MES:MES,MAX_SEG:MAX_SEG,EDIF:EDIF,TECHS:TECHS,PROBLEMAS:PROBLEMAS,TEMAS:TEMAS,ERAS:ERAS,INFLU:INFLU,COSTO_RED:COSTO_RED,riqueza:riqueza,
+  RECURSOS:RECURSOS,RORDEN:RORDEN,yacimiento:yacimiento,precio:precio,precioMes:precioMes,precioVenta:precioVenta,capacidad:capacidad,activo:activo,
+  ordenDe:ordenDe,causas:causas,hayProblema:hayProblema,
   DEUDA:DEUDA,CALIF:CALIF,oferta:oferta,calificacion:calificacion,deudaViva:deudaViva,servicioDeuda:servicioDeuda,ingresos:ingresos,cuotaFrancesa:cuotaFrancesa,
   influencia:influencia,rutas:rutas,tope:tope,requisitos:requisitos,
   POB:POB,EMPC:EMPC,EMPI:EMPI,

@@ -480,11 +480,86 @@ function servicio(o,t,era,n,now){
       o.arbol(-0.25,-0.25,0.8); o.arbol(0.27,0.25,0.75,1); o.arbol(0.25,-0.27,0.7); o.arbusto(-0.28,0.28,0.09); o.caja("madera",null,0.15,0.1,0.14,0.04,0.03,0.025,"#795548"); } break;
     case "Z": o.cil("piedra","piscina",0,0,0.28,0,0.05,"#b0bec5",null,18); o.cil("piedra",null,0,0,0.04,0.05,0.12,"#cfd8dc",null,8); o.brillo(0,0,0.2,"#e1f5fe",5);
       o.arbusto(-0.4,-0.4,0.07); o.arbusto(0.4,-0.4,0.07); o.arbusto(-0.4,0.4,0.07); o.arbusto(0.4,0.4,0.07); break;
+    case "m": mina3d(o,o.yac); break;
+    case "K": puerto3d(o); break;
+    case "A": aeropuerto3d(o); break;
+    case "X": o.suelo("plano",0,0,0.98,0.98,"#b8ad8a",0.001);
+      [[0,-0.47,0.96,0.04],[0,0.47,0.96,0.04],[-0.47,0,0.04,0.96],[0.47,0,0.04,0.96]].forEach(function(w){o.caja("estuco","plano",w[0],w[1],w[2],w[3],0,P(4),"#8a8f6a");});
+      y=o.caja("estuco",null,-0.12,-0.1,0.5,0.4,0,P(10),"#7a835a"); o.dos("teja","estuco",-0.12,-0.1,0.5,0.4,y,P(4),"#4e5a32","#7a835a");
+      o.caja("piedra","plano",0.36,-0.36,0.12,0.12,0,P(16),"#8a8f6a"); o.caja("solido","solido",0.36,-0.36,0.16,0.16,P(16),0.02,"#4e5a32");
+      for(var tq=0;tq<2;tq++){o.caja("solido","solido",0.18+tq*0.2,0.28,0.16,0.08,0.01,0.06,"#4f5b34"); o.caja("solido","solido",0.24+tq*0.2,0.28,0.06,0.07,0.07,0.04,"#3e4829");}
+      o.bandera(-0.36,0.34,P(22),"#2e7d32"); break;
     case "O": { o.caja("piedra","plano",0,0,0.62,0.62,0,P(4),"#d7ccc8"); var L3=o.L, b0=o.yb+P(4), bt=o.yb+P(40), w0=0.09, w1=0.05, cx=o.x, cz=o.z, cc=lin("#efe6d2");
       [[1,0],[0,1],[-1,0],[0,-1]].forEach(function(v){ var px=v[1], pz=-v[0];
         quad(L3,"piedra",[cx+v[0]*w0+px*w0,b0,cz+v[1]*w0+pz*w0],[cx+v[0]*w0-px*w0,b0,cz+v[1]*w0-pz*w0],[cx+v[0]*w1-px*w1,bt,cz+v[1]*w1-pz*w1],[cx+v[0]*w1+px*w1,bt,cz+v[1]*w1+pz*w1],[0,0],[0.2,0],[0.2,2],[0,2],cc,[v[0],0.1,v[1]]); });
       cono(L3,"brillo",cx,cz,0.072,bt,0.1,lin("#d4af37"),4); } break;
   }
+}
+
+/* minas según el yacimiento */
+function mina3d(o,r){
+  var cR=r?RECURSOS3[r]:"#999";
+  if(r==="litio"){ o.suelo("plano",0,0,0.98,0.98,"#e8eef0",0.001);
+    [["#7fd8cf",-0.24,-0.22],["#a8ebe4",0.18,-0.22],["#5cc6bd",-0.24,0.2],["#d6f5f2",0.18,0.2]].forEach(function(q){ o.caja("solido","solido",q[1],q[2],0.4,0.36,0,0.025,"#f4f4f4"); o.suelo("piscina",q[1],q[2],0.36,0.32,"#ffffff",0.027); });
+    o.caja("metal","plano",0.42,0.42,0.12,0.12,0,P(6),"#cfd8dc"); return; }
+  if(r==="petroleo"){ o.suelo("plano",0,0,0.98,0.98,"#8d8473",0.001);
+    o.caja("metal","plano",0,0,0.16,0.28,0,0.05,"#4a5560"); o.caja("metal",null,-0.03,0,0.025,0.025,0.05,P(12),"#37474f"); o.caja("metal",null,0.03,0,0.025,0.025,0.05,P(12),"#37474f");
+    o.caja("metal","metal",0,0,0.5,0.05,0.05+P(12),0.05,"#263238"); o.caja("metal","metal",-0.26,0,0.07,0.07,0.05+P(12)-0.08,0.13,"#37474f");
+    o.cil("brillo","plano",0.3,0.3,0.14,0,P(10),"#b0bec5","#cfd8dc",14); o.disco("solido",-0.3,0.25,0.12,"#141414"); return; }
+  o.suelo("plano",0,0,0.98,0.98,"#8a7f72",0.001);
+  o.cono("solido",-0.22,0.2,0.24,0,0.2,cR,9); o.cono("solido",-0.05,0.32,0.14,0,0.12,cR,8);
+  if(r==="piedra"){ for(var k=0;k<4;k++)o.caja("piedra","piedra",0.15+(k%2)*0.17,-0.2+Math.floor(k/2)*0.17,0.15,0.15,Math.floor(k/3)*0.15,0.15,"#bdbdbd");
+    o.caja("metal",null,0.32,0.25,0.02,0.02,0,P(16),"#ffb300"); o.caja("metal","metal",0.2,0.25,0.26,0.02,P(16),0.02,"#ffb300"); return; }
+  /* castillete de una mina subterránea */
+  var h=P(22); o.caja("metal",null,0.12,-0.18,0.03,0.03,0,h,"#5d4037"); o.caja("metal",null,0.32,-0.18,0.03,0.03,0,h,"#5d4037");
+  o.caja("metal",null,0.12,0.02,0.03,0.03,0,h*0.8,"#5d4037"); o.caja("metal",null,0.32,0.02,0.03,0.03,0,h*0.8,"#5d4037");
+  o.cil("metal","metal",0.22,-0.18,0.07,h-0.02,0.03,"#3e2723",null,12);
+  o.caja("madera",null,0.28,0.3,0.3,0.24,0,P(7),"#8d6e63"); o.dos("teja","madera",0.28,0.3,0.3,0.24,P(7),P(3),"#5d4037","#8d6e63");
+  if(r==="carbon")o.humo(0.4,0.3,P(12),true);
+}
+var RECURSOS3={piedra:"#9e9e9e",oro:"#e6b422",hierro:"#9b4a2a",carbon:"#2b2b2b",petroleo:"#141414",litio:"#dff3f2"};
+function puerto3d(o){
+  var api=o.api, dir=[0,1];
+  [[1,0],[0,1],[-1,0],[0,-1]].forEach(function(v){ if(api&&api.terr(Math.round(o.x)+v[0],Math.round(o.z)+v[1])==="w")dir=v; });
+  o.suelo("plano",0,0,0.98,0.98,"#a29a8a",0.001);
+  var px=dir[0]*0.55, pz=dir[1]*0.55, w=dir[0]?0.7:0.3, d=dir[0]?0.3:0.7;
+  o.caja("madera","madera",px,pz,w,d,-0.06,0.07,"#8d6e63","#a1887f");
+  for(var k=0;k<6;k++){ var cx=-0.3+(k%3)*0.16, cz=-0.25+Math.floor(k/3)*0.12; o.caja("metal","metal",cx-dir[0]*0.1,cz-dir[1]*0.1,0.14,0.08,Math.floor(k/4)*0.08,0.08,["#c62828","#1565c0","#2e7d32","#f9a825","#6a1b9a","#ef6c00"][k]); }
+  var gx=dir[0]*0.3, gz=dir[1]*0.3; o.caja("metal",null,gx-0.1*dir[1],gz-0.1*dir[0],0.03,0.03,0,P(22),"#ffb300"); o.caja("metal",null,gx+0.1*dir[1],gz+0.1*dir[0],0.03,0.03,0,P(22),"#ffb300");
+  o.caja("metal","metal",gx+dir[0]*0.15,gz+dir[1]*0.15,dir[0]?0.55:0.06,dir[0]?0.06:0.55,P(22),0.04,"#ffb300");
+  /* el barco amarrado en el agua */
+  var bx=dir[0]*1.05+dir[1]*0.1, bz=dir[1]*1.05+dir[0]*0.1, bw=dir[0]?0.22:0.75, bd=dir[0]?0.75:0.22;
+  o.caja("solido","solido",bx,bz,bw,bd,-0.04,0.1,"#1e3a5f","#8d6e63"); o.caja("estuco","plano",bx-dir[1]*0.25,bz-dir[0]*0.25,bw*0.7,bd*0.25+(dir[0]?0:0),0.06,0.12,"#f5f5f5");
+  for(var c=0;c<3;c++)o.caja("metal","metal",bx+dir[1]*(c*0.13-0.02),bz+dir[0]*(c*0.13-0.02),dir[0]?0.16:0.1,dir[0]?0.1:0.16,0.06,0.06,["#c62828","#2e7d32","#1565c0"][c]);
+}
+function aeropuerto3d(o){
+  o.suelo("cesped",0,0,0.98,0.98,"#7fae5a",0.001);
+  o.suelo("asfalto",0,0.18,0.98,0.26,"#4b5058",0.003);
+  for(var k=0;k<4;k++)o.suelo("marca",-0.38+k*0.24,0.18,0.12,0.025,"#f4f4f4",0.006);
+  o.suelo("asfalto",0,-0.12,0.7,0.3,"#6b7078",0.002);
+  var y=o.caja("cristal","plano",-0.18,-0.32,0.5,0.22,0,P(9),"#7fb3df","#dfe6ea"); o.caja("solido","solido",-0.18,-0.32,0.54,0.26,y,0.02,"#cfd8dc");
+  o.cil("estuco","plano",0.36,-0.34,0.05,0,P(26),"#e8ecef",null,10); o.cil("cristal","plano",0.36,-0.34,0.09,P(26),P(5),"#4f86c6","#cfd8dc",10);
+  o.brillo(0.36,-0.34,P(31)+0.02,"#ff3030",1);
+  avionEstatico(o,0.1,-0.1);
+  o.meta.avion.push(o.x,o.yb,o.z,o.n);
+}
+/* un avión de pasajeros: fuselaje, alas y cola (estático en la plataforma) */
+function avionEstatico(o,dx,dz){
+  o.caja("estuco","estuco",dx,dz,0.32,0.05,0.02,0.05,"#f5f7fa"); o.caja("estuco","estuco",dx,dz,0.07,0.34,0.035,0.012,"#e3e8ee");
+  o.caja("estuco","estuco",dx-0.14,dz,0.05,0.12,0.05,0.008,"#e3e8ee"); o.caja("solido","solido",dx-0.15,dz,0.04,0.008,0.06,0.07,"#1565c0");
+}
+/* un yacimiento sin explotar: piedras con vetas, un charco de petróleo o costras de sal */
+function veta3d(L,wx,wy,es,r,sd){
+  var h=function(u,v){var a=u+0.5,b=v+0.5; return (es[0]*(1-a)*(1-b)+es[1]*a*(1-b)+es[2]*a*b+es[3]*(1-a)*b)*LV;};
+  if(r==="petroleo"){ disco(L,"brillo",wx+0.1,wy+0.05,0.13,h(0.1,0.05)+0.012,lin("#2a2420"),10); disco(L,"solido",wx-0.18,wy-0.12,0.06,h(-0.18,-0.12)+0.012,lin("#3a322a"),8); return; }
+  if(r==="litio"){ for(var k=0;k<3;k++){var u=-0.25+k*0.25, v=(k%2)*0.2-0.1; disco(L,"solido",wx+u,wy+v,0.16,h(u,v)+0.01,lin("#f4f7f7"),10);} return; }
+  var col=lin(RECURSOS3[r]), gris=lin("#7d7d7d");
+  for(var q=0;q<4;q++){ var uu=-0.25+(q%2)*0.4+hs(sd,q,1)*0.1, vv=-0.2+Math.floor(q/2)*0.35, rr=0.07+0.05*hs(sd,q,2);
+    copaL(L,"solido",wx+uu,h(uu,vv)+rr*0.4,wy+vv,rr,rr*0.7,q%2?col:gris,sd+q); }
+}
+function copaL(L,k,cx,cy,cz,rx,ry,col,sd){
+  var I=icosa(); var vs=I.v.map(function(p,i){var j=0.8+0.35*hs(sd,i,5); return [cx+p[0]*rx*j,cy+p[1]*ry*j,cz+p[2]*rx*j];});
+  I.f.forEach(function(f){ var n=nrm(vs[f[0]],vs[f[1]],vs[f[2]]); for(var q=0;q<3;q++)v3(L,k,vs[f[q]],n,[0,0],col); });
 }
 
 /* ---------- calles ---------- */
@@ -611,7 +686,7 @@ V.firma=function(kx,ky){
   return h;
 };
 V.contenido=function(kx,ky){
-  var api=this.api, L=new Lotes(), meta={humo:[],brillo:[],molino:[],cables:[]}, M=this.M;
+  var api=this.api, L=new Lotes(), meta={humo:[],brillo:[],molino:[],cables:[],avion:[]}, M=this.M;
   for(var x=0;x<CH;x++)for(var y=0;y<CH;y++){
     var wx=kx*CH+x, wy=ky*CH+y, c=api.celda(wx,wy), ter=api.terr(wx,wy);
     var es=[api.vert(wx,wy),api.vert(wx+1,wy),api.vert(wx+1,wy+1),api.vert(wx,wy+1)], n=hs(wx,wy,7);
@@ -621,12 +696,13 @@ V.contenido=function(kx,ky){
     else if(t){
       var mx=Math.max(es[0],es[1],es[2],es[3]), mn=Math.min(es[0],es[1],es[2],es[3]), yb=mx*LV;
       if(mx>mn)caja(L,"cimiento","cimiento",wx,wy,0.99,0.99,mn*LV-0.06,(mx-mn)*LV+0.06,lin("#a88a5e"),lin("#9a8a6a"),0,0);
-      var o=new Obra(L,meta,wx,wy,yb,n,(wx*928371+wy*1237)|0), vari=Math.floor(n*4)%4;
+      var o=new Obra(L,meta,wx,wy,yb,n,(wx*928371+wy*1237)|0), vari=Math.floor(n*4)%4; o.api=api; if(t==="m")o.yac=api.yac(wx,wy);
       if(t==="R")viviendas(o,c.l,c.era,c.rq,vari,n);
       else if(t==="C")comercio(o,c.l,c.era,c.rq,vari,n);
       else if(t==="I")industria(o,c.l,c.era,n);
       else servicio(o,t,c.era,n);
     }
+    else if(api.yac(wx,wy)){ veta3d(L,wx,wy,es,api.yac(wx,wy),(wx*31+wy*7)|0); }
     else if(ter==="f"){ var hm=(es[0]+es[1]+es[2]+es[3])/4*LV, k2=hs(wx,wy,5);
       arbol(L,wx-0.18+k2*0.12,hm,wy-0.15,1.15,(wx*31+wy*17)|0,k2<0.55?1:0);
       if(k2>0.3)arbol(L,wx+0.22,hm,wy+0.2-k2*0.1,0.95,(wx*13+wy*7)|0,k2<0.75?0:1); }
@@ -686,6 +762,12 @@ V.dinamicos=function(){
     quad(L,"solido",[0,ca*0-sa*(-w),sa*0+ca*(-w)],[0,ca*l-sa*(-w*0.4),sa*l+ca*(-w*0.4)],[0,ca*l-sa*(w*0.4),sa*l+ca*(w*0.4)],[0,ca*0-sa*w,sa*0+ca*w],[0,0],[1,0],[1,1],[0,1],lin("#f5f7fa"),[-1,0,0]); }
   var b=L.m.solido, ga=new T.BufferGeometry(); ga.setAttribute("position",new T.Float32BufferAttribute(b.p,3)); ga.setAttribute("normal",new T.Float32BufferAttribute(b.n,3)); ga.setAttribute("color",new T.Float32BufferAttribute(b.c,3)); ga.setAttribute("uv",new T.Float32BufferAttribute(b.u,2));
   this.aspas=new T.InstancedMesh(ga,this.M.solido,80); this.aspas.count=0; this.aspas.frustumCulled=false; this.escena.add(this.aspas);
+  /* aviones: fuselaje, alas y cola, para los que despegan y aterrizan */
+  var La=new Lotes(), bl=lin("#f5f7fa"), az=lin("#1565c0");
+  caja(La,"solido","solido",0,0,0.5,0.07,0,0.07,bl,bl,0,0); caja(La,"solido","solido",0.02,0,0.1,0.52,0.025,0.014,bl,bl,0,0);
+  caja(La,"solido","solido",-0.22,0,0.07,0.18,0.06,0.01,bl,bl,0,0); caja(La,"solido","solido",-0.23,0,0.07,0.012,0.06,0.1,az,az,0,0);
+  var bb=La.m.solido, gv=new T.BufferGeometry(); gv.setAttribute("position",new T.Float32BufferAttribute(bb.p,3)); gv.setAttribute("normal",new T.Float32BufferAttribute(bb.n,3)); gv.setAttribute("color",new T.Float32BufferAttribute(bb.c,3)); gv.setAttribute("uv",new T.Float32BufferAttribute(bb.u,2));
+  this.aviones=new T.InstancedMesh(gv,this.M.solido,8); this.aviones.count=0; this.aviones.frustumCulled=false; this.aviones.castShadow=true; this.escena.add(this.aviones);
   /* coches: carrocería y cabina */
   var cuerpo=new T.BoxGeometry(1,1,1); cuerpo.translate(0,0.5,0);
   var mc=new T.MeshStandardMaterial({roughness:0.35,metalness:0.4}), mv=new T.MeshStandardMaterial({color:0x22313f,roughness:0.15,metalness:0.6});
@@ -721,6 +803,13 @@ V.mueve=function(t,noche,era,coches){
   var mm=new T.Matrix4(), ro=new T.Matrix4(), na=0, ej=new T.Vector3(1,0,1).normalize(), gira=new T.Matrix4().makeRotationY(-Math.PI/4);
   vis.forEach(function(m){ for(var i=0;i<m.molino.length&&na<80;i+=4){ ro.makeRotationAxis(ej,t/500+m.molino[i+3]*6); mm.copy(ro).multiply(gira); mm.setPosition(m.molino[i],m.molino[i+1],m.molino[i+2]); self.aspas.setMatrixAt(na++,mm); } });
   this.aspas.count=na; this.aspas.instanceMatrix.needsUpdate=true;
+  /* aviones: dan vueltas sobre su aeropuerto, bajan y suben */
+  var nv=0, qa=new T.Quaternion(), qb=new T.Quaternion(), ea=new T.Euler(), sc1=new T.Vector3(1,1,1), pa=new T.Vector3();
+  vis.forEach(function(m){ for(var i=0;i<m.avion.length&&nv<8;i+=4){ var th=t/7000+m.avion[i+3]*6.28, r=5, alt=1.2+0.9*(0.5+0.5*Math.sin(t/9000+m.avion[i+3]*3));
+    pa.set(m.avion[i]+Math.cos(th)*r,m.avion[i+1]+alt,m.avion[i+2]+Math.sin(th)*r); var dx=-Math.sin(th), dz=Math.cos(th);
+    ea.set(0.35,Math.atan2(-dz,dx),0,"YXZ"); qa.setFromEuler(ea); mm.compose(pa,qa,sc1); self.aviones.setMatrixAt(nv++,mm);
+    if(noche>0.3&&q<1195){Lp[q*3]=pa.x; Lp[q*3+1]=pa.y; Lp[q*3+2]=pa.z; Lc[q*3]=1; Lc[q*3+1]=0.2; Lc[q*3+2]=0.2; Lt[q]=0.12; La[q]=Math.floor(t/500)%2?0.9:0.2; q++;} } });
+  this.aviones.count=nv; this.aviones.instanceMatrix.needsUpdate=true; lp.setDrawRange(0,q); lp.attributes.position.needsUpdate=true; lp.attributes.color.needsUpdate=true; lp.attributes.tam.needsUpdate=true; lp.attributes.alfa.needsUpdate=true;
   /* coches: de la carreta al coche eléctrico */
   var nc=0, q4=new T.Quaternion(), sc=new T.Vector3(), po=new T.Vector3(), col=new T.Color(), up=new T.Vector3(0,1,0);
   coches.forEach(function(c){ if(nc>=64)return; var ang=Math.atan2(-c.dz,c.dx); q4.setFromAxisAngle(up,ang);

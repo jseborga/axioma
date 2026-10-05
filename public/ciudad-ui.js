@@ -70,13 +70,14 @@ var GRUPOS=[
   {k:"zonas",ico:"🏘️",nom:"Zonas",t:["R","C","I"]},
   {k:"energia",ico:"⚡",nom:"Energía",t:["e","w","s","h"]},
   {k:"agua",ico:"💧",nom:"Agua",t:["b","d"]},
+  {k:"recursos",ico:"⛏️",nom:"Recursos",t:["m","K","A"]},
   {k:"redes",ico:"🔌",nom:"Redes",red:true},
-  {k:"servicios",ico:"🚓",nom:"Servicios",t:["p","f","H","k"]},
+  {k:"servicios",ico:"🚓",nom:"Servicios",t:["p","f","H","k","X"]},
   {k:"cultura",ico:"🎭",nom:"Cultura",t:["L","Z","P","T","M","u","O"]},
   {k:"x",ico:"🧨",nom:"Demoler"},
   {k:"info",ico:"🔍",nom:"Mirar"}
 ];
-var ICO={c:"🛣️",R:"🏠",C:"🏬",I:"🏭",e:"🏭",w:"🌬️",s:"☀️",h:"🌊",b:"🚰",d:"♻️",p:"🚓",f:"🚒",H:"🏥",k:"🏫",u:"🎓",L:"📚",M:"🏛️",T:"🎭",P:"🌳",Z:"⛲",O:"🗿"};
+var ICO={c:"🛣️",R:"🏠",C:"🏬",I:"🏭",e:"🏭",w:"🌬️",s:"☀️",h:"🌊",b:"🚰",d:"♻️",p:"🚓",f:"🚒",H:"🏥",k:"🏫",u:"🎓",L:"📚",M:"🏛️",T:"🎭",P:"🌳",Z:"⛲",O:"🗿",m:"⛏️",K:"⚓",A:"✈️",X:"🪖"};
 var DESC={
   c:"Las zonas solo crecen junto a una calle. Arrastra para trazar en línea.",
   R:"Viviendas. Crecen si tienen calle, luz, agua, servicios y demanda (barra R).",
@@ -88,9 +89,15 @@ var DESC={
   p:"Seguridad en un radio de 9.",f:"Protege de incendios en un radio de 9.",H:"Salud en un radio de 10 (13 con Salud pública).",
   k:"Educación en un radio de 9: las zonas educadas llegan más alto.",u:"Educación en un radio de 14 y +4 de cultura.",
   L:"+1 de cultura: la cultura amplía el territorio.",M:"+3 de cultura y felicidad.",T:"+2 de cultura y mucha felicidad.",
-  P:"Felicidad y aire limpio alrededor.",Z:"Felicidad y un poco de cultura.",O:"+8 de cultura y gran felicidad."
+  P:"Felicidad y aire limpio alrededor.",Z:"Felicidad y un poco de cultura.",O:"+8 de cultura y gran felicidad.",
+  m:"Sobre un yacimiento (capa 🗺️ Recursos): saca piedra, oro, hierro, carbón, petróleo o litio cada mes. Da empleo, pero contamina.",
+  K:"Junto al agua: +30 de capacidad de exportación por mes y empleo.",
+  A:"+80 de capacidad de exportación, paga un 20 % más el oro y el litio (carga aérea), atrae turismo y comercio. Hace ruido alrededor.",
+  X:"El ejército: seguridad en un radio de 14 y +30 de capacidad de mantener el orden. Caro, y a la gente no le gusta verlo (−2 de felicidad)."
 };
-var CAPAS=[["","Sin capa"],["cont","Contaminación"],["seg","Seguridad"],["fue","Bomberos"],["sal","Salud"],["edu","Educación"],["feliz","Ocio"],["valor","Valor del suelo"],["luz","Electricidad"],["agua","Red de agua"]];
+function hexA(h,a){var n=parseInt(h.slice(1),16); return "rgba("+(n>>16)+","+((n>>8)&255)+","+(n&255)+","+a+")";}
+function precioTxt(p){return (Math.round(p*10)/10).toString().replace(".",",");}
+var CAPAS=[["","Sin capa"],["cont","Contaminación"],["seg","Seguridad"],["fue","Bomberos"],["sal","Salud"],["edu","Educación"],["feliz","Ocio"],["valor","Valor del suelo"],["luz","Electricidad"],["agua","Red de agua"],["recursos","Recursos"]];
 var MISIONES=[
   ["Traza una calle",function(s,st){return st.calles>=1;}],
   ["Pon una zona residencial junto a la calle",function(s,st){return st.R>=1;}],
@@ -205,6 +212,7 @@ function monta(ent){
       '<span class="cs-st" id="cs-ag-w" title="Agua: consumo / capacidad">💧 <b id="cs-ag"></b></span>'+
       '<span class="cs-st" title="Cultura (amplía el territorio)">🎭 <b id="cs-cul"></b></span>'+
       '<span class="cs-st" title="Respuestas correctas">🧠 <b id="cs-con"></b></span>'+
+      '<button type="button" class="cs-st cs-malw" id="cs-mal-w" title="Malestar social: toca para ver sus causas" hidden>😠 <b id="cs-mal"></b></button>'+
       '<span class="cs-rci" title="Demanda: Residencial, Comercial, Industrial"><i id="cs-dR"></i><i id="cs-dC"></i><i id="cs-dI"></i><small>R C I</small></span>'+
     '</div>'+
     '<div class="cs-obj" id="cs-obj"></div>'+
@@ -218,6 +226,7 @@ function monta(ent){
         '<button type="button" id="cs-inv"><span>🔬</span><small>Investigar</small></button>'+
         '<button type="button" id="cs-prob"><span>⚠️</span><small>Problemas</small><em id="cs-nprob" hidden></em></button>'+
         '<button type="button" id="cs-vec"><span>🌍</span><small>Vecinos</small></button>'+
+        '<button type="button" id="cs-com"><span>💹</span><small>Comercio</small></button>'+
         '<button type="button" id="cs-ayu"><span>🏛️</span><small>Alcaldía</small></button></div>'+
       '<div class="cs-capa-n" id="cs-capa-n" hidden></div>'+
       '<div class="cs-info" id="cs-info" hidden></div>'+
@@ -308,10 +317,12 @@ function eventos(now){
   var j=J, s=j.s, ev=s.ev||[]; s.ev=[];
   ev.forEach(function(e){
     if(e.tipo==="crece"){ if(j.chispas.length<30)j.chispas.push({i:e.i,t0:now}); if(Math.random()<0.15)SON.crece(); }
-    else if(e.tipo==="mes"){ var d=e.ing-e.gas-(e.deuda||0); j.ultMes=e; flota((d>=0?"+":"")+fmt(d)+" $",d>=0?"#2e7d32":"#c62828"); if(d>0)SON.mes(); }
+    else if(e.tipo==="mes"){ var d=e.ing-e.gas-(e.deuda||0)+(e.exp||0); j.ultMes=e; flota((d>=0?"+":"")+fmt(d)+" $",d>=0?"#2e7d32":"#c62828"); if(d>0)SON.mes(); }
     else if(e.tipo==="prestamo"){ SON.mes(); msg((e.k==="o"?"📜 Bonos emitidos: ":"🏦 Préstamo firmado: ")+"+"+fmt(e.monto)+" $ para invertir. Se devuelve cada mes con intereses (🏛️ Alcaldía → 💳).",6000); }
     else if(e.tipo==="saldada"){ msg("✅ "+A.DEUDA[e.k].nom+" de "+fmt(e.monto)+" $ pagado del todo. Costó "+fmt(e.intereses)+" $ de intereses.",6000); }
     else if(e.tipo==="devuelta"){ msg("✅ Deuda devuelta antes de tiempo: "+fmt(e.costo)+" $ con la comisión.",5000); }
+    else if(e.tipo==="venta"){ SON.mes(); msg("💹 Vendiste "+e.q+" de "+A.RECURSOS[e.r].nom.toLowerCase()+": +"+fmt(e.monto)+" $.",3500); }
+    else if(e.tipo==="orden"){ SON.mal(); msg("🚔 Se impuso el orden: el conflicto terminó, pero la gente quedó resentida (menos felicidad y más malestar por un tiempo).",7000); }
     else if(e.tipo==="impago"){ SON.mal(); msg("🚨 Impago: al pagar la deuda la caja quedó en rojo. Tu calificación crediticia baja durante un año y pedir prestado saldrá más caro.",8000); }
     else if(e.tipo==="problema"){ var P=A.PROBLEMAS[e.p.k]; SON.alerta(); msg("⚠️ "+P.nom+": "+P.desc+" Toca «Problemas» para resolverlo.",7000); }
     else if(e.tipo==="era"){ var E=A.ERAS[e.n]; SON.territorio(); j.banner={t:E.ico+" "+E.nom,sub:"Tu ciudad entra en una nueva época de la historia",t0:now};
@@ -343,6 +354,7 @@ function hud(primera){
   var r=A.radio(s), sig=r<A.R?culturaPara(r+1):null;
   $("cs-cul").textContent=fmt(s.cultura)+(sig?"/"+fmt(sig):"");
   $("cs-con").textContent=s.conocimiento;
+  var mal=Math.round(s.malestar||0); $("cs-mal-w").hidden=mal<15; $("cs-mal").textContent=mal+" %"; $("cs-mal-w").classList.toggle("mal",mal>=50);
   barra("cs-dR",st.demR); barra("cs-dC",st.demC); barra("cs-dI",st.demI);
   var np=s.problemas.length, b=$("cs-nprob"); b.hidden=!np; b.textContent=np;
   $("cs-prob").classList.toggle("alerta",np>0);
@@ -440,6 +452,7 @@ function motivo(t,dx,dy,gastado){
   if(E.era>s.era)return "Llega con la época "+eraNom(E.era)+".";
   if(E.tech&&!s.techs[E.tech])return "Primero investiga «"+A.TECHS[E.tech].nom+"».";
   if(E.junto){var ok=false;[[1,0],[-1,0],[0,1],[0,-1]].forEach(function(v){if(terr(s.cx+dx+v[0],s.cy+dy+v[1])===E.junto)ok=true;}); if(!ok)return "Tiene que tocar el agua.";}
+  if(t==="m"){var yr=A.yacimiento(s.mseed,s.cx+dx,s.cy+dy); if(!yr)return "La mina va sobre un yacimiento (mira la capa 🗺️ Recursos)."; if(A.RECURSOS[yr].era>s.era)return A.RECURSOS[yr].nom+": se explota desde la "+A.ERAS[A.RECURSOS[yr].era].nom+".";}
   if(s.dinero-(gastado||0)<A.costo(s,t,dx,dy))return "Faltan $: cuesta "+fmt(A.costo(s,t,dx,dy))+".";
   return null;
 }
@@ -502,14 +515,17 @@ function panelProblemas(){
   s.problemas.forEach(function(p){
     var P=A.PROBLEMAS[p.k], queda=Math.max(0,(p.vence-s.tick)*A.TICK/1000);
     h+='<div class="cs-it prob"><div><b>'+esc(P.nom)+'</b><small>'+esc(P.desc)+' · Tema: '+esc(A.TEMAS[P.tema])+'</small><small class="cs-req">Quedan '+seg2(queda)+(p.intentos?' · '+p.intentos+' fallo'+(p.intentos>1?'s':''):'')+' · Premio: '+esc(premioTxt(p.k))+'</small></div>'+
-      (j.solo?'':'<button type="button" class="primary" data-prob="'+p.id+'">Resolver</button>')+'</div>';
+      (j.solo?'':'<span class="cs-pacc"><button type="button" class="primary" data-prob="'+p.id+'">'+(P.disc?'🗣️ Dialogar':'Resolver')+'</button>'+
+        (P.disc?'<button type="button" class="ghost" data-orden="'+p.id+'"'+(A.ordenDe(s)<15||s.dinero<200?' disabled':'')+' title="Termina ya (200 $), pero deja resentimiento: −felicidad y +malestar un año">🚔 Imponer el orden</button>':'')+'</span>')+'</div>'+
+      (P.disc?'<small class="cs-nota">🗣️ Dialogar (acertar la pregunta) baja el malestar de verdad. 🚔 Imponer el orden lo termina enseguida'+(A.ordenDe(s)<15?' — necesitas policía que cubra a la mitad de la gente o un 🪖 cuartel':'')+', pero deja resentimiento.</small>':'');
   });
   abreModal(h+'</div><p class="cs-nota">Consejo: un problema que no se resuelve vuelve a aparecer si la causa sigue (por ejemplo, falta de energía). Arregla también la causa.</p>');
+  Array.prototype.forEach.call(document.querySelectorAll("[data-orden]"),function(b){b.onclick=function(){ if(hace("o",+b.getAttribute("data-orden"))){hud(true); panelProblemas();} };});
   Array.prototype.forEach.call(document.querySelectorAll("[data-prob]"),function(b){b.onclick=function(){
     var id=parseInt(b.getAttribute("data-prob"),10), p=s.problemas.filter(function(x){return x.id===id;})[0]; if(!p)return panelProblemas();
     pregunta("p:"+id,A.PROBLEMAS[p.k].tema,"⚠️ "+A.PROBLEMAS[p.k].nom);};});
 }
-function premioTxt(k){return {apagon:"+10 MW",sequia:"+15 de agua",smog:"aire más limpio",feria:"+15 de cultura"}[k]||"+felicidad un rato";}
+function premioTxt(k){if(A.PROBLEMAS[k]&&A.PROBLEMAS[k].disc)return "baja el malestar y la gente queda contenta"; return {apagon:"+10 MW",sequia:"+15 de agua",smog:"aire más limpio",feria:"+15 de cultura"}[k]||"+felicidad un rato";}
 
 /* la pregunta: la ciudad se detiene mientras se responde */
 function pregunta(obj,tema,titulo){
@@ -541,6 +557,7 @@ function pregunta(obj,tema,titulo){
         else if(obj.charAt(0)==="t"){var T=A.TECHS[obj.slice(2)]; txt=r.ok?"✅ ¡Correcto! Investigaste «"+T.nom+"». "+T.desc:"❌ No era esa. Podrás volver a intentarlo en 30 s con otra pregunta.";}
         else if(obj.charAt(0)==="e")txt=r.ok?"✅ ¡Correcto! Tu ciudad entra en la "+A.ERAS[eraQ].nom+".":"❌ No era esa. Repasa y vuelve a intentarlo en 30 s.";
         else if(obj.charAt(0)==="r")txt=r.ok?"✅ ¡Correcto! Tratado firmado: se abre una ruta comercial.":"❌ No era esa. Podrás proponer el tratado otra vez en 30 s.";
+        else if(A.PROBLEMAS[probK]&&A.PROBLEMAS[probK].disc)txt=r.ok?"✅ ¡Acuerdo! El diálogo funcionó: "+premioTxt(probK)+".":"❌ No era esa: el plazo se acorta 10 s y el conflicto sigue.";
         else txt=r.ok?"✅ ¡Correcto! Problema resuelto: +400 $ y "+premioTxt(probK)+".":"❌ No era esa: el plazo del problema se acorta 10 s.";
         if(r.ok){SON[obj.charAt(0)==="p"?"bien":"tech"]();}else SON.mal();
         $("cs-qn").innerHTML='<b class="'+(r.ok?'cs-ok':'cs-no')+'">'+esc(txt)+'</b>'+(r.dato?'<span class="cs-dato">💡 '+esc(r.dato)+'</span>':'')+
@@ -689,6 +706,47 @@ function panelDeuda(){
     if(hace("p",M,n2,k)){ hud(true); panelDeuda(); } else msg("El banco no aprobó ese monto: revisa el límite.",3500);
   };
 }
+/* ---------- recursos, comercio exterior y orden público ---------- */
+var RLISTA=["piedra","oro","hierro","carbon","petroleo","litio"];
+function panelComercio(foco){
+  var j=J, s=j.s, st=s.est||A.calcula(s), cap=A.capacidad(s), queda=Math.max(0,cap-(s.vendido||0)), mes=Math.floor(s.tick/A.MES), um=j.ultMes;
+  var h=cab("💹 Recursos y comercio");
+  h+='<p class="cs-nota">Las ⛏️ minas sacan recursos de los yacimientos (capa 🗺️ Recursos). Cada mes se <b>exporta</b> lo que no guardes, al precio del mercado, que sube y baja; o se guarda como <b>reserva estratégica</b>, que da un bono mientras haya existencias.</p>';
+  h+='<div class="cs-fin"><span>Capacidad de exportación<b>'+fmt(queda)+' / '+fmt(cap)+' este mes</b></span><span>Exportado el mes pasado<b>'+(um&&um.exp?fmt(um.exp)+' $ · '+um.u+' u.':'—')+'</b></span>'+
+    '<span>Minas<b>'+st.minas+'</b></span><span>⚓ Puertos · ✈️ aeropuertos<b>'+st.puertos+' · '+st.aero+'</b></span></div>';
+  h+='<div class="cs-recs">'+RLISTA.map(function(r){
+    var R=A.RECURSOS[r], bloq=R.era>s.era, q=(s.stock||{})[r]||0, pv=A.precioVenta(s,r), a=A.precioMes(s,r,mes), b=A.precioMes(s,r,mes-1);
+    var tend=a>b*1.03?'<i class="sube">▲</i>':a<b*0.97?'<i class="baja">▼</i>':'<i>▬</i>', res=!!(s.reserva&&s.reserva[r]), act=A.activo(s,r);
+    return '<div class="cs-rec'+(bloq?' bloq':'')+'"><span class="cs-ri">'+R.ico+'</span><div><b>'+R.nom+'</b>'+
+      (bloq?'<small>🔒 Se explota desde la '+esc(A.ERAS[R.era].nom)+'.</small>':
+        '<small>Existencias <b>'+fmt(q)+'</b> · '+precioTxt(pv)+' $ c/u '+tend+'</small><small class="'+(act?'cs-ok':'')+'">Reserva: '+esc(R.bono)+(res?(act?' ✅ Activo':' (sin existencias suficientes)'):'')+'</small>')+'</div>'+
+      (bloq||j.solo?'':'<span class="cs-racc"><span class="cs-seg" role="group" aria-label="Qué hacer con '+R.nom+'"><button type="button" data-pol="'+r+'" data-v="0" aria-pressed="'+!res+'">Exportar</button><button type="button" data-pol="'+r+'" data-v="1" aria-pressed="'+res+'">Reservar</button></span>'+
+        '<button type="button" class="ghost" data-vende="'+r+'"'+(q<1||queda<1?' disabled':'')+'>Vender ya</button></span>')+'</div>';
+  }).join("")+'</div>';
+  h+='<details class="cs-como"><summary>¿Cómo funciona el comercio exterior?</summary><ul>'+
+    '<li><b>Capacidad de exportación</b>: por caminos salen 10 unidades al mes; cada ⚓ puerto suma 30 y cada ✈️ aeropuerto 80. Cada ruta comercial con una vecina suma 10 y paga un 5 % más.</li>'+
+    '<li><b>Precios</b>: las materias primas suben y bajan (▲▼). Vender cuando el precio está alto rinde más; depender de un solo recurso es arriesgado, por eso conviene diversificar.</li>'+
+    '<li>El <b>aeropuerto</b> paga un 20 % más el oro y el litio (carga aérea liviana y valiosa) y atrae turismo, pero hace ruido.</li>'+
+    '<li><b>Reserva estratégica</b>: guardar en vez de vender da un bono a la ciudad, y cada mes se gasta un poco (el oro no se gasta: respalda a la ciudad).</li>'+
+    '<li>Las minas dan empleo pero contaminan; desde la Revolución Industrial necesitan electricidad. Con 🔬 «Minería moderna» producen un 30 % más y con «Comercio internacional» se exporta más y mejor.</li></ul></details>';
+  /* orden público */
+  var mal=Math.round(s.malestar||0), c=A.causas(s,st), orden=A.ordenDe(s,st), nivel=mal>=70?"crítico":mal>=50?"hay protestas":mal>=30?"tensión":"tranquila";
+  var filas=[["😞 Infelicidad",c.felicidad],["🧑‍🏭 Desempleo",c.desempleo],["💸 Impuestos altos",c.impuestos],["⚖️ Desigualdad",c.desigualdad],["⚠️ Problemas sin resolver",c.problemas],["🚔 Resentimiento por represión",c.represion]];
+  h+='<h4 id="cs-h-orden">🕊️ Orden público</h4><div class="cs-mal"><span class="cs-malbar"><i class="'+(mal>=70?'muy':mal>=50?'alto':mal>=30?'medio':'')+'" style="--p:'+mal+'%"></i></span><b>Malestar '+mal+' % · '+nivel+'</b></div>'+
+    '<div class="cs-causas">'+filas.map(function(f){return '<span><b>'+f[0]+'</b><i style="--p:'+Math.min(100,f[1]*2)+'%"></i><small>+'+f[1]+'</small></span>';}).join("")+'</div>'+
+    '<p class="cs-nota">Capacidad de mantener el orden: <b>'+orden+'</b> (🚓 policía cubre al '+Math.round(st.cob.seg*100)+' % de la gente'+(st.cuartel?' · 🪖 ejército en su cuartel':'')+'). Si el malestar la desborda hay disturbios.</p>'+
+    '<details class="cs-como"><summary>¿Cómo funciona el malestar?</summary><ul>'+
+    '<li>El malestar sube con la infelicidad, el desempleo, los impuestos altos, la desigualdad y los problemas sin resolver, y baja cuando se arreglan sus causas.</li>'+
+    '<li>Con malestar alto la gente <b>protesta</b> (es un derecho: la policía no lo evita) y el comercio vende menos; desde la industria puede haber <b>huelgas</b> que paran fábricas y minas.</li>'+
+    '<li>Si el malestar supera la capacidad de mantener el orden, hay <b>disturbios</b> que dañan edificios. La 🚓 policía y el 🪖 ejército dan esa capacidad, pero cuestan y el ejército inquieta a la gente.</li>'+
+    '<li>Ante un conflicto: <b>🗣️ dialogar</b> (acertar una pregunta) baja el malestar de verdad; <b>🚔 imponer el orden</b> lo termina enseguida, pero deja resentimiento durante un año. Como en la vida real, la fuerza debe ser proporcional y la última opción.</li></ul></details>';
+  abreModal(h);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-pol]"),function(b){b.onclick=function(){ if(hace("g",+b.getAttribute("data-v"),0,b.getAttribute("data-pol"))){SON.pon(); panelComercio();} };});
+  Array.prototype.forEach.call(document.querySelectorAll("[data-vende]"),function(b){b.onclick=function(){
+    var r=b.getAttribute("data-vende"), q=Math.min((s.stock||{})[r]||0,Math.max(0,A.capacidad(s)-(s.vendido||0)));
+    if(q>=1&&hace("s",q,0,r)){hud(); panelComercio();} else msg("No queda capacidad de exportación este mes: construye un ⚓ puerto o un ✈️ aeropuerto.",4500); };});
+  if(foco==="orden"){var hh=$("cs-h-orden"); if(hh&&hh.scrollIntoView)hh.scrollIntoView({block:"start"});}
+}
 function cierraInfo(){var z=$("cs-info"); if(z){z.hidden=true;z.innerHTML="";} if(J)J.sel=null;}
 /* qué hay en una casilla y por qué crece o no */
 function info(c){
@@ -701,7 +759,9 @@ function info(c){
     if(v&&v.t)h='<b>'+ICO[v.t]+' '+esc(A.EDIF[v.t].nom)+(v.l?' · nivel '+v.l:'')+'</b><small>En '+esc(v.v.nombre)+', la ciudad de '+esc(v.v.jugador)+'.</small>';
     else h='<b>'+tn+'</b><small>'+(v?'Territorio de '+esc(v.v.nombre)+'.':'Fuera de tu territorio. La cultura 🎭 lo amplía.')+'</small>';
   } else if(!t){
-    h='<b>'+tn+'</b><small>'+(tr==="w"?"No se puede construir en el agua.":tr==="f"?"Construir aquí cuesta 15 $ más (hay que talar).":"Libre para construir.")+'</small>';
+    var yv=A.yacimiento(s.mseed,c.x,c.y);
+    h='<b>'+tn+'</b><small>'+(tr==="w"?"No se puede construir en el agua.":tr==="f"?"Construir aquí cuesta 15 $ más (hay que talar).":"Libre para construir.")+'</small>'+
+      (yv?'<small class="cs-ok">'+A.RECURSOS[yv].ico+' Yacimiento de '+A.RECURSOS[yv].nom.toLowerCase()+(A.RECURSOS[yv].era>s.era?' (se explota desde la '+A.ERAS[A.RECURSOS[yv].era].nom+')':': construye una ⛏️ mina encima')+'.</small>':'');
   } else {
     var E=A.EDIF[t], l=s.nivel[i], m=A.mapas(s), st=s.est||A.calcula(s);
     h='<b>'+ICO[t]+' '+esc(E.nom)+(E.zona?' · nivel '+l+'/'+A.tope(s):'')+'</b>';
@@ -721,7 +781,9 @@ function info(c){
       h+='<small>'+habit+'.</small>'+(t!=="I"&&A.riqueza(m.valor[i])<2?'<small>💡 Parques, cultura, servicios y agua cerca suben el valor; la contaminación lo baja.</small>':'')+(frena.length?'<small class="cs-req">No crece porque '+frena.join(", ")+'.</small>':'<small class="cs-ok">Puede seguir creciendo.</small>');
       h+='<span class="cs-cob">'+[["seg","🚓"],["fue","🚒"],["sal","🏥"],["edu","🏫"]].map(function(x){return '<i class="'+(m.cov[x[0]][i]?'si':'no')+'">'+x[1]+'</i>';}).join("")+
         '<i class="'+(m.cont[i]>1.5?'no':'si')+'">🌫️ '+m.cont[i].toFixed(1)+'</i></span>';
-    } else h+='<small>'+esc(DESC[t])+'</small><small>Mantenimiento: '+E.mant+' $ por mes.</small>';
+    } else if(t==="m"){ var ym=A.yacimiento(s.mseed,c.x,c.y), RM=A.RECURSOS[ym];
+      h+='<small>'+RM.ico+' Mina de '+RM.nom.toLowerCase()+': '+Math.round(RM.prod*(s.techs.mineria?1.3:1))+' por mes · existencias '+fmt((s.stock||{})[ym]||0)+' · '+precioTxt(A.precioVenta(s,ym))+' $ c/u.</small><small>15 empleos · mantenimiento '+E.mant+' $ por mes. Vende o reserva en 💹 Comercio.</small>'; }
+    else h+='<small>'+esc(DESC[t])+'</small><small>Mantenimiento: '+E.mant+' $ por mes.</small>';
     if(t!=="c"){ var rE2=st.redE[m.redE.comp[i]], rA2=st.redA[m.redA.comp[i]];
       h+='<span class="cs-cob">'+(st.sinLuz?'':'<i class="'+(rE2>=0.95?'si':'no')+'">⚡ '+(rE2>=0.95?'conectada':Math.round(rE2*100)+' %')+'</i>')+
         '<i class="'+(rA2>=0.95?'si':'no')+'">💧 '+(rA2>=0.95?'con agua':Math.round(rA2*100)+' %')+'</i></span>'; }
@@ -795,6 +857,15 @@ function trozo(kx,ky){
 }
 /* la imagen de un trozo (solo para el dibujo 2D; la vista 3D no la necesita): casillas de pasto, bosque, arena y agua,
    cada una inclinada según sus cuatro esquinas */
+/* un yacimiento a la vista: piedras del color del mineral, un charco de petróleo o costras blancas de sal */
+function veta2d(g,x,y,r,n){
+  var c=A.RECURSOS[r].color;
+  if(r==="petroleo"){ g.fillStyle="rgba(20,20,20,.75)"; g.beginPath(); g.ellipse(x+1,y+1,6,2.6,0,0,6.283); g.fill(); g.fillStyle="rgba(120,140,200,.35)"; g.fillRect(x-1,y,3,0.8); return; }
+  if(r==="litio"){ g.fillStyle="rgba(245,250,250,.92)"; for(var k=0;k<3;k++){g.beginPath(); g.ellipse(x-5+k*5,y+(k%2)*2-1,3.4,1.5,0,0,6.283); g.fill();} return; }
+  for(var q=0;q<4;q++){ var px=x-5+q*3.4+(n*7%2), py=y+((q*5)%3)-1;
+    g.fillStyle=q%2?"#8d8d8d":"#6f6f6f"; g.beginPath(); g.ellipse(px,py,1.9,1.2,0,0,6.283); g.fill();
+    g.fillStyle=c; g.fillRect(px-0.7,py-0.8,1.4,0.9); }
+}
 function imagenTrozo(t){
   if(t.c)return t.c;
   var seed=J.s.mseed, kx=t.kx, ky=t.ky, ter=t.ter, va=t.va, T=t.T, ox=t.ox, oy=t.oy, W=t.w, H=t.h, x, y;
@@ -837,6 +908,7 @@ function imagenTrozo(t){
     g.fillStyle=col; g.beginPath(); g.moveTo(px,py-HH-0.4-aN); g.lineTo(px+HW+0.6,py-aE); g.lineTo(px,py+HH+0.4-aS); g.lineTo(px-HW-0.6,py-aO); g.closePath(); g.fill();
     var am=(aN+aE+aS+aO)/4; py-=am;   /* los detalles van a la altura del centro */
     if(tt==="g"&&!playa&&n>0.72){g.fillStyle="rgba(40,105,40,.32)"; g.fillRect(px-4+n*6,py-2,1,2); g.fillRect(px-2+n*6,py-3,1,3); g.fillRect(px+3-n*4,py+1,1,2);}
+    var yk=A.yacimiento(seed,wx,wy); if(yk)veta2d(g,px,py,yk,n);
     if(tt==="g"&&!playa&&n<0.035){g.fillStyle="#fff7d6"; g.fillRect(px-3,py,1.5,1.5); g.fillStyle=n<0.018?"#ff8fb3":"#ffe066"; g.fillRect(px+2,py-2,1.5,1.5);}
     if(playa&&n<0.12){g.fillStyle="rgba(160,130,80,.5)"; g.fillRect(px-2+n*20,py,1.2,0.8);}
   }
@@ -893,7 +965,7 @@ function inicia3d(j){
 /* lo que la vista 3D necesita saber de cada casilla (la mía o la de una vecina) */
 function api3d(){
   return {
-    seed:function(){return J.s.mseed;}, terr:terr, vert:vert,
+    seed:function(){return J.s.mseed;}, terr:terr, vert:vert, yac:function(x,y){return A.yacimiento(J.s.mseed,x,y);},
     altura:function(x,y){return altTop(x,y);},
     celda:function(wx,wy){ var j=J, s=j.s, dx=wx-s.cx, dy=wy-s.cy;
       if(dx>=-A.R&&dx<=A.R&&dy>=-A.R&&dy<=A.R){ var i=A.idx(dx,dy), t=s.tipo[i], l=s.nivel[i];
@@ -1004,14 +1076,14 @@ function enlaza(){
   $("cs-capa").onclick=function(){
     var k=0; for(var i=0;i<CAPAS.length;i++)if(CAPAS[i][0]===j.capa)k=i;
     var c=CAPAS[(k+1)%CAPAS.length]; j.capa=c[0];
-    var z=$("cs-capa-n"); z.hidden=!c[0]; z.innerHTML=c[0]?'🗺️ <b>'+c[1]+'</b> <small>'+(c[0]==="cont"?"rojo = aire contaminado":c[0]==="feliz"?"verde = cerca de parques y cultura":c[0]==="valor"?"rojo = popular · amarillo = clase media · verde = acomodado (parques, cultura, servicios y agua lo suben)":c[0]==="luz"?"verde = conectado a una central · rojo = sin electricidad · amarillo = tendido":c[0]==="agua"?"verde = con agua · rojo = sin agua · azul = tubería":"verde = cubierto · rojo = sin servicio")+'</small>':"";
+    var z=$("cs-capa-n"); z.hidden=!c[0]; z.innerHTML=c[0]?'🗺️ <b>'+c[1]+'</b> <small>'+(c[0]==="cont"?"rojo = aire contaminado":c[0]==="feliz"?"verde = cerca de parques y cultura":c[0]==="valor"?"rojo = popular · amarillo = clase media · verde = acomodado (parques, cultura, servicios y agua lo suben)":c[0]==="recursos"?"🪨 piedra · 🥇 oro · ⛓️ hierro · ⚫ carbón · 🛢️ petróleo · 🔋 litio: construye una ⛏️ mina encima":c[0]==="luz"?"verde = conectado a una central · rojo = sin electricidad · amarillo = tendido":c[0]==="agua"?"verde = con agua · rojo = sin agua · azul = tubería":"verde = cubierto · rojo = sin servicio")+'</small>':"";
     $("cs-capa").classList.toggle("on",!!c[0]);
   };
   $("cs-full").onclick=function(){var z=$("cs"); var on=!z.classList.contains("full"); z.classList.toggle("full",on); document.body.classList.toggle("cs-full",on);};
   $("cs-inv").onclick=function(){panelInvestigar();};
   $("cs-prob").onclick=panelProblemas;
   $("cs-vec").onclick=panelVecinos;
-  $("cs-ayu").onclick=panelAlcaldia; $("cs-nom").onclick=panelAlcaldia; $("cs-era").onclick=panelEpocas;
+  $("cs-ayu").onclick=panelAlcaldia; $("cs-com").onclick=function(){panelComercio();}; $("cs-mal-w").onclick=function(){panelComercio("orden");}; $("cs-nom").onclick=panelAlcaldia; $("cs-era").onclick=panelEpocas;
   $("cs-modal").onclick=function(e){if(e.target===this)cierraModal();};
   Array.prototype.forEach.call(document.querySelectorAll("[data-vel]"),function(b){b.onclick=function(){
     var v=+b.getAttribute("data-vel"); j.vel=v; j.pausa=v===0; marcaVel();};});
@@ -1272,11 +1344,34 @@ function pieza(g,t,l,x,y,wx,wy,now,noche,luces,vecina,s,era){
     case "Z": g.fillStyle="#b0bec5"; g.beginPath(); g.ellipse(x,y,7,3.5,0,0,6.283); g.fill(); g.fillStyle="#4fc3f7"; g.beginPath(); g.ellipse(x,y-0.5,5.5,2.6,0,0,6.283); g.fill();
       g.fillStyle="rgba(255,255,255,.85)"; var hj=5+Math.sin(now/180)*1.5; g.fillRect(x-0.6,y-hj-1,1.2,hj);
       for(k=0;k<4;k++){g.fillRect(x+Math.cos(now/400+k*1.57)*3,y-hj-1+Math.abs(Math.sin(now/400+k))*3,0.8,0.8);} break;
+    case "m": mina2d(g,x,y,A.yacimiento(J.s.mseed,wx,wy),now,vecina); break;
+    case "K": g.fillStyle="#8d6e63"; rombo(g,x,y,HW-1,HH-0.5); g.fill(); caja(g,x-4,y-1,0.4,7,"#b0bec5");
+      g.strokeStyle="#ffb300"; g.lineWidth=1.1; g.beginPath(); g.moveTo(x+4,y); g.lineTo(x+4,y-22); g.lineTo(x+12,y-18); g.stroke();
+      g.fillStyle="#1e3a5f"; g.beginPath(); g.moveTo(x+2,y+4); g.lineTo(x+13,y-1); g.lineTo(x+11,y+3); g.lineTo(x+4,y+6); g.fill(); g.fillStyle="#e53935"; g.fillRect(x+6,y-1,3,2); break;
+    case "A": g.fillStyle="#565b63"; g.beginPath(); g.moveTo(x-HW+2,y); g.lineTo(x,y+HH-1); g.lineTo(x+4,y+HH-3); g.lineTo(x-HW+6,y-2); g.fill();
+      g.strokeStyle="rgba(255,255,255,.8)"; g.lineWidth=0.6; g.setLineDash([2,2]); g.beginPath(); g.moveTo(x-HW+5,y); g.lineTo(x+1,y+HH-2); g.stroke(); g.setLineDash([]);
+      caja(g,x+3,y-1,0.5,8,"#cfd8dc","#e3eef7"); g.fillStyle="#9aa3ad"; g.fillRect(x+8,y-20,2,14); g.fillStyle="#7fc3ff"; g.fillRect(x+6.5,y-23,5,3);
+      g.fillStyle="#fafafa"; g.beginPath(); g.moveTo(x-8,y-4); g.lineTo(x-1,y-1); g.lineTo(x-2,y); g.lineTo(x-9,y-3); g.fill(); g.fillRect(x-6,y-4,1.5,4); break;
+    case "X": g.fillStyle="#7d8a5a"; rombo(g,x,y,HW-1,HH-0.5); g.fill(); caja(g,x,y,0.62,9,"#6b7a4a","#5c6a3e");
+      g.strokeStyle="#4e5a32"; g.lineWidth=0.8; g.beginPath(); g.moveTo(x-HW+1,y); g.lineTo(x,y+HH-0.5); g.lineTo(x+HW-1,y); g.stroke();
+      g.fillStyle="#5d4037"; g.fillRect(x+8,y-22,0.8,16); g.fillStyle="#2e7d32"; g.fillRect(x+8.8,y-22,6,3.5); break;
     case "O": caja(g,x,y,0.62,4,"#d7ccc8");
       g.fillStyle="#efe6d2"; g.beginPath(); g.moveTo(x-3,y-4); g.lineTo(x,y-1.5); g.lineTo(x,y-40); g.lineTo(x-2,y-38); g.fill();
       g.fillStyle="#d8ccb0"; g.beginPath(); g.moveTo(x,y-1.5); g.lineTo(x+3,y-4); g.lineTo(x+2,y-38); g.lineTo(x,y-40); g.fill();
       g.fillStyle="#d4af37"; g.beginPath(); g.moveTo(x-2,y-38); g.lineTo(x,y-44); g.lineTo(x+2,y-38); g.lineTo(x,y-40); g.fill(); break;
   }
+}
+/* una mina en 2D según su recurso: cantera, castillete de mina, balancín de petróleo o piletas de litio */
+function mina2d(g,x,y,r,now,vecina){
+  if(r==="litio"){ for(var k=0;k<3;k++){g.fillStyle=["#9be7e0","#c8f2ee","#7fd8cf"][k]; g.beginPath(); g.ellipse(x-6+k*6,y+(k-1)*1.5,4.5,2.2,0,0,6.283); g.fill();} caja(g,x+8,y-2,0.25,5,"#eceff1"); return; }
+  if(r==="petroleo"){ var a=Math.sin(now/400)*3; g.fillStyle="#455a64"; g.fillRect(x-1,y-12,2,12); g.strokeStyle="#263238"; g.lineWidth=1.6; g.beginPath(); g.moveTo(x-9,y-12-a); g.lineTo(x+7,y-12+a); g.stroke();
+    g.fillStyle="#37474f"; g.beginPath(); g.moveTo(x-11,y-14-a); g.lineTo(x-7,y-12-a); g.lineTo(x-9,y-8-a); g.fill(); g.fillStyle="#141414"; g.beginPath(); g.ellipse(x+6,y+2,4,1.6,0,0,6.283); g.fill(); return; }
+  g.fillStyle="#8a7f72"; g.beginPath(); g.ellipse(x-3,y+1,8,3.6,0,0,6.283); g.fill();
+  g.fillStyle=A.RECURSOS[r]?A.RECURSOS[r].color:"#999"; g.beginPath(); g.moveTo(x-9,y+1); g.lineTo(x-5,y-4); g.lineTo(x-1,y+1); g.fill();
+  if(r==="piedra"){ g.fillStyle="#bdbdbd"; g.fillRect(x+2,y-5,6,4); g.fillRect(x+4,y-8,4,3); return; }
+  g.strokeStyle="#5d4037"; g.lineWidth=1; g.beginPath(); g.moveTo(x+2,y); g.lineTo(x+6,y-18); g.lineTo(x+10,y); g.moveTo(x+3.5,y-8); g.lineTo(x+8.5,y-8); g.stroke();
+  g.fillStyle="#3e2723"; g.beginPath(); g.arc(x+6,y-18,1.8,0,6.283); g.fill();
+  if(!vecina&&r==="carbon")humo(g,x+6,y-20,now,0.5,true);
 }
 /* ---------- edificios de las zonas guardados como imagen ----------
    Cada combinación (zona, nivel, época, riqueza, variante, de día o de noche) se dibuja una sola vez con todo el detalle
@@ -1626,11 +1721,12 @@ function dibuja(now){
   /* 5) capa de información */
   if(m){
     var kk=j.capa;
-    for(var i=0;i<A.N;i++){ if(!s.tipo[i]&&kk!=="cont"&&!(kk==="luz"&&s.cable[i])&&!(kk==="agua"&&s.tubo[i]))continue;
+    for(var i=0;i<A.N;i++){ if(!s.tipo[i]&&kk!=="cont"&&kk!=="recursos"&&!(kk==="luz"&&s.cable[i])&&!(kk==="agua"&&s.tubo[i]))continue;
       var ddx=Math.floor(i/A.LADO)-A.R, ddy=i%A.LADO-A.R; if(!A.dentro(s,ddx,ddy))continue;
       var col;
       if(kk==="cont"){var v2=m.cont[i]; if(v2<0.3)continue; col="rgba(229,57,53,"+Math.min(0.75,v2/5)+")";}
       else if(kk==="feliz"){var v3=m.feliz[i]; col=v3>0?"rgba(67,160,71,"+Math.min(0.75,0.2+v3/20)+")":"rgba(0,0,0,.12)";}
+      else if(kk==="recursos"){ var yk=A.yacimiento(s.mseed,ddx+s.cx,ddy+s.cy); if(!yk)continue; col=hexA(A.RECURSOS[yk].color,A.RECURSOS[yk].era>s.era?0.35:0.8); }
       else if(kk==="valor"){ if(s.tipo[i]!=="R"&&s.tipo[i]!=="C")continue; var vq=m.valor[i];
         col=vq<0.42?"rgba(229,57,53,"+(0.35+0.3*(0.42-vq))+")":vq<0.66?"rgba(253,216,53,.6)":"rgba(67,160,71,"+(0.5+0.3*vq)+")"; }
       else if(kk==="luz"||kk==="agua"){

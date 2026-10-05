@@ -445,6 +445,8 @@ GUIAS.ciudad=[
    ["Servicios","⚡ Energía y 💧 agua para que crezcan; policía, bomberos, hospital y escuela para que suban de nivel y la gente esté feliz."],
    ["Redes","La electricidad y el agua llegan solo a lo conectado: lo construido contiguo se pasa el servicio, pero las calles y el campo cortan. En 🔌 Redes: tendido eléctrico (sobre calles y campo) y tuberías (bajo tierra, con ⛏️ vista subterránea). Un ⚡ o 💧 rojo sobre una zona avisa que no le llega."],
    ["Cultura","Bibliotecas, plazas, teatros, museos y la universidad suman 🎭 cultura: la cultura amplía tu territorio (el círculo punteado)."],
+   ["Recursos y comercio","En ⛏️ Recursos: minas sobre yacimientos (capa 🗺️ Recursos), ⚓ puertos y ✈️ aeropuertos. En 💹 Comercio decides si exportar cada recurso al precio del mercado o guardarlo como reserva estratégica, que da un bono."],
+   ["Orden público","😠 Si la gente está descontenta (sin trabajo, impuestos altos, desigualdad) protesta. 🗣️ Dialogar acertando una pregunta lo calma; 🚔 imponer el orden con la policía o el 🪖 ejército lo termina, pero deja resentimiento."],
    ["Barrios ricos","Parques, cultura, servicios y agua cerca suben el valor del suelo; la contaminación lo baja. Con valor alto, las viviendas y tiendas se vuelven barrios acomodados y comercio de lujo: se ven más elegantes y pagan más impuestos (capa 🗺️ Valor del suelo)."],
    ["Preguntas","🔬 Investiga tecnologías (eólica, solar, hidroeléctrica, rascacielos…) acertando una pregunta de su tema. Los ⚠️ problemas (apagón, sequía, atasco, incendio…) se resuelven igual, antes de que venza su plazo. La ciudad se detiene mientras respondes y siempre ves la explicación."]]);}},
 {t:"Épocas y encuentros",d:"",

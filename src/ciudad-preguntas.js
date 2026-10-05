@@ -3,10 +3,42 @@
    Vive solo en el servidor. Cada pregunta: [tema, pregunta,
    correcta, otra, otra, otra, dato]. Los temas son los de la
    ciudad: energía, agua, transporte, urbanismo, ambiente, salud,
-   seguridad, educación, economía, cultura, ingeniería básica e historia
+   seguridad, educación, economía, cultura, ingeniería básica, cívica e historia
    (estas llevan además la época a la que dan paso).
    =========================================================== */
 var B=[
+/* ---------- cívica: derechos, instituciones y convivencia (las protestas se calman dialogando) ---------- */
+["civica","¿Qué derecho permite a la gente reunirse para reclamar sin violencia?","La libertad de reunión y manifestación pacífica","El derecho de propiedad","El derecho al voto secreto","La libertad de culto","Está en la Declaración Universal de los Derechos Humanos (artículo 20) y en la mayoría de las constituciones."],
+["civica","Según la división de poderes, ¿quién hace las leyes?","El Poder Legislativo","El Poder Ejecutivo","El Poder Judicial","Las Fuerzas Armadas","Montesquieu propuso separar los poderes para que se controlen entre sí."],
+["civica","¿Quién decide, en un caso concreto, si alguien cumplió o no la ley?","El Poder Judicial","El Poder Legislativo","La policía","El alcalde","Los jueces deben ser independientes de los otros poderes."],
+["civica","¿Cuál es la ley más importante de un país?","La Constitución","Un decreto municipal","El código de tránsito","Un reglamento escolar","Ninguna otra ley puede contradecirla."],
+["civica","En una democracia, ¿cuál es la función principal de la policía?","Proteger a las personas y hacer cumplir la ley","Defender las fronteras","Hacer las leyes","Cobrar impuestos","Debe actuar respetando los derechos humanos."],
+["civica","¿Qué principio dice que la autoridad debe usar solo la fuerza mínima necesaria?","Proporcionalidad","Reciprocidad","Subsidiariedad","Progresividad","Lo recogen los Principios Básicos de la ONU sobre el empleo de la fuerza (1990)."],
+["civica","En una democracia, ¿bajo qué autoridad están las Fuerzas Armadas?","Las autoridades civiles elegidas","Sus propios generales, sin control","Las empresas privadas","Los partidos políticos","Se llama control civil de las fuerzas armadas."],
+["civica","¿Cuál es la misión principal de las Fuerzas Armadas de un país?","La defensa nacional (y ayudar en desastres)","Vigilar el tráfico","Hacer las leyes","Juzgar delitos comunes","La seguridad ciudadana de todos los días le corresponde a la policía."],
+["civica","¿Qué es la mediación en un conflicto?","Que una persona neutral ayude a las partes a llegar a un acuerdo","Que gane el más fuerte","Que se suspendan las leyes","Que decida un sorteo","Muchos conflictos sociales se resuelven en mesas de diálogo."],
+["civica","¿Qué es una huelga?","Que los trabajadores dejen de trabajar para reclamar mejoras","Un tipo de impuesto","Una fiesta nacional","Una elección anticipada","Es un derecho laboral reconocido por la OIT, con reglas para los servicios esenciales."],
+["civica","¿Qué institución defiende a la población frente a abusos de las autoridades?","La Defensoría del Pueblo","El Banco Central","La Cámara de Comercio","El tribunal electoral","Existe en Bolivia y en muchos países de América Latina."],
+["civica","¿Qué es un referéndum?","Una votación en la que la ciudadanía decide sobre una pregunta concreta","Una ley de tránsito","Un tipo de impuesto","Un juicio","Es una forma de democracia directa."],
+["civica","¿Para qué sirven los impuestos?","Para financiar servicios públicos como salud, educación y obras","Solo para pagar a los bancos","Para castigar a las personas","Para nada en particular","El presupuesto público dice en qué se gastan."],
+["civica","¿Qué es el presupuesto participativo?","Que los vecinos decidan en qué se invierte parte del dinero municipal","Un préstamo de un banco","Un impuesto a la renta","Una auditoría secreta","Nació en Porto Alegre (Brasil) en 1989."],
+["civica","¿Qué significa que un gobierno sea transparente?","Que publica cómo usa el dinero y cómo decide","Que sus edificios son de vidrio","Que no cobra impuestos","Que no hay elecciones","La transparencia ayuda a prevenir la corrupción."],
+["civica","¿Qué documento de 1948 reúne los derechos de todas las personas?","La Declaración Universal de los Derechos Humanos","La Carta Magna","El Tratado de Tordesillas","La Constitución de Cádiz","La aprobó la Asamblea General de la ONU el 10 de diciembre de 1948."],
+["civica","¿Qué es el Estado de derecho?","Que todos, también las autoridades, están sometidos a la ley","Que el gobierno puede hacer lo que quiera","Que solo algunos tienen derechos","Que no hay leyes","Es una base de la convivencia democrática."],
+["civica","¿Qué derecho permite expresar opiniones sin censura previa?","La libertad de expresión","El derecho a la herencia","El derecho de paso","La libertad de comercio","Tiene límites, como la incitación a la violencia o la calumnia."],
+/* ---------- comercio exterior y recursos ---------- */
+["economia","¿Qué es una exportación?","Vender bienes o servicios a otro país","Comprar productos del extranjero","Un impuesto municipal","Un préstamo bancario","Lo contrario es una importación."],
+["economia","¿Qué es la balanza comercial?","La diferencia entre lo que un país exporta e importa","El peso de la carga de un barco","El presupuesto municipal","El precio del oro","Si se exporta más de lo que se importa, hay superávit."],
+["economia","¿Qué es un arancel?","Un impuesto a los productos que entran (o salen) de un país","Un tipo de moneda","Un barco de carga","Una mina","Se usa para proteger la producción nacional o para recaudar."],
+["economia","¿Qué países forman el llamado «triángulo del litio»?","Bolivia, Argentina y Chile","Perú, Ecuador y Colombia","Brasil, Uruguay y Paraguay","México, Cuba y Panamá","Allí está más de la mitad de los recursos de litio conocidos del mundo."],
+["economia","¿Para qué se usa sobre todo el litio hoy?","Para baterías recargables","Para el vidrio de las ventanas","Como combustible de aviones","Para fabricar papel","Teléfonos, computadoras y autos eléctricos usan baterías de litio."],
+["economia","¿Qué metal hizo famosa a Potosí en la época colonial?","La plata","El oro","El cobre","El estaño","El Cerro Rico fue una de las mayores fuentes de plata del mundo en los siglos XVI y XVII."],
+["economia","¿Qué es una materia prima (commodity)?","Un producto básico con poca transformación, como minerales o granos","Un producto de lujo","Un servicio bancario","Una marca registrada","Sus precios suben y bajan mucho en el mercado mundial."],
+["economia","¿Por qué conviene diversificar las exportaciones?","Para no depender del precio de un solo producto","Para pagar más impuestos","Porque es obligatorio","Para exportar menos","Depender de una sola materia prima expone a la economía a sus caídas de precio."],
+["ingenieria","¿Qué es un salar?","Una gran extensión de sal que queda al evaporarse un lago","Una mina de carbón","Un volcán activo","Un río subterráneo","El Salar de Uyuni, en Bolivia, es el más grande del mundo: unos 10 000 km²."],
+["ingenieria","¿Qué gas peligroso puede acumularse en las minas de carbón?","El metano (grisú)","El helio","El oxígeno puro","El argón","Por eso las minas necesitan buena ventilación."],
+["ingenieria","¿Qué es una mina a cielo abierto?","Una excavación en la superficie, sin túneles","Una mina bajo el mar","Una mina abandonada","Una mina en el espacio","Mueve mucha tierra: hay que restaurar el terreno al cerrarla."],
+["ingenieria","¿Por qué los aeropuertos se construyen, si se puede, lejos de las viviendas?","Por el ruido y la seguridad de los vuelos","Porque los aviones no ven las casas","Porque se prohíbe el comercio cerca","Por el frío","El ruido de los aviones baja el valor del suelo alrededor."],
 /* ---------- energía ---------- */
 ["energia","¿En qué unidad se mide la potencia eléctrica?","Vatio (W)","Voltio (V)","Amperio (A)","Ohmio (Ω)","Un megavatio (MW) son un millón de vatios: la potencia de una central se mide en MW."],
 ["energia","¿En qué unidad se mide la tensión eléctrica?","Voltio","Vatio","Julio","Amperio","En Bolivia la red doméstica es de 220 voltios."],

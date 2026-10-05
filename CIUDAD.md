@@ -130,6 +130,59 @@ barrios ricos (su valor del suelo se calcula al cargarlas).
 
 El valor del suelo es una regla del motor: el servidor la repite igual al validar cada tramo.
 
+## Recursos estratégicos y comercio exterior
+
+El mundo tiene **yacimientos** fijos (salen de la semilla del mundo, los mismos para todos): 🪨 piedra, 🥇 oro, ⛓️ hierro,
+⚫ carbón, 🛢️ petróleo y 🔋 litio (en salares junto al agua). Junto a cada ciudad hay siempre piedra y hierro a mano, carbón
+y petróleo un poco más lejos y litio junto al lago. Se ven en el terreno (piedras con vetas, charcos de petróleo, costras de
+sal), en la capa 🗺️ **Recursos** y en la ficha de la casilla.
+
+| | Desde | Producción por mina y mes | Precio base | Bono de la reserva estratégica |
+|---|---|---|---|---|
+| 🪨 Piedra | Antigüedad | 8 | 5 $ | construir cuesta un 10 % menos |
+| 🥇 Oro | Antigüedad | 1 | 55 $ | con 20 o más, la calificación crediticia sube un escalón |
+| ⛓️ Hierro | Edad Media | 5 | 12 $ | la industria rinde un 20 % más |
+| ⚫ Carbón | Revolución Industrial | 6 | 10 $ | las centrales térmicas dan un 25 % más |
+| 🛢️ Petróleo | Revolución Industrial | 4 | 24 $ | el comercio rinde un 10 % más |
+| 🔋 Litio | Era Digital | 3 | 42 $ | las plantas solares y eólicas dan un 30 % más |
+
+- **⛏️ Mina** (600 $, sobre un yacimiento de su época): saca el recurso cada mes, da 15 empleos y contamina alrededor. Desde la
+  Revolución Industrial necesita electricidad (sin ella produce la mitad). Se ve distinta según el recurso: cantera, castillete
+  de mina con su pila de mineral, balancín de petróleo con su tanque o piletas de evaporación de litio.
+- **💹 Comercio** (botón a la derecha): las existencias de cada recurso, su precio con la tendencia (▲▼) y qué hacer con él:
+  **Exportar** (cada mes se vende solo al precio del mercado, hasta la capacidad de exportación) o **Reservar** (se guarda y da
+  su bono mientras haya existencias; cada mes se gasta un poco, salvo el oro). **Vender ya** vende las existencias en el acto.
+- **Precios**: cada recurso sube y baja en ciclos y con sorpresas cada pocos meses. Depender de un solo recurso es arriesgado.
+- **Capacidad de exportación**: por caminos salen 10 unidades al mes; cada **⚓ puerto** (Edad Media, 1.800 $, junto al agua)
+  suma 30 y cada **✈️ aeropuerto** (Era Moderna, 6.000 $) suma 80. Cada ruta comercial suma 10 y paga un 5 % más. El
+  aeropuerto paga además un 20 % más el oro y el litio (carga aérea), atrae turismo (+6 % de ingresos y más demanda
+  comercial) y hace ruido alrededor. En 3D se ven el muelle con grúas, contenedores y un barco, y la pista, la terminal, la
+  torre de control y aviones que despegan y dan vueltas.
+- Tecnologías: 🔬 **Minería moderna** (+30 % de producción) y **Comercio internacional** (+25 % de capacidad y +8 % de precio).
+
+## Malestar social y orden público
+
+El **malestar** (0 a 100 %, 😠 arriba cuando pasa del 15 %) sube con la infelicidad, el desempleo, los impuestos altos, la
+desigualdad, los problemas sin resolver y el resentimiento por la represión, y baja cuando se arreglan sus causas. El panel
+💹 Comercio → 🕊️ Orden público muestra cuánto aporta cada causa.
+
+- **Protesta ciudadana** (malestar de 50 % o más): protestar es un derecho, así que la policía no la evita; el comercio vende
+  un 15 % menos mientras dure. Tema de su pregunta: **cívica** (derechos, instituciones, convivencia).
+- **Huelga general** (desde la Revolución Industrial, con malestar de 60 % y mucho desempleo o impuestos altos): fábricas y
+  minas producen la mitad. Tema: economía.
+- **Disturbios** (cuando el malestar desborda la **capacidad de mantener el orden**): si no se calman a tiempo, tres
+  edificios pierden un nivel. Tema: seguridad.
+- La **capacidad de mantener el orden** sale de la 🚓 policía (hasta 30, según cuánta gente cubre) y del **🪖 cuartel**
+  (Edad Media, 2.500 $, +30, seguridad en un radio de 14), que cuesta mucho y resta 2 de felicidad: a la gente no le gusta ver
+  al ejército en la ciudad.
+- Ante un conflicto hay dos caminos: **🗣️ dialogar** (acertar una pregunta) baja el malestar de verdad (22 a 30 puntos, un 30 % más con
+  🔬 **Mediación social**) y la gente queda contenta; **🚔 imponer el orden** (200 $, hace falta capacidad de orden) lo termina
+  enseguida pero el malestar apenas baja, la felicidad cae y deja un año de resentimiento. Como en la vida real: la fuerza debe
+  ser proporcional y la última opción.
+
+Todo esto son reglas del motor (acciones `s` vender, `g` exportar o reservar, `o` imponer el orden): el servidor las repite
+igual al validar cada tramo.
+
 ## Deuda pública: préstamos y bonos para invertir
 
 Como una alcaldía real, la ciudad puede pedir prestado para **invertir** (hospitales, universidad, centrales, depuradoras) y
