@@ -158,14 +158,38 @@ devolverlo cada mes con intereses (🏛️ Alcaldía → 💳 Deuda e inversión
 Pedir (`p`: monto, plazo, tipo) y devolver (`v`: número de deuda) son acciones del tramo: el servidor las repite y calcula
 los intereses igual que el navegador.
 
+## Vista 3D realista
+
+La ciudad se dibuja en **3D con WebGL** (three.js, que se carga solo al entrar a la ciudad y queda en caché para jugar sin
+conexión):
+
+- **Luz y sombras**: el sol recorre el día (alto a mediodía, bajo y anaranjado al amanecer y al atardecer) y los edificios,
+  los árboles y las chimeneas proyectan sombras suaves. El cielo ilumina lo demás y se refleja en el vidrio y en el agua.
+- **Materiales**: fachadas con ventanas (estuco, ladrillo, piedra, madera, oficinas y muros cortina de vidrio), tejas,
+  azoteas, césped, adoquines, asfalto con aceras y líneas, paneles solares y metal dorado. Al pie de cada pared hay una
+  sombra de contacto que asienta los edificios en el suelo.
+- **Terreno**: el relieve es una malla continua con sombreado suave, playas junto al agua y bosques de árboles con copa
+  redonda o de pino. El agua tiene olas que se mueven y refleja el cielo.
+- **De noche** se encienden ventanas al azar, las farolas, los faros de los coches, las balizas de los rascacielos y los
+  neones de la Era Digital; la luna da una luz azulada.
+- **Lo que se mueve**: coches (de la carreta al coche eléctrico) por el carril derecho, humo de fábricas y centrales,
+  aspas de los molinos, sirenas de la policía y la fuente de la plaza.
+- La cámara es ortográfica y mira con el mismo ángulo que el dibujo isométrico: cada punto cae en el mismo píxel, así que
+  tocar casillas, las capas, la rejilla, los avisos y los nombres (que se dibujan encima) funcionan igual. La vista del
+  mundo (🌐, de lejos) y la vista subterránea siguen siendo planas.
+- **Rendimiento**: el mundo se arma en trozos de 16×16 casillas; cada trozo junta todo lo que comparte material (pocas
+  llamadas de dibujo) y solo se rehace cuando cambia lo que hay en él. Las sombras se recalculan al mover la cámara o al
+  cambiar la ciudad, y si el teléfono va lento la vista baja la resolución sola.
+- 👾 **Retro**: vuelve al dibujo 2D con píxeles nítidos. Si el aparato no tiene WebGL, se usa el dibujo 2D.
+
 ## Relieve y modo retro
 
 - **Relieve**: el mundo tiene colinas, laderas y valles (de 0, el agua, a 4 niveles). Cada casilla se inclina según sus cuatro
   esquinas y se ilumina desde arriba a la izquierda. Las calles y los lotes vacíos siguen la ladera; los edificios se nivelan
   sobre un cimiento de tierra. El relieve sale de la semilla del mundo y es solo visual: no cambia las reglas ni lo que valida
   el servidor.
-- **Modo retro** (👾): la ciudad se dibuja a la mitad de resolución y se amplía sin suavizar, con píxeles nítidos como los
-  juegos de ciudades de los 90 (además, va más rápido). Viene encendido; el botón lo alterna y el teléfono lo recuerda.
+- **Modo retro** (👾): en lugar de la vista 3D, la ciudad se dibuja en 2D a la mitad de resolución y se amplía sin suavizar,
+  con píxeles nítidos como los juegos de ciudades de los 90. Viene apagado; el botón lo alterna y el teléfono lo recuerda.
   Los textos (nombres de las ciudades, el cartel de época, el dinero del mes) van en una capa encima a resolución
   completa, así que se leen bien también en retro.
 - **Zoom con dos dedos**: el pellizco acerca y aleja siguiendo los dedos (la página no se amplía). Al alejar mucho se pasa
@@ -270,5 +294,7 @@ Tablas: `ciudad_mundos`, `ciudad_ciudades` y `ciudad_respuestas` (ver
 |---|---|
 | `public/ciudad-motor.js` | Motor determinista: terreno infinito, edificios, crecimiento, economía, problemas, tecnologías, repetición de tramos |
 | `public/ciudad-ui.js` | Pantalla: vista isométrica, herramientas, paneles, preguntas y guardado por tramos |
+| `public/ciudad-3d.js` | Vista 3D con WebGL: terreno, agua, calles, edificios por época y riqueza, luz, sombras, noche, coches y humo |
+| `public/vendor/three.min.js` | three.js r159 (MIT), cargado solo al entrar a la ciudad |
 | `src/ciudad.js` | API: mundos, ranuras, guardado comprobado, vecinos, ranking, preguntas y desafíos |
 | `src/ciudad-preguntas.js` | Banco de preguntas por tema (solo en el servidor) |

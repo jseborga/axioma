@@ -177,6 +177,7 @@ function para(){
   if(j.raf)cancelAnimationFrame(j.raf);
   if(j.fuera)j.fuera();
   if(j.tq)clearInterval(j.tq);
+  if(j.g3){try{j.g3.destruye();}catch(e){} j.g3=null;}
 }
 /* al salir de la sección: lo que falte se guarda sin esperar la respuesta */
 function cerrar(){
@@ -208,7 +209,7 @@ function monta(ent){
     '</div>'+
     '<div class="cs-obj" id="cs-obj"></div>'+
     '<div class="cs-mapa" id="cs-mapa">'+
-      '<canvas id="cs-cv" aria-label="Mapa de la ciudad"></canvas><canvas id="cs-tx" class="cs-tx" aria-hidden="true"></canvas>'+
+      '<canvas id="cs-gl" class="cs-gl" aria-hidden="true"></canvas><canvas id="cs-cv" aria-label="Mapa de la ciudad"></canvas><canvas id="cs-tx" class="cs-tx" aria-hidden="true"></canvas>'+
       '<div class="cs-izq">'+
         '<button type="button" id="cs-zmas" title="Acercar">+</button><button type="button" id="cs-zmenos" title="Alejar">−</button>'+
         '<button type="button" id="cs-centro" title="Volver al centro">🎯</button><button type="button" id="cs-mundo" title="Ver el mundo y las ciudades vecinas">🌐</button><button type="button" id="cs-retro" title="Modo retro: píxeles nítidos">👾</button><button type="button" id="cs-capa" title="Capas de información">🗺️</button>'+
@@ -231,6 +232,7 @@ function monta(ent){
   '</div>';
   var cv=$("cs-cv"), ctx=cv.getContext("2d");
   yo.cv=cv; yo.ctx=ctx; yo.tx=$("cs-tx"); yo.gt=yo.tx.getContext("2d");
+  inicia3d(yo);
   if(yo.solo)msg("Este desafío terminó: tu ciudad queda para mirarla.",8000);
   else if(!ent.estado)msg("¡Bienvenida, alcaldía! Empieza por una calle desde el centro (🛣️ Vías) y pon zonas residenciales a su lado.",9000);
   else msg("Bienvenida de nuevo a "+s.nombre+".",4000);
@@ -784,12 +786,22 @@ function trozo(kx,ky){
   var ca={}; function CA(x,y){var k=x+","+y; if(ca[k]===undefined)ca[k]=celdaAlt(seed,x,y,T); return ca[k];}
   var va=new Array((CH+1)*(CH+1));
   for(x=0;x<=CH;x++)for(y=0;y<=CH;y++){var i=kx*CH+x, jj=ky*CH+y; va[x*(CH+1)+y]=Math.min(CA(i-1,jj-1),CA(i,jj-1),CA(i-1,jj),CA(i,jj));}
+  var W=CH*TW+TW, H=CH*TH+TH+MAXA*ALT, ox=((kx-ky)*CH-CH)*HW, oy=(kx+ky)*CH*HH-HH-MAXA*ALT;   /* esquina del trozo en el mapa (con lugar arriba para las colinas) */
+  t={ter:ter,va:va,kx:kx,ky:ky,c:null,ox:ox,oy:oy,w:W,h:H,uso:j.marco||0,T:T};
+  j.trozos[key]=t; j.ntrozos++;
+  /* no guardar demasiados: se borran los que hace más que no se ven */
+  if(j.ntrozos>70){var ks=Object.keys(j.trozos).sort(function(a,b){return j.trozos[a].uso-j.trozos[b].uso;}); for(var i=0;i<20;i++){delete j.trozos[ks[i]];j.ntrozos--;} ultT=null;}
+  return t;
+}
+/* la imagen de un trozo (solo para el dibujo 2D; la vista 3D no la necesita): casillas de pasto, bosque, arena y agua,
+   cada una inclinada según sus cuatro esquinas */
+function imagenTrozo(t){
+  if(t.c)return t.c;
+  var seed=J.s.mseed, kx=t.kx, ky=t.ky, ter=t.ter, va=t.va, T=t.T, ox=t.ox, oy=t.oy, W=t.w, H=t.h, x, y;
   function V(x,y){return va[x*(CH+1)+y];}
-  /* la imagen: casillas de pasto, bosque, arena y agua, cada una inclinada según sus cuatro esquinas */
-  var c=document.createElement("canvas"), W=CH*TW+TW, H=CH*TH+TH+MAXA*ALT;
+  var c=document.createElement("canvas");
   c.width=W*CS; c.height=H*CS;
   var g=c.getContext("2d"); g.setTransform(CS,0,0,CS,0,0);
-  var ox=((kx-ky)*CH-CH)*HW, oy=(kx+ky)*CH*HH-HH-MAXA*ALT;   /* esquina del trozo en el mapa (con lugar arriba para las colinas) */
   /* primero el agua y luego la tierra; el agua dibuja en su borde de atrás el talud de la orilla (la tierra queda más alta) */
   for(var pasada=0;pasada<2;pasada++)for(x=0;x<CH;x++)for(y=0;y<CH;y++){
     var wx=kx*CH+x, wy=ky*CH+y, tt=ter[x*CH+y], px=(wx-wy)*HW-ox, py=(wx+wy)*HH-oy, n=hsh(wx,wy,seed);
@@ -828,11 +840,8 @@ function trozo(kx,ky){
     if(tt==="g"&&!playa&&n<0.035){g.fillStyle="#fff7d6"; g.fillRect(px-3,py,1.5,1.5); g.fillStyle=n<0.018?"#ff8fb3":"#ffe066"; g.fillRect(px+2,py-2,1.5,1.5);}
     if(playa&&n<0.12){g.fillStyle="rgba(160,130,80,.5)"; g.fillRect(px-2+n*20,py,1.2,0.8);}
   }
-  t={ter:ter,va:va,kx:kx,ky:ky,c:c,ox:ox,oy:oy,w:W,h:H,uso:j.marco||0};
-  j.trozos[key]=t; j.ntrozos++;
-  /* no guardar demasiados: se borran los que hace más que no se ven */
-  if(j.ntrozos>70){var ks=Object.keys(j.trozos).sort(function(a,b){return j.trozos[a].uso-j.trozos[b].uso;}); for(var i=0;i<20;i++){delete j.trozos[ks[i]];j.ntrozos--;} ultT=null;}
-  return t;
+  t.c=c; t.T=null;
+  return c;
 }
 function cargaVecinos(){
   var j=J; if(!j)return;
@@ -859,7 +868,7 @@ function vecinoEn(x,y){
 
 /* ---------- cámara ---------- */
 /* modo retro: la ciudad se dibuja a la mitad de resolución y se amplía sin suavizar (píxeles nítidos, como en los 90) */
-function retroGuardado(){try{var v=localStorage.getItem("cs_retro"); return v===null?true:v==="1";}catch(e){return true;}}
+function retroGuardado(){try{return localStorage.getItem("cs_retro")==="1";}catch(e){return false;}}
 function tam(){
   var j=J, cv=j.cv, dpr=j.retro?0.5:Math.min(2,window.devicePixelRatio||1), w=cv.clientWidth, h=cv.clientHeight;
   cv.classList.toggle("retro",!!j.retro);
@@ -869,6 +878,42 @@ function tam(){
   var tx=j.tx; if(tx){var d2=Math.min(2,window.devicePixelRatio||1); j.dtx=d2;
     if(tx.width!==Math.round(w*d2)||tx.height!==Math.round(h*d2)){tx.width=Math.round(w*d2); tx.height=Math.round(h*d2); tx.style.width=w+"px"; tx.style.height=h+"px";}
     tx.style.left=cv.offsetLeft+"px"; tx.style.top=cv.offsetTop+"px";}
+  var gl=$("cs-gl"); if(gl){ gl.style.width=w+"px"; gl.style.height=h+"px"; gl.style.left=cv.offsetLeft+"px"; gl.style.top=cv.offsetTop+"px"; }
+}
+/* ---------- la vista 3D (WebGL): se carga al entrar; si el aparato no puede, queda el dibujo 2D ---------- */
+function inicia3d(j){
+  if(j.retro||j.g3||j.no3d||j.cargando3d)return;
+  if(!window.AxCiudad3D||!AxCiudad3D.soporta()){ j.no3d=true; return; }
+  j.cargando3d=true;
+  AxCiudad3D.carga().then(function(){
+    j.cargando3d=false; if(J!==j||j.retro)return;
+    try{ j.g3=AxCiudad3D.crea($("cs-gl"),api3d()); }catch(e){ j.no3d=true; j.g3=null; }
+  }).catch(function(){ j.cargando3d=false; j.no3d=true; });
+}
+/* lo que la vista 3D necesita saber de cada casilla (la mía o la de una vecina) */
+function api3d(){
+  return {
+    seed:function(){return J.s.mseed;}, terr:terr, vert:vert,
+    altura:function(x,y){return altTop(x,y);},
+    celda:function(wx,wy){ var j=J, s=j.s, dx=wx-s.cx, dy=wy-s.cy;
+      if(dx>=-A.R&&dx<=A.R&&dy>=-A.R&&dy<=A.R){ var i=A.idx(dx,dy), t=s.tipo[i], l=s.nivel[i];
+        return {t:t,l:l,era:s.era,rq:(t==="R"||t==="C")&&l?riquezaDe(wx,wy,false):0,cable:s.cable[i],dentro:A.dentro(s,dx,dy)}; }
+      if(!j.vecinos.length)return null; var v=vecinoEn(wx,wy); if(!v)return null;
+      return {t:v.t,l:v.l,era:v.v.era||0,rq:(v.t==="R"||v.t==="C")&&v.l?riquezaDe(wx,wy,true):0,cable:0,dentro:v.dentro}; },
+    conCalle:function(wx,wy){ var s=J.s, dx=wx-s.cx, dy=wy-s.cy; return calleVecina(wx,wy,s,!(Math.abs(dx)<=A.R&&Math.abs(dy)<=A.R)); },
+    cubre:function(kx,ky){ var j=J, s=j.s, x0=kx*CH-1, x1=kx*CH+CH, y0=ky*CH-1, y1=ky*CH+CH, R=A.R;
+      function ok(cx,cy){return x1>=cx-R&&x0<=cx+R&&y1>=cy-R&&y0<=cy+R;}
+      if(ok(s.cx,s.cy))return true; for(var i=0;i<j.vecinos.length;i++)if(ok(j.vecinos[i].cx,j.vecinos[i].cy))return true; return false; }
+  };
+}
+/* los coches para la vista 3D: dónde están, hacia dónde van y por el carril derecho */
+function coches3d(){
+  var j=J, s=j.s, out=[], LV3=AxCiudad3D.LV;
+  j.cars.forEach(function(cr){ var ax=cr.x+s.cx, ay=cr.y+s.cy, bx=cr.nx+s.cx, by=cr.ny+s.cy, f=Math.min(1,cr.t);
+    var wx=ax+(bx-ax)*f, wy=ay+(by-ay)*f, ha=altTop(ax,ay), hb=altTop(bx,by), dx=bx-ax, dy=by-ay, n=Math.hypot(dx,dy);
+    if(!n){dx=1;dy=0;n=1;} dx/=n; dy/=n;
+    out.push({x:wx-dy*0.13,z:wy+dx*0.13,y:(ha+(hb-ha)*f)*LV3+0.015,dx:dx,dz:dy,col:cr.c}); });
+  return out;
 }
 function centra(inicio){
   var j=J, s=j.s; tam();
@@ -944,7 +989,8 @@ function enlaza(){
   $("cs-retro").classList.toggle("on",!!j.retro);
   $("cs-retro").onclick=function(){
     j.retro=!j.retro; j.vin=null; try{localStorage.setItem("cs_retro",j.retro?"1":"0");}catch(e){}
-    this.classList.toggle("on",j.retro); msg(j.retro?"👾 Modo retro: píxeles nítidos, como los juegos de ciudades de los 90.":"Modo nítido: la ciudad a toda resolución.",3500);
+    if(!j.retro)inicia3d(j);
+    this.classList.toggle("on",j.retro); msg(j.retro?"👾 Modo retro: píxeles nítidos, como los juegos de ciudades de los 90.":j.no3d?"Modo nítido: la ciudad a toda resolución.":"🏙️ Vista 3D: luz del sol, sombras, reflejos y ventanas que se encienden de noche.",3500);
   };
   $("cs-mundo").onclick=function(){
     var c=j.cam;
@@ -1460,8 +1506,13 @@ function dibuja(now){
   var j=J, g=j.ctx, s=j.s; if(!g)return;
   tam(); j.marco=(j.marco||0)+1;
   var W=j.W, H=j.H, c=j.cam, k=j.dpr*c.z;
+  /* con la vista 3D, el terreno, las calles y los edificios los dibuja WebGL; aquí queda solo lo que va encima */
+  var tres=!!(j.g3&&!j.retro&&c.z>=ZMUNDO);
+  if(j.glVis!==tres){ $("cs-gl").style.visibility=tres?"visible":"hidden"; j.glVis=tres; }
+  if(tres){ try{ j.g3.dibuja({cam:c,W:W,H:H,t:now+desfase,era:s.era,capa:!!j.capa,coches:coches3d()}); }
+    catch(e){ try{j.g3.destruye();}catch(e2){} j.g3=null; j.no3d=true; tres=false; $("cs-gl").style.visibility="hidden"; j.glVis=false; } }
   g.setTransform(j.dpr,0,0,j.dpr,0,0);
-  g.fillStyle="#3a93dc"; g.fillRect(0,0,W,H);
+  if(tres)g.clearRect(0,0,W,H); else { g.fillStyle="#3a93dc"; g.fillRect(0,0,W,H); }
   g.setTransform(k,0,0,k,j.dpr*W/2-c.x*k,j.dpr*H/2-c.y*k);
   /* lo visible, en unidades del mapa */
   var ix0=c.x-W/2/c.z, ix1=c.x+W/2/c.z, iy0=c.y-H/2/c.z, iy1=c.y+H/2/c.z;
@@ -1473,10 +1524,11 @@ function dibuja(now){
   var kxA, kyA;
   var lejos=c.z<ZMUNDO, gr=Math.max(1,0.8/c.z);   /* gr: grosor de las líneas para que se vean de lejos */
   if(lejos){ terrenoMundo(g,c); kx1=kx0-1; }       /* de lejos, el terreno es una sola imagen */
+  if(tres)kx1=kx0-1;
   for(kxA=kx0;kxA<=kx1;kxA++)for(kyA=ky0;kyA<=ky1;kyA++){
     var t=trozo(kxA,kyA);
     if(t.ox>ix1||t.ox+t.w<ix0||t.oy>iy1||t.oy+t.h<iy0)continue;
-    g.drawImage(t.c,t.ox,t.oy,t.w,t.h);
+    g.drawImage(imagenTrozo(t),t.ox,t.oy,t.w,t.h);
   }
   var luz=Math.sin((now+desfase)/40000*Math.PI*2*0.25); /* un día de 160 s */
   var noche=Math.max(0,Math.min(1,(-luz+0.25)/0.9));
@@ -1543,24 +1595,25 @@ function dibuja(now){
       if(dx>=-A.R&&dx<=A.R&&dy>=-A.R&&dy<=A.R){ii=A.idx(dx,dy); tipo=s.tipo[ii]; niv=s.nivel[ii];}
       else if(j.vecinos.length){var vv=vecinoEn(wx,wy); if(vv&&vv.t){tipo=vv.t; niv=vv.l; vecina=true;}}
       var ter=terr(wx,wy);
-      if(ter==="w"&&!tipo&&!lejos){var hh2=hsh(wx,wy,11);
+      if(ter==="w"&&!tipo&&!lejos&&!tres){var hh2=hsh(wx,wy,11);
         if(hh2<0.3){var fz=(now/2400+hh2*7)%1, al=0.5*Math.sin(fz*Math.PI); g.strokeStyle="rgba(255,255,255,"+al.toFixed(2)+")"; g.lineWidth=0.7;
           g.beginPath(); g.moveTo(x-5+fz*6,y-1+fz*1.5); g.quadraticCurveTo(x-3+fz*6,y-2.4+fz*1.5,x-1+fz*6,y-1+fz*1.5); g.stroke();}}
       var es=ter==="w"&&!tipo?null:esquinas(wx,wy), yt=y;
-      if(tipo&&(tipo==="c"||("RCI".indexOf(tipo)>=0&&!niv))){ INC=es; pieza(g,tipo,niv,x,y,wx,wy,now,hayNoche,luces,vecina,s,vecina?vv.v.era:s.era); INC=null; yt=y-(es[0]+es[1]+es[2]+es[3])/4*ALT; }
-      else if(tipo){ var mx=Math.max(es[0],es[1],es[2],es[3]); if(mx>Math.min(es[0],es[1],es[2],es[3]))cimiento(g,x,y,es,mx); yt=y-mx*ALT;
-        pieza(g,tipo,niv,x,yt,wx,wy,now,hayNoche,luces,vecina,s,vecina?vv.v.era:s.era); }
+      if(tipo&&(tipo==="c"||("RCI".indexOf(tipo)>=0&&!niv))){ INC=es; if(!tres)pieza(g,tipo,niv,x,y,wx,wy,now,hayNoche,luces,vecina,s,vecina?vv.v.era:s.era); INC=null; yt=y-(es[0]+es[1]+es[2]+es[3])/4*ALT; }
+      else if(tipo){ var mx=Math.max(es[0],es[1],es[2],es[3]); if(!tres&&mx>Math.min(es[0],es[1],es[2],es[3]))cimiento(g,x,y,es,mx); yt=y-mx*ALT;
+        if(!tres)pieza(g,tipo,niv,x,yt,wx,wy,now,hayNoche,luces,vecina,s,vecina?vv.v.era:s.era); }
       else if(es){ yt=y-(es[0]+es[1]+es[2]+es[3])/4*ALT;
-        if(ter==="f")arbol(g,x,yt+2,hsh(wx,wy,5),0.95);
+        if(tres){}
+        else if(ter==="f")arbol(g,x,yt+2,hsh(wx,wy,5),0.95);
         else if(ter==="g"&&!vecina&&ii<0&&hsh(wx,wy,9)<0.035)arbol(g,x,yt+2,hsh(wx,wy,5),0.7);
         if(rejilla&&ii>=0&&A.dentro(s,dx,dy)){g.strokeStyle="rgba(255,255,255,.28)"; g.lineWidth=0.5; contorno(g,wx,wy); g.stroke();} }
-      if(ii>=0&&s.cable[ii])poste(g,s,wx,wy,x,yt);
+      if(ii>=0&&s.cable[ii]&&!tres)poste(g,s,wx,wy,x,yt);
       if(ii>=0&&tipo&&tipo!=="c"&&(niv||!A.EDIF[tipo].zona)){
         var Ed=A.EDIF[tipo], luzMal=!stD.sinLuz&&!Ed.mw&&stD.redE[mD.redE.comp[ii]]<0.95, aguaMal=!Ed.agua&&stD.redA[mD.redA.comp[ii]]<0.95;
         if(luzMal||aguaMal)avisos.push(x,yt,luzMal&&(!aguaMal||Math.floor(now/1000)%2)?"luz":"agua");
       }
       if(ii>=0&&fuegos[ii])fuego(g,x,yt,now);
-      var lista=coches[wx+","+wy]; if(lista)lista.forEach(function(cr){coche(g,cr,s);});
+      var lista=coches[wx+","+wy]; if(lista&&!tres)lista.forEach(function(cr){coche(g,cr,s);});
       if(prev){var pv=prev[wx+","+wy]; if(pv!==undefined){g.fillStyle=pv?"rgba(105,240,174,.45)":"rgba(255,82,82,.45)"; contorno(g,wx,wy); g.fill();}}
     }
   }
@@ -1604,11 +1657,11 @@ function dibuja(now){
     }
   }
   /* 6) atardecer, noche y luces */
-  if(!j.capa&&noche>0.02&&noche<0.75){
+  if(!j.capa&&!tres&&noche>0.02&&noche<0.75){
     g.setTransform(j.dpr,0,0,j.dpr,0,0); g.fillStyle="rgba(255,120,40,"+(0.16*Math.sin(Math.min(1,noche/0.75)*Math.PI)).toFixed(3)+")"; g.fillRect(0,0,W,H);
     g.setTransform(k,0,0,k,j.dpr*W/2-c.x*k,j.dpr*H/2-c.y*k);
   }
-  if(!j.capa&&noche>0.02){
+  if(!j.capa&&!tres&&noche>0.02){
     g.setTransform(j.dpr,0,0,j.dpr,0,0); g.fillStyle="rgba(12,20,60,"+(0.5*noche)+")"; g.fillRect(0,0,W,H);
     g.setTransform(k,0,0,k,j.dpr*W/2-c.x*k,j.dpr*H/2-c.y*k);
     if(hayNoche){g.globalCompositeOperation="lighter"; g.fillStyle=(s.era<3?"rgba(255,150,60,":s.era===5?"rgba(140,230,255,":"rgba(255,214,110,")+(0.35*noche)+")";
@@ -1790,5 +1843,5 @@ window.AxCiudadUI={portada:portada,juega:juega,cerrar:cerrar,
   estado:function(){return J&&J.s;},camara:function(){return J?{x:J.cam.x,y:J.cam.y,z:J.cam.z}:null;},
   /* para las pruebas: la casilla del mapa que se ve en un punto de la pantalla, y al revés */
   pantalla:function(dx,dy){if(!J)return null; var s=J.s, wx=s.cx+dx, wy=s.cy+dy, ix=(wx-wy)*HW, iy=(wx+wy)*HH-altTop(wx,wy)*ALT; return {x:(ix-J.cam.x)*J.cam.z+J.W/2,y:(iy-J.cam.y)*J.cam.z+J.H/2};},
-  guarda:function(){return guarda();},vecinos:function(){return J?J.vecinos:null;},reloj:function(ms){desfase=ms;},log:function(){return J?J.log:null;}};
+  vista3d:function(){return J?J.g3:null;},guarda:function(){return guarda();},vecinos:function(){return J?J.vecinos:null;},reloj:function(ms){desfase=ms;},log:function(){return J?J.log:null;}};
 })();

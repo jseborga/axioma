@@ -455,7 +455,7 @@ GUIAS.ciudad=[
 {t:"Trucos",d:"",
  a:function(){return tarjetas([["🔍 Mirar","Toca una casilla y te dice por qué crece o no: falta calle, energía, agua, demanda, escuela…"],
    ["🗺️ Capas","Contaminación, seguridad, bomberos, salud, educación, ocio, valor del suelo y redes pintadas sobre el mapa."],
-   ["👾 Retro","Píxeles nítidos como los juegos de ciudades de los 90, o la ciudad a toda resolución."],
+   ["🏙️ 3D y 👾 retro","La ciudad se ve en 3D con luz del sol, sombras y reflejos; de noche se encienden las ventanas. 👾 cambia al dibujo retro de píxeles nítidos."],
    ["Impuestos","En 🏛️ Alcaldía: más impuestos dan más dinero, pero bajan la felicidad y frenan el crecimiento."],
    ["💳 Deuda","En 🏛️ Alcaldía → 💳: pide un préstamo bancario (cuota fija) o emite bonos municipales (desde la Revolución Industrial) para invertir, y devuélvelos cada mes con intereses. Tu calificación crediticia (AAA a B) fija el interés; la deuda no puede pasar del 110 % de lo que ingresas en un año."],
    ["Contaminación","La industria y la central térmica contaminan; los parques, el reciclaje y la depuradora limpian."]]);}},
