@@ -93,6 +93,15 @@ reflexiones; consejos para acompañar (elogiar el esfuerzo, preguntar «¿cómo 
 pensaste?», sesiones cortas); editar el perfil, activar la lectura en voz alta y
 borrar el perfil.
 
+## Pantalla completa y Lumi
+
+El botón ⛶ (arriba en cada pantalla) pone el juego en pantalla completa; en iPhone,
+donde el navegador no lo permite, el juego ocupa toda la ventana igual. Se sale con el
+mismo botón o con Esc. **Lumi**, la mascota, saluda, sugiere el concepto, piensa con
+el niño cuando hay un error, anima en el refuerzo y celebra al dominar. Es la misma
+mascota del curso de [Inglés](INGLES.md), que usa los mismos perfiles: arriba se
+cambia entre 🧮 Matemática y 🔤 Inglés.
+
 ## Voz
 
 🔊 lee las preguntas, las pistas y las afirmaciones con la voz del sistema en español

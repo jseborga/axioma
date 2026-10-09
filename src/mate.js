@@ -13,10 +13,11 @@
    límite diario (MATE_IA_DIA, 20 por defecto). Con IA_PRUEBA=1 se simula.
    =========================================================== */
 import "../public/mate-motor.js";
+import "../public/ingles-motor.js";
 import { esInvitado } from "./aula.js";
 import { configuracion, pideJSON } from "./ia-proveedores.js";
 
-var M=globalThis.AxMate;
+var M=globalThis.AxMate, I=globalThis.AxIngles;
 var MAX_PERFILES=8, MAX_DATOS=150000;
 
 function dia(){return new Date().toISOString().slice(0,10);}
@@ -64,6 +65,7 @@ async function guarda(req,env,user,id,j){
       racha:e(p.racha,0,1e6),en:e(p.en,0,1e6),dom:!!p.dom,ref:e(p.ref,0,1e6),at:e(p.at,0,9e15)};});
   (Array.isArray(d.refl)?d.refl:[]).slice(-60).forEach(function(r){if(r&&M.POR_ID[r.c])datos.refl.push({c:r.c,t:+r.t||0,ok:+r.ok||0,n:+r.n||0,s:r.s==null?null:Math.max(0,Math.min(3,+r.s||0)),d:limpia(r.d,12),nota:limpia(r.nota,120)});});
   if(d.dias&&typeof d.dias==="object")Object.keys(d.dias).filter(function(k){return /^\d{4}-\d\d-\d\d$/.test(k);}).sort().slice(-120).forEach(function(k){datos.dias[k]=Math.max(0,Math.min(10000,+d.dias[k]||0));});
+  if(d.ing&&typeof d.ing==="object"&&!Array.isArray(d.ing))datos.ing=ingles(d.ing);
   var txt=JSON.stringify(datos);
   if(txt.length>MAX_DATOS)return j({error:"too_large"},null,413);
   var ya=await env.DB.prepare("SELECT updated_at FROM mate_perfiles WHERE user_id=? AND id=?").bind(user.id,id).first();
@@ -76,6 +78,15 @@ async function guarda(req,env,user,id,j){
     "ON CONFLICT(user_id,id) DO UPDATE SET nombre=excluded.nombre,avatar=excluded.avatar,etapa=excluded.etapa,datos=excluded.datos,updated_at=excluded.updated_at")
     .bind(user.id,id,nombre,datos.avatar,etapa,txt,now,now).run();
   return j({ok:true,updated_at:now});
+}
+/* el avance en inglés: lecciones, fuerza de cada palabra, XP, días y cómo se sintió */
+function ingles(g){
+  var e=function(x,lo,hi){x=Math.floor(+x||0); return Math.max(lo,Math.min(hi,x));}, o={lec:{},pal:{},xp:e(g.xp,0,1e7),dias:{},refl:[]};
+  if(g.lec&&typeof g.lec==="object")Object.keys(g.lec).forEach(function(k){var l=g.lec[k]; if(I.POR_ID[k]&&l&&typeof l==="object")o.lec[k]={e:e(l.e,0,3),v:e(l.v,0,1e5)};});
+  if(g.pal&&typeof g.pal==="object")Object.keys(g.pal).forEach(function(k){var p=g.pal[k]; if(I.PAL[k]&&p&&typeof p==="object")o.pal[k]={f:e(p.f,0,5),e:e(p.e,0,1e5),v:e(p.v,0,1e6),t:e(p.t,0,9e15)};});
+  if(g.dias&&typeof g.dias==="object")Object.keys(g.dias).filter(function(k){return /^\d{4}-\d\d-\d\d$/.test(k);}).sort().slice(-120).forEach(function(k){o.dias[k]=e(g.dias[k],0,1e5);});
+  (Array.isArray(g.refl)?g.refl:[]).slice(-30).forEach(function(r){if(r&&(I.POR_ID[r.l]||r.l==="repaso"))o.refl.push({l:r.l,t:e(r.t,0,9e15),ok:e(r.ok,0,1000),n:e(r.n,0,1000),s:r.s==null?null:e(r.s,0,3)});});
+  return o;
 }
 async function borra(env,user,id,j){
   await env.DB.prepare("DELETE FROM mate_perfiles WHERE user_id=? AND id=?").bind(user.id,id).run();

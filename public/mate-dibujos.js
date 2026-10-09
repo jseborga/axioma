@@ -198,6 +198,7 @@ function cubitos(l,w,h,col){
     out+=poly([P(i,j+1,k),P(i+1,j+1,k),P(i+1,j+1,k+1),P(i,j+1,k+1)],sombra(c,0.9));});
   return svg(f1(maxx-minx+8),f1(maxy-miny+8),out,"mt-cubos",l+" por "+w+" por "+h);
 }
+function aclara(hex,f){var n=parseInt(hex.slice(1),16), c=function(v){return Math.min(255,Math.round(v*f));}; return "rgb("+c(n>>16)+","+c((n>>8)&255)+","+c(n&255)+")";}
 function sombra(hex,f){var n=parseInt(hex.slice(1),16); return "rgb("+Math.round((n>>16)*f)+","+Math.round(((n>>8)&255)*f)+","+Math.round((n&255)*f)+")";}
 V.cubos=function(v){return cubitos(v.l,v.w,v.h,"#ffb74d");};
 V.cubo=function(v){return cubitos(v.n,v.n,v.n,v.n<=10?colorDe(v.n)==="#eeeeee"?"#e0e0e0":colorDe(v.n):"#f9a825");};
@@ -304,20 +305,28 @@ function escena(e,prog){
   var r=M.rng(e*977+13);
   if(oscuro){for(var i=0;i<40;i++)out+='<circle cx="'+f1(r()*W)+'" cy="'+f1(r()*110)+'" r="'+f1(0.6+r()*1.3)+'" fill="#fff" opacity="'+f1(0.4+r()*0.6)+'"/>';
     out+='<circle cx="340" cy="40" r="20" fill="#fff8e1" opacity=".95"/><circle cx="332" cy="34" r="18" fill="'+E.cielo[0]+'" opacity=".55"/>';}
-  else{out+='<circle cx="350" cy="38" r="22" fill="#ffd54f"/><circle cx="350" cy="38" r="30" fill="#ffd54f" opacity=".25"/>';
-    for(var n=0;n<3;n++){var cx=40+n*110+r()*40, cy=24+r()*24; out+='<g fill="#fff" opacity=".85"><ellipse cx="'+f1(cx)+'" cy="'+f1(cy)+'" rx="26" ry="9"/><ellipse cx="'+f1(cx+12)+'" cy="'+f1(cy-6)+'" rx="15" ry="9"/></g>';}}
-  /* el suelo: colinas suaves */
-  out+='<path d="M0 118 Q60 98 120 112 T240 108 T400 104 V180 H0Z" fill="'+E.suelo+'"/>';
-  out+='<path d="M0 140 Q80 126 170 138 T400 132 V180 H0Z" fill="'+sombra(E.suelo,0.88)+'"/>';
+  else{var sid=uid(); out+='<defs><radialGradient id="'+sid+'"><stop offset="0" stop-color="#fff7c2"/><stop offset=".5" stop-color="#ffd54f"/><stop offset="1" stop-color="#ffb300"/></radialGradient></defs>';
+    out+='<g class="mt-sol">'; for(var ra=0;ra<12;ra++){var an=ra*Math.PI/6; out+='<line x1="'+f1(350+30*Math.cos(an))+'" y1="'+f1(38+30*Math.sin(an))+'" x2="'+f1(350+42*Math.cos(an))+'" y2="'+f1(38+42*Math.sin(an))+'" stroke="#ffca28" stroke-width="4" stroke-linecap="round"/>';}
+    out+='</g><circle cx="350" cy="38" r="24" fill="url(#'+sid+')"/><circle cx="342" cy="34" r="2.6" fill="#8d6e00"/><circle cx="358" cy="34" r="2.6" fill="#8d6e00"/><path d="M341 43 Q350 50 359 43" stroke="#8d6e00" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
+    for(var n=0;n<3;n++){var cx=40+n*110+r()*40, cy=24+r()*24; out+='<g class="mt-nube" fill="#fff" opacity=".92"><ellipse cx="'+f1(cx)+'" cy="'+f1(cy)+'" rx="28" ry="10"/><ellipse cx="'+f1(cx+12)+'" cy="'+f1(cy-7)+'" rx="16" ry="11"/><ellipse cx="'+f1(cx-12)+'" cy="'+f1(cy-4)+'" rx="12" ry="8"/></g>';}}
+  /* el suelo: tres colinas con luz arriba */
+  var gid=uid();
+  out+='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+aclara(E.suelo,1.18)+'"/><stop offset="1" stop-color="'+E.suelo+'"/></linearGradient></defs>';
+  out+='<path d="M0 104 Q70 80 150 98 T300 92 T400 86 V180 H0Z" fill="'+sombra(E.suelo,0.92)+'" opacity=".7"/>';
+  out+='<path d="M0 118 Q60 98 120 112 T240 108 T400 104 V180 H0Z" fill="url(#'+gid+')"/>';
+  out+='<path d="M0 140 Q80 126 170 138 T400 132 V180 H0Z" fill="'+sombra(E.suelo,0.86)+'"/>';
   /* los adornos crecen con el avance de la etapa */
-  var ad=ADORNO[E.escena]||ADORNO.granja, cuantos=2+Math.round(frac*10);
+  var ad=ADORNO[E.escena]||ADORNO.granja, cuantos=3+Math.round(frac*12);
   for(var k=0;k<cuantos;k++){var ax=12+r()*376, ay=oscuro?20+r()*80:96+r()*16; if(!oscuro&&k%3===2)ay=60+r()*30;
-    out+='<text x="'+f1(ax)+'" y="'+f1(ay)+'" font-size="'+f1(14+r()*8)+'" text-anchor="middle" opacity=".9">'+ad[k%ad.length]+'</text>';}
-  /* los dibujos de los conceptos */
-  cs.forEach(function(c,i){var p=prog[c.id], av=M.avance(p,c), x=34+i*(332/Math.max(1,cs.length-1)), y=i%2?160:138, tam=f1(24+20*av);
+    out+='<text x="'+f1(ax)+'" y="'+f1(ay)+'" font-size="'+f1(16+r()*10)+'" text-anchor="middle" opacity=".95">'+ad[k%ad.length]+'</text>';}
+  /* los dibujos de los conceptos: en una medalla con un anillo que se llena con el avance */
+  cs.forEach(function(c,i){var p=prog[c.id], av=M.avance(p,c), x=34+i*(332/Math.max(1,cs.length-1)), y=i%2?150:128, R=17+5*av, L=2*Math.PI*(R+3);
     if(cs.length===1)x=200;
-    out+='<g class="mt-sticker'+(p?(p.dom?" dom":" vivo"):" gris")+'" data-c="'+c.id+'"><text x="'+f1(x)+'" y="'+y+'" font-size="'+tam+'" text-anchor="middle">'+c.dibujo+'</text>'+
-      (p&&p.dom?'<text x="'+f1(x+13)+'" y="'+(y-18)+'" font-size="12" text-anchor="middle">✨</text>':'')+'</g>';});
+    out+='<g class="mt-sticker'+(p?(p.dom?" dom":" vivo"):" gris")+'" data-c="'+c.id+'">'+
+      '<circle cx="'+f1(x)+'" cy="'+f1(y)+'" r="'+f1(R)+'" fill="'+(p&&p.dom?'#fff8d6':'#fff')+'" stroke="rgba(0,0,0,.12)" stroke-width="1.5"/>'+
+      (p?'<circle cx="'+f1(x)+'" cy="'+f1(y)+'" r="'+f1(R+3)+'" fill="none" stroke="'+(p.dom?'#ffb300':'#43c000')+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+f1(L*Math.max(0.04,av))+' '+f1(L)+'" transform="rotate(-90 '+f1(x)+' '+f1(y)+')"/>':'')+
+      '<text x="'+f1(x)+'" y="'+f1(y+R*0.36)+'" font-size="'+f1(R*1.05)+'" text-anchor="middle">'+c.dibujo+'</text>'+
+      (p&&p.dom?'<text x="'+f1(x+R)+'" y="'+f1(y-R+2)+'" font-size="13" text-anchor="middle">⭐</text>':'')+'</g>';});
   return svg(W,H,out,"mt-escena-svg","escena de "+E.nom).replace('width="400" height="180"','preserveAspectRatio="xMidYMid slice"');
 }
 

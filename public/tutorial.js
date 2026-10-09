@@ -486,6 +486,20 @@ GUIAS.mate=[
    ["Ideas para casa","Cada concepto trae una actividad con objetos de la casa: contar cucharas, repartir galletas, medir con pasos…"],
    ["Privacidad","Solo se guarda un apodo, el animalito y el avance. Sin cuenta, todo queda en el dispositivo; con Google, también en la cuenta del adulto."]]);}}
 ];
+GUIAS.ingles=[
+{t:"Inglés para niñas y niños",d:"Un curso de inglés desde cero, práctico y con juegos: palabras con dibujos y sonido, frases, escuchar y hablar. Usa los mismos perfiles que Matemática: arriba se cambia de materia.",
+ a:function(){return ico("🔤");}},
+{t:"El camino",d:"",
+ a:function(){return pasos([["Unidades","15 unidades: saludos, colores, números, animales, familia, comida, cuerpo, ropa, escuela, casa, acciones, emociones, clima, juguetes y opuestos. 📖 muestra sus palabras y frases para escuchar."],
+   ["Lecciones","Cada unidad tiene un camino: Palabras (con dibujo y sonido), Frases, Escucha y habla, y el Reto. Se abren en orden; Lumi marca dónde seguir."],
+   ["Ejercicios","Elegir el dibujo, escuchar, traducir, unir parejas, deletrear, armar la frase con fichas, completar y decirlo en voz alta (🎤, si el navegador lo permite). 🐢 repite más despacio."],
+   ["Comprobar","Se elige y se toca «Comprobar». Si no era, se ve la respuesta y ese ejercicio vuelve al final de la lección."],
+   ["Al terminar","Estrellas según los aciertos (terminar siempre da al menos una), XP, la meta del día (20 XP) y cómo me sentí."]]);}},
+{t:"Repasar",d:"",
+ a:function(){return tarjetas([["💪 Repasar mis palabras","Cada palabra tiene su fuerza: sube al acertar y baja al fallar. El repaso practica las más débiles."],
+   ["Si cuesta","Cuando una lección sale con menos del 60 %, Lumi propone repasar en el momento las palabras difíciles."],
+   ["Para adultos","En 👪 se ven las lecciones hechas, las palabras aprendidas y las que hay que repasar, con una idea para practicar en casa."]]);}}
+];
 GUIAS.juegos=[
 {t:"Más juegos",d:"Juegos en sala con código: estrategia 1 contra 1, juegos de mesa en grupo, dinámicas en vivo para eventos, sorteos y subastas, y juegos solo para adultos. Cada juego explica sus reglas en su ficha.",
  a:function(){return tarjetas([["Estrategia","Gomoku, Hex, tres en raya cuántico: contra el bot sin conexión, a dos en un teléfono o en línea."],

@@ -23,6 +23,7 @@ function hoy(){var d=new Date(); return d.getFullYear()+"-"+("0"+(d.getMonth()+1
 function semilla(){return (Math.floor(Math.random()*4294967295)^Date.now())>>>0;}
 var RONDA=8, LS="ax-mate-v1";
 var AVATARES=["🦁","🐼","🐯","🦊","🐸","🐧","🐨","🦄","🐙","🐢","🐰","🐻","🐶","🐱","🦉","🐬"];
+var ACENTO=["#ff9f1c","#43c000","#2bb673","#1cb0f6","#7c5cff","#ff6b4a","#00a8e8","#8e5cf7","#ff4fa3"];
 var FASES=[{ico:"🧱",nom:"Material"},{ico:"✏️",nom:"Dibujo"},{ico:"🔢",nom:"Números"}];
 var SENTIR=[["😄","¡Feliz!"],["🙂","Bien"],["😐","Más o menos"],["😟","Me costó"]];
 var INSIGNIAS=[[1,"🌱","Primer concepto dominado"],[5,"🎒","Exploradora o explorador"],[10,"🧭","Aventura matemática"],[20,"🏅","Gran constancia"],[30,"🎓","Pensamiento matemático"],[48,"👑","¡Todos los conceptos!"]];
@@ -91,25 +92,35 @@ var S={};             /* lo que se está haciendo ahora */
 function panel(){return $("rapido-panel");}
 function pinta(html,cls){var pn=panel(); if(!pn)return null; pn.hidden=false; callaVoz(); S.teclado=null;
   var pf=actual(), e=S.etapa!=null?S.etapa:pf?pf.etapa:0;
-  pn.innerHTML='<div class="mt '+(cls||"")+'" data-etapa="'+e+'" style="--cielo1:'+M.ETAPAS[e].cielo[0]+';--cielo2:'+M.ETAPAS[e].cielo[1]+'">'+html+'</div>';
-  var g=pn.querySelector(".mt"); try{if(pn.getBoundingClientRect().top<0)pn.scrollIntoView({block:"start"});}catch(x){} return g;}
+  pn.innerHTML='<div class="mt '+(cls||"")+'" data-etapa="'+e+'" style="--cielo1:'+M.ETAPAS[e].cielo[0]+';--cielo2:'+M.ETAPAS[e].cielo[1]+';--ac:'+ACENTO[e]+'">'+html+'</div>';
+  var g=pn.querySelector(".mt");
+  /* pantalla completa en todas las pantallas: en la barra de arriba o, si no hay, en la esquina */
+  if(window.AxAprender&&!g.querySelector("[data-ap-full]")){var top=g.querySelector(".mt-top"); if(top)top.insertAdjacentHTML("beforeend",AxAprender.botonCompleta()); else g.insertAdjacentHTML("afterbegin",'<div class="ap-full-flota">'+AxAprender.botonCompleta()+'</div>');} try{if(pn.getBoundingClientRect().top<0)pn.scrollIntoView({block:"start"});}catch(x){} return g;}
 function on(raiz,sel,fn){Array.prototype.forEach.call(raiz.querySelectorAll(sel),function(b){b.onclick=function(ev){ev.preventDefault();fn(b,ev);};});}
 function btnVoz(t){return '<button type="button" class="mt-voz" data-voz="'+esc(t)+'" aria-label="Escuchar" title="Escuchar">🔊</button>';}
 function activaVoz(raiz){on(raiz,"[data-voz]",function(b){habla(b.getAttribute("data-voz"));});}
+function lumi(g,t){return window.AxAprender?'<div class="mt-lumi">'+AxAprender.mascota(g,t||64)+'</div>':'';}
 function estrellas(n,max){var s='';for(var i=1;i<=max;i++)s+=i<=n?'★':'☆';return '<span class="mt-est" aria-label="nivel '+n+' de '+max+'">'+s+'</span>';}
 function faseChips(f){return '<span class="mt-fases">'+FASES.map(function(x,i){return '<i class="'+(i<f?"hecho":i===f?"ahora":"")+'" title="'+x.nom+'">'+x.ico+'</i>';}).join("")+'</span>';}
 
 /* ===================== PORTADA: elegir perfil ===================== */
-function portada(){
+function portada(materia){
+  if(materia){D.materia=materia; guardaLocal();}
   baja().then(function(c){if(c&&S.portada)portadaPinta();});
+  /* con un solo perfil se entra directo; con varios, cada quien elige el suyo */
+  if(D.lista.length===1&&actual())return entra();
   portadaPinta();
 }
+/* la materia elegida: Matemática o Inglés */
+function entra(){if(D.materia==="ingles"&&window.AxInglesUI)return AxInglesUI.mapa(); mapa();}
 function portadaPinta(){
   S={portada:true};
   if(!D.lista.length)return crear();
-  var g=pinta('<div class="mt-portada"><h3>🧮 Matemática Montessori</h3>'+
-    '<p class="fine">Juegos para aprender matemática desde inicial hasta secundaria: primero con el material, luego con dibujos y al final con números. '+
-    'Cada quien avanza a su ritmo y los errores se convierten en ayuda. <a href="#" class="guia-link" data-guia="mate">¿Cómo funciona?</a></p>'+
+  var ing=D.materia==="ingles";
+  var g=pinta('<div class="mt-portada">'+(window.AxAprender?AxAprender.globo("feliz",ing?"Hello! ¿Quién va a aprender inglés hoy?":"¡Hola! ¿Quién va a aprender hoy?","grande"):'')+
+    '<h3>'+(ing?'🔤 Inglés para niñas y niños':'🧮 Matemática Montessori')+'</h3>'+
+    '<p class="fine">'+(ing?'Un curso de inglés desde cero con juegos: palabras con dibujos y sonido, frases, escuchar y hablar. Lecciones cortas, a tu ritmo. <a href="#" class="guia-link" data-guia="ingles">¿Cómo funciona?</a>'
+      :'Juegos para aprender matemática desde inicial hasta secundaria: primero con el material, luego con dibujos y al final con números. Cada quien avanza a su ritmo y los errores se convierten en ayuda. <a href="#" class="guia-link" data-guia="mate">¿Cómo funciona?</a>')+'</p>'+
     '<h4>¿Quién va a aprender hoy?</h4><div class="mt-perfiles">'+
     D.lista.map(function(pf){var E=M.ETAPAS[pf.etapa]||M.ETAPAS[0], r=racha(pf);
       return '<button type="button" class="mt-perfil" data-pf="'+esc(pf.id)+'"><span class="mt-ava">'+esc(pf.avatar)+'</span><b>'+esc(pf.nombre)+'</b><small>'+E.ico+' '+esc(E.nom)+'</small>'+
@@ -118,7 +129,7 @@ function portadaPinta(){
     '</div><div class="actions"><button type="button" class="ghost" id="mt-adultos">👪 Para adultos</button></div>'+
     '<p class="fine">'+(usuario()?(nube.estado==="sin_tablas"?'Los perfiles se guardan en este dispositivo (faltan las tablas en el servidor).':'Los perfiles se guardan en tu cuenta y en este dispositivo.'):'Los perfiles se guardan en este dispositivo. Un adulto puede entrar con Google para guardarlos en su cuenta.')+'</p></div>');
   if(!g)return;
-  on(g,"[data-pf]",function(b){D.act=b.getAttribute("data-pf"); guardaLocal(); mapa();});
+  on(g,"[data-pf]",function(b){D.act=b.getAttribute("data-pf"); guardaLocal(); entra();});
   if($("mt-nuevo"))$("mt-nuevo").onclick=function(){crear();};
   $("mt-adultos").onclick=function(){puerta(function(){adultos();});};
 }
@@ -141,9 +152,32 @@ function crear(pf){
     var n=$("mt-nom").value.replace(/\s+/g," ").trim();
     if(!n){var er=$("mt-err"); er.hidden=false; er.textContent="Escribe tu nombre o un apodo."; $("mt-nom").focus(); return;}
     if(pf){pf.nombre=n.slice(0,20); pf.avatar=av; pf.etapa=et; cambia(pf); adultos(); return;}
-    nuevoPerfil(n.slice(0,20),av,et); mapa();
+    nuevoPerfil(n.slice(0,20),av,et); entra();
   };
   $("mt-nom").onkeydown=function(e){if(e.key==="Enter")$("mt-listo").click();};
+}
+
+/* ===================== la cabecera: quién, materia y botones ===================== */
+function cabeza(pf,materia,linea,extra){
+  return '<div class="mt-cab"><button type="button" class="mt-ava-btn" id="mt-cambiar" title="Cambiar de perfil">'+esc(pf.avatar)+'</button>'+
+      '<div class="mt-quien"><b>'+esc(pf.nombre)+'</b><small>'+linea+'</small>'+(extra||'')+'</div>'+
+      '<button type="button" class="mt-mini-btn" id="mt-voz-auto" title="Leer en voz alta">'+(D.voz?'🔊':'🔈')+'</button>'+
+      (window.AxAprender?AxAprender.botonCompleta():'')+'<button type="button" class="mt-mini-btn" id="mt-adultos" title="Para adultos">👪</button></div>'+
+    '<div class="ap-materias" role="tablist">'+[["mate","🧮","Matemática"],["ingles","🔤","Inglés"]].filter(function(x){return x[0]!=="ingles"||window.AxInglesUI;}).map(function(x){
+      return '<button type="button" role="tab" data-materia="'+x[0]+'" aria-selected="'+(x[0]===materia)+'" class="m-'+x[0]+(x[0]===materia?' on':'')+'"><span>'+x[1]+'</span>'+x[2]+'</button>';}).join("")+'</div>';
+}
+/* al cambiar de materia desde las pestañas, el menú y la ayuda «?» también cambian */
+function marcaModo(m){
+  document.body.setAttribute("data-mode",m);
+  var nom=m==="ingles"?"Inglés":"Matemática";
+  if($("mode-label"))$("mode-label").textContent=nom; if($("hdr"))$("hdr").textContent=nom;
+  ["mate","ingles"].forEach(function(x){var b=$("t-"+x); if(b)b.setAttribute("aria-checked",x===m?"true":"false");});
+}
+function activaCabeza(g){
+  on(g,"[data-materia]",function(b){var m=b.getAttribute("data-materia"); if(m===D.materia||(!D.materia&&m==="mate"))return; D.materia=m; guardaLocal(); SON.toca(); entra(); marcaModo(m);});
+  $("mt-cambiar").onclick=function(){portadaPinta();};
+  $("mt-adultos").onclick=function(){puerta(function(){adultos();});};
+  $("mt-voz-auto").onclick=function(){D.voz=!D.voz; guardaLocal(); this.textContent=D.voz?'🔊':'🔈'; if(D.voz)habla("Voy a leer en voz alta.");};
 }
 
 /* ===================== el mapa de la etapa ===================== */
@@ -151,15 +185,13 @@ function mapa(etapa){
   var pf=actual(); if(!pf)return portadaPinta();
   if(etapa!=null&&etapa!==pf.etapa){pf.etapa=etapa; cambia(pf);}
   var e=pf.etapa, E=M.ETAPAS[e], cs=M.deEtapa(e), sug=M.sugerido(pf.prog,e), dom=dominados(pf,e), ins=insignias(pf), r=racha(pf);
-  S={etapa:e};
-  var g=pinta('<div class="mt-cab"><button type="button" class="mt-ava-btn" id="mt-cambiar" title="Cambiar de perfil">'+esc(pf.avatar)+'</button>'+
-      '<div class="mt-quien"><b>'+esc(pf.nombre)+'</b><small>⭐ '+dominados(pf)+' dominados'+(r?' · 🔥 '+r+(r===1?' día':' días seguidos'):'')+'</small>'+
-      (ins.length?'<span class="mt-insig">'+ins.map(function(x){return '<i title="'+esc(x.nom)+'">'+x.ico+'</i>';}).join("")+'</span>':'')+'</div>'+
-      '<button type="button" class="mt-mini-btn" id="mt-voz-auto" title="Leer en voz alta">'+(D.voz?'🔊':'🔈')+'</button><button type="button" class="mt-mini-btn" id="mt-adultos" title="Para adultos">👪</button></div>'+
+  S={etapa:e}; if(D.materia!=="mate"){D.materia="mate"; guardaLocal();}
+  var g=pinta(cabeza(pf,"mate",'⭐ '+dominados(pf)+' dominados'+(r?' · 🔥 '+r+(r===1?' día':' días seguidos'):''),
+      ins.length?'<span class="mt-insig">'+ins.map(function(x){return '<i title="'+esc(x.nom)+'">'+x.ico+'</i>';}).join("")+'</span>':'')+
     '<div class="mt-etapas" role="tablist">'+M.ETAPAS.map(function(X,i){var c=M.etapaCompleta(pf.prog,i);
       return '<button type="button" role="tab" data-et="'+i+'" aria-selected="'+(i===e)+'" class="'+(i===e?"on":"")+(c?" completa":"")+'"><span>'+X.ico+'</span>'+esc(X.nom)+(c?' ✔':'')+'</button>';}).join("")+'</div>'+
     '<div class="mt-escena">'+DB.escena(e,pf.prog)+'<div class="mt-escena-pie"><b>'+E.ico+' '+esc(E.nom)+'</b><span>'+dom+' de '+cs.length+' conceptos dominados</span><i style="--p:'+Math.round(100*dom/cs.length)+'%"></i></div></div>'+
-    (sug?'<button type="button" class="mt-sugerido" data-c="'+sug+'"><span>'+M.POR_ID[sug].dibujo+'</span><b>Te sugiero: '+esc(M.POR_ID[sug].nom)+'</b><small>'+esc(M.POR_ID[sug].obj)+'</small></button>'
+    (sug?'<button type="button" class="mt-sugerido" data-c="'+sug+'"><span>'+(window.AxAprender?AxAprender.mascota("anima",62):M.POR_ID[sug].dibujo)+'</span><b>Te sugiero: '+M.POR_ID[sug].dibujo+' '+esc(M.POR_ID[sug].nom)+'</b><small>'+esc(M.POR_ID[sug].obj)+'</small></button>'
       :'<div class="mt-sugerido listo"><span>🏆</span><b>¡Dominaste toda la etapa!</b><small>'+(e<M.ETAPAS.length-1?'Cuando quieras, pasa a '+esc(M.ETAPAS[e+1].nom)+'. También puedes repasar.':'Eres un ejemplo de constancia.')+'</small>'+(e<M.ETAPAS.length-1?'<button type="button" class="primary" data-et="'+(e+1)+'">Ir a '+esc(M.ETAPAS[e+1].nom)+'</button>':'')+'</div>')+
     '<div class="mt-conceptos">'+cs.map(function(c){var p=pf.prog[c.id], av=M.avance(p,c), est=!p?"nuevo":p.dom?"dom":M.necesitaRefuerzo(p)?"refuerzo":"camino";
       var chip={nuevo:"Nuevo",dom:"Dominado ✅",refuerzo:"Repasemos 💪",camino:"En camino"}[est];
@@ -169,9 +201,7 @@ function mapa(etapa){
   on(g,"[data-c]",function(b){objetivo(b.getAttribute("data-c"));});
   Array.prototype.forEach.call(g.querySelectorAll(".mt-sticker"),function(s){s.addEventListener("click",function(){objetivo(s.getAttribute("data-c"));});});
   on(g,"[data-et]",function(b){mapa(+b.getAttribute("data-et"));});
-  $("mt-cambiar").onclick=function(){portadaPinta();};
-  $("mt-adultos").onclick=function(){puerta(function(){adultos();});};
-  $("mt-voz-auto").onclick=function(){D.voz=!D.voz; guardaLocal(); this.textContent=D.voz?'🔊':'🔈'; if(D.voz)habla("Voy a leer las preguntas en voz alta.");};
+  activaCabeza(g);
   var sel=g.querySelector(".mt-etapas .on"); if(sel&&sel.scrollIntoView)try{sel.scrollIntoView({block:"nearest",inline:"center"});}catch(x){}
 }
 
@@ -344,7 +374,7 @@ function responde(val,ok){
     var ayuda=S.intento>0, ev=o.practica?registra(true,ayuda):{};
     var txt=pick(M.ANIMOS_BIEN);
     fb.className="mt-fb bien";
-    fb.innerHTML='<p class="mt-animo">'+(ayuda?'🌟 ¡Lo corregiste tú! '+esc(txt):'🌟 '+esc(txt))+'</p>'+eventoTxt(ev)+
+    fb.innerHTML=lumi(ev.domina||ev.fase||ev.nivel?"wow":"feliz")+'<p class="mt-animo">'+(ayuda?'🌟 ¡Lo corregiste tú! '+esc(txt):'🌟 '+esc(txt))+'</p>'+eventoTxt(ev)+
       '<details class="mt-porque"'+(o.leccion?' open':'')+'><summary>¿Por qué?</summary><ol>'+it.ex.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ol></details>'+
       '<div class="actions"><button type="button" class="primary grande" id="mt-sig">'+(o.leccion?'Seguir →':'Siguiente →')+'</button></div>';
     vozAuto(ayuda?"¡Lo corregiste! "+txt:txt);
@@ -357,7 +387,7 @@ function responde(val,ok){
     SON.otra();
     fb.className="mt-fb otra";
     var ani=pick(M.ANIMOS_MAL);
-    fb.innerHTML='<p class="mt-animo">🤔 '+esc(ani)+'</p><p class="mt-pista">💡 '+esc(it.pista)+'</p>';
+    fb.innerHTML=lumi("piensa")+'<p class="mt-animo">🤔 '+esc(ani)+'</p><p class="mt-pista">💡 '+esc(it.pista)+'</p>';
     if(it.ocultaVisual&&!S.vioMaterial)verMaterial();
     vozAuto(ani+" "+it.pista);
     return;
@@ -369,7 +399,7 @@ function responde(val,ok){
   if(it.ocultaVisual&&!S.vioMaterial)verMaterial();
   var bot=$("mt-resp"); if(bot&&it.r.t==="op"){var bk=bot.querySelector('[data-i="'+it.r.ok+'"]'); if(bk)bk.classList.add("es");}
   fb.className="mt-fb juntos";
-  fb.innerHTML='<p class="mt-animo">🤝 Vamos a verlo juntos. Equivocarse es parte de aprender.</p>'+
+  fb.innerHTML=lumi("anima")+'<p class="mt-animo">🤝 Vamos a verlo juntos. Equivocarse es parte de aprender.</p>'+
     '<ol class="mt-pasos-ex">'+it.ex.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ol><p>La respuesta es <b>'+esc(muestra(it))+'</b>. '+btnVoz(it.ex.join(" ")+" La respuesta es "+muestra(it))+'</p>'+
     eventoTxt(ev2)+'<div id="mt-ia"></div>'+
     '<div class="actions"><button type="button" class="ghost" id="mt-ia-btn">🤖 Explícamelo de otra forma</button><button type="button" class="primary" id="mt-sig">Entendido, sigamos →</button></div>';
@@ -417,7 +447,7 @@ function explicaIA(it,resp,z,btn){
 function refuerzo(){
   var c=M.POR_ID[S.c], it=M.ejercicio(S.c,1,0,semilla()), R=S.ronda;
   var g=pinta('<div class="mt-top"><button type="button" class="mt-atras" id="mt-atras">← '+esc(c.nom)+'</button></div>'+
-    '<div class="mt-refuerzo"><h3>💪 Volvamos al material</h3><p>Hubo varios errores seguidos, y eso está bien: <b>significa que estás aprendiendo algo nuevo</b>. Vamos a mirar el concepto otra vez, con calma.</p>'+
+    '<div class="mt-refuerzo">'+(window.AxAprender?AxAprender.globo("anima","¡Tranquilidad! Equivocarse es parte de aprender. Lo vemos juntos."):'')+'<h3>💪 Volvamos al material</h3><p>Hubo varios errores seguidos, y eso está bien: <b>significa que estás aprendiendo algo nuevo</b>. Vamos a mirar el concepto otra vez, con calma.</p>'+
     '<p class="mt-pres">🧱 '+esc(c.pres)+' '+btnVoz(c.pres)+'</p>'+
     '<div class="mt-tarea"><p class="mt-preg">'+esc(it.q)+'</p>'+DB.vis(it.v)+'<div class="mt-modelo"><b>Paso a paso:</b><ol>'+it.ex.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ol><p>Respuesta: <b>'+esc(muestra(it))+'</b></p></div></div>'+
     '<div id="mt-ia"></div><p class="mt-afirma">«Equivocarme me ayuda a aprender.» '+btnVoz("Equivocarme me ayuda a aprender.")+'</p>'+
@@ -434,7 +464,7 @@ function celebra(){
   var pf=actual(), c=M.POR_ID[S.c], E=M.ETAPAS[c.e], completa=M.etapaCompleta(pf.prog,c.e), R=S.ronda;
   R.domina=false; R.celebrado=true;
   var conf='';for(var i=0;i<24;i++)conf+='<i style="--x:'+Math.round(Math.random()*100)+'%;--d:'+(Math.random()*1.5).toFixed(2)+'s;--c:'+pick(["#ef5350","#42a5f5","#66bb6a","#ffca28","#ab47bc"])+'"></i>';
-  var g=pinta('<div class="mt-celebra"><div class="mt-confeti">'+conf+'</div><span class="mt-dib enorme">'+c.dibujo+'</span>'+
+  var g=pinta('<div class="mt-celebra"><div class="mt-confeti">'+conf+'</div><div class="mt-cel-fila">'+(window.AxAprender?AxAprender.mascota("celebra",130):'')+'<span class="mt-dib enorme">'+c.dibujo+'</span></div>'+
     '<h3>¡Dominaste «'+esc(c.nom)+'»!</h3><p>Tu '+c.dibujo+' ya brilla en la escena de '+esc(E.nom)+'.</p>'+
     (completa?'<p class="mt-evento dom">'+E.ico+' ¡Completaste toda la etapa '+esc(E.nom)+'! Ganaste su insignia.</p>':'')+
     '<p class="mt-afirma">«Soy capaz de aprender cosas difíciles.» '+btnVoz("Soy capaz de aprender cosas difíciles.")+'</p>'+
@@ -457,7 +487,7 @@ function reflexion(){
     '<h4>¿Cómo te pareció?</h4><div class="mt-dific">'+["Fácil","Justo","Difícil"].map(function(x){return '<button type="button" data-d="'+x+'">'+x+'</button>';}).join("")+'</div>'+
     (c.e>=1?'<label class="mt-campo">Hoy aprendí… (si quieres)<input id="mt-nota" maxlength="120" autocomplete="off" placeholder="Por ejemplo: que 10 unidades son una decena"></label>':'')+
     '<p class="mt-msg" id="mt-msg" hidden></p>'+
-    '<div class="mt-afirma grande"><small>Repite conmigo:</small>«'+esc(af)+'» '+btnVoz(af)+'</div>'+
+    '<div class="mt-afirma grande">'+lumi("feliz",58)+'<div><small>Repite conmigo:</small>«'+esc(af)+'» '+btnVoz(af)+'</div></div>'+
     '<div class="actions"><button type="button" class="ghost" id="mt-mapa">🗺️ Volver al mapa</button><button type="button" class="primary" id="mt-otra">Otra ronda ▶</button></div></div>');
   if(!g)return; activaVoz(g);
   var guardado=false;
@@ -486,9 +516,17 @@ function puerta(fn){
     '<div class="actions"><button type="button" class="ghost" id="mt-pu-no">Volver</button><button type="button" class="primary" id="mt-pu-ok">Entrar</button></div></div>');
   if(!g)return;
   $("mt-pu").focus();
-  $("mt-pu-no").onclick=function(){actual()?mapa():portadaPinta();};
+  $("mt-pu-no").onclick=function(){actual()?entra():portadaPinta();};
   $("mt-pu-ok").onclick=function(){if(+$("mt-pu").value===a+b)fn(); else $("mt-pu-e").hidden=false;};
   $("mt-pu").onkeydown=function(e){if(e.key==="Enter")$("mt-pu-ok").click();};
+}
+/* el avance en inglés, para el panel de adultos */
+function ingAdultos(pf){
+  var I=window.AxIngles, g=pf.ing||I.nuevo(), hechas=Object.keys(g.lec||{}).length, tot=Object.keys(I.POR_ID).length, dif=I.dificiles(g,10);
+  var u=I.UNIDADES.filter(function(x,i){return I.unidadHecha(g,i);}).length, sent=(g.refl||[]).slice(-6).reverse();
+  return '<h4>🔤 Inglés</h4><div class="mt-kpis"><div><b>'+hechas+'/'+tot+'</b><small>lecciones</small></div><div><b>'+u+'</b><small>unidades completas</small></div><div><b>'+I.aprendidas(g)+'</b><small>palabras aprendidas</small></div><div><b>'+(g.xp||0)+'</b><small>XP</small></div></div>'+
+    (dif.length?'<div class="mt-tarjeta ref"><b>💪 Palabras para repasar</b><p>'+dif.map(function(w){return w.e+' <b>'+esc(w.en)+'</b> ('+esc(w.es)+')';}).join(' · ')+'</p><p>🏠 <b>En casa:</b> nombren estas cosas en inglés cuando las vean (por ejemplo, al poner la mesa o al vestirse). El botón «Repasar mis palabras» del curso las practica.</p></div>':'')+
+    (sent.length?'<div class="mt-lista">'+sent.map(function(r){var L=I.POR_ID[r.l]; return '<span>'+(r.s!=null?SENTIR[r.s][0]:'·')+' '+esc(L?I.UNIDADES[L.u].en+' · '+L.nom:r.l)+' <small>'+r.ok+'/'+r.n+'</small></span>';}).join("")+'</div>':'');
 }
 function adultos(){
   var pf=actual()||D.lista[0]; if(!pf)return crear(); D.act=pf.id; guardaLocal();
@@ -505,6 +543,7 @@ function adultos(){
     '<h4>💪 Necesita refuerzo</h4>'+(ref.length?ref.map(function(c){var p=pf.prog[c.id];
       return '<div class="mt-tarjeta ref"><b>'+c.dibujo+' '+esc(c.nom)+'</b><small>'+Math.round(100*p.a/Math.max(1,p.i))+' % de aciertos en '+p.i+' ejercicios · '+p.ref+(p.ref===1?' refuerzo':' refuerzos')+'</small><p>🏠 <b>Para hacer en casa:</b> '+esc(c.casa)+'</p></div>';}).join(""):'<p class="fine">Nada por ahora. ¡Va muy bien!</p>')+
     (camino.length?'<h4>🚶 En camino</h4><div class="mt-lista">'+camino.map(function(c){var p=pf.prog[c.id]; return '<span>'+c.dibujo+' '+esc(c.nom)+' <small>'+FASES[p.f].ico+' '+Math.round(M.avance(p,c)*100)+' %</small></span>';}).join("")+'</div>':'')+
+    (window.AxIngles?ingAdultos(pf):'')+
     '<h4>💬 Sus reflexiones</h4>'+(refl.length?'<div class="mt-refls">'+refl.map(function(r){var c=M.POR_ID[r.c]; return '<div><span>'+(r.s!=null?SENTIR[r.s][0]:'·')+'</span><b>'+esc(c?c.nom:r.c)+'</b><small>'+new Date(r.t).toLocaleDateString()+' · '+r.ok+'/'+r.n+(r.d?' · '+esc(r.d):'')+'</small>'+(r.nota?'<p>«'+esc(r.nota)+'»</p>':'')+'</div>';}).join("")+'</div>':'<p class="fine">Aún no hay reflexiones.</p>')+
     '<h4>🌱 Cómo acompañar</h4><ul class="mt-tips"><li>Elogia el <b>esfuerzo</b> y las estrategias, no la rapidez ni «ser inteligente».</li><li>Deja que se equivoque: el juego da una pista y otra oportunidad antes de explicar.</li>'+
       '<li>Si hay muchos errores, el juego vuelve solo al material concreto. En casa, usen objetos reales (las ideas de arriba).</li><li>Pregunta «¿cómo lo pensaste?» antes que «¿cuánto te salió?».</li><li>Sesiones cortas (una ronda de '+RONDA+' ejercicios) y frecuentes funcionan mejor que una larga.</li></ul>'+
@@ -512,7 +551,7 @@ function adultos(){
     '<p class="fine">'+(u?'Los perfiles se guardan en la cuenta de '+esc(u.name||u.email||"Google")+' y en este dispositivo. Solo se guarda el apodo, el animalito y el avance.':'Los perfiles están solo en este dispositivo. Entra con Google (menú de la cuenta) para guardarlos en la nube y usarlos en otros dispositivos.')+'</p>'+
     '</div>');
   if(!g)return;
-  $("mt-atras").onclick=function(){mapa();};
+  $("mt-atras").onclick=function(){entra();};
   on(g,"[data-pf]",function(b){D.act=b.getAttribute("data-pf"); guardaLocal(); adultos();});
   $("mt-edit").onclick=function(){crear(pf);};
   $("mt-vozt").onclick=function(){D.voz=!D.voz; guardaLocal(); adultos();};
@@ -525,17 +564,21 @@ function adultos(){
 
 /* ---------- teclado físico ---------- */
 document.addEventListener("keydown",function(e){
-  if(!S.teclado||document.body.getAttribute("data-mode")!=="mate")return;
+  var md=document.body.getAttribute("data-mode"); if(!S.teclado||(md!=="mate"&&md!=="ingles"))return;
   var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"))return;
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   if(S.teclado(e.key))e.preventDefault();
 });
 /* la cuenta llega después de abrir la sección: traer sus perfiles */
-document.addEventListener("ax-user",function(){if(document.body.getAttribute("data-mode")==="mate"&&usuario())baja().then(function(c){if(c&&S.portada)portadaPinta();});});
+document.addEventListener("ax-user",function(){var md=document.body.getAttribute("data-mode"); if((md==="mate"||md==="ingles")&&usuario())baja().then(function(c){if(c&&S.portada)portadaPinta();});});
 
-function cerrar(){callaVoz(); if(tSube){clearTimeout(tSube); sube();} S={};}
+function cerrar(){callaVoz(); if(tSube){clearTimeout(tSube); sube();} S={}; if(window.AxAprender&&AxAprender.enCompleta())AxAprender.completa(false); if(window.AxInglesUI)AxInglesUI.para();}
 
-window.AxMateUI={portada:portada,cerrar:cerrar,
+/* lo que usa Inglés: los mismos perfiles, la misma cabecera y el mismo panel */
+var comun={actual:actual,cambia:cambia,pinta:pinta,on:on,esc:esc,cabeza:cabeza,activaCabeza:activaCabeza,puerta:puerta,adultos:adultos,portada:portadaPinta,
+  SON:SON,habla:habla,callaVoz:callaVoz,voz:function(){return !!D.voz;},SENTIR:SENTIR,hoy:hoy,semilla:semilla,
+  teclado:function(fn){S.teclado=fn;},estado:function(o){S=o||{};}};
+window.AxMateUI={portada:portada,cerrar:cerrar,comun:comun,
   /* para las pruebas */
   _datos:function(){return D;},_estado:function(){return S;}};
 })();
