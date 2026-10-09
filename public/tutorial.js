@@ -490,7 +490,7 @@ GUIAS.ingles=[
 {t:"Inglés para niñas y niños",d:"Un curso de inglés desde cero, práctico y con juegos: palabras con dibujos y sonido, frases, escuchar y hablar. Usa los mismos perfiles que Matemática: arriba se cambia de materia.",
  a:function(){return ico("🔤");}},
 {t:"El camino",d:"",
- a:function(){return pasos([["Unidades","15 unidades: saludos, colores, números, animales, familia, comida, cuerpo, ropa, escuela, casa, acciones, emociones, clima, juguetes y opuestos. 📖 muestra sus palabras y frases para escuchar."],
+ a:function(){return pasos([["Unidades","30 unidades en dos niveles. Inicial: saludos, colores, números, animales, familia, comida, cuerpo, ropa, escuela, casa, acciones, emociones, clima, juguetes y opuestos. Básico: números hasta 20, días, meses, la hora, lugares, ¿dónde está?, mi rutina, preguntas, pasatiempos, naturaleza, transporte, profesiones, personas, ¿cómo es? y ¡a conversar! 📖 muestra sus palabras y frases para escuchar."],["Saltar de nivel","Quien ya sabe lo básico puede hacer la prueba 🚀 del Nivel 2: con 80 % o más se abre directamente."],
    ["Lecciones","Cada unidad tiene un camino: Palabras (con dibujo y sonido), Frases, Escucha y habla, y el Reto. Se abren en orden; Lumi marca dónde seguir."],
    ["Ejercicios","Elegir el dibujo, escuchar, traducir, unir parejas, deletrear, armar la frase con fichas, completar y decirlo en voz alta (🎤, si el navegador lo permite). 🐢 repite más despacio."],
    ["Comprobar","Se elige y se toca «Comprobar». Si no era, se ve la respuesta y ese ejercicio vuelve al final de la lección."],

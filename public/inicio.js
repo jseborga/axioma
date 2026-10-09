@@ -53,7 +53,7 @@ function abrir(){
     '<h4 class="ini-cap">Aprender jugando</h4>'+
     '<div class="ini-grid">'+
       tarjeta("mate","mate","Matemática Montessori","De inicial a secundaria: cada concepto con su material, luego con dibujos y al final con números. Se adapta a cada niña o niño, refuerza cuando hay errores y explica con IA.","Perfiles para toda la familia","grande")+
-      tarjeta("ingles","ingles","Inglés para niñas y niños","Un curso desde cero con juegos y colores: palabras con dibujos y sonido, frases, escuchar y hablar. Lecciones cortas en un camino, estrellas y repaso de lo que cuesta.","15 unidades · con voz y micrófono","grande")+
+      tarjeta("ingles","ingles","Inglés para niñas y niños","Un curso desde cero con juegos y colores: palabras con dibujos y sonido, frases, escuchar y hablar. Lecciones cortas en un camino, estrellas y repaso de lo que cuesta.","30 unidades · con voz y micrófono","grande")+
     '</div>'+
     '<h4 class="ini-cap">Juegos de lógica</h4>'+
     '<div class="ini-grid">'+

@@ -72,11 +72,60 @@ var UNIDADES=[
   fra:[["I have a red ball.","Tengo una pelota roja."],["My robot is big.","Mi robot es grande."],["I play with my teddy bear.","Juego con mi osito."],["The kite is blue.","La cometa es azul."],["Where is my car?","¿Dónde está mi auto?"],["I like trains.","Me gustan los trenes."]]},
  {id:"u15",nom:"Opuestos",en:"Opposites",ico:"🐘",col:"#7c5cff",col2:"#b9a6ff",
   pal:[["big","grande","🐳"],["small","pequeño","🐜"],["fast","rápido","🐆"],["slow","lento","🐢"],["tall","alto","🦒"],["short","bajo","🐧"],["new","nuevo","🎁"],["old","viejo","🏚️"],["clean","limpio","🧼"],["dirty","sucio","🐷"]],
-  fra:[["The elephant is big.","El elefante es grande."],["The ant is small.","La hormiga es pequeña."],["My bag is new.","Mi mochila es nueva."],["The cat is fast.","El gato es rápido."],["The giraffe is tall.","La jirafa es alta."],["My shoes are dirty.","Mis zapatos están sucios."]]}
+  fra:[["The elephant is big.","El elefante es grande."],["The ant is small.","La hormiga es pequeña."],["My bag is new.","Mi mochila es nueva."],["The cat is fast.","El gato es rápido."],["The giraffe is tall.","La jirafa es alta."],["My shoes are dirty.","Mis zapatos están sucios."]]},
+ /* ===== Nivel 2 · Básico ===== */
+ {id:"u16",nivel:2,nom:"Números del 11 al 20",en:"Numbers 11–20",ico:"🔢",col:"#00a8e8",col2:"#6fd3ff",
+  pal:[["eleven","once","11"],["twelve","doce","12"],["thirteen","trece","13"],["fourteen","catorce","14"],["fifteen","quince","15"],["sixteen","dieciséis","16"],["seventeen","diecisiete","17"],["eighteen","dieciocho","18"],["nineteen","diecinueve","19"],["twenty","veinte","20"]],
+  fra:[["I am eleven.","Tengo once años."],["Ten and five is fifteen.","Diez y cinco es quince."],["I have twelve crayons.","Tengo doce crayones."],["My sister is thirteen.","Mi hermana tiene trece años."],["Twenty dogs!","¡Veinte perros!"],["Count to twenty.","Cuenta hasta veinte."],["I have fourteen books.","Tengo catorce libros."]]},
+ {id:"u17",nivel:2,nom:"Los días",en:"Days of the week",ico:"📅",col:"#ff6b4a",col2:"#ffa07a",
+  pal:[["Monday","lunes","LUN"],["Tuesday","martes","MAR"],["Wednesday","miércoles","MIÉ"],["Thursday","jueves","JUE"],["Friday","viernes","VIE"],["Saturday","sábado","SÁB"],["Sunday","domingo","DOM"],["today","hoy","📍"],["tomorrow","mañana","⏭️"],["week","semana","🗓️"]],
+  fra:[["Today is Monday.","Hoy es lunes."],["I like Saturday.","Me gusta el sábado."],["Tomorrow is Friday.","Mañana es viernes."],["I go to school on Monday.","Voy a la escuela el lunes."],["Sunday is a fun day.","El domingo es un día divertido."],["A week has seven days.","Una semana tiene siete días."]]},
+ {id:"u18",nivel:2,nom:"Los meses",en:"Months",ico:"🎂",col:"#8e5cf7",col2:"#c0a6ff",
+  pal:[["January","enero","ENE"],["February","febrero","FEB"],["March","marzo","MAR"],["April","abril","ABR"],["May","mayo","MAY"],["June","junio","JUN"],["July","julio","JUL"],["August","agosto","AGO"],["September","septiembre","SEP"],["October","octubre","OCT"],["November","noviembre","NOV"],["December","diciembre","DIC"],["birthday","cumpleaños","🎂"]],
+  fra:[["My birthday is in May.","Mi cumpleaños es en mayo."],["It is cold in July.","Hace frío en julio."],["I like December.","Me gusta diciembre."],["January is the first month.","Enero es el primer mes."],["Happy birthday!","¡Feliz cumpleaños!"],["School starts in February.","La escuela empieza en febrero."]]},
+ {id:"u19",nivel:2,nom:"La hora",en:"Time",ico:"⏰",col:"#ffb300",col2:"#ffd866",
+  pal:[["one o'clock","la una en punto","🕐"],["three o'clock","las tres en punto","🕒"],["six o'clock","las seis en punto","🕕"],["nine o'clock","las nueve en punto","🕘"],["twelve o'clock","las doce en punto","🕛"],["morning","la mañana","🌄"],["afternoon","la tarde","🌇"],["night","la noche","🌃"],["clock","reloj","⏰"],["hour","hora","⌛"]],
+  fra:[["What time is it?","¿Qué hora es?"],["It is three o'clock.","Son las tres en punto."],["I wake up in the morning.","Me despierto en la mañana."],["I play in the afternoon.","Juego en la tarde."],["I sleep at night.","Duermo en la noche."],["It is twelve o'clock.","Son las doce en punto."]]},
+ {id:"u20",nivel:2,nom:"Lugares",en:"Places",ico:"🏞️",col:"#2bb673",col2:"#7ddbaa",
+  pal:[["park","parque","🏞️"],["hospital","hospital","🏥"],["store","tienda","🏪"],["bank","banco","🏦"],["library","biblioteca","🏛️"],["church","iglesia","⛪"],["zoo","zoológico","🦓"],["beach","playa","🏖️"],["market","mercado","🛒"],["restaurant","restaurante","🍽️"],["street","calle","🛣️"]],
+  fra:[["I go to the park.","Voy al parque."],["The zoo has lions.","El zoológico tiene leones."],["Mom is at the market.","Mamá está en el mercado."],["I like the beach.","Me gusta la playa."],["The library has books.","La biblioteca tiene libros."],["Where is the hospital?","¿Dónde está el hospital?"]]},
+ {id:"u21",nivel:2,nom:"¿Dónde está?",en:"Where is it?",ico:"📦",col:"#ff4fa3",col2:"#ff9ccc",
+  pal:[["in","dentro de","📥"],["on","encima de","🔝"],["under","debajo de","⬇️"],["next to","al lado de","↔️"],["behind","detrás de","🔙"],["in front of","delante de","🔜"],["box","caja","📦"],["here","aquí","👇"],["there","allí","👉"]],
+  fra:[["The cat is in the box.","El gato está dentro de la caja."],["The ball is under the bed.","La pelota está debajo de la cama."],["The book is on the sofa.","El libro está encima del sofá."],["The dog is behind the door.","El perro está detrás de la puerta."],["My bag is next to the chair.","Mi mochila está al lado de la silla."],["I am here!","¡Estoy aquí!"],["The car is in front of the house.","El auto está delante de la casa."]]},
+ {id:"u22",nivel:2,nom:"Mi rutina",en:"My day",ico:"🪥",col:"#00c2a8",col2:"#6fe8d6",
+  pal:[["wake up","despertarse","⏰"],["brush my teeth","cepillarme los dientes","🪥"],["take a shower","ducharme","🚿"],["get dressed","vestirme","👔"],["eat breakfast","desayunar","🥣"],["go to school","ir a la escuela","🎒"],["do homework","hacer la tarea","📝"],["watch TV","ver televisión","📺"],["go to bed","ir a la cama","🛌"],["wash my hands","lavarme las manos","🧼"]],
+  fra:[["I wake up at seven.","Me despierto a las siete."],["I brush my teeth.","Me cepillo los dientes."],["I eat breakfast with my family.","Desayuno con mi familia."],["I go to school.","Voy a la escuela."],["I do my homework.","Hago mi tarea."],["I go to bed at nine.","Me voy a la cama a las nueve."],["I wash my hands.","Me lavo las manos."]]},
+ {id:"u23",nivel:2,nom:"Preguntas",en:"Questions",ico:"❓",col:"#7c5cff",col2:"#b3a1ff",
+  pal:[["what","qué","💭"],["who","quién","🧑"],["where","dónde","📍"],["when","cuándo","⏳"],["why","por qué","🤔"],["how","cómo","🛠️"],["how many","cuántos","🔢"],["how old","cuántos años","🎂"]],
+  fra:[["What is your name?","¿Cuál es tu nombre?"],["How old are you?","¿Cuántos años tienes?"],["Where is my bag?","¿Dónde está mi mochila?"],["Who is she?","¿Quién es ella?"],["How many cats?","¿Cuántos gatos?"],["Why are you sad?","¿Por qué estás triste?"],["When is your birthday?","¿Cuándo es tu cumpleaños?"]]},
+ {id:"u24",nivel:2,nom:"Deportes y pasatiempos",en:"Hobbies",ico:"⚽",col:"#43c000",col2:"#9be35c",
+  pal:[["football","fútbol","⚽"],["basketball","básquet","🏀"],["tennis","tenis","🎾"],["guitar","guitarra","🎸"],["piano","piano","🎹"],["paint","pintar","🎨"],["draw","dibujar","🖍️"],["cook","cocinar","🍳"],["skate","patinar","🛹"],["music","música","🎵"]],
+  fra:[["I play football.","Juego fútbol."],["I like music.","Me gusta la música."],["She can play the piano.","Ella puede tocar el piano."],["I paint with my friend.","Pinto con mi amigo."],["We play basketball.","Jugamos básquet."],["I can cook.","Yo puedo cocinar."]]},
+ {id:"u25",nivel:2,nom:"La naturaleza",en:"Nature",ico:"🌳",col:"#2e9e4f",col2:"#7fd394",
+  pal:[["tree","árbol","🌳"],["flower","flor","🌼"],["grass","pasto","🌱"],["river","río","🏞️"],["mountain","montaña","⛰️"],["sea","mar","🌊"],["butterfly","mariposa","🦋"],["bee","abeja","🐝"],["ant","hormiga","🐜"],["spider","araña","🕷️"],["leaf","hoja","🍃"]],
+  fra:[["The tree is big.","El árbol es grande."],["I see a butterfly.","Veo una mariposa."],["The bee is yellow and black.","La abeja es amarilla y negra."],["The river is blue.","El río es azul."],["I like flowers.","Me gustan las flores."],["The leaf is green.","La hoja es verde."]]},
+ {id:"u26",nivel:2,nom:"El transporte",en:"Transport",ico:"🚌",col:"#1c8cf6",col2:"#79c2ff",
+  pal:[["bus","bus","🚌"],["plane","avión","✈️"],["boat","barco","⛵"],["truck","camión","🚚"],["taxi","taxi","🚕"],["motorcycle","moto","🏍️"],["bike","bicicleta","🚲"],["helicopter","helicóptero","🚁"],["subway","metro","🚇"],["cable car","teleférico","🚡"]],
+  fra:[["I go to school by bus.","Voy a la escuela en bus."],["The plane is fast.","El avión es rápido."],["I ride my bike.","Ando en mi bicicleta."],["The boat is on the sea.","El barco está en el mar."],["I like the cable car.","Me gusta el teleférico."],["The truck is big.","El camión es grande."]]},
+ {id:"u27",nivel:2,nom:"Profesiones",en:"Jobs",ico:"🧑‍🚒",col:"#ff6b4a",col2:"#ffab91",
+  pal:[["doctor","doctor","🧑‍⚕️"],["police officer","policía","👮"],["firefighter","bombero","🧑‍🚒"],["farmer","agricultor","🧑‍🌾"],["chef","chef","🧑‍🍳"],["pilot","piloto","🧑‍✈️"],["singer","cantante","🧑‍🎤"],["artist","artista","🧑‍🎨"],["nurse","enfermero","💉"],["dentist","dentista","🦷"],["scientist","científico","🧑‍🔬"]],
+  fra:[["My mother is a doctor.","Mi mamá es doctora."],["I want to be a pilot.","Quiero ser piloto."],["The firefighter is brave.","El bombero es valiente."],["The chef can cook.","El chef puede cocinar."],["My father is a farmer.","Mi papá es agricultor."],["She is a singer.","Ella es cantante."]]},
+ {id:"u28",nivel:2,nom:"Personas",en:"People",ico:"🙋",col:"#ffb300",col2:"#ffdc73",
+  pal:[["I","yo","🙋"],["you","tú","👉"],["he","él","👨"],["she","ella","👩"],["we","nosotros","👫"],["they","ellos","👥"],["it","eso","🐾"],["boy","niño","👦"],["girl","niña","👧"]],
+  fra:[["She is my sister.","Ella es mi hermana."],["He is happy.","Él está feliz."],["We are friends.","Somos amigos."],["They are cats.","Son gatos."],["You are tall.","Tú eres alto."],["I am a girl.","Soy una niña."],["It is my ball.","Es mi pelota."]]},
+ {id:"u29",nivel:2,nom:"¿Cómo es?",en:"Describing",ico:"🦸",col:"#e64a8a",col2:"#ff9cc4",
+  pal:[["funny","divertido","😂"],["kind","amable","🤗"],["smart","inteligente","🧠"],["brave","valiente","🦸"],["quiet","callado","🤫"],["loud","ruidoso","📢"],["strong","fuerte","🏋️"],["beautiful","hermoso","🌺"],["young","joven","🐣"],["shy","tímido","🙈"]],
+  fra:[["My friend is funny.","Mi amigo es divertido."],["You are very kind.","Eres muy amable."],["The lion is strong.","El león es fuerte."],["I am brave.","Soy valiente."],["My dog is loud.","Mi perro es ruidoso."],["She is smart.","Ella es inteligente."]]},
+ {id:"u30",nivel:2,nom:"¡A conversar!",en:"Let's talk!",ico:"💬",col:"#1cb0f6",col2:"#8fdcff",
+  pal:[["I like","me gusta","❤️"],["I don't like","no me gusta","💔"],["I can","puedo","✅"],["I can't","no puedo","❌"],["I want","quiero","🤲"],["I have","tengo","🎁"],["let's go","vamos","🚀"],["see you","nos vemos","👀"]],
+  fra:[["I like pizza.","Me gusta la pizza."],["I don't like rain.","No me gusta la lluvia."],["I can swim.","Puedo nadar."],["I can't fly.","No puedo volar."],["I want ice cream.","Quiero helado."],["Let's go to the park!","¡Vamos al parque!"],["I have a new bike.","Tengo una bicicleta nueva."],["See you tomorrow!","¡Nos vemos mañana!"]]}
+
 ];
+/* los niveles del curso: las unidades sin nivel son del 1 */
+var NIVELES=[{n:1,nom:"Nivel 1 · Inicial",ico:"🌱"},{n:2,nom:"Nivel 2 · Básico",ico:"🚀"}];
 var PAL={}, LISTA=[];
 UNIDADES.forEach(function(u,ui){
-  u.n=ui;
+  u.n=ui; u.nivel=u.nivel||1;
   u.palabras=u.pal.map(function(p){var w={en:p[0],es:p[1],e:p[2],c:p[3]||null,u:ui}; PAL[p[0]]=w; LISTA.push(w); return w;});
   u.frases=u.fra.map(function(f){return {en:f[0],es:f[1],u:ui};});
   u.lecciones=leccionesDe(u);
@@ -124,6 +173,9 @@ function completa(r,f,u){
   tok.forEach(function(t,i){if(vocab.indexOf(t.toLowerCase())>=0)cand.push(i);});
   if(!cand.length)tok.forEach(function(t,i){if(t.length>2)cand.push(i);});
   var i=pick(r,cand), ok=tok[i], dis=baraja(r,u.palabras.filter(function(w){return norm(w.en)!==norm(ok)&&w.en.indexOf(" ")<0&&tok.map(norm).indexOf(norm(w.en))<0;})).slice(0,2).map(function(w){return w.en;});
+  /* en unidades de frases hechas (todas de varias palabras), los distractores salen de las otras frases */
+  if(dis.length<2){var mas=[]; u.frases.forEach(function(g){fichas(g.en).forEach(function(x){if(x.length>2&&norm(x)!==norm(ok)&&tok.map(norm).indexOf(norm(x))<0&&mas.map(norm).indexOf(norm(x))<0)mas.push(x);});});
+    dis=dis.concat(baraja(r,mas)).slice(0,2);}
   var ops=baraja(r,[ok].concat(dis));
   return {t:"completa",f:[f.en,f.es],hueco:i,ops:ops,ok:ops.indexOf(ok)};
 }
@@ -173,6 +225,17 @@ function repaso(seed,ctx){
   tipos.forEach(function(t,k){var w=flojas[k%flojas.length], pool=UNIDADES[w.u].palabras; if(t==="escucha"&&ctx.sinVoz)t="imagen"; if(t==="deletrea"&&(w.en.length>8||w.en.indexOf(" ")>=0))t="traduce"; its.push(GEN[t](r,w,pool));});
   return its;
 }
+
+/* prueba para saltar a un nivel: dos ejercicios del reto de seis unidades de los niveles anteriores */
+function salto(nivel,seed,ctx){
+  var r=rng(seed>>>0), us=baraja(r,UNIDADES.filter(function(u){return u.nivel<nivel;})).slice(0,6), its=[];
+  us.forEach(function(u){var l=u.lecciones[u.lecciones.length-1].id, lst=genera(l,ri(r,1,1e9),ctx).filter(function(it){return it.t!=="parejas"&&it.t!=="nueva"&&it.t!=="habla";});
+    its=its.concat(baraja(r,lst).slice(0,2));});
+  return baraja(r,its);
+}
+/* aprobada la prueba: las lecciones de los niveles anteriores quedan hechas (con una estrella) */
+function saltaNivel(prog,nivel){UNIDADES.forEach(function(u){if(u.nivel<nivel)u.lecciones.forEach(function(l){if(!hecha(prog,l.id))prog.lec[l.id]={e:1,v:1};});});}
+function nivelAbierto(prog,nivel){var u=UNIDADES.filter(function(x){return x.nivel===nivel;})[0]; return !!u&&abierta(prog,u.lecciones[0].id);}
 
 /* ---------- corregir ---------- */
 function respuesta(it){
@@ -240,7 +303,7 @@ function estrellasTot(prog){var t=0; Object.keys((prog&&prog.lec)||{}).forEach(f
 var ANIMOS=["Amazing!","Great job!","Awesome!","Super!","Well done!","Excellent!","Fantastic!"];
 var ANIMOS_ES={"Amazing!":"¡Increíble!","Great job!":"¡Gran trabajo!","Awesome!":"¡Genial!","Super!":"¡Súper!","Well done!":"¡Bien hecho!","Excellent!":"¡Excelente!","Fantastic!":"¡Fantástico!"};
 
-G.AxIngles={UNIDADES:UNIDADES,PAL:PAL,LISTA:LISTA,POR_ID:POR_ID,genera:genera,repaso:repaso,corrige:corrige,respuesta:respuesta,palabrasDe:palabrasDe,norm:norm,fichas:fichas,
+G.AxIngles={UNIDADES:UNIDADES,NIVELES:NIVELES,salto:salto,saltaNivel:saltaNivel,nivelAbierto:nivelAbierto,PAL:PAL,LISTA:LISTA,POR_ID:POR_ID,genera:genera,repaso:repaso,corrige:corrige,respuesta:respuesta,palabrasDe:palabrasDe,norm:norm,fichas:fichas,
   nuevo:nuevo,registra:registra,termina:termina,hecha:hecha,abierta:abierta,actualLec:actualLec,unidadHecha:unidadHecha,aprendidas:aprendidas,vistas:vistas,dificiles:dificiles,estrellasTot:estrellasTot,
   ANIMOS:ANIMOS,ANIMOS_ES:ANIMOS_ES,rng:rng};
 })(typeof window!=="undefined"?window:globalThis);

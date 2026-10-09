@@ -42,6 +42,8 @@ function hash(s){var h=0; for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;
 function dibujo(w,cls){
   if(w.c)return '<span class="ig-pic color '+(cls||"")+'" style="--c:'+w.c+'" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 6c14 0 18 12 30 16s16 16 12 28-2 22-14 30-22 14-34 10S20 82 14 70 2 52 10 38 36 6 50 6z" fill="'+w.c+'" stroke="rgba(0,0,0,.18)" stroke-width="2"/>'+
     '<ellipse cx="36" cy="30" rx="12" ry="7" fill="#fff" opacity=".35" transform="rotate(-25 36 30)"/></svg><i>'+w.e+'</i></span>';
+  if(/^\d+$/.test(w.e))return '<span class="ig-pic num '+(cls||"")+'" aria-hidden="true"><b>'+w.e+'</b></span>';
+  if(/^[A-ZÁÉÍÓÚ]{3}$/.test(w.e))return '<span class="ig-pic cal '+(cls||"")+'" aria-hidden="true"><i></i><b>'+w.e+'</b></span>';
   var f=FONDOS[hash(w.en)%FONDOS.length];
   return '<span class="ig-pic '+(cls||"")+'" style="--f1:'+f[0]+';--f2:'+f[1]+'" aria-hidden="true">'+w.e+'</span>';
 }
@@ -58,8 +60,12 @@ function mapa(){
     (window.AxAprender?AxAprender.globo(dif.length>=4?"anima":"feliz",saludo):'')+
     (vistas>=4?'<button type="button" class="ig-repaso'+(dif.length>=4?' fuerte':'')+'" id="ig-repaso"><span>💪</span><b>Repasar mis palabras</b><small>'+(dif.length?dif.slice(0,6).map(function(w){return w.e;}).join(" ")+' y más':'Practica lo que ya aprendiste')+'</small></button>':'')+
     '<div class="ig-camino">'+I.UNIDADES.map(function(u,ui){
-      var abierta=I.abierta(g,u.lecciones[0].id), hecha=I.unidadHecha(g,ui), k=0;
-      return '<section class="ig-unidad'+(abierta?'':' cerrada')+'" style="--c:'+u.col+';--c2:'+u.col2+'">'+
+      var abierta=I.abierta(g,u.lecciones[0].id), hecha=I.unidadHecha(g,ui), k=0, cab='';
+      if(!ui||I.UNIDADES[ui-1].nivel!==u.nivel){var N=I.NIVELES.filter(function(x){return x.n===u.nivel;})[0]||{nom:"Nivel "+u.nivel,ico:"⭐"}, delNivel=I.UNIDADES.filter(function(x){return x.nivel===u.nivel;}),
+        listas=delNivel.filter(function(x){return I.unidadHecha(g,x.n);}).length;
+        cab='<div class="ig-nivel n'+u.nivel+'"><span>'+N.ico+'</span><div><b>'+esc(N.nom)+'</b><small>'+listas+' de '+delNivel.length+' unidades</small></div></div>'+
+          (u.nivel>1&&!I.nivelAbierto(g,u.nivel)?'<button type="button" class="ig-salto" data-salto="'+u.nivel+'"><span>🚀</span><b>¿Ya sabes lo del nivel anterior?</b><small>Haz una prueba de 12 ejercicios: con 80 % o más se abre el '+esc(N.nom)+'.</small></button>':'');}
+      return cab+'<section class="ig-unidad'+(abierta?'':' cerrada')+'" style="--c:'+u.col+';--c2:'+u.col2+'">'+
         '<div class="ig-banda"><span class="ig-u-ico">'+u.ico+'</span><div><small>Unidad '+(ui+1)+(hecha?' · ✔ completa':'')+'</small><b>'+esc(u.en)+'</b><em>'+esc(u.nom)+'</em></div>'+
           '<button type="button" class="ig-vocab" data-vocab="'+ui+'" title="Ver las palabras">📖</button></div>'+
         '<div class="ig-nodos'+(u.lecciones.some(function(l){return l.id===act;})?' con-actual':'')+'">'+u.lecciones.map(function(l){var h=I.hecha(g,l.id), ab=I.abierta(g,l.id), cur=l.id===act, x=ZIG[(k++)%ZIG.length], e=h?g.lec[l.id].e:0;
@@ -76,6 +82,7 @@ function mapa(){
     inicia(id);});
   on(el,"[data-vocab]",function(b){vocab(+b.getAttribute("data-vocab"));});
   if($("ig-repaso"))$("ig-repaso").onclick=function(){inicia("repaso");};
+  on(el,"[data-salto]",function(b){inicia("salto"+b.getAttribute("data-salto"));});
   var cur=el.querySelector(".ig-nodo.actual"); if(cur&&cur.scrollIntoView)setTimeout(function(){try{cur.scrollIntoView({block:"center",behavior:"smooth"});}catch(x){}},120);
   if(C.voz()&&!vistas)di("Hello! Let's learn English!");
 }
@@ -95,7 +102,7 @@ function vocab(ui){
 /* ===================== una lección ===================== */
 function inicia(id){
   var pf=C.actual(), g=ing(pf), seed=C.semilla(), ctx={prog:g,sinVoz:!hayVoz,mic:hayMic()};
-  var its=id==="repaso"?I.repaso(seed,ctx):I.genera(id,seed,ctx);
+  var its=id==="repaso"?I.repaso(seed,ctx):/^salto\d+$/.test(id)?I.salto(+id.slice(5),seed,ctx):I.genera(id,seed,ctx);
   if(!its.length)return mapa();
   its.forEach(function(it){it._n=1;});
   S={id:id,cola:its,i:0,tot:its.filter(function(x){return x.t!=="nueva";}).length,bien:0,hechos:0,combo:0,maxCombo:0,t0:Date.now(),pal:{},extra:0};
@@ -264,8 +271,9 @@ function siguiente(){if(!S)return; S.i++; muestra();}
 /* ===================== al terminar ===================== */
 function resultados(){
   var pf=C.actual(), g=ing(pf), id=S.id, tot=Math.max(1,S.tot), bien=S.bien, seg=Math.round((Date.now()-S.t0)/1000), r, antes=hoyXP(g);
-  var unidadAntes=id!=="repaso"?I.unidadHecha(g,I.POR_ID[id].u):false;
-  if(id==="repaso"){var xp=5+Math.round(bien/2); g.xp+=xp; var d=C.hoy(); g.dias[d]=(g.dias[d]||0)+xp; r={estrellas:bien/tot>=0.9?3:bien/tot>=0.7?2:1,xp:xp,prec:bien/tot};}
+  var L0=I.POR_ID[id], unidadAntes=L0?I.unidadHecha(g,L0.u):false, salto=/^salto\d+$/.test(id)?+id.slice(5):0, aprobo=false;
+  if(salto){aprobo=bien/tot>=0.8; if(aprobo)I.saltaNivel(g,salto);}
+  if(!L0){var xp=5+Math.round(bien/2); g.xp+=xp; var d=C.hoy(); g.dias[d]=(g.dias[d]||0)+xp; r={estrellas:bien/tot>=0.9?3:bien/tot>=0.7?2:1,xp:xp,prec:bien/tot};}
   else r=I.termina(g,id,bien,tot);
   if(S.maxCombo>=5){g.xp+=3; r.xp+=3; g.dias[C.hoy()]+=3;}
   C.cambia(pf);
@@ -275,7 +283,8 @@ function resultados(){
   var est='';for(var k=1;k<=3;k++)est+='<i class="'+(k<=r.estrellas?'on':'')+'" style="--d:'+(k*0.25)+'s">★</i>';
   S=null;
   var el=C.pinta('<div class="ig-fin">'+(window.AxAprender?AxAprender.mascota(r.prec>=0.6?"celebra":"anima",130):'')+
-    '<h3>'+(id==="repaso"?'¡Repaso completo!':'¡Lección completa!')+'</h3>'+(u?'<p class="fine">'+u.ico+' '+esc(u.en)+' · '+esc(L.nom)+'</p>':'')+
+    '<h3>'+(salto?(aprobo?'¡Prueba aprobada!':'¡Buen intento!'):id==="repaso"?'¡Repaso completo!':'¡Lección completa!')+'</h3>'+
+    (salto?'<p class="ig-trofeo'+(aprobo?' meta':'')+'">'+(aprobo?'🚀 ¡Se abrió el '+esc((I.NIVELES.filter(function(x){return x.n===salto;})[0]||{nom:"nivel"}).nom)+'! Las lecciones anteriores quedan hechas y puedes repasarlas cuando quieras.':'Para saltar hace falta 80 % de aciertos. Sigue con las lecciones del camino o inténtalo otra vez: ¡cada intento te ayuda a aprender!')+'</p>':'')+(u?'<p class="fine">'+u.ico+' '+esc(u.en)+' · '+esc(L.nom)+'</p>':'')+
     '<div class="ig-estrellas">'+est+'</div>'+
     '<div class="ig-kpis"><div class="xp"><small>XP</small><b>+'+r.xp+'</b></div><div class="pr"><small>Aciertos</small><b>'+Math.round(r.prec*100)+' %</b></div><div class="ti"><small>Tiempo</small><b>'+Math.floor(seg/60)+':'+("0"+seg%60).slice(-2)+'</b></div></div>'+
     (unidadAhora&&!unidadAntes?'<p class="ig-trofeo">🏆 ¡Terminaste la unidad <b>'+esc(u.en)+'</b>! Se abrió la siguiente.</p>':'')+

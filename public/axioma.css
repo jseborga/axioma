@@ -2519,3 +2519,19 @@ body.ap-full .ig-pie{margin:8px -14px -24px;border-radius:0}
 .mt .ig-nodo{border-radius:50%}
 .ig-nodos.con-actual{padding-top:62px}
 .ig-check{transition:none}
+.ig-pic.num{background:linear-gradient(145deg,#dff1ff,#8ccfff);color:#0b5fa5}
+.ig-pic.num b{font-size:calc(var(--s,96px)*.5);font-weight:900;font-family:"Nunito","Trebuchet MS",system-ui,sans-serif}
+.ig-pic.cal{position:relative;background:#fff;border:3px solid #ffd2c4;display:grid;place-items:center;overflow:hidden}
+.ig-pic.cal i{position:absolute;top:0;left:0;right:0;height:26%;background:linear-gradient(180deg,#ff6b4a,#ff4b2b)}
+.ig-pic.cal b{margin-top:22%;font-size:calc(var(--s,96px)*.3);font-weight:900;color:#3c3c3c;font-family:"Nunito","Trebuchet MS",system-ui,sans-serif}
+.ig-nivel{display:flex;align-items:center;gap:12px;margin:8px 0 2px;padding:10px 14px;border-radius:18px;background:var(--inset);border:2px dashed var(--inset-2)}
+.ig-nivel span{font-size:30px}
+.ig-nivel b{display:block;font-size:18px;font-weight:900}
+.ig-nivel small{color:var(--ink-2);font-weight:700}
+.ig-nivel.n2{background:linear-gradient(135deg,#ede7ff,#dff1ff);border-color:#c9bbff;color:#3b2a8a}
+.ig-nivel.n2 small{color:#5a49b5}
+.ig-salto{display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;width:100%;text-align:left;padding:12px 14px;border-radius:18px;
+  background:linear-gradient(135deg,#7c5cff,#1cb0f6);color:#fff;box-shadow:0 5px 0 #5a3ee0}
+.ig-salto span{grid-row:span 2;font-size:34px}
+.ig-salto b{font-size:17px}
+.ig-salto small{font-size:13.5px;font-weight:600;opacity:.92}

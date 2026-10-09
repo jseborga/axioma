@@ -8,6 +8,8 @@ con botón de **pantalla completa**.
 
 ## Unidades
 
+### Nivel 1 · Inicial
+
 | # | Unidad | Palabras |
 |---|---|---|
 | 1 | 👋 Hello! | hello, goodbye, good morning, good night, please, thank you, yes, no, friend, name |
@@ -26,13 +28,40 @@ con botón de **pantalla completa**.
 | 14 | 🧸 Toys | ball, doll, teddy bear, kite, car, train, robot, balloon, blocks, puzzle |
 | 15 | 🐘 Opposites | big, small, fast, slow, tall, short, new, old, clean, dirty |
 
-Cada unidad trae también 6 a 8 frases sencillas («I have a dog.», «The cat is black.»,
+### Nivel 2 · Básico
+
+| # | Unidad | Palabras y expresiones |
+|---|---|---|
+| 16 | 🔢 Numbers 11–20 | eleven … twenty |
+| 17 | 📅 Days of the week | Monday … Sunday, today, tomorrow, week |
+| 18 | 🎂 Months | January … December, birthday |
+| 19 | ⏰ Time | one/three/six/nine/twelve o'clock, morning, afternoon, night, clock, hour |
+| 20 | 🏞️ Places | park, hospital, store, bank, library, church, zoo, beach, market, restaurant, street |
+| 21 | 📦 Where is it? | in, on, under, next to, behind, in front of, box, here, there |
+| 22 | 🪥 My day | wake up, brush my teeth, take a shower, get dressed, eat breakfast, go to school, do homework, watch TV, go to bed, wash my hands |
+| 23 | ❓ Questions | what, who, where, when, why, how, how many, how old |
+| 24 | ⚽ Hobbies | football, basketball, tennis, guitar, piano, paint, draw, cook, skate, music |
+| 25 | 🌳 Nature | tree, flower, grass, river, mountain, sea, butterfly, bee, ant, spider, leaf |
+| 26 | 🚌 Transport | bus, plane, boat, truck, taxi, motorcycle, bike, helicopter, subway, cable car |
+| 27 | 🧑‍🚒 Jobs | doctor, police officer, firefighter, farmer, chef, pilot, singer, artist, nurse, dentist, scientist |
+| 28 | 🙋 People | I, you, he, she, we, they, it, boy, girl |
+| 29 | 🦸 Describing | funny, kind, smart, brave, quiet, loud, strong, beautiful, young, shy |
+| 30 | 💬 Let's talk! | I like, I don't like, I can, I can't, I want, I have, let's go, see you |
+
+Los días y los meses se muestran como hojas de calendario (LUN, ENE…) y los números
+como fichas con sus cifras.
+
+**Saltar al Nivel 2**: quien ya sabe lo básico puede hacer una prueba de 12 ejercicios
+(de seis unidades del Nivel 1, al azar). Con 80 % o más, las lecciones del Nivel 1 quedan
+hechas con una estrella y se abre el Nivel 2; si no, se sigue el camino normal.
+
+Son 30 unidades y 301 palabras. Cada unidad trae también 6 a 8 frases sencillas («I have a dog.», «The cat is black.»,
 «I like ice cream.»…). El contenido está en `public/ingles-motor.js`; 📖 en cada unidad
 muestra sus palabras y frases para escucharlas.
 
 ## El camino de lecciones
 
-Cada unidad es un camino (79 lecciones en total) que se abre en orden; Lumi marca dónde
+Cada unidad es un camino (158 lecciones en total) que se abre en orden; Lumi marca dónde
 seguir:
 
 1. **Palabras 1, 2, 3**: 4 palabras nuevas por lección. Cada una se presenta con su
