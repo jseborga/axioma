@@ -103,3 +103,5 @@ CREATE UNIQUE INDEX IF NOT EXISTS ciudad_slot ON ciudad_ciudades(mundo, slot);
 CREATE INDEX IF NOT EXISTS ciudad_rank ON ciudad_ciudades(mundo, puntaje);
 CREATE INDEX IF NOT EXISTS ciudad_user ON ciudad_ciudades(user_id);
 CREATE TABLE IF NOT EXISTS ciudad_respuestas (mundo TEXT NOT NULL, user_id TEXT NOT NULL, seg INTEGER NOT NULL, qid TEXT NOT NULL, o INTEGER NOT NULL, ok INTEGER NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (mundo, user_id, seg, qid));
+CREATE TABLE IF NOT EXISTS mate_perfiles (user_id TEXT NOT NULL, id TEXT NOT NULL, nombre TEXT NOT NULL, avatar TEXT, etapa INTEGER NOT NULL DEFAULT 0, datos TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (user_id, id));
+CREATE TABLE IF NOT EXISTS mate_ia (user_id TEXT NOT NULL, dia TEXT NOT NULL, usos INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (user_id, dia));

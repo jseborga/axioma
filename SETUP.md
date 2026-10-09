@@ -687,6 +687,21 @@ Sin ellas, Ciudad Saber avisa de que faltan las tablas; el resto de la plataform
 igual. El mundo abierto se crea solo la primera vez que alguien entra. Usa también la
 tabla `preguntas_vistas` (para no repetir preguntas). Ver [CIUDAD.md](CIUDAD.md).
 
+### Añadir las tablas de Matemática Montessori
+
+Los perfiles de **Matemática Montessori** se guardan en el dispositivo; con una cuenta de
+Google también se copian en el servidor, y las explicaciones con IA tienen un límite
+diario por cuenta. Pega esto en la consola de D1 (también está al final de `instalar.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS mate_perfiles (user_id TEXT NOT NULL, id TEXT NOT NULL, nombre TEXT NOT NULL, avatar TEXT, etapa INTEGER NOT NULL DEFAULT 0, datos TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (user_id, id));
+CREATE TABLE IF NOT EXISTS mate_ia (user_id TEXT NOT NULL, dia TEXT NOT NULL, usos INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (user_id, dia));
+```
+
+Sin ellas el juego funciona igual, solo en el dispositivo. La IA es la que se elige en el
+panel de la plataforma (ver «Ayudas con IA»); el límite diario por cuenta se cambia con la
+variable `MATE_IA_DIA` (20 por defecto). Usa también la tabla `ia_explicaciones`. Ver [MATE.md](MATE.md).
+
 ### Añadir las tablas de las competencias sin fin (maratón)
 
 Para las competencias que se juegan hasta perder (memoria sin fin, maratón de

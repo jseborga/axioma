@@ -26,6 +26,7 @@ var ICONO={
   granja:'<svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9h-6v-5H9v5H3v-9z"/><path d="M10 9h4v3h-4z" opacity=".55"/></svg>',
   ciudad:'<svg viewBox="0 0 24 24"><path d="M3 21V10l5-3v14z"/><path d="M9 21V4h7v17z" opacity=".75"/><path d="M17 21v-9h4v9z" opacity=".55"/></svg>',
   grupo:'<svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.2"/><circle cx="5" cy="9.5" r="2.4" opacity=".55"/><circle cx="19" cy="9.5" r="2.4" opacity=".55"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6H6z"/><path d="M1 19.5c0-2.4 1.8-4.3 4-4.3.6 0 1.1.1 1.6.3A7.6 7.6 0 0 0 4.9 19.5H1zm22 0h-3.9a7.6 7.6 0 0 0-1.7-4c.5-.2 1-.3 1.6-.3 2.2 0 4 1.9 4 4.3z" opacity=".55"/></svg>',
+  mate:'<svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="10" cy="5" r="2.2"/><circle cx="15" cy="5" r="2.2" opacity=".55"/><rect x="3" y="10" width="4" height="11" rx="2" opacity=".75"/><path d="M10 14h4m-2-2v4M16 13h5m-5 4h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>',
   reto:'<svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6H2zm15.5 0c0-2-.7-3.7-1.9-5 .5-.1.9-.1 1.4-.1 3.1 0 5 2.2 5 5.1h-4.5z"/></svg>'
 };
 
@@ -47,6 +48,10 @@ function abrir(){
       (ac.ver.empresas?tarjeta("empresas","empresa","Empresas y eventos","Tu marca, convocatorias con premio que se abren con un QR y se juegan sin trámites, y métricas.",'<span id="ini-emp">Cargando…</span>',"grande"):'')+
       tarjeta("concurso","concurso","Concursos de trivia","Te inscribes, juegas una sola vez y al cierre se publica el ranking y el ganador.",'<span id="ini-conc">Cargando…</span>',"grande")+
       (ac.ver.educativo&&ac.ver.empresas?'':tarjeta("amigos","grupo","Mis grupos y partidas","Tus amigos con su ranking de la semana, y todo lo que has jugado guardado en tu cuenta.",u&&!u.guest?"Crea tu grupo":"Entra con Google","grande"))+
+    '</div>'+
+    '<h4 class="ini-cap">Aprender jugando</h4>'+
+    '<div class="ini-grid">'+
+      tarjeta("mate","mate","Matemática Montessori","De inicial a secundaria: cada concepto con su material, luego con dibujos y al final con números. Se adapta a cada niña o niño, refuerza cuando hay errores y explica con IA.","Perfiles para toda la familia","grande")+
     '</div>'+
     '<h4 class="ini-cap">Juegos de lógica</h4>'+
     '<div class="ini-grid">'+

@@ -466,6 +466,26 @@ GUIAS.ciudad=[
    ["Desafíos de curso","El docente crea un mundo para su curso, con fechas y metas, y ve un reporte de aciertos por tema de cada estudiante."]],
    "Tu ciudad se guarda sola cada ~40 s: el servidor repite lo que hiciste con su propio banco de preguntas, así que nadie puede inventar una ciudad o un acierto.");}}
 ];
+GUIAS.mate=[
+{t:"Matemática Montessori",d:"Juegos para aprender matemática desde inicial (4 años) hasta 6.º de secundaria, con el método Montessori: cada concepto se descubre con su material, se pasa al dibujo y al final a los números. Cada niña o niño tiene su perfil y avanza a su ritmo.",
+ a:function(){return ico("🧮");}},
+{t:"Cómo se aprende",d:"",
+ a:function(){return pasos([["Elige tu perfil","Un apodo, un animalito y el curso. Se puede cambiar de etapa cuando se quiera: si algo es muy fácil o muy difícil, se elige otra."],
+   ["El mapa","Cada etapa tiene su escena (granja, jardín, bosque, mar, ciudad, montaña, cielo, espacio y estrellas). Cada concepto tiene un dibujo que aparece en gris, crece al practicar y brilla al dominarlo; la escena se llena de detalles con el avance."],
+   ["El objetivo","Antes de empezar se lee el objetivo («Aprenderé a…») y el material Montessori que se usa."],
+   ["La lección en tres tiempos","1. Esto es: se muestra el concepto con el material. 2. Muéstrame: se elige entre tres. 3. ¿Qué es?: se responde."],
+   ["El ciclo de trabajo","Rondas de 8 ejercicios. 🧱 Material → ✏️ Dibujo → 🔢 Números: tres aciertos seguidos suben de fase y luego de nivel (★)."],
+   ["Reflexión","Al terminar: ¿cómo te sentiste?, ¿fue fácil o difícil?, «hoy aprendí…» y una frase para repetir, como «Equivocarme me ayuda a aprender»."]]);}},
+{t:"Errores que ayudan",d:"",
+ a:function(){return tarjetas([["Control del error","Si la respuesta no es correcta, el juego da una pista y otra oportunidad, sin castigo. Si vuelve a fallar, lo explica paso a paso."],
+   ["Refuerzo","Con varios errores juntos (3 de los últimos 5), vuelve al material concreto, repasa el concepto con un ejemplo resuelto y baja un poco el nivel."],
+   ["🤖 Explícamelo","Con una cuenta de Google, la IA explica el ejercicio de otra forma, con un ejemplo concreto y una pregunta para probar (hay un límite diario)."],
+   ["🔊 Voz","Las preguntas se pueden escuchar: ideal para quienes aún no leen."]]);}},
+{t:"Para adultos",d:"",
+ a:function(){return tarjetas([["👪 El panel","Con una suma sencilla se entra al panel: conceptos dominados por etapa, aciertos, días seguidos, sus reflexiones y lo que necesita refuerzo."],
+   ["Ideas para casa","Cada concepto trae una actividad con objetos de la casa: contar cucharas, repartir galletas, medir con pasos…"],
+   ["Privacidad","Solo se guarda un apodo, el animalito y el avance. Sin cuenta, todo queda en el dispositivo; con Google, también en la cuenta del adulto."]]);}}
+];
 GUIAS.juegos=[
 {t:"Más juegos",d:"Juegos en sala con código: estrategia 1 contra 1, juegos de mesa en grupo, dinámicas en vivo para eventos, sorteos y subastas, y juegos solo para adultos. Cada juego explica sus reglas en su ficha.",
  a:function(){return tarjetas([["Estrategia","Gomoku, Hex, tres en raya cuántico: contra el bot sin conexión, a dos en un teléfono o en línea."],

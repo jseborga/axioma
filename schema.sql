@@ -800,3 +800,28 @@ CREATE TABLE IF NOT EXISTS ciudad_respuestas (
   at      INTEGER NOT NULL,
   PRIMARY KEY (mundo, user_id, seg, qid)
 );
+
+-- ============================================================
+-- The Final Test · Matemática Montessori
+-- ============================================================
+-- Perfiles de niñas y niños de una cuenta (apodo, animalito, etapa y el
+-- avance por concepto). El juego los guarda también en el dispositivo; aquí
+-- se copian para usarlos en otros dispositivos (gana la versión más nueva).
+CREATE TABLE IF NOT EXISTS mate_perfiles (
+  user_id    TEXT NOT NULL,             -- la cuenta del adulto
+  id         TEXT NOT NULL,             -- id del perfil (lo crea el dispositivo)
+  nombre     TEXT NOT NULL,             -- apodo
+  avatar     TEXT,
+  etapa      INTEGER NOT NULL DEFAULT 0,
+  datos      TEXT NOT NULL,             -- JSON: prog, refl, dias…
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, id)
+);
+-- Explicaciones con IA usadas por día y cuenta (límite MATE_IA_DIA).
+CREATE TABLE IF NOT EXISTS mate_ia (
+  user_id TEXT NOT NULL,
+  dia     TEXT NOT NULL,                -- AAAA-MM-DD (UTC)
+  usos    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, dia)
+);

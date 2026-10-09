@@ -37,6 +37,7 @@ import { handleSalas } from "./sala.js";
 import { handlePerfiles } from "./perfiles.js";
 import { handleGranja } from "./granja.js";
 import { handleCiudad } from "./ciudad.js";
+import { handleMate } from "./mate.js";
 
 var COOKIE="ax_session";
 var SESSION_DAYS=30;
@@ -79,6 +80,8 @@ export async function handleApi(req,env,url){
       return await handleIA(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/ciudad\//.test(path))
       return await handleCiudad(req,env,url,path,{json:json,user:await currentUser(req,env)});
+    if(/^\/mate\//.test(path))
+      return await handleMate(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/granja\//.test(path))
       return await handleGranja(req,env,url,path,{json:json,dayNumber:dayNumber,user:await currentUser(req,env)});
     if(/^\/(acceso|grupos|actividad)(\/|$)/.test(path)||path==="/admin/perfiles")
