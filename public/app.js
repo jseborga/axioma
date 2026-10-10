@@ -484,7 +484,7 @@ function hint(){
 /* ---------- controles ---------- */
 function setMode(m){
   if(window.AxMaratonUI&&AxMaratonUI.activo())AxMaratonUI.cerrar();   /* la partida queda guardada en el servidor */
-  ["inicio","aula","empresas","amigos","day","flash","free","sud","granja","ciudad","mate","ingles","concurso","rapido","juegos","reto","pareja"].forEach(function(x){
+  ["inicio","aula","empresas","amigos","day","flash","free","sud","granja","ciudad","mate","ingles","ciencias","concurso","rapido","juegos","reto","pareja"].forEach(function(x){
     $("t-"+x).setAttribute("aria-checked",x===m?"true":"false");
   });
   $("mode-label").textContent=MODOS[m];
@@ -493,7 +493,7 @@ function setMode(m){
   if(window.AxRetos&&m!=="reto"&&m!=="pareja")AxRetos.cerrar();
   if(window.AxRapidosUI&&m!=="rapido"&&m!=="reto"&&m!=="granja")AxRapidosUI.cerrar();
   if(window.AxCiudadUI&&m!=="ciudad")AxCiudadUI.cerrar();
-  if(window.AxMateUI&&m!=="mate"&&m!=="ingles")AxMateUI.cerrar();
+  if(window.AxMateUI&&m!=="mate"&&m!=="ingles"&&m!=="ciencias")AxMateUI.cerrar();
   if(window.AxConcursos&&m!=="concurso")AxConcursos.cerrar();
   if(window.AxInicio&&m!=="inicio")AxInicio.cerrar();
   if(window.AxAula&&m!=="aula"&&m!=="empresas")AxAula.cerrar();
@@ -558,15 +558,16 @@ function setMode(m){
     if(window.AxCiudadUI)AxCiudadUI.portada();
     return;
   }
-  if(m==="mate"||m==="ingles"){
+  if(m==="mate"||m==="ingles"||m==="ciencias"){
     detiene();
     if(window.AxRapidosUI)AxRapidosUI.cerrar();
     document.body.setAttribute("data-game","rapido");
     document.body.removeAttribute("data-sub");
     $("diff").hidden=true; $("sud-diff").hidden=true;
     $("sud-panel").hidden=true; $("sud-acts").hidden=true;
-    $("status-cap").textContent="Aprender"; $("hdr").textContent=m==="ingles"?"Inglés":"Matemática";
+    $("status-cap").textContent="Aprender"; $("hdr").textContent=m==="ingles"?"Inglés":m==="ciencias"?"Ciencias":"Matemática";
     if(window.AxInglesUI)AxInglesUI.para();
+    if(window.AxCienciasUI)AxCienciasUI.para();
     if(window.AxMateUI)AxMateUI.portada(m);
     return;
   }
@@ -598,7 +599,7 @@ function setMode(m){
   newBoard();
   if(window.AxTutorial)AxTutorial.primeraVez();   /* la guía de Axioma, la primera vez que se entra */
 }
-var MODOS={inicio:"Inicio",aula:"Educativo",empresas:"Empresas",amigos:"Mis grupos",marca:"Marca",juegos:"Más juegos",pantalla:"Proyector",day:"Axioma",flash:"Axioma flash",free:"Axioma libre",sud:"Sudoku",granja:"Granja Express",ciudad:"Ciudad Saber",mate:"Matemática",ingles:"Inglés",concurso:"Concursos",rapido:"Rápidos",reto:"Retos",pareja:"En pareja"};
+var MODOS={inicio:"Inicio",aula:"Educativo",empresas:"Empresas",amigos:"Mis grupos",marca:"Marca",juegos:"Más juegos",pantalla:"Proyector",day:"Axioma",flash:"Axioma flash",free:"Axioma libre",sud:"Sudoku",granja:"Granja Express",ciudad:"Ciudad Saber",mate:"Matemática",ingles:"Inglés",ciencias:"Ciencias",concurso:"Concursos",rapido:"Rápidos",reto:"Retos",pareja:"En pareja"};
 var menu=$("mode-menu"), mbtn=$("mode-btn");
 function abreMenu(v){
   menu.hidden=!v; mbtn.setAttribute("aria-expanded",v?"true":"false");
@@ -608,7 +609,7 @@ document.addEventListener("click",function(e){
   if(!menu.hidden && !menu.contains(e.target) && e.target!==mbtn) abreMenu(false);
 });
 document.addEventListener("keydown",function(e){ if(e.key==="Escape")abreMenu(false); });
-["inicio","aula","empresas","amigos","day","flash","free","sud","granja","ciudad","mate","ingles","concurso","rapido","juegos","reto","pareja"].forEach(function(m){
+["inicio","aula","empresas","amigos","day","flash","free","sud","granja","ciudad","mate","ingles","ciencias","concurso","rapido","juegos","reto","pareja"].forEach(function(m){
   $("t-"+m).onclick=function(){abreMenu(false);setMode(m);};
 });
 /* ---------- maratón: un tablero que llega del servidor, sin su solución ----------

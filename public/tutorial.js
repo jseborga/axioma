@@ -500,6 +500,19 @@ GUIAS.ingles=[
    ["Si cuesta","Cuando una lección sale con menos del 60 %, Lumi propone repasar en el momento las palabras difíciles."],
    ["Para adultos","En 👪 se ven las lecciones hechas, las palabras aprendidas y las que hay que repasar, con una idea para practicar en casa."]]);}}
 ];
+GUIAS.ciencias=[
+{t:"Ciencias: naturales, física y química",d:"De inicial a secundaria, con el método Montessori: primero la idea con algo que se ve o se toca, luego juegos para practicar, un laboratorio y un experimento para hacer en casa. Usa los mismos perfiles que Matemática e Inglés.",
+ a:function(){return ico("🔬");}},
+{t:"Niveles y unidades",d:"",
+ a:function(){return pasos([["Cinco niveles","🔍 Explorar (inicial a 2.º): seres vivos, sentidos, plantas, animales, agua, sol y luna. 🔭 Descubrir (3.º a 6.º): materia, ciclo del agua, ecosistemas, cuerpo humano, sistema solar, fuerzas, electricidad y ambiente. 🧬 Biología y Tierra, ⚡ Física y ⚗️ Química (secundaria)."],
+   ["Elige la unidad","Como en Montessori, cada quien elige qué descubrir. El nivel se sugiere según el curso del perfil y se cambia arriba."],
+   ["Cuatro lecciones","💡 Descubre (ideas clave con preguntas), ✏️ Practica, 🧪 Laboratorio (experimento para casa y laboratorio interactivo) y 🏆 Reto."]]);}},
+{t:"Juegos y laboratorios",d:"",
+ a:function(){return tarjetas([["Ejercicios","Elegir, verdadero o falso, ¿qué parte señala la flecha? (planta, cuerpo, célula, ciclo del agua, circuito, Tierra, átomo), clasificar en cajas, ordenar pasos, unir parejas y cálculos de física y química con teclado."],
+   ["Laboratorios","Calienta o enfría el agua con el termómetro, prueba materiales en un circuito, ajusta distancia y tiempo para la velocidad, y usa el indicador de repollo morado para el pH."],
+   ["Experimentos para casa","Cada unidad trae uno con materiales sencillos, pasos y una pregunta para pensar (📖 en el mapa)."],
+   ["Si cuesta","Lo fallado vuelve al final y queda en «Repasar lo que me costó». 🤖 Explícamelo da otra explicación con IA (con cuenta de Google)."]]);}}
+];
 GUIAS.juegos=[
 {t:"Más juegos",d:"Juegos en sala con código: estrategia 1 contra 1, juegos de mesa en grupo, dinámicas en vivo para eventos, sorteos y subastas, y juegos solo para adultos. Cada juego explica sus reglas en su ficha.",
  a:function(){return tarjetas([["Estrategia","Gomoku, Hex, tres en raya cuántico: contra el bot sin conexión, a dos en un teléfono o en línea."],

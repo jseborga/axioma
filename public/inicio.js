@@ -28,6 +28,7 @@ var ICONO={
   grupo:'<svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.2"/><circle cx="5" cy="9.5" r="2.4" opacity=".55"/><circle cx="19" cy="9.5" r="2.4" opacity=".55"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6H6z"/><path d="M1 19.5c0-2.4 1.8-4.3 4-4.3.6 0 1.1.1 1.6.3A7.6 7.6 0 0 0 4.9 19.5H1zm22 0h-3.9a7.6 7.6 0 0 0-1.7-4c.5-.2 1-.3 1.6-.3 2.2 0 4 1.9 4 4.3z" opacity=".55"/></svg>',
   mate:'<svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="10" cy="5" r="2.2"/><circle cx="15" cy="5" r="2.2" opacity=".55"/><rect x="3" y="10" width="4" height="11" rx="2" opacity=".75"/><path d="M10 14h4m-2-2v4M16 13h5m-5 4h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>',
   ingles:'<svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9l-4 3v-3a2 2 0 0 1-2-2V5z"/><path d="M10 15h5l4 3v-3a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-1v4a4 4 0 0 1-4 4h-4z" opacity=".55"/></svg>',
+  ciencias:'<svg viewBox="0 0 24 24"><path d="M9 3h6v2h-1v5.2l5.4 8.6A2 2 0 0 1 17.7 22H6.3a2 2 0 0 1-1.7-3.2L10 10.2V5H9V3z" opacity=".55"/><path d="M7.4 16h9.2l1.6 2.6c.4.6 0 1.4-.8 1.4H6.6c-.8 0-1.2-.8-.8-1.4L7.4 16z"/></svg>',
   reto:'<svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6H2zm15.5 0c0-2-.7-3.7-1.9-5 .5-.1.9-.1 1.4-.1 3.1 0 5 2.2 5 5.1h-4.5z"/></svg>'
 };
 
@@ -54,6 +55,7 @@ function abrir(){
     '<div class="ini-grid">'+
       tarjeta("mate","mate","Matemática Montessori","De inicial a secundaria: cada concepto con su material, luego con dibujos y al final con números. Se adapta a cada niña o niño, refuerza cuando hay errores y explica con IA.","Perfiles para toda la familia","grande")+
       tarjeta("ingles","ingles","Inglés para niñas y niños","Un curso desde cero con juegos y colores: palabras con dibujos y sonido, frases, escuchar y hablar. Lecciones cortas en un camino, estrellas y repaso de lo que cuesta.","30 unidades · con voz y micrófono","grande")+
+      tarjeta("ciencias","ciencias","Ciencias: naturales, física y química","De inicial a secundaria: ideas clave, juegos, diagramas, cálculos de física y química, laboratorios interactivos y experimentos para hacer en casa.","5 niveles · 30 unidades","grande")+
     '</div>'+
     '<h4 class="ini-cap">Juegos de lógica</h4>'+
     '<div class="ini-grid">'+

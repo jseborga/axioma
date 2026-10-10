@@ -100,7 +100,7 @@ donde el navegador no lo permite, el juego ocupa toda la ventana igual. Se sale 
 mismo botón o con Esc. **Lumi**, la mascota, saluda, sugiere el concepto, piensa con
 el niño cuando hay un error, anima en el refuerzo y celebra al dominar. Es la misma
 mascota del curso de [Inglés](INGLES.md), que usa los mismos perfiles: arriba se
-cambia entre 🧮 Matemática y 🔤 Inglés.
+cambia entre 🧮 Matemática, 🔤 Inglés y 🔬 [Ciencias](CIENCIAS.md).
 
 ## Voz
 

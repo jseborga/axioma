@@ -3,7 +3,8 @@
      GET    /api/mate/perfiles        los perfiles de niñas y niños de la cuenta
      PUT    /api/mate/perfiles/:id    { nombre, avatar, etapa, datos } guarda uno
      DELETE /api/mate/perfiles/:id    lo borra
-     POST   /api/mate/explica         { c, n, f, seed, resp } una explicación con IA
+     POST   /api/mate/explica         { c, n, f, seed, resp } una explicación con IA (matemática)
+                                      { materia:"ciencias", u, k, seed, resp } (ciencias)
    Los perfiles viven en el dispositivo; con una cuenta de Google se copian
    aquí para usarlos en otros dispositivos (gana la versión más nueva). Solo
    se guarda un apodo, el animalito, la etapa y el avance.
@@ -14,10 +15,12 @@
    =========================================================== */
 import "../public/mate-motor.js";
 import "../public/ingles-motor.js";
+import "../public/ciencias-datos.js";
+import "../public/ciencias-motor.js";
 import { esInvitado } from "./aula.js";
 import { configuracion, pideJSON } from "./ia-proveedores.js";
 
-var M=globalThis.AxMate, I=globalThis.AxIngles;
+var M=globalThis.AxMate, I=globalThis.AxIngles, K=globalThis.AxCiencias;
 var MAX_PERFILES=8, MAX_DATOS=150000;
 
 function dia(){return new Date().toISOString().slice(0,10);}
@@ -66,6 +69,7 @@ async function guarda(req,env,user,id,j){
   (Array.isArray(d.refl)?d.refl:[]).slice(-60).forEach(function(r){if(r&&M.POR_ID[r.c])datos.refl.push({c:r.c,t:+r.t||0,ok:+r.ok||0,n:+r.n||0,s:r.s==null?null:Math.max(0,Math.min(3,+r.s||0)),d:limpia(r.d,12),nota:limpia(r.nota,120)});});
   if(d.dias&&typeof d.dias==="object")Object.keys(d.dias).filter(function(k){return /^\d{4}-\d\d-\d\d$/.test(k);}).sort().slice(-120).forEach(function(k){datos.dias[k]=Math.max(0,Math.min(10000,+d.dias[k]||0));});
   if(d.ing&&typeof d.ing==="object"&&!Array.isArray(d.ing))datos.ing=ingles(d.ing);
+  if(d.cie&&typeof d.cie==="object"&&!Array.isArray(d.cie))datos.cie=ciencias(d.cie);
   var txt=JSON.stringify(datos);
   if(txt.length>MAX_DATOS)return j({error:"too_large"},null,413);
   var ya=await env.DB.prepare("SELECT updated_at FROM mate_perfiles WHERE user_id=? AND id=?").bind(user.id,id).first();
@@ -88,6 +92,15 @@ function ingles(g){
   (Array.isArray(g.refl)?g.refl:[]).slice(-30).forEach(function(r){if(r&&(I.POR_ID[r.l]||r.l==="repaso"))o.refl.push({l:r.l,t:e(r.t,0,9e15),ok:e(r.ok,0,1000),n:e(r.n,0,1000),s:r.s==null?null:e(r.s,0,3)});});
   return o;
 }
+/* el avance en ciencias: lecciones, lo que costó, XP, días, cómo se sintió y el nivel elegido */
+function ciencias(g){
+  var e=function(x,lo,hi){x=Math.floor(+x||0); return Math.max(lo,Math.min(hi,x));}, o={lec:{},fallos:{},xp:e(g.xp,0,1e7),dias:{},refl:[],nivel:e(g.nivel,0,K.NIVELES.length)};
+  if(g.lec&&typeof g.lec==="object")Object.keys(g.lec).forEach(function(k){var l=g.lec[k]; if(K.POR_ID[k]&&l&&typeof l==="object")o.lec[k]={e:e(l.e,0,3),v:e(l.v,0,1e5)};});
+  if(g.fallos&&typeof g.fallos==="object")Object.keys(g.fallos).slice(0,400).forEach(function(k){var p=k.split(":"), u=K.POR_U[p[0]]; if(u&&/^\d+$/.test(p[1]||"")&&u.q[+p[1]])o.fallos[k]=e(g.fallos[k],0,1000);});
+  if(g.dias&&typeof g.dias==="object")Object.keys(g.dias).filter(function(k){return /^\d{4}-\d\d-\d\d$/.test(k);}).sort().slice(-120).forEach(function(k){o.dias[k]=e(g.dias[k],0,1e5);});
+  (Array.isArray(g.refl)?g.refl:[]).slice(-30).forEach(function(r){if(r&&(K.POR_ID[r.l]||r.l==="repaso"))o.refl.push({l:r.l,t:e(r.t,0,9e15),ok:e(r.ok,0,1000),n:e(r.n,0,1000),s:r.s==null?null:e(r.s,0,3)});});
+  return o;
+}
 async function borra(env,user,id,j){
   await env.DB.prepare("DELETE FROM mate_perfiles WHERE user_id=? AND id=?").bind(user.id,id).run();
   return j({ok:true});
@@ -100,6 +113,33 @@ var H_EXPLICA={name:"entregar_explicacion",description:"Entrega la explicación 
     ejemplo_concreto:{type:"string",description:"Un ejemplo con el material Montessori u objetos cotidianos (máx. 250 caracteres)."},
     pregunta_para_probar:{type:"string",description:"Una pregunta parecida y más sencilla para que lo intente (máx. 160 caracteres), sin la respuesta."}},
     required:["explicacion","ejemplo_concreto","pregunta_para_probar"]}};
+/* lo que se pide a la IA según la materia: {clave, sistema, datos, simulada} */
+var TONO="Construye confianza: valora el intento, nunca digas que algo «es fácil» ni hagas sentir mal por equivocarse. "+
+  "Si la respuesta del niño o la niña es incorrecta, ayúdale a ver dónde estuvo la confusión sin repetir «está mal». No uses LaTeX ni markdown. Usa la herramienta entregar_explicacion.";
+function pideMate(b){
+  var c=M.POR_ID[String(b.c||"")]; if(!c)return null;
+  var n=parseInt(b.n,10), f=parseInt(b.f,10), seed=Number(b.seed);
+  if(!(n>=1&&n<=c.nmax)||!(f>=0&&f<=2)||!(seed>=0&&seed<4294967296)||Math.floor(seed)!==seed)return null;
+  var it=M.ejercicio(c.id,n,f,seed), resp=textoDe(it,b.resp), E=M.ETAPAS[c.e];
+  return {clave:"mate:"+c.id+":"+n+":"+f+":"+seed+":"+(resp==null?"-":resp),
+    sistema:"Eres una guía Montessori cálida y paciente. Explicas matemática a niñas y niños de "+E.sub+" ("+E.nom+"), en español sencillo de Latinoamérica, con frases cortas. "+
+      "Parte de lo concreto (el material Montessori o cosas cotidianas) y luego pasa a los números. Muestra el razonamiento paso a paso. "+TONO,
+    datos:{concepto:c.nom,objetivo:c.obj,material:c.mat,idea_clave:c.pres,ejercicio:it.qa||it.q,respuesta_correcta:correctaDe(it),respuesta_del_estudiante:resp,pasos_del_juego:it.ex},
+    simulada:{explicacion:"(Simulada) "+it.ex.join(" "),ejemplo_concreto:"Usa el material: "+c.mat+".",pregunta_para_probar:"¿Lo intentas con un número más pequeño?"}};
+}
+function pideCiencias(b){
+  var u=K.POR_U[String(b.u||"")], k=parseInt(b.k,10), seed=Number(b.seed);
+  if(!u||!(k>=0&&k<u.q.length)||!(seed>=0&&seed<4294967296)||Math.floor(seed)!==seed)return null;
+  var it=K.item(u,k,seed); if(!it||it.t==="sim"||it.t==="parejas")return null;
+  var resp=null;
+  if(b.resp!=null&&b.resp!==""){if(it.ops){var o=it.ops[+b.resp]; resp=o==null?null:o;} else if(it.t==="num")resp=limpia(b.resp,20);}
+  var N=K.NIVELES[u.nivel-1];
+  return {clave:"cie:"+u.id+":"+k+":"+seed+":"+(resp==null?"-":resp),
+    sistema:"Eres una guía de ciencias cálida y paciente, con el método Montessori. Explicas ciencias naturales, física y química a estudiantes del nivel «"+N.nom+"» ("+N.sub+"), "+
+      "en español sencillo de Latinoamérica, con frases cortas. Relaciona la idea con algo que se pueda ver o tocar en casa o en Bolivia y, en los cálculos, muestra la fórmula y cada paso. "+TONO,
+    datos:{unidad:u.nom,ideas_clave:u.ideas.map(function(i){return i[1]+": "+i[2];}),ejercicio:it.q,respuesta_correcta:K.respuestaTxt(it),respuesta_del_estudiante:resp,explicacion_del_juego:it.ex},
+    simulada:{explicacion:"(Simulada) "+it.ex,ejemplo_concreto:"Prueba el experimento: "+u.casa.nom+".",pregunta_para_probar:"¿Puedes dar otro ejemplo de tu casa?"}};
+}
 /* lo que se ve de una respuesta: el texto de la opción o el número */
 function textoDe(it,resp){
   var r=it.r;
@@ -115,12 +155,9 @@ async function gasta(env,user,max){
 async function devuelve(env,user){try{await env.DB.prepare("UPDATE mate_ia SET usos=MAX(0,usos-1) WHERE user_id=? AND dia=?").bind(user.id,dia()).run();}catch(e){}}
 async function explica(req,env,user,j){
   var b=await req.json().catch(function(){return {};});
-  var c=M.POR_ID[String(b.c||"")];
-  if(!c)return j({error:"bad_request"},null,400);
-  var n=parseInt(b.n,10), f=parseInt(b.f,10), seed=Number(b.seed);
-  if(!(n>=1&&n<=c.nmax)||!(f>=0&&f<=2)||!(seed>=0&&seed<4294967296)||Math.floor(seed)!==seed)return j({error:"bad_request"},null,400);
-  var it=M.ejercicio(c.id,n,f,seed), resp=textoDe(it,b.resp), E=M.ETAPAS[c.e];
-  var clave="mate:"+c.id+":"+n+":"+f+":"+seed+":"+(resp==null?"-":resp);
+  var P=b.materia==="ciencias"?pideCiencias(b):pideMate(b);
+  if(!P)return j({error:"bad_request"},null,400);
+  var clave=P.clave;
   var ya=await env.DB.prepare("SELECT texto FROM ia_explicaciones WHERE clave=?").bind(clave).first();
   if(ya){try{var g=JSON.parse(ya.texto); g.guardada=true; return j(g);}catch(e){}}
   var cfg=await configuracion(env), prueba=!cfg.listo&&env.IA_PRUEBA==="1";
@@ -128,14 +165,8 @@ async function explica(req,env,user,j){
   if(!(await gasta(env,user,limite(env))))return j({error:"limit"},null,429);
   var res;
   try{
-    if(prueba)res={explicacion:"(Simulada) "+it.ex.join(" "),ejemplo_concreto:"Usa el material: "+c.mat+".",pregunta_para_probar:"¿Lo intentas con un número más pequeño?"};
-    else res=await pideJSON(env,cfg,
-      "Eres una guía Montessori cálida y paciente. Explicas matemática a niñas y niños de "+E.sub+" ("+E.nom+"), en español sencillo de Latinoamérica, con frases cortas. "+
-      "Construye confianza: valora el intento, nunca digas que algo «es fácil» ni hagas sentir mal por equivocarse. "+
-      "Parte de lo concreto (el material Montessori o cosas cotidianas) y luego pasa a los números. Muestra el razonamiento paso a paso; "+
-      "si la respuesta del niño o la niña es incorrecta, ayúdale a ver dónde estuvo la confusión sin repetir «está mal». No uses LaTeX ni markdown. Usa la herramienta entregar_explicacion.",
-      [{type:"text",text:JSON.stringify({concepto:c.nom,objetivo:c.obj,material:c.mat,idea_clave:c.pres,ejercicio:it.qa||it.q,respuesta_correcta:correctaDe(it),
-        respuesta_del_estudiante:resp,pasos_del_juego:it.ex})}],H_EXPLICA,900);
+    if(prueba)res=P.simulada;
+    else res=await pideJSON(env,cfg,P.sistema,[{type:"text",text:JSON.stringify(P.datos)}],H_EXPLICA,900);
   }catch(e){await devuelve(env,user); console.error("mate explica",e&&e.message); return j({error:"ia_failed"},null,502);}
   var out={explicacion:limpia(res&&res.explicacion,600),ejemplo:limpia(res&&res.ejemplo_concreto,320),pregunta:limpia(res&&res.pregunta_para_probar,220)};
   if(!out.explicacion){await devuelve(env,user); return j({error:"ia_failed"},null,502);}
