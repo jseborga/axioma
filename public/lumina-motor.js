@@ -38,8 +38,6 @@ var RAREZA=["Común","Especial","Legendaria"];
 /* los lugares donde pasea la mascota: panoramas anchos (2:1) con el piso a la misma altura */
 var LUGARES=[{id:"cuarto",nom:"Mi habitación",ico:"🏠",img:"lumina/lugares/cuarto.webp"},{id:"jardin",nom:"Jardín Hada",ico:"🌸",img:"lumina/lugares/jardin.webp"},
   {id:"nubes",nom:"Cielo de Nubes",ico:"☁️",img:"lumina/lugares/nubes.webp"},{id:"cristal",nom:"Cueva de Cristal",ico:"💎",img:"lumina/lugares/cristal.webp"}];
-/* los que todavía no tienen su imagen no se ofrecen */
-var LISTOS={cuarto:1}; LUGARES=LUGARES.filter(function(l){return LISTOS[l.id];});
 var LUGAR={}; LUGARES.forEach(function(l){LUGAR[l.id]=l;});
 /* «auto»: cada criatura en su casa (Lila en su habitación, las demás en su bioma) */
 function lugarDe(g,c){var l=g.lugar&&g.lugar!=="auto"?g.lugar:(c&&c.id!=="lila"?c.bioma:"cuarto"); return LUGAR[l]||LUGAR.cuarto;}
