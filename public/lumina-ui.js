@@ -170,8 +170,9 @@ function vida(pet,escena,quieta){
   function haz(){if(!pet.isConnected)return; var a=lista[Math.floor(Math.random()*lista.length)]; if(a==="pasea")pasea(); else accion1(pet,a); luego(haz,2400+Math.random()*3000);}
   function pasea(){var ahora=pet.style.left?parseFloat(pet.style.left):rango[1], nuevo=Math.max(rango[0],Math.min(rango[2],ahora+(Math.random()<0.5?-1:1)*(10+Math.random()*16)));
     if(Math.abs(nuevo-ahora)<4)return accion1(pet,"salta");
+    var c=ctl(pet); if(c)c.camina(true);
     pet.classList.toggle("izq",nuevo<ahora); pet.classList.add("camina"); pet.style.left=nuevo.toFixed(1)+"%";
-    setTimeout(function(){pet.classList.remove("camina","izq");},1850);}
+    setTimeout(function(){pet.classList.remove("camina","izq"); if(c)c.camina(false);},1850);}
   luego(haz,1200+Math.random()*1500);
   if(!escena)return;
   escena.addEventListener("pointermove",function(ev){var r=pet.getBoundingClientRect(); if(!r.width)return;

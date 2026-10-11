@@ -29,7 +29,7 @@ var BASE={cabeza:{c:P(262,188),r:[150/512,132/512],cuello:P(262,312)},
   ojos:[{c:P(209.5,205),r:[31/512,27/512]},{c:P(313.5,199.5),r:[27/512,25/512]}],
   nariz:P(265,232),mejillas:[P(212,246),P(318,240)],boca:P(265,256),
   cuerpo:{c:P(265,372),abajo:458/512},
-  cola:[P(150,408),P(112,378),P(90,332),P(86,300)],colaR:34/512};
+  cola:null};
 var OREJAS={gato:[{b:P(182,138),p:P(148,78),r:40/512},{b:P(336,128),p:P(368,70),r:40/512}],
   conejo:[{b:P(206,122),p:P(198,10),r:34/512},{b:P(322,116),p:P(336,8),r:34/512}],
   zorro:[{b:P(186,124),p:P(126,26),r:46/512},{b:P(332,114),p:P(396,16),r:46/512}],
@@ -43,23 +43,28 @@ var RIGS={
   astro:{"ojos":[[215.5,204.5,27.2,22.4],[307.0,205.0,27.2,22.4]],"orejas":[[130.9,70.0],[365.5,60.0]],"abajo":454},
   brasita:{"ojos":[[215.0,202.0,24.6,22.4],[308.5,200.0,24.6,22.4]],"orejas":[[231.5,0.0],[290.0,0.0]],"abajo":453},
   chispa:{"ojos":[[216.0,205.0,26.6,22.4],[306.5,202.5,26.6,22.4]],"orejas":[[129.8,70.0],[365.2,59.0]],"abajo":456},
-  cometa:{"ojos":[[217.5,204.0,24.6,22.4],[305.5,205.5,24.6,22.4]],"orejas":[[117.5,38.0],[390.0,37.0]],"abajo":456},
-  cuarzo:{"ojos":[[214.0,208.0,26.6,29.0],[308.0,207.5,26.6,29.0]],"orejas":[[176.5,68.0],[349.0,66.0]],"abajo":454},
-  florita:{"ojos":[[215.0,209.0,24.6,29.0],[307.5,208.0,24.6,29.0]],"orejas":[[228.5,10.0],[291.0,11.0]],"abajo":453},
+  cometa:{"ojos":[[217.5,204.0,24.6,22.4],[305.5,205.5,24.6,22.4]],"orejas":[[117.5,38.0],[390.0,37.0]],"abajo":456,"cola":null,"patas":[[213.7,440.3,25.4],[311.3,439.3,25.4]]},
+  cuarzo:{"ojos":[[214.0,208.0,26.6,29.0],[308.0,207.5,26.6,29.0]],"orejas":[[176.5,68.0],[349.0,66.0]],"abajo":454,"cola":[[177.5,375.4,23.8],[171.1,385.5,23.8],[160.6,402.0,14.4],[154.0,413.7,18.9],[146.4,420.7,26.9],[135.0,425.9,20.7],[117.8,422.1,8.5]],"patas":[[217.5,436.7,27.1],[313.8,436.4,27.1]]},
+  florita:{"ojos":[[215.0,209.0,24.6,29.0],[307.5,208.0,24.6,29.0]],"orejas":[[228.5,10.0],[291.0,11.0]],"abajo":453,"cola":null,"patas":[[210.5,436.9,26.7],[313.3,436.1,26.7]]},
   iris:{"ojos":[[214.5,205.5,24.8,23.6],[311.5,200.5,24.8,23.6]],"orejas":[[132.5,20.0],[391.5,17.0]],"abajo":457},
+  lila:{"cola":[[126.7,417.4,21.1],[117.3,409.9,21.1],[101.4,397.2,17.4],[94.9,379.9,14.5],[95.6,361.5,20.2],[92.9,345.5,21.2],[88.0,331.1,13.9]],"patas":[[204.4,437.4,30.0],[319.9,436.2,30.0]]},
   luzmi:{"ojos":[[214.0,210.0,25.4,29.0],[307.5,203.0,25.4,29.0]],"orejas":[[229.0,7.0],[294.6,7.0]],"abajo":455},
   miel:{"ojos":[[215.0,204.0,26.6,22.4],[306.5,208.0,26.6,22.4]],"orejas":[[167.5,69.0],[353.5,66.0]],"abajo":454},
-  mirlu:{"ojos":[[214.5,205.0,27.2,22.4],[306.0,200.5,27.2,22.4]],"orejas":[[130.2,71.0],[363.0,58.0]],"abajo":456},
+  mirlu:{"ojos":[[214.5,205.0,27.2,22.4],[306.0,200.5,27.2,22.4]],"orejas":[[130.2,71.0],[363.0,58.0]],"abajo":456,"cola":[[127.5,413.4,31.2],[120.3,403.8,31.2],[106.4,385.3,24.0],[105.9,363.0,25.7],[108.3,341.8,31.4],[106.1,324.2,27.0],[98.2,311.4,13.2]],"patas":[[210.9,438.9,26.4],[311.3,437.6,26.4]]},
   nube:{"ojos":[[215.5,208.0,24.8,29.0],[306.5,201.0,24.8,29.0]],"orejas":[[211.0,18.0],[302.5,17.0]],"abajo":455},
-  petala:{"ojos":[[215.0,204.5,27.8,22.4],[305.0,207.0,27.8,22.4]],"orejas":[[122.5,69.0],[367.0,58.0]],"abajo":457},
-  polar:{"ojos":[[215.0,202.5,24.6,22.4],[308.0,206.0,24.6,22.4]],"orejas":[[172.5,68.0],[354.5,64.0]],"abajo":455},
-  rocio:{"ojos":[[216.5,202.0,24.8,22.4],[307.0,204.5,24.8,22.4]],"orejas":[[128.0,31.0],[386.5,29.0]],"abajo":453},
+  petala:{"ojos":[[215.0,204.5,27.8,22.4],[305.0,207.0,27.8,22.4]],"orejas":[[122.5,69.0],[367.0,58.0]],"abajo":457,"cola":null,"patas":[[209.9,440.9,26.0],[309.7,439.8,26.0]]},
+  polar:{"ojos":[[215.0,202.5,24.6,22.4],[308.0,206.0,24.6,22.4]],"orejas":[[172.5,68.0],[354.5,64.0]],"abajo":455,"cola":[[137.5,416.2,24.2],[127.1,410.3,24.2],[107.8,399.4,18.4],[99.8,381.3,17.0],[99.0,361.3,20.7],[93.4,346.1,17.1],[90.3,332.3,8.0]],"patas":[[210.8,438.3,26.8],[313.1,437.3,26.8]]},
+  rocio:{"ojos":[[216.5,202.0,24.8,22.4],[307.0,204.5,24.8,22.4]],"orejas":[[128.0,31.0],[386.5,29.0]],"abajo":453,"cola":null,"patas":[[211.7,437.6,26.1],[312.3,437.0,26.1]]},
   rubi:{"ojos":[[218.5,203.5,24.6,22.4],[307.0,206.0,24.6,22.4]],"orejas":[[125.6,35.0],[388.5,30.0]],"abajo":454}};
 function rig(c){
   var r=JSON.parse(JSON.stringify(BASE)), d=RIGS[c.id];
   r.orejas=JSON.parse(JSON.stringify(OREJAS[c.esp]||OREJAS.gato));
   r.alas=ALAS[c.rasgo]||null;
+  r.patas=[{c:P(204,437),r:30/512},{c:P(320,436),r:30/512}];
   if(!d)return r;
+  if(d.patas&&d.patas.length===2)r.patas=d.patas.map(function(p){return {c:P(p[0],p[1]),r:p[2]/512};});
+  r.cola=d.cola?d.cola.map(function(q){return [q[0]/512,q[1]/512,q[2]/512];}):null;
+  if(!d.ojos)return r;
   var e=d.ojos, mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2, sc=Math.abs(e[1][0]-e[0][0])/104;
   r.ojos=e.map(function(o){return {c:P(o[0],o[1]),r:[o[2]/512,o[3]/512]};});
   r.cabeza={c:P(mx,my-14*sc),r:[150*sc/512,132*sc/512],cuello:P(mx,my+110*sc)};
@@ -67,7 +72,6 @@ function rig(c){
   r.cuerpo.c=[mx/512,r.cuerpo.c[1]];
   if(d.orejas)d.orejas.forEach(function(t,q){if(!t)return; var p=P(t[0],t[1]), hc=r.cabeza.c;
     r.orejas[q]={p:p,b:[p[0]+(hc[0]-p[0])*0.42,p[1]+(hc[1]-p[1])*0.42],r:r.orejas[q].r*Math.max(0.8,Math.min(1.25,sc))};});
-  if(d.cola)r.cola=d.cola.map(function(q){return P(q[0],q[1]);});
   if(d.abajo)r.cuerpo.abajo=d.abajo/512;
   return r;
 }
@@ -93,8 +97,8 @@ var FS=[
 "  if(r>1.4) return base;",
 "  float dentro=1.0-smoothstep(1.0,1.38,r);",
 /* la mirada: el iris se corre, el borde del ojo queda quieto */
-"  float mov=1.0-smoothstep(0.5,1.0,r);",
-"  vec4 c=texture2D(uTex,uv-e.yz*o.zw*0.3*mov);",
+"  float mov=1.0-smoothstep(0.3,0.72,r);",
+"  vec4 c=texture2D(uTex,uv-e.yz*o.zw*0.2*mov);",
 /* párpado de arriba: baja el pelaje de la frente */
 "  float b=e.x; float bp=mix(-1.3,0.86,b);",
 "  float borde=bp-uCurva*(1.0-l.x*l.x)*b;",
@@ -142,7 +146,7 @@ Ronroneo.prototype.on=function(v){
 Ronroneo.prototype.fin=function(){try{if(this.o){this.g.gain.setTargetAtTime(0,AC.currentTime,0.1); var o=this.o,l=this.l; setTimeout(function(){try{o.stop();l.stop();}catch(e){}},400);}}catch(e){} this.g=null;};
 
 /* ---------- una criatura viva ---------- */
-var N=44, MARGEN=1/1.25;
+var N=58, MARGEN=1/1.25;
 function monta(host,c,op){
   op=op||{}; if(typeof c==="string")c=L.POR_ID[c];
   if(!host||!c||!(c.recorte||c.foto)||!soporta())return null;
@@ -152,7 +156,7 @@ function monta(host,c,op){
   var R=rig(c), muerto=false, listo=false, raf=0;
   /* malla: posiciones de reposo, UV y pesos de cada hueso */
   var n=(N+1)*(N+1), rep=new Float32Array(n*2), pos=new Float32Array(n*2), uv=new Float32Array(n*2), W={};
-  ["cab","ore0","ore1","cola","cuerpo","nariz","mej0","mej1","boca","ala0","ala1"].forEach(function(k){W[k]=new Float32Array(n);});
+  ["cab","ore0","ore1","cola","cuerpo","nariz","mej0","mej1","boca","pata0","pata1"].forEach(function(k){W[k]=new Float32Array(n);});
   var colaS=new Float32Array(n);
   for(var j=0,k=0;j<=N;j++)for(var i=0;i<=N;i++,k++){
     var x=i/N, y=j/N; rep[2*k]=x; rep[2*k+1]=y; uv[2*k]=x; uv[2*k+1]=y;
@@ -162,15 +166,17 @@ function monta(host,c,op){
       var px=o.b[0]+ax*Math.min(1,t), py=o.b[1]+ay*Math.min(1,t), dd=Math.sqrt((x-px)*(x-px)+(y-py)*(y-py)), w=(1-ss(o.r*0.7,o.r*1.4,dd))*ss(0,0.45,t);
       W["ore"+q][k]=w; wc=Math.max(wc,1-ss(o.r*0.8,o.r*1.5,dd)*1);});
     W.cab[k]=wc;
-    /* la cola: distancia a la línea y avance desde la base (0) hasta la punta (1) */
-    var best=9, sBest=0, acum=0, tot=0, cc=R.cola, seg;
-    for(seg=0;seg<cc.length-1;seg++){var sx=cc[seg+1][0]-cc[seg][0], sy=cc[seg+1][1]-cc[seg][1]; tot+=Math.sqrt(sx*sx+sy*sy);}
-    for(seg=0;seg<cc.length-1;seg++){var ax2=cc[seg+1][0]-cc[seg][0], ay2=cc[seg+1][1]-cc[seg][1], l2=ax2*ax2+ay2*ay2, ll=Math.sqrt(l2), t2=Math.max(0,Math.min(1,((x-cc[seg][0])*ax2+(y-cc[seg][1])*ay2)/l2));
-      var qx=cc[seg][0]+ax2*t2, qy=cc[seg][1]+ay2*t2, d2=Math.sqrt((x-qx)*(x-qx)+(y-qy)*(y-qy)); if(d2<best){best=d2; sBest=(acum+ll*t2)/tot;} acum+=ll;}
-    var ext=Math.sqrt(Math.pow(x-cc[cc.length-1][0],2)+Math.pow(y-cc[cc.length-1][1],2));
-    W.cola[k]=(1-ss(R.colaR*0.9,R.colaR*1.9,Math.min(best,ext)))*ss(0.0,0.25,sBest); colaS[k]=sBest;
+    /* la cola: cápsulas a lo largo de su línea central, con el grosor de cada tramo; el peso crece
+       desde la unión (0) hasta la punta (1), así el cuerpo no se deforma */
+    if(R.cola){var cc=R.cola, best=9, sBest=0, rBest=0, acum=0, tot=0, seg;
+      for(seg=0;seg<cc.length-1;seg++)tot+=Math.sqrt(Math.pow(cc[seg+1][0]-cc[seg][0],2)+Math.pow(cc[seg+1][1]-cc[seg][1],2));
+      for(seg=0;seg<cc.length-1;seg++){var ax2=cc[seg+1][0]-cc[seg][0], ay2=cc[seg+1][1]-cc[seg][1], l2=ax2*ax2+ay2*ay2, ll=Math.sqrt(l2), t2=Math.max(0,Math.min(1,((x-cc[seg][0])*ax2+(y-cc[seg][1])*ay2)/l2));
+        var qx=cc[seg][0]+ax2*t2, qy=cc[seg][1]+ay2*t2, rr=cc[seg][2]+(cc[seg+1][2]-cc[seg][2])*t2, d2=Math.sqrt((x-qx)*(x-qx)+(y-qy)*(y-qy))/rr;
+        if(d2<best){best=d2; sBest=(acum+ll*t2)/tot; rBest=rr;} acum+=ll;}
+      W.cola[k]=(1-ss(0.95,1.3,best))*ss(0.0,0.35,sBest); colaS[k]=sBest;}
     /* el cuerpo respira desde el piso; las patitas quedan apoyadas */
     W.cuerpo[k]=ss(R.cuerpo.abajo,R.cuerpo.abajo-0.3,y);
+    if(R.patas)R.patas.forEach(function(p,q){var ex=(x-p.c[0])/p.r, ey=(y-p.c[1])/p.r; W["pata"+q][k]=Math.exp(-(ex*ex+ey*ey)/1.6)*ss(-1.3,-0.2,ey);});
     var g=function(c2,rr){var ex=x-c2[0], ey=y-c2[1]; return Math.exp(-(ex*ex+ey*ey)/(2*rr*rr));};
     W.nariz[k]=g(R.nariz,0.022); W.boca[k]=g(R.boca,0.04);
     W.mej0[k]=g(R.mejillas[0],0.07); W.mej1[k]=g(R.mejillas[1],0.07);
@@ -233,9 +239,9 @@ function monta(host,c,op){
   /* ---------- el estado: resortes que siguen a sus objetivos ---------- */
   var S={cabA:new Resorte(40,10),cabX:new Resorte(40,10),cabY:new Resorte(40,10),mirX:new Resorte(160,22),mirY:new Resorte(160,22),
     ore0:new Resorte(260,14),ore1:new Resorte(260,14),parp:new Resorte(900,60),feliz:new Resorte(60,14),nariz:new Resorte(500,25),
-    mej:new Resorte(380,18),boca:new Resorte(200,18),colaA:new Resorte(30,6),alas:new Resorte(90,8)};
+    mej:new Resorte(380,18),boca:new Resorte(200,18),anda:new Resorte(30,11),paso:new Resorte(1,1),sonr:new Resorte(40,12),colaA:new Resorte(30,6),alas:new Resorte(90,8)};
   var gesto=op.gesto||"feliz", t0=performance.now(), prev=t0, sig={parp:t0+1500,ore:t0+3000,nariz:t0+2200,mira:t0+1200,bigote:t0+4000}, ext={mira:null,colaRapida:0,mastica:0,feliz:0};
-  var caricias=[], ronr=new Ronroneo(), acariciando=0, finParp=0, doble=0;
+  var caricias=[], ronr=new Ronroneo(), acariciando=0, finParp=0, doble=0, andando=false;
   var seg=[]; if(op.acc)Array.prototype.forEach.call(op.acc,function(el){seg.push(el);});
   function azar(a,b){return a+Math.random()*(b-a);}
   function cuadro(ahora){
@@ -269,7 +275,9 @@ function monta(host,c,op){
     var rap=ahora<ext.colaRapida; S.colaA.t=duerme?0.05*Math.sin(t*0.6):(rap?0.35*Math.sin(t*14):0.16*Math.sin(t*1.7)+0.06*Math.sin(t*0.6));
     if(rap){S.colaA.k=400; S.colaA.d=18;} else {S.colaA.k=30; S.colaA.d=6;}
     S.alas.t=R.alas?(duerme?0.02:0.12*Math.sin(t*(c.rasgo==="hada"?7:3.2))):0;
-    for(var kk in S)S[kk].paso(dt);
+    S.anda.t=andando?1:0; S.sonr.t=duerme?0:(feliz?1:(come?0.3:0.35));
+    for(var kk in S)if(kk!=="paso")S[kk].paso(dt);
+    S.paso.x+=dt*9.5*S.anda.x;
     /* caricias que se van soltando */
     for(var ci=caricias.length-1;ci>=0;ci--){caricias[ci].f*=Math.pow(0.12,dt); if(caricias[ci].f<0.01)caricias.splice(ci,1);}
     acariciando=Math.max(0,acariciando-dt*0.8);
@@ -289,7 +297,7 @@ function monta(host,c,op){
   }
   function deforma(t,duerme){
     var h=R.cabeza, cu=h.cuello, ang=S.cabA.x, tx=S.cabX.x, ty=S.cabY.x, resp=(duerme?0.022:0.014)*Math.sin(t*(duerme?1.4:2.1));
-    var bx=R.cuerpo.c[0], by=R.cuerpo.abajo, cola=R.cola[0], ore=[S.ore0.x,S.ore1.x], na=S.nariz.x, mj=S.mej.x, bo=S.boca.x, ca=S.colaA.x, al=S.alas.x;
+    var bx=R.cuerpo.c[0], by=R.cuerpo.abajo, cola=R.cola?R.cola[0]:null, fase=S.paso.x, pie=[Math.max(0,Math.sin(fase))*S.anda.x,Math.max(0,Math.sin(fase+Math.PI))*S.anda.x], bote=Math.abs(Math.sin(fase))*S.anda.x, son=S.sonr.x, ore=[S.ore0.x,S.ore1.x], na=S.nariz.x, mj=S.mej.x, bo=S.boca.x, ca=S.colaA.x, al=S.alas.x;
     for(var k=0;k<n;k++){
       var x=rep[2*k], y=rep[2*k+1], q, w;
       /* orejas */
@@ -299,7 +307,12 @@ function monta(host,c,op){
       /* cabeza */
       w=W.cab[k]; if(w>0.001){q=rot(x,y,cu[0],cu[1],ang*w); x=q[0]+tx*w; y=q[1]+ty*w;}
       /* cola: una onda que crece hacia la punta */
-      w=W.cola[k]; if(w>0.001){var s=colaS[k]; q=rot(x,y,cola[0],cola[1],ca*w*(0.35+s)+0.05*Math.sin(t*3.1-s*4)*w*s); x=q[0]; y=q[1];}
+      /* sonrisa: las mejillas y las comisuras suben */
+      y-=(W.mej0[k]+W.mej1[k])*son*0.007;
+      w=cola?W.cola[k]:0; if(w>0.001){var s=colaS[k]; q=rot(x,y,cola[0],cola[1],ca*w*(0.35+s)+0.05*Math.sin(t*3.1-s*4)*w*s); x=q[0]; y=q[1];}
+      /* caminar: cada pata se levanta por turno y el cuerpo sube un poquito */
+      var wp0=W.pata0[k], wp1=W.pata1[k], wb=1-Math.max(wp0,wp1);
+      if(S.anda.x>0.01){y-=(wp0*pie[0]+wp1*pie[1])*0.04; x+=(wp0*pie[0]-wp1*pie[1])*0.006; y-=wb*bote*0.014;}
       /* respirar */
       w=W.cuerpo[k]; x+=(x-bx)*resp*0.45*w; y-=(by-y)*resp*w;
       /* caricias: el pelo se va con el dedo */
@@ -324,6 +337,7 @@ function monta(host,c,op){
       else if(a==="come")ext.mastica=tt+1800;
       else if(a==="parpadea")finParp=tt+120;},
     gesto:function(g){gesto=g||"feliz";},
+    camina:function(v){andando=!!v;},
     mira:function(dx,dy){ext.mira=dx==null?null:[Math.max(-1,Math.min(1,dx)),Math.max(-1,Math.min(1,dy||0))];},
     /* x, y: punto en la foto (0–1); vx, vy: cuánto se movió el dedo */
     caricia:function(x,y,vx,vy){var m=Math.sqrt(vx*vx+vy*vy); if(m>0.06){vx*=0.06/m; vy*=0.06/m;}
