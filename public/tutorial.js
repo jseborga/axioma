@@ -513,6 +513,25 @@ GUIAS.ciencias=[
    ["Experimentos para casa","Cada unidad trae uno con materiales sencillos, pasos y una pregunta para pensar (📖 en el mapa)."],
    ["Si cuesta","Lo fallado vuelve al final y queda en «Repasar lo que me costó». 🤖 Explícamelo da otra explicación con IA (con cuenta de Google)."]]);}}
 ];
+GUIAS.lumina=[
+{t:"LuminaPets: El Valle de las Criaturas Mágicas",d:"Para niñas y niños de 4 a 9 años. Lila, la gatita lavanda, pide cosas (merienda, baño, jugar, dormir) y para dárselas hay que aprender: matemática, letras, ciencias, inglés y lógica, mezclados como ingredientes mágicos. Usa los mismos perfiles que Matemática, Inglés y Ciencias.",
+ a:function(){return ico("🐾");}},
+{t:"Aprender para cuidar",d:"",
+ a:function(){return tarjetas([["🧪 Cocina de Pociones","Contar ingredientes, series, colores y formas, sumas, restas, repartir y la tarta en partes iguales. Da 🧁 bocadillos."],
+   ["🌳 Árbol de las Palabras","¿Qué empieza con este sonido?, trazar letras uniendo estrellas, sílabas y leer palabras. Da 🫧 espuma para el baño."],
+   ["🌼 Jardín de las Preguntas","Ciencias, inglés (con voz) y lógica en cada ronda. Da 💎 gemas para vestir a la mascota."],
+   ["A su medida","Modo Preescolar (4–6) o Primaria inicial (7–9) según el curso del perfil; dentro, la dificultad sube con tres aciertos y baja si cuesta. Un error nunca castiga: se vuelve a intentar."]]);}},
+{t:"Cuidar, huevos y aldea",d:"",
+ a:function(){return pasos([["Barras sin castigo","Energía, pancita, brillo y descanso bajan despacio. Si llegan a cero, la mascota duerme en un capullo y despierta con un abrazo: nunca enferma ni muere."],
+   ["Vínculo Mágico","Aprender y cuidar llena la barra 💖. Al llenarse llega un huevo sorpresa."],
+   ["Incubar","Se le da calor frotándolo, cantándole o meciéndolo (también moviendo el teléfono). Cuando está listo, se toca para que nazca."],
+   ["La Aldea del Gran Árbol","Cada criatura (Gatito-Unicornio, Conejo-Hada, Zorrito-Estrella, Osito-Dragón y más) vive en su rama: Jardín Hada, Cielo de Nubes o Cueva de Cristal."]]);}},
+{t:"Para la familia",d:"",
+ a:function(){return tarjetas([["🦸 Misiones reales","Cepillarse los dientes, leer, recoger los juguetes y las que agreguen. Un adulto las confirma con el PIN familiar y un cometa trae gemas; con todas las del día, un huevo especial."],
+   ["🌙 Modo noche","Desde las 20:30 (se puede cambiar) las criaturas duermen y los juegos se pausan."],
+   ["🔐 Puerta para adultos","Los ajustes piden resolver una cuenta escrita en palabras."],
+   ["🛡️ Ético","Sin anuncios, sin compras y sin datos personales: solo un apodo."]]);}}
+];
 GUIAS.juegos=[
 {t:"Más juegos",d:"Juegos en sala con código: estrategia 1 contra 1, juegos de mesa en grupo, dinámicas en vivo para eventos, sorteos y subastas, y juegos solo para adultos. Cada juego explica sus reglas en su ficha.",
  a:function(){return tarjetas([["Estrategia","Gomoku, Hex, tres en raya cuántico: contra el bot sin conexión, a dos en un teléfono o en línea."],

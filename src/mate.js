@@ -17,10 +17,11 @@ import "../public/mate-motor.js";
 import "../public/ingles-motor.js";
 import "../public/ciencias-datos.js";
 import "../public/ciencias-motor.js";
+import "../public/lumina-motor.js";
 import { esInvitado } from "./aula.js";
 import { configuracion, pideJSON } from "./ia-proveedores.js";
 
-var M=globalThis.AxMate, I=globalThis.AxIngles, K=globalThis.AxCiencias;
+var M=globalThis.AxMate, I=globalThis.AxIngles, K=globalThis.AxCiencias, LU=globalThis.AxLumina;
 var MAX_PERFILES=8, MAX_DATOS=150000;
 
 function dia(){return new Date().toISOString().slice(0,10);}
@@ -70,6 +71,7 @@ async function guarda(req,env,user,id,j){
   if(d.dias&&typeof d.dias==="object")Object.keys(d.dias).filter(function(k){return /^\d{4}-\d\d-\d\d$/.test(k);}).sort().slice(-120).forEach(function(k){datos.dias[k]=Math.max(0,Math.min(10000,+d.dias[k]||0));});
   if(d.ing&&typeof d.ing==="object"&&!Array.isArray(d.ing))datos.ing=ingles(d.ing);
   if(d.cie&&typeof d.cie==="object"&&!Array.isArray(d.cie))datos.cie=ciencias(d.cie);
+  if(d.lumi&&typeof d.lumi==="object"&&!Array.isArray(d.lumi))datos.lumi=lumina(d.lumi);
   var txt=JSON.stringify(datos);
   if(txt.length>MAX_DATOS)return j({error:"too_large"},null,413);
   var ya=await env.DB.prepare("SELECT updated_at FROM mate_perfiles WHERE user_id=? AND id=?").bind(user.id,id).first();
@@ -99,6 +101,36 @@ function ciencias(g){
   if(g.fallos&&typeof g.fallos==="object")Object.keys(g.fallos).slice(0,400).forEach(function(k){var p=k.split(":"), u=K.POR_U[p[0]]; if(u&&/^\d+$/.test(p[1]||"")&&u.q[+p[1]])o.fallos[k]=e(g.fallos[k],0,1000);});
   if(g.dias&&typeof g.dias==="object")Object.keys(g.dias).filter(function(k){return /^\d{4}-\d\d-\d\d$/.test(k);}).sort().slice(-120).forEach(function(k){o.dias[k]=e(g.dias[k],0,1e5);});
   (Array.isArray(g.refl)?g.refl:[]).slice(-30).forEach(function(r){if(r&&(K.POR_ID[r.l]||r.l==="repaso"))o.refl.push({l:r.l,t:e(r.t,0,9e15),ok:e(r.ok,0,1000),n:e(r.n,0,1000),s:r.s==null?null:e(r.s,0,3)});});
+  return o;
+}
+/* LuminaPets: la mascota, su colección, inventario, huevos, niveles, misiones (con el PIN ya cifrado) y modo noche */
+function lumina(g){
+  var e=function(x,lo,hi){x=Math.floor(+x||0); return Math.max(lo,Math.min(hi,x));}, ob=function(x){return x&&typeof x==="object"&&!Array.isArray(x)?x:{};}, n=LU.nuevo();
+  var hora=function(x,def){return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(x))?String(x):def;}, fecha=function(k){return /^\d{4}-\d\d-\d\d$/.test(k);};
+  var o={v:1,modo:g.modo==="pre"||g.modo==="pri"?g.modo:null,activa:"lila",mascotas:[],barras:{},capullo:!!g.capullo,vinculo:e(g.vinculo,0,100),inv:{},acc:[],huevos:[],niveles:{},
+    stats:{temas:{}},habitos:[],hechos:{},pin:/^[0-9a-z]{1,8}$/.test(String(g.pin||""))?String(g.pin):null,noche:{},dias:{}};
+  var vistos={};
+  (Array.isArray(g.mascotas)?g.mascotas:[]).forEach(function(m){if(!m||!LU.POR_ID[m.id]||vistos[m.id])return; vistos[m.id]=1;
+    var acc=[]; (Array.isArray(m.acc)?m.acc:[]).forEach(function(a){if(LU.ACC[a]&&acc.indexOf(a)<0)acc.push(a);});
+    o.mascotas.push({id:m.id,nom:LU.POR_ID[m.id].nom,acc:acc.slice(0,4),nacio:e(m.nacio,0,9e15)});});
+  if(!o.mascotas.length)o.mascotas=n.mascotas;
+  o.activa=vistos[g.activa]?g.activa:o.mascotas[0].id;
+  var b=ob(g.barras); ["fel","pan","bri","des"].forEach(function(k){o.barras[k]=b[k]==null?n.barras[k]:Math.max(0,Math.min(100,+b[k]||0));}); o.barras.t=e(b.t,0,9e15)||Date.now();
+  var inv=ob(g.inv); ["polvo","bocadillo","espuma","gema"].forEach(function(k){o.inv[k]=e(inv[k],0,1e6);});
+  (Array.isArray(g.acc)?g.acc:[]).forEach(function(a){if(LU.ACC[a]&&o.acc.indexOf(a)<0)o.acc.push(a);});
+  (Array.isArray(g.huevos)?g.huevos:[]).slice(0,3).forEach(function(h){if(h&&/^h[a-z0-9]{1,20}$/.test(String(h.id)))o.huevos.push({id:String(h.id),calor:e(h.calor,0,100),tono:e(h.tono,0,6),especial:!!h.especial});});
+  var nv=ob(g.niveles), st=ob(g.stats), tm=ob(st.temas);
+  ["cocina","arbol","jardin"].forEach(function(k){o.niveles[k]=e(nv[k],0,5); var s=ob(st[k]); o.stats[k]={r:e(s.r,0,1e6),ok:e(s.ok,0,1e7),n:e(s.n,0,1e7)};});
+  ["mate","logica","lectura","ciencia","ingles"].forEach(function(k){var t=ob(tm[k]); if(t.n)o.stats.temas[k]={ok:e(t.ok,0,1e7),n:e(t.n,0,1e7)};});
+  var ids={};
+  (Array.isArray(g.habitos)?g.habitos:[]).slice(0,12).forEach(function(h){if(!h)return; var id=String(h.id||""), base=LU.HABITOS.filter(function(x){return x.id===id;})[0];
+    if(ids[id]||!(base||/^c[a-z0-9]{1,20}$/.test(id)))return; ids[id]=1;
+    o.habitos.push({id:id,nom:base?base.nom:limpia(h.nom,40)||"Misión",ico:base?base.ico:limpia(h.ico,8)||"⭐",on:!!h.on,veces:base?base.veces:1});});
+  if(!g.habitos)o.habitos=n.habitos;
+  var hc=ob(g.hechos); Object.keys(hc).filter(fecha).sort().slice(-40).forEach(function(k){var d=ob(hc[k]), x={}; Object.keys(d).forEach(function(h){if(ids[h]||h==="_huevo")x[h]=e(d[h],0,10);}); o.hechos[k]=x;});
+  var no=ob(g.noche); o.noche={on:no.on==null?true:!!no.on,desde:hora(no.desde,"20:30"),hasta:hora(no.hasta,"07:00")};
+  var ds=ob(g.dias); Object.keys(ds).filter(fecha).sort().slice(-120).forEach(function(k){o.dias[k]=e(ds[k],0,1e5);});
+  var mi=ob(g.mimos); if(fecha(String(mi.d||"")))o.mimos={d:mi.d,n:e(mi.n,0,1e5)};
   return o;
 }
 async function borra(env,user,id,j){

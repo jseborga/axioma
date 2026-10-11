@@ -112,14 +112,14 @@ function portada(materia){
   portadaPinta();
 }
 /* la materia elegida: Matemática o Inglés */
-function entra(){if(D.materia==="ingles"&&window.AxInglesUI)return AxInglesUI.mapa(); if(D.materia==="ciencias"&&window.AxCienciasUI)return AxCienciasUI.mapa(); mapa();}
+function entra(){if(D.materia==="ingles"&&window.AxInglesUI)return AxInglesUI.mapa(); if(D.materia==="ciencias"&&window.AxCienciasUI)return AxCienciasUI.mapa(); if(D.materia==="lumina"&&window.AxLuminaUI)return AxLuminaUI.mapa(); mapa();}
 function portadaPinta(){
   S={portada:true};
   if(!D.lista.length)return crear();
-  var ing=D.materia==="ingles";
-  var g=pinta('<div class="mt-portada">'+(window.AxAprender?AxAprender.globo("feliz",ing?"Hello! ¿Quién va a aprender inglés hoy?":"¡Hola! ¿Quién va a aprender hoy?","grande"):'')+
-    '<h3>'+(ing?'🔤 Inglés para niñas y niños':'🧮 Matemática Montessori')+'</h3>'+
-    '<p class="fine">'+(ing?'Un curso de inglés desde cero con juegos: palabras con dibujos y sonido, frases, escuchar y hablar. Lecciones cortas, a tu ritmo. <a href="#" class="guia-link" data-guia="ingles">¿Cómo funciona?</a>'
+  var ing=D.materia==="ingles", lu=D.materia==="lumina"&&window.AxLuminaUI;
+  var g=pinta('<div class="mt-portada">'+(lu?'<img class="lp-portada" src="lumina/lila.jpg" alt="Lila, la gatita mágica">':window.AxAprender?AxAprender.globo("feliz",ing?"Hello! ¿Quién va a aprender inglés hoy?":"¡Hola! ¿Quién va a aprender hoy?","grande"):'')+
+    '<h3>'+(lu?'🐾 LuminaPets: El Valle de las Criaturas Mágicas':ing?'🔤 Inglés para niñas y niños':'🧮 Matemática Montessori')+'</h3>'+
+    '<p class="fine">'+(lu?'Lila y sus amigas necesitan tu ayuda: cocina pociones contando y sumando, consigue espuma leyendo y gemas respondiendo preguntas de ciencias e inglés. Para niñas y niños de 4 a 9 años. <a href="#" class="guia-link" data-guia="lumina">¿Cómo funciona?</a>':ing?'Un curso de inglés desde cero con juegos: palabras con dibujos y sonido, frases, escuchar y hablar. Lecciones cortas, a tu ritmo. <a href="#" class="guia-link" data-guia="ingles">¿Cómo funciona?</a>'
       :'Juegos para aprender matemática desde inicial hasta secundaria: primero con el material, luego con dibujos y al final con números. Cada quien avanza a su ritmo y los errores se convierten en ayuda. <a href="#" class="guia-link" data-guia="mate">¿Cómo funciona?</a>')+'</p>'+
     '<h4>¿Quién va a aprender hoy?</h4><div class="mt-perfiles">'+
     D.lista.map(function(pf){var E=M.ETAPAS[pf.etapa]||M.ETAPAS[0], r=racha(pf);
@@ -137,7 +137,7 @@ function portadaPinta(){
 /* ===================== crear o editar un perfil ===================== */
 function crear(pf){
   var av=pf?pf.avatar:pick(AVATARES), et=pf?pf.etapa:0;
-  var g=pinta('<div class="mt-crear"><h3>'+(pf?'Editar perfil':'🧮 ¡Hola! Vamos a crear tu perfil')+'</h3>'+
+  var g=pinta('<div class="mt-crear"><h3>'+(pf?'Editar perfil':(D.materia==="lumina"?'🐾':'🧮')+' ¡Hola! Vamos a crear tu perfil')+'</h3>'+
     '<label class="mt-campo">Tu nombre o apodo<input id="mt-nom" maxlength="20" autocomplete="off" value="'+esc(pf?pf.nombre:"")+'" placeholder="Ej.: Sofi"></label>'+
     '<p class="fine">Usa solo un apodo: no hace falta el nombre completo.</p>'+
     '<h4>Elige tu animalito</h4><div class="mt-avatares">'+AVATARES.map(function(a){return '<button type="button" data-av="'+a+'" class="'+(a===av?"on":"")+'" aria-label="'+a+'">'+a+'</button>';}).join("")+'</div>'+
@@ -163,15 +163,15 @@ function cabeza(pf,materia,linea,extra){
       '<div class="mt-quien"><b>'+esc(pf.nombre)+'</b><small>'+linea+'</small>'+(extra||'')+'</div>'+
       '<button type="button" class="mt-mini-btn" id="mt-voz-auto" title="Leer en voz alta">'+(D.voz?'🔊':'🔈')+'</button>'+
       (window.AxAprender?AxAprender.botonCompleta():'')+'<button type="button" class="mt-mini-btn" id="mt-adultos" title="Para adultos">👪</button></div>'+
-    '<div class="ap-materias" role="tablist">'+[["mate","🧮","Matemática"],["ingles","🔤","Inglés"],["ciencias","🔬","Ciencias"]].filter(function(x){return x[0]==="mate"||(x[0]==="ingles"&&window.AxInglesUI)||(x[0]==="ciencias"&&window.AxCienciasUI);}).map(function(x){
+    '<div class="ap-materias" role="tablist">'+[["mate","🧮","Matemática"],["ingles","🔤","Inglés"],["ciencias","🔬","Ciencias"],["lumina","🐾","Lumina"]].filter(function(x){return x[0]==="mate"||(x[0]==="ingles"&&window.AxInglesUI)||(x[0]==="ciencias"&&window.AxCienciasUI)||(x[0]==="lumina"&&window.AxLuminaUI);}).map(function(x){
       return '<button type="button" role="tab" data-materia="'+x[0]+'" aria-selected="'+(x[0]===materia)+'" class="m-'+x[0]+(x[0]===materia?' on':'')+'"><span>'+x[1]+'</span>'+x[2]+'</button>';}).join("")+'</div>';
 }
 /* al cambiar de materia desde las pestañas, el menú y la ayuda «?» también cambian */
 function marcaModo(m){
   document.body.setAttribute("data-mode",m);
-  var nom=m==="ingles"?"Inglés":m==="ciencias"?"Ciencias":"Matemática";
+  var nom=m==="ingles"?"Inglés":m==="ciencias"?"Ciencias":m==="lumina"?"LuminaPets":"Matemática";
   if($("mode-label"))$("mode-label").textContent=nom; if($("hdr"))$("hdr").textContent=nom;
-  ["mate","ingles","ciencias"].forEach(function(x){var b=$("t-"+x); if(b)b.setAttribute("aria-checked",x===m?"true":"false");});
+  ["mate","ingles","ciencias","lumina"].forEach(function(x){var b=$("t-"+x); if(b)b.setAttribute("aria-checked",x===m?"true":"false");});
 }
 function activaCabeza(g){
   on(g,"[data-materia]",function(b){var m=b.getAttribute("data-materia"); if(m===D.materia||(!D.materia&&m==="mate"))return; D.materia=m; guardaLocal(); SON.toca(); entra(); marcaModo(m);});
@@ -510,14 +510,15 @@ function reflexion(){
 
 /* ===================== para adultos ===================== */
 function puerta(fn){
-  var a=12+Math.floor(Math.random()*30), b=13+Math.floor(Math.random()*40);
-  var g=pinta('<div class="mt-puerta"><h3>👪 Para adultos</h3><p>Para entrar, resuelve: <b>'+a+' + '+b+'</b></p>'+
+  /* la cuenta va escrita en palabras: fácil para un adulto, difícil para quien recién aprende a leer */
+  var a=12+Math.floor(Math.random()*30), b=13+Math.floor(Math.random()*40), P=window.AxLumina?AxLumina.puerta(semilla()):null, ok=P?P.ok:a+b;
+  var g=pinta('<div class="mt-puerta"><h3>👪 Para adultos</h3><p>'+(P?esc(P.q):'Para entrar, resuelve: <b>'+a+' + '+b+'</b>')+'</p>'+
     '<input id="mt-pu" inputmode="numeric" autocomplete="off" aria-label="resultado"><p class="msg bad" id="mt-pu-e" hidden>No es correcto.</p>'+
     '<div class="actions"><button type="button" class="ghost" id="mt-pu-no">Volver</button><button type="button" class="primary" id="mt-pu-ok">Entrar</button></div></div>');
   if(!g)return;
   $("mt-pu").focus();
   $("mt-pu-no").onclick=function(){actual()?entra():portadaPinta();};
-  $("mt-pu-ok").onclick=function(){if(+$("mt-pu").value===a+b)fn(); else $("mt-pu-e").hidden=false;};
+  $("mt-pu-ok").onclick=function(){if(+$("mt-pu").value===ok)fn(); else $("mt-pu-e").hidden=false;};
   $("mt-pu").onkeydown=function(e){if(e.key==="Enter")$("mt-pu-ok").click();};
 }
 /* el avance en inglés, para el panel de adultos */
@@ -553,7 +554,7 @@ function adultos(){
     '<h4>💪 Necesita refuerzo</h4>'+(ref.length?ref.map(function(c){var p=pf.prog[c.id];
       return '<div class="mt-tarjeta ref"><b>'+c.dibujo+' '+esc(c.nom)+'</b><small>'+Math.round(100*p.a/Math.max(1,p.i))+' % de aciertos en '+p.i+' ejercicios · '+p.ref+(p.ref===1?' refuerzo':' refuerzos')+'</small><p>🏠 <b>Para hacer en casa:</b> '+esc(c.casa)+'</p></div>';}).join(""):'<p class="fine">Nada por ahora. ¡Va muy bien!</p>')+
     (camino.length?'<h4>🚶 En camino</h4><div class="mt-lista">'+camino.map(function(c){var p=pf.prog[c.id]; return '<span>'+c.dibujo+' '+esc(c.nom)+' <small>'+FASES[p.f].ico+' '+Math.round(M.avance(p,c)*100)+' %</small></span>';}).join("")+'</div>':'')+
-    (window.AxIngles?ingAdultos(pf):'')+(window.AxCiencias?cieAdultos(pf):'')+
+    (window.AxIngles?ingAdultos(pf):'')+(window.AxCiencias?cieAdultos(pf):'')+(window.AxLuminaUI?AxLuminaUI.resumen(pf):'')+
     '<h4>💬 Sus reflexiones</h4>'+(refl.length?'<div class="mt-refls">'+refl.map(function(r){var c=M.POR_ID[r.c]; return '<div><span>'+(r.s!=null?SENTIR[r.s][0]:'·')+'</span><b>'+esc(c?c.nom:r.c)+'</b><small>'+new Date(r.t).toLocaleDateString()+' · '+r.ok+'/'+r.n+(r.d?' · '+esc(r.d):'')+'</small>'+(r.nota?'<p>«'+esc(r.nota)+'»</p>':'')+'</div>';}).join("")+'</div>':'<p class="fine">Aún no hay reflexiones.</p>')+
     '<h4>🌱 Cómo acompañar</h4><ul class="mt-tips"><li>Elogia el <b>esfuerzo</b> y las estrategias, no la rapidez ni «ser inteligente».</li><li>Deja que se equivoque: el juego da una pista y otra oportunidad antes de explicar.</li>'+
       '<li>Si hay muchos errores, el juego vuelve solo al material concreto. En casa, usen objetos reales (las ideas de arriba).</li><li>Pregunta «¿cómo lo pensaste?» antes que «¿cuánto te salió?».</li><li>Sesiones cortas (una ronda de '+RONDA+' ejercicios) y frecuentes funcionan mejor que una larga.</li></ul>'+
@@ -563,6 +564,7 @@ function adultos(){
   if(!g)return;
   $("mt-atras").onclick=function(){entra();};
   on(g,"[data-pf]",function(b){D.act=b.getAttribute("data-pf"); guardaLocal(); adultos();});
+  if($("lp-ajustes"))$("lp-ajustes").onclick=function(){AxLuminaUI.ajustes();};
   $("mt-edit").onclick=function(){crear(pf);};
   $("mt-vozt").onclick=function(){D.voz=!D.voz; guardaLocal(); adultos();};
   $("mt-borra").onclick=function(){
@@ -574,15 +576,15 @@ function adultos(){
 
 /* ---------- teclado físico ---------- */
 document.addEventListener("keydown",function(e){
-  var md=document.body.getAttribute("data-mode"); if(!S.teclado||(md!=="mate"&&md!=="ingles"&&md!=="ciencias"))return;
+  var md=document.body.getAttribute("data-mode"); if(!S.teclado||(md!=="mate"&&md!=="ingles"&&md!=="ciencias"&&md!=="lumina"))return;
   var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"))return;
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   if(S.teclado(e.key))e.preventDefault();
 });
 /* la cuenta llega después de abrir la sección: traer sus perfiles */
-document.addEventListener("ax-user",function(){var md=document.body.getAttribute("data-mode"); if((md==="mate"||md==="ingles"||md==="ciencias")&&usuario())baja().then(function(c){if(c&&S.portada)portadaPinta();});});
+document.addEventListener("ax-user",function(){var md=document.body.getAttribute("data-mode"); if((md==="mate"||md==="ingles"||md==="ciencias"||md==="lumina")&&usuario())baja().then(function(c){if(c&&S.portada)portadaPinta();});});
 
-function cerrar(){callaVoz(); if(tSube){clearTimeout(tSube); sube();} S={}; if(window.AxAprender&&AxAprender.enCompleta())AxAprender.completa(false); if(window.AxInglesUI)AxInglesUI.para(); if(window.AxCienciasUI)AxCienciasUI.para();}
+function cerrar(){callaVoz(); if(tSube){clearTimeout(tSube); sube();} S={}; if(window.AxAprender&&AxAprender.enCompleta())AxAprender.completa(false); if(window.AxInglesUI)AxInglesUI.para(); if(window.AxCienciasUI)AxCienciasUI.para(); if(window.AxLuminaUI)AxLuminaUI.para();}
 
 /* lo que usa Inglés: los mismos perfiles, la misma cabecera y el mismo panel */
 var comun={actual:actual,cambia:cambia,pinta:pinta,on:on,esc:esc,cabeza:cabeza,activaCabeza:activaCabeza,puerta:puerta,adultos:adultos,portada:portadaPinta,
