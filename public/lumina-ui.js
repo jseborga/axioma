@@ -45,7 +45,16 @@ function modo(pf,g){return L.modoDe(g,pf.etapa||0);}
 function vivo(){return !!document.querySelector(".mt.lp");}
 function luego(fn,ms){var t=setTimeout(function(){if(vivo())fn();},ms); TM.push(t); return t;}
 function limpia(){TM.forEach(clearTimeout); TM=[]; if(MOVER){window.removeEventListener("devicemotion",MOVER); MOVER=null;}}
-function pinta(html,cls){limpia(); return C.pinta(html,"lp "+(cls||""));}
+function pinta(html,cls){limpia(); var el=C.pinta(html,"lp "+(cls||"")); if(el)vivos(el); return el;}
+/* las criaturas grandes cobran vida con la malla animada (WebGL); las chicas quedan como imagen */
+function vivos(raiz){
+  if(!window.AxLuminaVivo)return; var n=0, noche=raiz.classList.contains("noche");
+  Array.prototype.forEach.call(raiz.querySelectorAll(".lp-vivo[data-cid]"),function(h){
+    if(h._vivo||n>=3)return; var r=h.getBoundingClientRect(); if(r.width<110)return;
+    var c=AxLuminaVivo.monta(h,h.getAttribute("data-cid"),{gesto:h.getAttribute("data-gesto"),noche:noche,acc:h.parentNode.querySelectorAll(".lp-acc.z-cabeza,.lp-acc.z-ojos")});
+    if(c){h._vivo=c; n++;}});
+}
+function ctl(pet){var h=pet&&pet.querySelector(".lp-vivo"); return h&&h._vivo;}
 function decir(t){if(t)C.habla(t);}
 function autoVoz(pf,g){return C.voz()||modo(pf,g)==="pre";}
 function hablaEn(t){if(!window.speechSynthesis||!t)return; try{speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(t); u.lang="en-US";
@@ -113,7 +122,7 @@ function mapa(){
   on(el,"[data-acc]",function(b){accion(b.getAttribute("data-acc"));});
   $("lp-familia").onclick=function(e){e.preventDefault(); C.puerta(function(){ajustes();});};
   if(g.capullo){$("lp-abrazo").onclick=function(){abrazo(pf,g,m);}; $("lp-pet").onclick=function(){abrazo(pf,g,m);};}
-  else{$("lp-pet").addEventListener("pointerdown",function(ev){mimo(pf,g,m,ev);}); vida($("lp-pet").querySelector(".lp-pet"),$("lp-escena"));}
+  else{caricias(pf,g,m,$("lp-pet")); vida($("lp-pet").querySelector(".lp-pet"),$("lp-escena"));}
   if(autoVoz(pf,g))decir(m.nom+" dice: "+dice);
 }
 /* el capullo de siesta: un abrazo y despierta bostezando, sin culpa */
@@ -123,13 +132,25 @@ function abrazo(pf,g,m){
   AVISO="*Bosteza* ¡Gracias por el abrazo! Ya desperté. ¡Te extrañaba!";
   luego(mapa,1300);
 }
-function mimo(pf,g,m,ev){
+/* acariciar: tocar es un mimo; arrastrar el dedo encima la acaricia (el pelo se mueve con el dedo,
+   cierra los ojos, se apoya en la mano y ronronea); cada tramo de caricia también cuenta como mimo */
+function caricias(pf,g,m,btn){
+  var pet=btn.querySelector(".lp-pet"), ini=null, ult=null, recorrido=0, acum=0;
+  btn.addEventListener("pointerdown",function(ev){ini=ult=[ev.clientX,ev.clientY]; recorrido=0;});
+  btn.addEventListener("pointermove",function(ev){if(!ini)return;
+    var h=pet.querySelector(".lp-vivo")||pet, r=h.getBoundingClientRect(), dx=ev.clientX-ult[0], dy=ev.clientY-ult[1]; ult=[ev.clientX,ev.clientY]; recorrido+=Math.abs(dx)+Math.abs(dy);
+    var x=(ev.clientX-r.left)/r.width, y=(ev.clientY-r.top)/r.height; if(pet.classList.contains("izq")){x=1-x; dx=-dx;}
+    var c=ctl(pet); if(c)c.caricia(x,y,dx/r.width,dy/r.height); else if(recorrido>40&&recorrido<60)accion1(pet,"feliz");
+    acum+=Math.abs(dx)+Math.abs(dy); if(acum>r.width*0.7){acum=0; mimo(pf,g,m,ev,true);}});
+  ["pointerup","pointercancel","pointerleave"].forEach(function(t){btn.addEventListener(t,function(ev){if(ini&&t==="pointerup"&&recorrido<12)mimo(pf,g,m,ev); ini=null; var c=ctl(pet); if(c)c.suelta();});});
+}
+function mimo(pf,g,m,ev,acaricia){
   var ahora=Date.now(); if(mimo.t&&ahora-mimo.t<350)return; mimo.t=ahora;
   var r=L.mimo(g); guardaLuego(pf); nota(880,0.12,0.03);
   var e=$("lp-escena"), p=$("lp-pet"); if(!e)return;
   var rc=e.getBoundingClientRect(), h=document.createElement("span"); h.className="lp-corazon"; h.textContent=pick(["💖","💕","💗","✨"]);
   h.style.left=(ev.clientX-rc.left)+"px"; h.style.top=(ev.clientY-rc.top)+"px"; e.appendChild(h); setTimeout(function(){if(h.parentNode)h.parentNode.removeChild(h);},1000);
-  accion1(p.querySelector(".lp-pet"),p.querySelector(".lp-pet.dib,.recortada")?(Math.random()<0.5?"salta":"feliz"):"feliz");
+  if(!acaricia)accion1(p.querySelector(".lp-pet"),p.querySelector(".lp-pet.dib")&&Math.random()<0.5?"salta":"feliz");
   var v=document.querySelector(".lp-vinculo"); if(v){v.querySelector("i").style.setProperty("--p",Math.round(g.vinculo)+"%"); v.querySelector("b").textContent=Math.round(g.vinculo)+"%";}
   if(r.huevos){AVISO="¡Llegó un huevo sorpresa! 🥚 Búscalo en Huevos."; luego(mapa,500);}
 }
@@ -138,12 +159,12 @@ function mimo(pf,g,m,ev){
    mueve las orejas, menea la cola, salta, baila o pasea por la habitación; y sigue el dedo
    (o el ratón) con la mirada */
 var DURA={mira:2300,mira2:2300,orejas:1200,cola:1600,feliz:800,salta:750,baila:1700};
-function accion1(pet,a){if(!pet)return; pet.classList.remove("a-"+a); void pet.offsetWidth; pet.classList.add("a-"+a); setTimeout(function(){pet.classList.remove("a-"+a);},DURA[a]||1500);}
+function accion1(pet,a){if(!pet)return; var c=ctl(pet); if(c&&/^(mira|mira2|orejas|cola|feliz|nariz)$/.test(a)){c.accion(a); return;} pet.classList.remove("a-"+a); void pet.offsetWidth; pet.classList.add("a-"+a); setTimeout(function(){pet.classList.remove("a-"+a);},DURA[a]||1500);}
 function vida(pet,escena,quieta){
   if(!pet)return;
   var foto=pet.classList.contains("foto"), recortada=!!pet.querySelector(".recortada"), lista=foto&&!recortada?["mira","mira2","cola","feliz","cola"]:quieta?["mira","mira2","orejas","cola","salta","feliz"]:["mira","mira2","orejas","cola","salta","baila","pasea","pasea","feliz"];
-  if(foto&&!quieta&&recortada)lista=["mira","mira2","cola","salta","baila","pasea","pasea","feliz"];
-  if(foto&&quieta)lista=["mira","mira2","cola","feliz"].concat(recortada?["salta"]:[]);
+  if(foto&&!quieta&&recortada)lista=["mira","mira2","cola","orejas","nariz","salta","baila","pasea","pasea","feliz"];
+  if(foto&&quieta)lista=["mira","mira2","cola","orejas","nariz","feliz"].concat(recortada?["salta"]:[]);
   /* hasta dónde puede caminar (en % de la escena): la dibujada mide 58 %, Lila 90 % */
   var rango=foto?[-12,5,22]:[2,21,40];
   function haz(){if(!pet.isConnected)return; var a=lista[Math.floor(Math.random()*lista.length)]; if(a==="pasea")pasea(); else accion1(pet,a); luego(haz,2400+Math.random()*3000);}
@@ -156,8 +177,9 @@ function vida(pet,escena,quieta){
   escena.addEventListener("pointermove",function(ev){var r=pet.getBoundingClientRect(); if(!r.width)return;
     var dx=Math.max(-1,Math.min(1,(ev.clientX-(r.left+r.width/2))/(r.width/2))), dy=Math.max(-1,Math.min(1,(ev.clientY-(r.top+r.height*0.45))/(r.height/2)));
     if(pet.classList.contains("izq"))dx=-dx;
+    var c=ctl(pet); if(c){c.mira(dx,dy); return;}
     pet.style.setProperty("--mx",(dx*(foto?3:7)).toFixed(1)+"deg"); pet.style.setProperty("--px",(dx*3.5).toFixed(1)+"px"); pet.style.setProperty("--py",(dy*3).toFixed(1)+"px");});
-  escena.addEventListener("pointerleave",function(){["--mx","--px","--py"].forEach(function(k){pet.style.removeProperty(k);});});
+  escena.addEventListener("pointerleave",function(){var c=ctl(pet); if(c)c.mira(null); ["--mx","--px","--py"].forEach(function(k){pet.style.removeProperty(k);});});
 }
 
 /* ===================== cuidados ===================== */

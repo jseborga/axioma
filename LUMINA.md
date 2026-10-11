@@ -20,15 +20,25 @@ pastel y almohadillas rosadas).
 - **Barras sin castigo**: ⭐ Energía, 🍓 Pancita, 🫧 Brillo y 🌙 Descanso bajan despacio
   (nunca de noche). Si una llega a cero, la mascota duerme en un **capullo de siesta** y
   despierta con un **abrazo**. Nunca enferma ni muere.
-- **Está viva**: respira, parpadea y mueve la cola todo el tiempo; de a ratos mira a un lado,
-  mueve las orejas, menea la cola, salta, baila o pasea por la habitación, y sigue el dedo o
-  el ratón con la mirada. Al hacerle mimos se alegra (entrecierra los ojos y mueve la
-  cabeza); dormida cierra los ojos y cabecea; comiendo mastica. Lila está recortada de su foto
-  (`lila-sola.webp`, con fondo transparente) y camina sobre su habitación vacía (`cuarto.jpg`,
-  la misma foto sin ella), así que también **pasea**, salta y baila; se anima por capas con
-  máscaras suaves (cabeza con párpados, cuerpo y cola); las criaturas dibujadas
-  tienen sus partes separadas (cabeza, orejas, ojos, cola, cuerpo y alas). Con «reducir
-  movimiento» activado en el sistema, se quedan quietas.
+- **Criaturas realistas y coherentes**: todas son fotos con el mismo estilo que Lila. Se hicieron a
+  partir de su foto con la técnica de *paint-over + img2img*: se recolorea su pelaje en espacio Lab
+  (sin tocar ojos ni nariz), se pintan en bruto las orejas de cada especie y el rasgo mágico, y un
+  modelo de difusión (LCM Dreamshaper v7, licencia MIT) las vuelve realistas con poca fuerza. Luego
+  se recortan (IS-Net, con la cola recuperada por GrabCut) y se miden sus ojos y orejas.
+- **Animación avanzada (WebGL)**: cada criatura grande se monta sobre una malla deformable con
+  huesos, como Live2D (`lumina-vivo.js`): la cabeza se inclina y mira, las orejas se sacuden, la
+  cola ondula desde la base hasta la punta, el cuerpo respira desde el piso, la nariz y los bigotes
+  tiemblan y la boca mastica. Los ojos se resuelven en la GPU: el párpado es el propio pelaje de la
+  frente que baja (parpadeo natural, a veces doble), el iris se corre para mirar el dedo o el ratón,
+  y el párpado de abajo sube cuando sonríe. Las alas de hada y de dragón son capas propias que
+  aletean desde los hombros. Los accesorios de la cabeza la siguen.
+- **Caricias**: tocar es un mimo; arrastrar el dedo encima la acaricia: el pelo se mueve con el
+  dedo, cierra los ojos felices («^ ^»), apoya la cabeza en la mano y **ronronea** (sonido
+  sintetizado, se apaga con el silencio del juego). Cada tramo de caricia cuenta como mimo.
+- **Pasea**: camina por su habitación mirando hacia donde va, salta y baila. Dormida cierra los
+  ojos y cabecea; comiendo mastica. En tamaños chicos (aldea, álbum) se muestra la imagen fija
+  con una respiración suave, y si el dispositivo no tiene WebGL también. Con «reducir movimiento»
+  activado en el sistema, se quedan quietas.
 - **Lo que pide**: la barra más baja (si está bajo 60 %). Si ya hay con qué dárselo, se
   destaca el botón; si no, el minijuego que lo consigue.
 - **Cuidados**: 🧁 comer, 🛁 baño de burbujas (se revientan una por una; con espuma mágica es
@@ -87,4 +97,7 @@ Nubes** o la **Cueva de Cristal**. Tocando una en la aldea pasa a ser la compañ
 | `public/lumina-ui.js` | `AxLuminaUI`: la casa, cuidados, minijuegos, incubación, aldea, misiones, noche y ajustes |
 | `public/lumina/lila.jpg` | La imagen de Lila (portada) |
 | `public/lumina/lila-sola.webp`, `public/lumina/cuarto.jpg` | Lila recortada con fondo transparente (segmentación IS-Net, la cola recuperada con GrabCut) y su habitación sin ella (rellenada con LaMa), para que pueda pasear |
+| `public/lumina/criaturas/*.webp` | Las 16 criaturas realistas, recortadas |
+| `public/lumina/alas-hada.webp`, `public/lumina/alas-dragon.webp` | Las alas que aletean |
+| `public/lumina-vivo.js` | `AxLuminaVivo`: la malla con huesos en WebGL, los ojos en la GPU, las caricias y el ronroneo |
 | `src/mate.js` | Guarda `perfil.lumi` en la nube limpiando cada campo (criaturas y accesorios del catálogo, topes, horas válidas, el PIN solo como hash) |

@@ -67,9 +67,9 @@ function rasgoFrente(c){
 function criatura(c,o){
   o=o||{}; if(typeof c==="string")c=L.POR_ID[c];
   /* Lila recortada (fondo transparente): puede pasear por su habitación; la foto completa queda de portada */
-  if(c.foto){var im='<img src="'+(c.recorte||c.foto)+'" alt="" draggable="false">';
-    return '<span class="lp-foto lp-vivo'+(c.recorte?' recortada':'')+' g-'+(o.gesto||"feliz")+'" style="--dl:'+desfase()+'" role="img" aria-label="'+c.nom+'">'+(c.recorte?'<i class="lp-sombra"></i>':'')+im+'<span class="lp-capa lp-a-cola">'+im+'</span><span class="lp-capa lp-a-cuerpo">'+im+'</span>'+
-      '<span class="lp-capa lp-a-cabeza">'+im+'<i class="lp-parpado izq"></i><i class="lp-parpado der"></i></span></span>';}
+  /* las criaturas con foto: la imagen fija, que lumina-vivo.js reemplaza por la malla animada (WebGL) */
+  if(c.foto)return '<span class="lp-foto lp-vivo'+(c.recorte?' recortada':'')+' g-'+(o.gesto||"feliz")+'" data-cid="'+c.id+'" data-gesto="'+(o.gesto||"feliz")+'" style="--dl:'+desfase()+'" role="img" aria-label="'+c.nom+'">'+
+    (c.recorte?'<i class="lp-sombra"></i>':'')+'<img class="lp-img" src="'+(c.recorte||c.foto)+'" alt="" draggable="false"></span>';
   var col=L.COLORES[c.col], g=uid(), gb=uid(), sud=SUDADERA[c.col]||"#e8f4ff";
   var s='<defs><radialGradient id="'+g+'" cx="45%" cy="38%" r="65%"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="'+col[0]+'"/><stop offset="1" stop-color="'+col[1]+'"/></radialGradient>'+
     '<linearGradient id="'+gb+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+sud+'"/><stop offset="1" stop-color="'+sombra(sud,.88)+'"/></linearGradient></defs>';

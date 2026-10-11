@@ -2900,21 +2900,6 @@ body.ap-full .ig-pie{margin:8px -14px -24px;border-radius:0}
    Siempre: respira, parpadea y mueve la cola. De a ratos (clases a-*): mira, mueve las
    orejas, menea la cola, salta, baila o pasea. Con el dedo o el ratón, la sigue con la mirada. */
 .lp-vivo{position:relative;display:block;width:100%;height:100%;--amp:4deg;--ampc:5deg}
-.lp-vivo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none}
-.lp-capa{position:absolute;inset:0;display:block}
-.lp-vivo .lp-a-cabeza{-webkit-mask-image:radial-gradient(ellipse 31% 27% at 51% 37%,#000 70%,transparent 100%);mask-image:radial-gradient(ellipse 31% 27% at 51% 37%,#000 70%,transparent 100%);transform-origin:51% 62%;rotate:var(--mx,0deg);transition:rotate .5s ease-out}
-.lp-vivo .lp-a-cuerpo{-webkit-mask-image:radial-gradient(ellipse 22% 16% at 52% 71%,#000 65%,transparent 100%);mask-image:radial-gradient(ellipse 22% 16% at 52% 71%,#000 65%,transparent 100%);transform-origin:52% 86%;animation:lpRespiraF 3.4s ease-in-out infinite}
-.lp-vivo .lp-a-cola{-webkit-mask-image:radial-gradient(ellipse 13% 16% at 20% 69%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 13% 16% at 20% 69%,#000 60%,transparent 100%);transform-origin:29% 80%;animation:lpCola 3.2s ease-in-out infinite}
-.lp-parpado{position:absolute;border-radius:50% 50% 46% 46%;background:radial-gradient(ellipse 80% 70% at 50% 30%,#bba8c6,#ad97b4 70%,#9f88a8);box-shadow:inset 0 -2.5px 0 #4d3a48,0 0 3px 1px rgba(180,160,195,.55);transform-origin:50% 0;transform:scaleY(0);animation:lpParpadoF 4.6s infinite}
-.lp-parpado.izq{left:34.4%;top:34.4%;width:12.9%;height:11.3%}
-.lp-parpado.der{left:55.9%;top:33.6%;width:11.3%;height:10.8%;animation-delay:.04s}
-.lp-vivo.g-duerme .lp-parpado{animation:none;transform:none}
-.lp-vivo.g-duerme{filter:saturate(.85) brightness(.9)}
-.lp-vivo.g-duerme .lp-a-cabeza{animation:lpCabecea 4s ease-in-out infinite}
-.lp-vivo.g-come .lp-parpado{animation:none;transform:scaleY(.6)}
-.lp-vivo.g-come .lp-a-cabeza{animation:lpMastica .32s ease-in-out infinite}
-@keyframes lpParpadoF{0%,91%,100%{transform:scaleY(0)}94%,95.5%{transform:scaleY(1)}}
-@keyframes lpRespiraF{50%{transform:scale(1.012,1.022)}}
 @keyframes lpCabecea{50%{transform:rotate(2.5deg) translateY(1%)}}
 @keyframes lpMastica{50%{transform:translateY(1.2%)}}
 @keyframes lpCola{0%,100%{transform:rotate(calc(var(--ampc,6deg) * -.6))}50%{transform:rotate(var(--ampc,6deg))}}
@@ -2943,11 +2928,9 @@ body.ap-full .ig-pie{margin:8px -14px -24px;border-radius:0}
 @keyframes lpOrejaI{50%{transform:rotate(-14deg)}}
 @keyframes lpOrejaD{50%{transform:rotate(14deg)}}
 .lp-pet.a-cola .lp-a-cola{animation:lpMenea .3s ease-in-out 5}
-.lp-pet.a-cola .lp-vivo .lp-a-cola{--ampc:7deg}
 @keyframes lpMenea{0%,100%{transform:rotate(calc(var(--ampc,9deg) * -1.4))}50%{transform:rotate(calc(var(--ampc,9deg) * 1.4))}}
 .lp-pet.a-feliz .lp-a-cabeza{animation:lpFeliz .7s ease-in-out}
 .lp-pet.a-feliz .lp-svg .lp-a-ojos{animation:none;transform:scaleY(.45)}
-.lp-pet.a-feliz .lp-parpado{animation:none;transform:scaleY(.55)}
 @keyframes lpFeliz{20%{transform:rotate(calc(var(--amp,7deg) * -1))}50%{transform:rotate(var(--amp,7deg))}80%{transform:rotate(calc(var(--amp,7deg) * -.5))}}
 .lp-pet.a-salta{animation:lpBrinco .7s cubic-bezier(.3,.7,.4,1);transform-origin:50% 90%}
 @keyframes lpBrinco{0%,100%{transform:translateY(0) scale(1)}15%{transform:translateY(2%) scale(1.06,.92)}50%{transform:translateY(-16%) scale(.96,1.05)}85%{transform:translateY(1%) scale(1.05,.95)}}
@@ -2959,8 +2942,6 @@ body.ap-full .ig-pie{margin:8px -14px -24px;border-radius:0}
 .lp-pet.camina{animation:lpPaso .36s ease-in-out infinite;transform-origin:50% 90%}
 @keyframes lpPaso{50%{transform:translateY(-4%) rotate(2deg)}}
 /* al tocar: la foto no salta entera (es la habitación), se alegra la cabeza */
-.lp-vivo .lp-a-cuerpo,.lp-vivo .lp-a-cola,.lp-parpado,.lp-svg .lp-a-cuerpo,.lp-svg .lp-a-cola,.lp-svg .lp-a-ojos,.lp-svg .lp-a-alas{animation-delay:var(--dl,0s)}
-.lp-parpado.der{animation-delay:calc(var(--dl,0s) + .04s)}
 /* Lila recortada sobre su habitación vacía: pasea, salta y baila como las demás */
 .lp-fondo-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none}
 .lp-escena.con-foto .lp-pet.foto{left:5%;bottom:0;width:90%;aspect-ratio:1;transition:left 1.8s linear}
@@ -2969,3 +2950,10 @@ body.ap-full .ig-pie{margin:8px -14px -24px;border-radius:0}
 .lp-pet.foto.a-salta .lp-sombra,.lp-pet.foto.camina .lp-sombra{opacity:.6}
 .lp-vivo:not(.recortada){overflow:hidden}
 .lp-premio .actions .primary{flex:1 1 100%}
+/* las criaturas con foto: imagen fija de respaldo y, encima, la malla animada en WebGL */
+.lp-vivo .lp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;animation:lpRespiraF 3.4s ease-in-out infinite;transform-origin:50% 90%;animation-delay:var(--dl,0s)}
+@keyframes lpRespiraF{50%{transform:scale(1.01,1.02)}}
+.lp-gl{position:absolute;left:-12.5%;top:-12.5%;width:125%;height:125%;pointer-events:none}
+.lp-vivo.gl-listo .lp-img{opacity:0;animation:none}
+.lp-escena-mini,.lp-revela{overflow:visible}
+#lp-pet{touch-action:pan-y}

@@ -54,6 +54,9 @@ var CRIATURAS=[
   {id:"polar",esp:"osito",rasgo:"estrella",col:"celeste",nom:"Polar",bioma:"nubes",rar:0},
   {id:"cuarzo",esp:"osito",rasgo:"dragon",col:"lavanda",nom:"Cuarzo",bioma:"cristal",rar:2}
 ];
+/* todas son fotos con el estilo de Lila (recortadas, con fondo transparente) y viven en la misma habitación */
+var CON_FOTO={astro:1,chispa:1,cometa:1,florita:1,mirlu:1,nube:1,petala:1,polar:1};
+CRIATURAS.forEach(function(c){if(!c.foto&&CON_FOTO[c.id]){c.foto="lumina/criaturas/"+c.id+".webp"; c.recorte=c.foto;} if(c.foto)c.fondo="lumina/cuarto.jpg";});
 var POR_ID={}; CRIATURAS.forEach(function(c){POR_ID[c.id]=c;});
 function titulo(c){return c.rasgo?ESPECIES[c.esp]+"-"+RASGOS[c.rasgo]:"Gatito lavanda";}
 
