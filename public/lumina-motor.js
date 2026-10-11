@@ -36,7 +36,7 @@ var RASGOS={unicornio:"Unicornio",hada:"Hada",estrella:"Estrella",dragon:"Dragó
 var BIOMAS=[{id:"jardin",nom:"Jardín Hada",ico:"🌸"},{id:"nubes",nom:"Cielo de Nubes",ico:"☁️"},{id:"cristal",nom:"Cueva de Cristal",ico:"💎"}];
 var RAREZA=["Común","Especial","Legendaria"];
 var CRIATURAS=[
-  {id:"lila",esp:"gato",rasgo:null,col:"lavanda",nom:"Lila",bioma:"jardin",rar:0,foto:"lumina/lila.jpg"},
+  {id:"lila",esp:"gato",rasgo:null,col:"lavanda",nom:"Lila",bioma:"jardin",rar:0,foto:"lumina/lila.jpg",recorte:"lumina/lila-sola.webp",fondo:"lumina/cuarto.jpg"},
   {id:"mirlu",esp:"gato",rasgo:"unicornio",col:"rosa",nom:"Mirlú",bioma:"nubes",rar:1},
   {id:"petala",esp:"gato",rasgo:"hada",col:"menta",nom:"Pétala",bioma:"jardin",rar:0},
   {id:"astro",esp:"gato",rasgo:"estrella",col:"celeste",nom:"Astro",bioma:"nubes",rar:2},

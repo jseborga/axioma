@@ -23,8 +23,10 @@ pastel y almohadillas rosadas).
 - **Está viva**: respira, parpadea y mueve la cola todo el tiempo; de a ratos mira a un lado,
   mueve las orejas, menea la cola, salta, baila o pasea por la habitación, y sigue el dedo o
   el ratón con la mirada. Al hacerle mimos se alegra (entrecierra los ojos y mueve la
-  cabeza); dormida cierra los ojos y cabecea; comiendo mastica. La foto de Lila se anima por
-  capas con máscaras suaves (cabeza con párpados, cuerpo y cola); las criaturas dibujadas
+  cabeza); dormida cierra los ojos y cabecea; comiendo mastica. Lila está recortada de su foto
+  (`lila-sola.webp`, con fondo transparente) y camina sobre su habitación vacía (`cuarto.jpg`,
+  la misma foto sin ella), así que también **pasea**, salta y baila; se anima por capas con
+  máscaras suaves (cabeza con párpados, cuerpo y cola); las criaturas dibujadas
   tienen sus partes separadas (cabeza, orejas, ojos, cola, cuerpo y alas). Con «reducir
   movimiento» activado en el sistema, se quedan quietas.
 - **Lo que pide**: la barra más baja (si está bajo 60 %). Si ya hay con qué dárselo, se
@@ -83,5 +85,6 @@ Nubes** o la **Cueva de Cristal**. Tocando una en la aldea pasa a ser la compañ
 | `public/lumina-motor.js` | `AxLumina`: criaturas, barras, cuidados, huevos, hábitos, PIN, noche, puerta y los minijuegos (`ronda`, `corrige`, `terminaRonda`). Sin dependencias; lo usan el navegador, el servidor y las pruebas |
 | `public/lumina-dibujos.js` | `AxLuminaDibujos`: criaturas de peluche, huevo, habitación, tarta y la aldea en SVG |
 | `public/lumina-ui.js` | `AxLuminaUI`: la casa, cuidados, minijuegos, incubación, aldea, misiones, noche y ajustes |
-| `public/lumina/lila.jpg` | La imagen de Lila |
+| `public/lumina/lila.jpg` | La imagen de Lila (portada) |
+| `public/lumina/lila-sola.webp`, `public/lumina/cuarto.jpg` | Lila recortada con fondo transparente (segmentación IS-Net, la cola recuperada con GrabCut) y su habitación sin ella (rellenada con LaMa), para que pueda pasear |
 | `src/mate.js` | Guarda `perfil.lumi` en la nube limpiando cada campo (criaturas y accesorios del catálogo, topes, horas válidas, el PIN solo como hash) |

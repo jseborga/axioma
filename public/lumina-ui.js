@@ -94,7 +94,7 @@ function mapa(){
   var html=C.cabeza(pf,"lumina",linea,'')+
     '<div class="lp-casa">'+inventario(g)+
     '<div class="lp-globo" id="lp-globo"><b>'+esc(m.nom)+'</b> '+esc(dice)+'<button type="button" class="lp-son" data-voz="'+esc(dice)+'" aria-label="Escuchar">🔊</button></div>'+
-    '<div class="lp-escena'+(c.foto?' con-foto':'')+(g.capullo?' capullo':'')+'" id="lp-escena">'+(c.foto?'':DW.habitacion())+
+    '<div class="lp-escena'+(c.foto?' con-foto':'')+(g.capullo?' capullo':'')+'" id="lp-escena">'+(c.fondo?'<img class="lp-fondo-foto" src="'+c.fondo+'" alt="" draggable="false">':c.foto?'':DW.habitacion())+
       '<button type="button" class="lp-pet-btn" id="lp-pet" aria-label="Hacer un mimo a '+esc(m.nom)+'">'+petHTML(g,m,g.capullo?"duerme":"feliz")+'</button>'+
       (g.capullo?'<div class="lp-capullo" aria-hidden="true"><span>💤</span></div>':'')+'</div>'+
     (g.capullo?'<button type="button" class="lp-abrazo" id="lp-abrazo">🤗 Darle un abrazo</button>':
@@ -129,7 +129,7 @@ function mimo(pf,g,m,ev){
   var e=$("lp-escena"), p=$("lp-pet"); if(!e)return;
   var rc=e.getBoundingClientRect(), h=document.createElement("span"); h.className="lp-corazon"; h.textContent=pick(["💖","💕","💗","✨"]);
   h.style.left=(ev.clientX-rc.left)+"px"; h.style.top=(ev.clientY-rc.top)+"px"; e.appendChild(h); setTimeout(function(){if(h.parentNode)h.parentNode.removeChild(h);},1000);
-  accion1(p.querySelector(".lp-pet"),p.querySelector(".lp-pet.dib")?(Math.random()<0.5?"salta":"feliz"):"feliz");
+  accion1(p.querySelector(".lp-pet"),p.querySelector(".lp-pet.dib,.recortada")?(Math.random()<0.5?"salta":"feliz"):"feliz");
   var v=document.querySelector(".lp-vinculo"); if(v){v.querySelector("i").style.setProperty("--p",Math.round(g.vinculo)+"%"); v.querySelector("b").textContent=Math.round(g.vinculo)+"%";}
   if(r.huevos){AVISO="¡Llegó un huevo sorpresa! 🥚 Búscalo en Huevos."; luego(mapa,500);}
 }
@@ -141,9 +141,13 @@ var DURA={mira:2300,mira2:2300,orejas:1200,cola:1600,feliz:800,salta:750,baila:1
 function accion1(pet,a){if(!pet)return; pet.classList.remove("a-"+a); void pet.offsetWidth; pet.classList.add("a-"+a); setTimeout(function(){pet.classList.remove("a-"+a);},DURA[a]||1500);}
 function vida(pet,escena,quieta){
   if(!pet)return;
-  var foto=pet.classList.contains("foto"), lista=foto?["mira","mira2","cola","feliz","cola"]:quieta?["mira","mira2","orejas","cola","salta","feliz"]:["mira","mira2","orejas","cola","salta","baila","pasea","pasea","feliz"];
+  var foto=pet.classList.contains("foto"), recortada=!!pet.querySelector(".recortada"), lista=foto&&!recortada?["mira","mira2","cola","feliz","cola"]:quieta?["mira","mira2","orejas","cola","salta","feliz"]:["mira","mira2","orejas","cola","salta","baila","pasea","pasea","feliz"];
+  if(foto&&!quieta&&recortada)lista=["mira","mira2","cola","salta","baila","pasea","pasea","feliz"];
+  if(foto&&quieta)lista=["mira","mira2","cola","feliz"].concat(recortada?["salta"]:[]);
+  /* hasta dónde puede caminar (en % de la escena): la dibujada mide 58 %, Lila 90 % */
+  var rango=foto?[-12,5,22]:[2,21,40];
   function haz(){if(!pet.isConnected)return; var a=lista[Math.floor(Math.random()*lista.length)]; if(a==="pasea")pasea(); else accion1(pet,a); luego(haz,2400+Math.random()*3000);}
-  function pasea(){var ahora=parseFloat(pet.style.left)||21, nuevo=Math.max(2,Math.min(40,ahora+(Math.random()<0.5?-1:1)*(10+Math.random()*16)));
+  function pasea(){var ahora=pet.style.left?parseFloat(pet.style.left):rango[1], nuevo=Math.max(rango[0],Math.min(rango[2],ahora+(Math.random()<0.5?-1:1)*(10+Math.random()*16)));
     if(Math.abs(nuevo-ahora)<4)return accion1(pet,"salta");
     pet.classList.toggle("izq",nuevo<ahora); pet.classList.add("camina"); pet.style.left=nuevo.toFixed(1)+"%";
     setTimeout(function(){pet.classList.remove("camina","izq");},1850);}
