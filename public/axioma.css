@@ -2957,3 +2957,5 @@ body.ap-full .ig-pie{margin:8px -14px -24px;border-radius:0}
 .lp-vivo.gl-listo .lp-img{opacity:0;animation:none}
 .lp-escena-mini,.lp-revela{overflow:visible}
 #lp-pet{touch-action:pan-y}
+.lp-rama.r-nubes{width:46%}
+.lp-vecino{width:clamp(38px,10.5vw,58px)}
