@@ -27,19 +27,20 @@ function ojos(gesto){
   if(gesto==="come")return '<path d="M60 100 Q76 84 92 100" stroke="#4a3426" stroke-width="4.5" fill="none" stroke-linecap="round"/><path d="M108 100 Q124 84 140 100" stroke="#4a3426" stroke-width="4.5" fill="none" stroke-linecap="round"/>';
   var g=uid(), o='<defs><radialGradient id="'+g+'" cx="50%" cy="60%" r="60%"><stop offset="0" stop-color="#e8b04a"/><stop offset=".6" stop-color="#a86a1c"/><stop offset="1" stop-color="#4a2a0c"/></radialGradient></defs>';
   [76,124].forEach(function(x){var big=gesto==="wow"?1.12:1;
-    o+='<ellipse cx="'+x+'" cy="94" rx="'+f1(19*big)+'" ry="'+f1(21*big)+'" fill="#2b1d14"/><circle cx="'+x+'" cy="95" r="'+f1(16*big)+'" fill="url(#'+g+')"/><circle cx="'+x+'" cy="96" r="'+f1(8.5*big)+'" fill="#1a0f08"/>'+
-      '<circle cx="'+(x-6)+'" cy="87" r="'+f1(6.5*big)+'" fill="#fff"/><circle cx="'+(x+6)+'" cy="102" r="3" fill="#fff" opacity=".9"/><circle cx="'+(x+8)+'" cy="88" r="1.6" fill="#fff"/>';});
+    o+='<ellipse cx="'+x+'" cy="94" rx="'+f1(19*big)+'" ry="'+f1(21*big)+'" fill="#2b1d14"/><g class="lp-a-pupila"><circle cx="'+x+'" cy="95" r="'+f1(16*big)+'" fill="url(#'+g+')"/><circle cx="'+x+'" cy="96" r="'+f1(8.5*big)+'" fill="#1a0f08"/>'+
+      '<circle cx="'+(x-6)+'" cy="87" r="'+f1(6.5*big)+'" fill="#fff"/><circle cx="'+(x+6)+'" cy="102" r="3" fill="#fff" opacity=".9"/><circle cx="'+(x+8)+'" cy="88" r="1.6" fill="#fff"/></g>';});
   return o;
 }
 function orejas(c,col){
-  var a=col[1], d=col[2], rosa="#f7a8c4";
-  if(c.esp==="gato")return '<path d="M44 66 L50 18 Q54 12 60 18 L88 46Z" fill="'+a+'" stroke="'+d+'" stroke-width="2" stroke-linejoin="round"/><path d="M54 54 L56 28 L76 46Z" fill="'+rosa+'"/>'+
-    '<path d="M156 66 L150 18 Q146 12 140 18 L112 46Z" fill="'+a+'" stroke="'+d+'" stroke-width="2" stroke-linejoin="round"/><path d="M146 54 L144 28 L124 46Z" fill="'+rosa+'"/>';
-  if(c.esp==="conejo")return '<ellipse cx="72" cy="22" rx="15" ry="40" transform="rotate(-12 72 22)" fill="'+a+'" stroke="'+d+'" stroke-width="2"/><ellipse cx="72" cy="24" rx="7" ry="30" transform="rotate(-12 72 24)" fill="'+rosa+'"/>'+
-    '<ellipse cx="128" cy="22" rx="15" ry="40" transform="rotate(12 128 22)" fill="'+a+'" stroke="'+d+'" stroke-width="2"/><ellipse cx="128" cy="24" rx="7" ry="30" transform="rotate(12 128 24)" fill="'+rosa+'"/>';
-  if(c.esp==="zorro")return '<path d="M40 70 L44 8 L92 44Z" fill="'+a+'" stroke="'+d+'" stroke-width="2" stroke-linejoin="round"/><path d="M44 8 L50 28 L60 20Z" fill="'+d+'"/><path d="M52 58 L50 26 L78 46Z" fill="#fff4ec"/>'+
-    '<path d="M160 70 L156 8 L108 44Z" fill="'+a+'" stroke="'+d+'" stroke-width="2" stroke-linejoin="round"/><path d="M156 8 L150 28 L140 20Z" fill="'+d+'"/><path d="M148 58 L150 26 L122 46Z" fill="#fff4ec"/>';
-  return '<circle cx="54" cy="40" r="20" fill="'+a+'" stroke="'+d+'" stroke-width="2"/><circle cx="54" cy="42" r="11" fill="'+rosa+'"/><circle cx="146" cy="40" r="20" fill="'+a+'" stroke="'+d+'" stroke-width="2"/><circle cx="146" cy="42" r="11" fill="'+rosa+'"/>';
+  var a=col[1], d=col[2], rosa="#f7a8c4", o;
+  if(c.esp==="gato")o=['<path d="M44 66 L50 18 Q54 12 60 18 L88 46Z" fill="'+a+'" stroke="'+d+'" stroke-width="2" stroke-linejoin="round"/><path d="M54 54 L56 28 L76 46Z" fill="'+rosa+'"/>',
+    '<path d="M156 66 L150 18 Q146 12 140 18 L112 46Z" fill="'+a+'" stroke="'+d+'" stroke-width="2" stroke-linejoin="round"/><path d="M146 54 L144 28 L124 46Z" fill="'+rosa+'"/>'];
+  else if(c.esp==="conejo")o=['<ellipse cx="72" cy="22" rx="15" ry="40" transform="rotate(-12 72 22)" fill="'+a+'" stroke="'+d+'" stroke-width="2"/><ellipse cx="72" cy="24" rx="7" ry="30" transform="rotate(-12 72 24)" fill="'+rosa+'"/>',
+    '<ellipse cx="128" cy="22" rx="15" ry="40" transform="rotate(12 128 22)" fill="'+a+'" stroke="'+d+'" stroke-width="2"/><ellipse cx="128" cy="24" rx="7" ry="30" transform="rotate(12 128 24)" fill="'+rosa+'"/>'];
+  else if(c.esp==="zorro")o=['<path d="M40 70 L44 8 L92 44Z" fill="'+a+'" stroke="'+d+'" stroke-width="2" stroke-linejoin="round"/><path d="M44 8 L50 28 L60 20Z" fill="'+d+'"/><path d="M52 58 L50 26 L78 46Z" fill="#fff4ec"/>',
+    '<path d="M160 70 L156 8 L108 44Z" fill="'+a+'" stroke="'+d+'" stroke-width="2" stroke-linejoin="round"/><path d="M156 8 L150 28 L140 20Z" fill="'+d+'"/><path d="M148 58 L150 26 L122 46Z" fill="#fff4ec"/>'];
+  else o=['<circle cx="54" cy="40" r="20" fill="'+a+'" stroke="'+d+'" stroke-width="2"/><circle cx="54" cy="42" r="11" fill="'+rosa+'"/>','<circle cx="146" cy="40" r="20" fill="'+a+'" stroke="'+d+'" stroke-width="2"/><circle cx="146" cy="42" r="11" fill="'+rosa+'"/>'];
+  return '<g class="lp-a-oreja izq">'+o[0]+'</g><g class="lp-a-oreja der">'+o[1]+'</g>';
 }
 function cola(c,col){
   if(c.esp==="gato")return '<path d="M146 168 Q192 160 184 112 Q180 96 170 104 Q178 140 142 150Z" fill="'+col[1]+'" stroke="'+col[2]+'" stroke-width="2"/>';
@@ -65,32 +66,39 @@ function rasgoFrente(c){
 /* una criatura de peluche; Lila es la foto de portada */
 function criatura(c,o){
   o=o||{}; if(typeof c==="string")c=L.POR_ID[c];
-  if(c.foto)return '<img class="lp-foto'+(o.gesto==="duerme"?" duerme":"")+'" src="'+c.foto+'" alt="'+c.nom+'" draggable="false">';
+  if(c.foto){var im='<img src="'+c.foto+'" alt="" draggable="false">';
+    return '<span class="lp-foto lp-vivo g-'+(o.gesto||"feliz")+'" style="--dl:'+desfase()+'" role="img" aria-label="'+c.nom+'">'+im+'<span class="lp-capa lp-a-cola">'+im+'</span><span class="lp-capa lp-a-cuerpo">'+im+'</span>'+
+      '<span class="lp-capa lp-a-cabeza">'+im+'<i class="lp-parpado izq"></i><i class="lp-parpado der"></i></span></span>';}
   var col=L.COLORES[c.col], g=uid(), gb=uid(), sud=SUDADERA[c.col]||"#e8f4ff";
   var s='<defs><radialGradient id="'+g+'" cx="45%" cy="38%" r="65%"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="'+col[0]+'"/><stop offset="1" stop-color="'+col[1]+'"/></radialGradient>'+
     '<linearGradient id="'+gb+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+sud+'"/><stop offset="1" stop-color="'+sombra(sud,.88)+'"/></linearGradient></defs>';
   s+='<ellipse cx="100" cy="190" rx="58" ry="8" fill="rgba(80,60,120,.18)"/>';
-  s+=rasgoAtras(c)+cola(c,col);
-  /* el cuerpo con su sudadera */
-  s+='<ellipse cx="100" cy="152" rx="52" ry="40" fill="url(#'+g+')"/>';
+  var atras=rasgoAtras(c); if(atras)s+='<g class="lp-a-alas">'+atras+'</g>';
+  s+='<g class="lp-a-cola">'+cola(c,col)+'</g>';
+  /* el cuerpo con su sudadera (respira) */
+  s+='<g class="lp-a-cuerpo"><ellipse cx="100" cy="152" rx="52" ry="40" fill="url(#'+g+')"/>';
   s+='<path d="M54 150 Q56 118 100 116 Q144 118 146 150 L142 178 Q100 190 58 178Z" fill="url(#'+gb+')" stroke="'+sombra(sud,.8)+'" stroke-width="2"/>';
   s+='<path d="M92 122 L92 146 M108 122 L108 146" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="92" cy="148" r="2.5" fill="#fff"/><circle cx="108" cy="148" r="2.5" fill="#fff"/>';
   s+='<path d="M70 150 l3 6 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z" fill="#ffd166"/><path d="M128 156 c-4 -6 -12 -2 -8 4 l8 7 8 -7 c4 -6 -4 -10 -8 -4z" fill="#ff8fab"/>';
   /* patitas con almohadillas */
   [78,122].forEach(function(x){s+='<ellipse cx="'+x+'" cy="180" rx="17" ry="12" fill="'+col[0]+'" stroke="'+col[1]+'" stroke-width="2"/><ellipse cx="'+x+'" cy="183" rx="6" ry="4.5" fill="#f7a8c4"/>'+
     '<circle cx="'+(x-8)+'" cy="176" r="2.6" fill="#f7a8c4"/><circle cx="'+x+'" cy="174" r="2.6" fill="#f7a8c4"/><circle cx="'+(x+8)+'" cy="176" r="2.6" fill="#f7a8c4"/>';});
-  /* la cabeza grande y esponjosa */
-  s+=orejas(c,col);
+  s+='</g>';
+  /* la cabeza grande y esponjosa (se inclina, mira y parpadea) */
+  s+='<g class="lp-a-cabeza">'+orejas(c,col);
   s+='<path d="'+pelusa(100,90,62,44,3.2)+'" fill="url(#'+g+')" stroke="'+col[1]+'" stroke-width="1.5" stroke-linejoin="round"/>';
   if(c.esp==="zorro")s+='<path d="M100 132 Q66 132 56 104 Q80 112 100 98 Q120 112 144 104 Q134 132 100 132Z" fill="#fff8f2" opacity=".9"/>';
   s+=rasgoFrente(c);
-  s+=ojos(o.gesto);
+  s+='<g class="lp-a-ojos">'+ojos(o.gesto)+'</g>';
   s+='<ellipse cx="58" cy="116" rx="11" ry="7" fill="#ff9ec2" opacity=".55"/><ellipse cx="142" cy="116" rx="11" ry="7" fill="#ff9ec2" opacity=".55"/>';
   s+='<path d="M95 110 Q100 106 105 110 Q102 115 100 115 Q98 115 95 110Z" fill="#f48fb1"/>';
   s+=o.gesto==="come"?'<ellipse cx="100" cy="124" rx="7" ry="6" fill="#c2185b"/>':o.gesto==="wow"?'<ellipse cx="100" cy="124" rx="5" ry="6" fill="#c2185b"/>':'<path d="M90 118 Q95 124 100 118 Q105 124 110 118" stroke="#4a3426" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
   if(c.esp==="gato"||c.esp==="zorro")s+='<g stroke="#fff" stroke-width="1.5" opacity=".8"><path d="M40 108 L64 112 M40 118 L64 116 M160 108 L136 112 M160 118 L136 116"/></g>';
-  return '<svg class="lp-svg" viewBox="0 0 200 200" role="img" aria-label="'+c.nom+'">'+s+'</svg>';
+  s+='</g>';
+  return '<svg class="lp-svg g-'+(o.gesto||"feliz")+'" style="--dl:'+desfase()+'" viewBox="0 0 200 200" role="img" aria-label="'+c.nom+'">'+s+'</svg>';
 }
+/* cada criatura parpadea y respira a su propio ritmo */
+function desfase(){return "-"+(Math.random()*4).toFixed(2)+"s";}
 function sombra(hex,f){var n=parseInt(hex.slice(1),16); return "rgb("+Math.round((n>>16)*f)+","+Math.round(((n>>8)&255)*f)+","+Math.round((n&255)*f)+")";}
 
 /* ---------- el huevo sorpresa ---------- */

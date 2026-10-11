@@ -113,7 +113,7 @@ function mapa(){
   on(el,"[data-acc]",function(b){accion(b.getAttribute("data-acc"));});
   $("lp-familia").onclick=function(e){e.preventDefault(); C.puerta(function(){ajustes();});};
   if(g.capullo){$("lp-abrazo").onclick=function(){abrazo(pf,g,m);}; $("lp-pet").onclick=function(){abrazo(pf,g,m);};}
-  else $("lp-pet").addEventListener("pointerdown",function(ev){mimo(pf,g,m,ev);});
+  else{$("lp-pet").addEventListener("pointerdown",function(ev){mimo(pf,g,m,ev);}); vida($("lp-pet").querySelector(".lp-pet"),$("lp-escena"));}
   if(autoVoz(pf,g))decir(m.nom+" dice: "+dice);
 }
 /* el capullo de siesta: un abrazo y despierta bostezando, sin culpa */
@@ -129,9 +129,31 @@ function mimo(pf,g,m,ev){
   var e=$("lp-escena"), p=$("lp-pet"); if(!e)return;
   var rc=e.getBoundingClientRect(), h=document.createElement("span"); h.className="lp-corazon"; h.textContent=pick(["💖","💕","💗","✨"]);
   h.style.left=(ev.clientX-rc.left)+"px"; h.style.top=(ev.clientY-rc.top)+"px"; e.appendChild(h); setTimeout(function(){if(h.parentNode)h.parentNode.removeChild(h);},1000);
-  p.classList.remove("salta"); void p.offsetWidth; p.classList.add("salta");
+  accion1(p.querySelector(".lp-pet"),p.querySelector(".lp-pet.dib")?(Math.random()<0.5?"salta":"feliz"):"feliz");
   var v=document.querySelector(".lp-vinculo"); if(v){v.querySelector("i").style.setProperty("--p",Math.round(g.vinculo)+"%"); v.querySelector("b").textContent=Math.round(g.vinculo)+"%";}
   if(r.huevos){AVISO="¡Llegó un huevo sorpresa! 🥚 Búscalo en Huevos."; luego(mapa,500);}
+}
+
+/* la mascota está viva: respira, parpadea y mueve la cola (CSS); de a ratos mira a un lado,
+   mueve las orejas, menea la cola, salta, baila o pasea por la habitación; y sigue el dedo
+   (o el ratón) con la mirada */
+var DURA={mira:2300,mira2:2300,orejas:1200,cola:1600,feliz:800,salta:750,baila:1700};
+function accion1(pet,a){if(!pet)return; pet.classList.remove("a-"+a); void pet.offsetWidth; pet.classList.add("a-"+a); setTimeout(function(){pet.classList.remove("a-"+a);},DURA[a]||1500);}
+function vida(pet,escena,quieta){
+  if(!pet)return;
+  var foto=pet.classList.contains("foto"), lista=foto?["mira","mira2","cola","feliz","cola"]:quieta?["mira","mira2","orejas","cola","salta","feliz"]:["mira","mira2","orejas","cola","salta","baila","pasea","pasea","feliz"];
+  function haz(){if(!pet.isConnected)return; var a=lista[Math.floor(Math.random()*lista.length)]; if(a==="pasea")pasea(); else accion1(pet,a); luego(haz,2400+Math.random()*3000);}
+  function pasea(){var ahora=parseFloat(pet.style.left)||21, nuevo=Math.max(2,Math.min(40,ahora+(Math.random()<0.5?-1:1)*(10+Math.random()*16)));
+    if(Math.abs(nuevo-ahora)<4)return accion1(pet,"salta");
+    pet.classList.toggle("izq",nuevo<ahora); pet.classList.add("camina"); pet.style.left=nuevo.toFixed(1)+"%";
+    setTimeout(function(){pet.classList.remove("camina","izq");},1850);}
+  luego(haz,1200+Math.random()*1500);
+  if(!escena)return;
+  escena.addEventListener("pointermove",function(ev){var r=pet.getBoundingClientRect(); if(!r.width)return;
+    var dx=Math.max(-1,Math.min(1,(ev.clientX-(r.left+r.width/2))/(r.width/2))), dy=Math.max(-1,Math.min(1,(ev.clientY-(r.top+r.height*0.45))/(r.height/2)));
+    if(pet.classList.contains("izq"))dx=-dx;
+    pet.style.setProperty("--mx",(dx*(foto?3:7)).toFixed(1)+"deg"); pet.style.setProperty("--px",(dx*3.5).toFixed(1)+"px"); pet.style.setProperty("--py",(dy*3).toFixed(1)+"px");});
+  escena.addEventListener("pointerleave",function(){["--mx","--px","--py"].forEach(function(k){pet.style.removeProperty(k);});});
 }
 
 /* ===================== cuidados ===================== */
@@ -279,6 +301,7 @@ function aldea(){
   if(!el)return;
   $("lp-volver").onclick=function(){mapa();};
   on(el,"[data-m]",function(b){g.activa=b.getAttribute("data-m"); C.cambia(pf); C.SON.toca(); var m=L.mascota(g); AVISO="¡Hola! Hoy me quedo contigo en casa. Soy "+m.nom+"."; mapa();});
+  Array.prototype.forEach.call(el.querySelectorAll(".lp-vecino .lp-pet"),function(p){vida(p,null,true);});
 }
 
 /* ===================== misiones de pequeños héroes ===================== */
@@ -354,6 +377,7 @@ function muestra(){
     '<div class="lp-juego t-'+it.t+'"><div class="lp-pide"><span class="lp-pide-pet">'+petHTML(g,m,"feliz")+'</span><div class="lp-q"><b>'+esc(it.q)+'</b>'+
       '<button type="button" class="lp-son" id="lp-oir" aria-label="Escuchar">🔊</button>'+(it.en?'<button type="button" class="lp-son en" id="lp-en" aria-label="Escuchar en inglés">🇬🇧 '+esc(it.en)+'</button>':'')+'</div></div>'+cuerpo+'</div>',"juego m-"+S.mod);
   if(!el)return;
+  vida(el.querySelector(".lp-pide-pet .lp-pet"),null,true);
   $("lp-salir").onclick=function(){para(); mapa();};
   $("lp-oir").onclick=function(){decir(it.q); if(it.en)luego(function(){hablaEn(it.en);},1600);};
   if($("lp-en"))$("lp-en").onclick=function(){hablaEn(it.en);};
@@ -391,7 +415,7 @@ function okIdx(it){for(var i=0;i<it.ops.length;i++)if(it.ops[i].ok)return i; ret
 function responde(el,it,ok,marcaBien,marcaMal,muestraOk,pista){
   if(S.primeras[S.i]==null)S.primeras[S.i]=ok;
   var pet=el.querySelector(".lp-pide-pet");
-  if(ok){S.listo=true; if(marcaBien)marcaBien(); C.SON.bien(); if(pet){pet.classList.add("salta");} chispas(el.querySelector(".lp-pide"),8); pie(el,true,it); return;}
+  if(ok){S.listo=true; if(marcaBien)marcaBien(); C.SON.bien(); if(pet){pet.classList.add("salta"); accion1(pet.querySelector(".lp-pet"),"feliz");} chispas(el.querySelector(".lp-pide"),8); pie(el,true,it); return;}
   S.fallos++; C.SON.otra(); if(marcaMal)marcaMal();
   if(pet){pet.classList.remove("no"); void pet.offsetWidth; pet.classList.add("no");}
   if(S.fallos>=2&&it.t!=="contar"){S.listo=true; if(muestraOk)muestraOk(); pie(el,false,it); return;}
@@ -445,7 +469,7 @@ function premio(){
     '<div class="actions">'+(r.huevos?'<button type="button" class="primary grande" data-ir="huevos">🥚 Ver el huevo</button>':usa?'<button type="button" class="primary grande" data-ir="'+usa[0]+'">'+esc(usa[1])+'</button>':'')+
       '<button type="button" class="ghost" id="lp-otra">🔁 Otra ronda</button><button type="button" class="ghost" data-ir="casa">🏠 Volver a casa</button></div></div>',"premio");
   if(!el)return;
-  C.SON.sube(); chispas($("lp-fiesta"),18);
+  C.SON.sube(); chispas($("lp-fiesta"),18); accion1(el.querySelector("#lp-fiesta .lp-pet"),"feliz"); vida(el.querySelector("#lp-fiesta .lp-pet"),$("lp-fiesta"),true);
   decir((r.ok===3?"¡Perfecto! ":"¡Muy bien! ")+"Ganaste "+r.cant+" "+M.premioNom+".");
   $("lp-otra").onclick=function(){ronda(mod);};
   on(el,"[data-ir]",function(b){var k=b.getAttribute("data-ir"); if(k==="casa")return mapa(); accion(k);});

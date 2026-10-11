@@ -20,6 +20,13 @@ pastel y almohadillas rosadas).
 - **Barras sin castigo**: ⭐ Energía, 🍓 Pancita, 🫧 Brillo y 🌙 Descanso bajan despacio
   (nunca de noche). Si una llega a cero, la mascota duerme en un **capullo de siesta** y
   despierta con un **abrazo**. Nunca enferma ni muere.
+- **Está viva**: respira, parpadea y mueve la cola todo el tiempo; de a ratos mira a un lado,
+  mueve las orejas, menea la cola, salta, baila o pasea por la habitación, y sigue el dedo o
+  el ratón con la mirada. Al hacerle mimos se alegra (entrecierra los ojos y mueve la
+  cabeza); dormida cierra los ojos y cabecea; comiendo mastica. La foto de Lila se anima por
+  capas con máscaras suaves (cabeza con párpados, cuerpo y cola); las criaturas dibujadas
+  tienen sus partes separadas (cabeza, orejas, ojos, cola, cuerpo y alas). Con «reducir
+  movimiento» activado en el sistema, se quedan quietas.
 - **Lo que pide**: la barra más baja (si está bajo 60 %). Si ya hay con qué dárselo, se
   destaca el botón; si no, el minijuego que lo consigue.
 - **Cuidados**: 🧁 comer, 🛁 baño de burbujas (se revientan una por una; con espuma mágica es
