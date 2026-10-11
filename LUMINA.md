@@ -45,6 +45,13 @@ pastel y almohadillas rosadas).
   ojos y cabecea; comiendo mastica. En tamaños chicos (aldea, álbum) se muestra la imagen fija
   con una respiración suave, y si el dispositivo no tiene WebGL también. Con «reducir movimiento»
   activado en el sistema, se quedan quietas.
+- **Lugares que cambian**: la mascota pasea por panoramas anchos con el mismo estilo de las
+  fotos: **Mi habitación**, **Jardín Hada**, **Cielo de Nubes** y **Cueva de Cristal**. En modo
+  automático cada criatura está en su casa (Lila en su habitación, las demás en su bioma); con el
+  botón 🏞️ Lugar se elige otro. Al pasear, la cámara la sigue: el fondo se desplaza y unos adornos
+  cercanos pasan más rápido (paralaje). Cada lugar tiene su ambiente animado (polvo de luz, pétalos
+  que caen, nubes que pasan, destellos de cristal) y la luz cambia con la hora (mañana, día y
+  atardecer), tiñendo también a la mascota para que se vea dentro de la escena.
 - **Lo que pide**: la barra más baja (si está bajo 60 %). Si ya hay con qué dárselo, se
   destaca el botón; si no, el minijuego que lo consigue.
 - **Cuidados**: 🧁 comer, 🛁 baño de burbujas (se revientan una por una; con espuma mágica es
@@ -104,6 +111,7 @@ Nubes** o la **Cueva de Cristal**. Tocando una en la aldea pasa a ser la compañ
 | `public/lumina/lila.jpg` | La imagen de Lila (portada) |
 | `public/lumina/lila-sola.webp`, `public/lumina/cuarto.jpg` | Lila recortada con fondo transparente (segmentación IS-Net, la cola recuperada con GrabCut) y su habitación sin ella (rellenada con LaMa), para que pueda pasear |
 | `public/lumina/criaturas/*.webp` | Las 16 criaturas realistas, recortadas |
+| `public/lumina/lugares/*.webp` | Los cuatro lugares panorámicos (2:1), generados con el mismo modelo |
 | `public/lumina/alas-hada.webp`, `public/lumina/alas-dragon.webp` | Las alas que aletean |
 | `public/lumina-vivo.js` | `AxLuminaVivo`: la malla con huesos en WebGL, los ojos en la GPU, las caricias y el ronroneo |
 | `src/mate.js` | Guarda `perfil.lumi` en la nube limpiando cada campo (criaturas y accesorios del catálogo, topes, horas válidas, el PIN solo como hash) |

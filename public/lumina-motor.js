@@ -35,6 +35,16 @@ var ESPECIES={gato:"Gatito",conejo:"Conejito",zorro:"Zorrito",osito:"Osito"};
 var RASGOS={unicornio:"Unicornio",hada:"Hada",estrella:"Estrella",dragon:"Dragón"};
 var BIOMAS=[{id:"jardin",nom:"Jardín Hada",ico:"🌸"},{id:"nubes",nom:"Cielo de Nubes",ico:"☁️"},{id:"cristal",nom:"Cueva de Cristal",ico:"💎"}];
 var RAREZA=["Común","Especial","Legendaria"];
+/* los lugares donde pasea la mascota: panoramas anchos (2:1) con el piso a la misma altura */
+var LUGARES=[{id:"cuarto",nom:"Mi habitación",ico:"🏠",img:"lumina/lugares/cuarto.webp"},{id:"jardin",nom:"Jardín Hada",ico:"🌸",img:"lumina/lugares/jardin.webp"},
+  {id:"nubes",nom:"Cielo de Nubes",ico:"☁️",img:"lumina/lugares/nubes.webp"},{id:"cristal",nom:"Cueva de Cristal",ico:"💎",img:"lumina/lugares/cristal.webp"}];
+/* los que todavía no tienen su imagen no se ofrecen */
+var LISTOS={cuarto:1}; LUGARES=LUGARES.filter(function(l){return LISTOS[l.id];});
+var LUGAR={}; LUGARES.forEach(function(l){LUGAR[l.id]=l;});
+/* «auto»: cada criatura en su casa (Lila en su habitación, las demás en su bioma) */
+function lugarDe(g,c){var l=g.lugar&&g.lugar!=="auto"?g.lugar:(c&&c.id!=="lila"?c.bioma:"cuarto"); return LUGAR[l]||LUGAR.cuarto;}
+/* la hora del día para la luz de la escena */
+function franja(d){d=d||new Date(); var h=d.getHours()+d.getMinutes()/60; return h<6||h>=20.5?"noche":h<10.5?"manana":h<17?"dia":"tarde";}
 var CRIATURAS=[
   {id:"lila",esp:"gato",rasgo:null,col:"lavanda",nom:"Lila",bioma:"jardin",rar:0,foto:"lumina/lila.jpg",recorte:"lumina/lila-sola.webp",fondo:"lumina/cuarto.jpg"},
   {id:"mirlu",esp:"gato",rasgo:"unicornio",col:"rosa",nom:"Mirlú",bioma:"nubes",rar:1},
@@ -320,7 +330,7 @@ function terminaRonda(g,mod,its,primeras,modo){
   return {ok:ok,premio:M.premio,cant:n,polvo:polvo,huevos:vinculo(g,12+ok*2),nivel:g.niveles[mod]};
 }
 
-G.AxLumina={COLORES:COLORES,ESPECIES:ESPECIES,RASGOS:RASGOS,BIOMAS:BIOMAS,RAREZA:RAREZA,CRIATURAS:CRIATURAS,POR_ID:POR_ID,ACCES:ACCES,ACC:ACC,HABITOS:HABITOS,MODULOS:MODULOS,TRAZOS:TRAZOS,PALABRAS:PALABRAS,
+G.AxLumina={LUGARES:LUGARES,LUGAR:LUGAR,lugarDe:lugarDe,franja:franja,COLORES:COLORES,ESPECIES:ESPECIES,RASGOS:RASGOS,BIOMAS:BIOMAS,RAREZA:RAREZA,CRIATURAS:CRIATURAS,POR_ID:POR_ID,ACCES:ACCES,ACC:ACC,HABITOS:HABITOS,MODULOS:MODULOS,TRAZOS:TRAZOS,PALABRAS:PALABRAS,
   titulo:titulo,nuevo:nuevo,modoDe:modoDe,nivelDe:nivelDe,actualiza:actualiza,despierta:despierta,necesidad:necesidad,comer:comer,bano:bano,mimo:mimo,dormir:dormir,compra:compra,viste:viste,mascota:mascota,
   calienta:calienta,nace:nace,hoy:hoy,hashPin:hashPin,pinOk:pinOk,habitosHoy:habitosHoy,validaHabito:validaHabito,enNoche:enNoche,enPalabras:enPalabras,puerta:puerta,
   ronda:ronda,corrige:corrige,terminaRonda:terminaRonda,vinculo:vinculo,sonido:sonido,letra:letra,rng:rng,NOMBRE_LETRA:NOMBRE_LETRA};

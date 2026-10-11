@@ -131,6 +131,7 @@ function lumina(g){
   var no=ob(g.noche); o.noche={on:no.on==null?true:!!no.on,desde:hora(no.desde,"20:30"),hasta:hora(no.hasta,"07:00")};
   var ds=ob(g.dias); Object.keys(ds).filter(fecha).sort().slice(-120).forEach(function(k){o.dias[k]=e(ds[k],0,1e5);});
   var mi=ob(g.mimos); if(fecha(String(mi.d||"")))o.mimos={d:mi.d,n:e(mi.n,0,1e5)};
+  o.lugar=g.lugar==="auto"||LU.LUGAR[g.lugar]?g.lugar:"auto";
   return o;
 }
 async function borra(env,user,id,j){

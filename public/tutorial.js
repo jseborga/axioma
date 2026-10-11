@@ -525,6 +525,7 @@ GUIAS.lumina=[
  a:function(){return pasos([["Barras sin castigo","Energía, pancita, brillo y descanso bajan despacio. Si llegan a cero, la mascota duerme en un capullo y despierta con un abrazo: nunca enferma ni muere."],
    ["Vínculo Mágico","Aprender y cuidar llena la barra 💖. Al llenarse llega un huevo sorpresa."],
    ["Incubar","Se le da calor frotándolo, cantándole o meciéndolo (también moviendo el teléfono). Cuando está listo, se toca para que nazca."],
+   ["Lugares","Pasea por su habitación, el Jardín Hada, el Cielo de Nubes o la Cueva de Cristal (🏞️ Lugar). La cámara la sigue y la luz cambia con la hora."],
    ["La Aldea del Gran Árbol","Cada criatura (Gatito-Unicornio, Conejo-Hada, Zorrito-Estrella, Osito-Dragón y más) vive en su rama: Jardín Hada, Cielo de Nubes o Cueva de Cristal."]]);}},
 {t:"Para la familia",d:"",
  a:function(){return tarjetas([["🦸 Misiones reales","Cepillarse los dientes, leer, recoger los juguetes y las que agreguen. Un adulto las confirma con el PIN familiar y un cometa trae gemas; con todas las del día, un huevo especial."],

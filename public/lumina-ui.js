@@ -99,17 +99,18 @@ function mapa(){
   if(nec){if(nec.accion==="comer"&&g.inv.bocadillo<=0)modPide="cocina"; else if(nec.accion==="bano"&&g.inv.espuma<=0)modPide="arbol"; else if(nec.accion==="jugar")modPide="jardin"; else marca=nec.accion;}
   var dice=AVISO||(g.capullo?"Zzz… estoy en mi capullo de siesta. ¡Un abrazo me despierta!":nec?(modPide&&nec.accion!=="jugar"?nec.txt+" "+(modPide==="cocina"?"Hay que prepararla en la Cocina de Pociones.":"Necesito espuma del Árbol de las Palabras."):nec.txt):pick(ALEGRE));
   AVISO=null;
+  var lugar=L.lugarDe(g,c), hora=L.franja();
   var linea='🐾 '+g.mascotas.length+'/'+L.CRIATURAS.length+' criaturas · '+(md==="pri"?'🌟 Primaria':'🌱 Preescolar');
   var html=C.cabeza(pf,"lumina",linea,'')+
     '<div class="lp-casa">'+inventario(g)+
     '<div class="lp-globo" id="lp-globo"><b>'+esc(m.nom)+'</b> '+esc(dice)+'<button type="button" class="lp-son" data-voz="'+esc(dice)+'" aria-label="Escuchar">🔊</button></div>'+
-    '<div class="lp-escena'+(c.foto?' con-foto':'')+(g.capullo?' capullo':'')+'" id="lp-escena">'+(c.fondo?'<img class="lp-fondo-foto" src="'+c.fondo+'" alt="" draggable="false">':c.foto?'':DW.habitacion())+
+    '<div class="lp-escena'+(c.foto?' con-foto':'')+(g.capullo?' capullo':'')+(c.foto?' lugar-'+lugar.id+' hora-'+hora:'')+'" id="lp-escena" style="--cam:.5">'+(c.foto?mundoHTML(lugar):DW.habitacion())+
       '<button type="button" class="lp-pet-btn" id="lp-pet" aria-label="Hacer un mimo a '+esc(m.nom)+'">'+petHTML(g,m,g.capullo?"duerme":"feliz")+'</button>'+
       (g.capullo?'<div class="lp-capullo" aria-hidden="true"><span>💤</span></div>':'')+'</div>'+
     (g.capullo?'<button type="button" class="lp-abrazo" id="lp-abrazo">🤗 Darle un abrazo</button>':
       '<div class="lp-barras">'+BARRAS.map(function(b){var v=Math.round(g.barras[b[0]]); return '<div class="lp-barra'+(v<35?' baja':'')+'"><span>'+b[1]+'</span><i style="--p:'+v+'%"></i><small>'+esc(b[2])+'</small></div>';}).join("")+'</div>'+barraV(g)+
       '<div class="lp-dock">'+[["comer","🧁","Comer",g.inv.bocadillo],["bano","🛁","Baño",g.inv.espuma],["dormir","☁️","Dormir",""],["vestir","🎀","Vestir",""],
-        ["huevos","🥚","Huevos",g.huevos.length||""],["aldea","🌳","Aldea",g.mascotas.length],["misiones","🦸","Misiones",pend||""]].map(function(x){
+        ["huevos","🥚","Huevos",g.huevos.length||""],["aldea","🌳","Aldea",g.mascotas.length],["misiones","🦸","Misiones",pend||""],["lugar",lugar.ico,"Lugar",""]].map(function(x){
         return '<button type="button" data-acc="'+x[0]+'" class="'+(marca===x[0]?'pide':'')+'"><span>'+x[1]+'</span>'+x[2]+(x[3]!==""?'<i>'+x[3]+'</i>':'')+'</button>';}).join("")+'</div>'+
       '<h4 class="lp-h">✨ Aprende y consigue cosas para '+esc(m.nom)+'</h4><div class="lp-modulos">'+["cocina","arbol","jardin"].map(function(k){var M=L.MODULOS[k];
         return '<button type="button" class="lp-mod m-'+k+(modPide===k?' pide':'')+'" data-mod="'+k+'">'+(modPide===k?'<em>¡'+esc(m.nom)+' lo necesita!</em>':'')+'<span class="lp-mod-ico">'+M.ico+'</span><b>'+esc(M.nom)+'</b><small>'+esc(M.desc)+'</small>'+
@@ -117,6 +118,7 @@ function mapa(){
     '<p class="fine lp-pie-nota">Sin anuncios ni compras: todo se consigue aprendiendo y cuidando. <a href="#" id="lp-familia">👪 Para la familia</a></p></div>';
   var el=pinta(html,"casa"); if(!el)return;
   C.activaCabeza(el);
+  activaMundo(el);
   on(el,"[data-voz]",function(b){decir(b.getAttribute("data-voz"));});
   on(el,"[data-mod]",function(b){ronda(b.getAttribute("data-mod"));});
   on(el,"[data-acc]",function(b){accion(b.getAttribute("data-acc"));});
@@ -168,10 +170,17 @@ function vida(pet,escena,quieta){
   /* hasta dónde puede caminar (en % de la escena): la dibujada mide 58 %, Lila 90 % */
   var rango=foto?[-12,5,22]:[2,21,40];
   function haz(){if(!pet.isConnected)return; var a=lista[Math.floor(Math.random()*lista.length)]; if(a==="pasea")pasea(); else accion1(pet,a); luego(haz,2400+Math.random()*3000);}
-  function pasea(){var ahora=pet.style.left?parseFloat(pet.style.left):rango[1], nuevo=Math.max(rango[0],Math.min(rango[2],ahora+(Math.random()<0.5?-1:1)*(10+Math.random()*16)));
-    if(Math.abs(nuevo-ahora)<4)return accion1(pet,"salta");
+  function pasea(){var ahora=pet.style.left?parseFloat(pet.style.left):rango[1], dir=Math.random()<0.5?-1:1, nuevo;
+    /* en un lugar panorámico la cámara la sigue: el fondo se desplaza y ella avanza un poco */
+    var mundo=escena&&escena.querySelector(".lp-mundo");
+    if(mundo){var cam=parseFloat(escena.style.getPropertyValue("--cam"))||0.5, camN=Math.max(0,Math.min(1,cam+dir*(0.18+Math.random()*0.24)));
+      if(Math.abs(camN-cam)<0.05){dir=-dir; camN=Math.max(0,Math.min(1,cam+dir*(0.18+Math.random()*0.24)));}
+      escena.style.setProperty("--cam",camN.toFixed(3)); nuevo=Math.max(rango[0],Math.min(rango[2],ahora+dir*(2+Math.random()*5)));}
+    else nuevo=Math.max(rango[0],Math.min(rango[2],ahora+dir*(10+Math.random()*16)));
+    if(!mundo&&Math.abs(nuevo-ahora)<4)return accion1(pet,"salta");
+    pet.classList.toggle("izq",dir<0);
     var c=ctl(pet); if(c)c.camina(true);
-    pet.classList.toggle("izq",nuevo<ahora); pet.classList.add("camina"); pet.style.left=nuevo.toFixed(1)+"%";
+    pet.classList.add("camina"); pet.style.left=nuevo.toFixed(1)+"%";
     setTimeout(function(){pet.classList.remove("camina","izq"); if(c)c.camina(false);},1850);}
   luego(haz,1200+Math.random()*1500);
   if(!escena)return;
@@ -181,6 +190,28 @@ function vida(pet,escena,quieta){
     var c=ctl(pet); if(c){c.mira(dx,dy); return;}
     pet.style.setProperty("--mx",(dx*(foto?3:7)).toFixed(1)+"deg"); pet.style.setProperty("--px",(dx*3.5).toFixed(1)+"px"); pet.style.setProperty("--py",(dy*3).toFixed(1)+"px");});
   escena.addEventListener("pointerleave",function(){var c=ctl(pet); if(c)c.mira(null); ["--mx","--px","--py"].forEach(function(k){pet.style.removeProperty(k);});});
+}
+
+/* ===================== el mundo: lugares panorámicos que cambian ===================== */
+/* partículas de cada lugar (capa lejana) y adornos cercanos que pasan más rápido (paralaje) */
+var AMB={cuarto:["mota",14],jardin:["petalo",16],nubes:["nubecita",9],cristal:["destello",18]};
+function mundoHTML(l){
+  var a=AMB[l.id]||AMB.cuarto, p='';
+  for(var i=0;i<a[1];i++)p+='<i class="'+a[0]+'" style="--x:'+(Math.random()*100).toFixed(1)+'%;--y:'+(Math.random()*70).toFixed(1)+'%;--d:'+(-Math.random()*12).toFixed(1)+'s;--t:'+(7+Math.random()*8).toFixed(1)+'s;--s:'+(0.6+Math.random()*0.9).toFixed(2)+'"></i>';
+  var cerca=''; for(var j=0;j<7;j++)cerca+='<i style="--x:'+(j*15+Math.random()*8).toFixed(1)+'%;--s:'+(0.7+Math.random()*0.6).toFixed(2)+'"></i>';
+  return '<div class="lp-mundo"><img class="lp-pan" src="'+l.img+'" alt="" draggable="false"></div><div class="lp-ambiente amb-'+l.id+'" aria-hidden="true">'+p+'</div>'+
+    '<div class="lp-cerca cerca-'+l.id+'" aria-hidden="true">'+cerca+'</div><div class="lp-luz" aria-hidden="true"></div>';
+}
+function activaMundo(el){var im=el.querySelector(".lp-pan"); if(im)im.addEventListener("error",function(){im.src="lumina/cuarto.jpg"; im.classList.add("solo");});}
+function lugares(){
+  var pf=C.actual(), g=lumi(pf), m=L.mascota(g), c=L.POR_ID[m.id], act=g.lugar||"auto";
+  var el=pinta(top("🏞️ ¿Dónde jugamos?")+'<div class="lp-lugares"><p class="lp-txt">Elige un lugar para pasear con '+esc(m.nom)+'.</p><div class="lp-lug-grid">'+
+    '<button type="button" data-lug="auto" class="'+(act==="auto"?'on':'')+'"><span class="lp-lug-auto">✨</span><b>Automático</b><small>Cada criatura en su casa: ahora '+esc(L.lugarDe({lugar:"auto"},c).nom)+'</small></button>'+
+    L.LUGARES.map(function(l){return '<button type="button" data-lug="'+l.id+'" class="'+(act===l.id?'on':'')+'"><img src="'+l.img+'" alt=""><b>'+l.ico+' '+esc(l.nom)+'</b></button>';}).join("")+'</div>'+
+    '<p class="fine">La luz cambia con la hora: mañana, día y atardecer.</p></div>',"lugares");
+  if(!el)return;
+  $("lp-volver").onclick=function(){mapa();};
+  on(el,"[data-lug]",function(b){g.lugar=b.getAttribute("data-lug"); C.cambia(pf); C.SON.toca(); var l=L.lugarDe(g,c); AVISO="¡Vamos a "+(l.id==="cuarto"?"mi habitación":l.nom)+"! "+l.ico; mapa();});
 }
 
 /* ===================== cuidados ===================== */
@@ -193,6 +224,7 @@ function accion(k){
   if(k==="huevos")return huevos();
   if(k==="aldea")return aldea();
   if(k==="misiones")return misiones();
+  if(k==="lugar")return lugares();
 }
 function comer(pf,g,m){
   if(g.inv.bocadillo<=0){AVISO="¡No quedan bocadillos! Prepáralos en la Cocina de Pociones 🧪."; return mapa();}

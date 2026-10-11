@@ -2960,3 +2960,44 @@ body.ap-full .ig-pie{margin:8px -14px -24px;border-radius:0}
 .lp-rama.r-nubes{width:46%}
 .lp-vecino{width:clamp(38px,10.5vw,58px)}
 .lp-pet:has(.gl-listo).camina{animation:none}
+/* ---------- LuminaPets: lugares panorámicos que cambian ----------
+   El panorama mide el doble de ancho que la escena; la cámara (--cam, 0–1) lo desplaza cuando la
+   mascota pasea. Encima: partículas del lugar, adornos cercanos que pasan más rápido (paralaje)
+   y la luz de la hora, que también tiñe a la mascota. */
+.lp-mundo{position:absolute;inset:0;overflow:hidden}
+.lp-pan{position:absolute;top:0;left:0;height:100%;width:200%;object-fit:cover;transform:translateX(calc(var(--cam,.5) * -50%));transition:transform 1.8s cubic-bezier(.45,.05,.55,.95);user-select:none;pointer-events:none}
+.lp-pan.solo{width:100%;transform:none}
+.lp-ambiente,.lp-cerca,.lp-luz{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lp-ambiente i{position:absolute;left:var(--x);top:var(--y);display:block;animation-duration:var(--t);animation-delay:var(--d);animation-iteration-count:infinite;animation-timing-function:linear}
+.amb-cuarto .mota{width:5px;height:5px;border-radius:50%;background:radial-gradient(#fffbe6,rgba(255,240,200,0));transform:scale(var(--s));animation-name:lpMota}
+@keyframes lpMota{0%{translate:0 0;opacity:0}20%{opacity:.9}100%{translate:30px -90px;opacity:0}}
+.amb-jardin .petalo{width:10px;height:7px;border-radius:70% 10% 70% 10%;background:linear-gradient(135deg,#ffd1e6,#ff9ec7);scale:var(--s);animation-name:lpPetalo;top:-6%}
+@keyframes lpPetalo{0%{translate:0 0;rotate:0deg;opacity:0}10%{opacity:1}100%{translate:-80px 115cqh;rotate:540deg;opacity:.2}}
+.amb-nubes .nubecita{width:90px;height:30px;border-radius:50%;background:rgba(255,255,255,.85);filter:blur(4px);scale:var(--s);animation-name:lpNube;animation-duration:calc(var(--t) * 3)}
+@keyframes lpNube{0%{translate:-40cqw 0}100%{translate:80cqw 0}}
+.amb-cristal .destello{width:12px;height:12px;background:radial-gradient(#fff,rgba(214,190,255,0) 70%);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);scale:var(--s);animation-name:lpDestello;animation-duration:calc(var(--t) / 3)}
+@keyframes lpDestello{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1.2)}}
+.lp-escena{container-type:size}
+/* adornos cercanos: pasan más rápido que el fondo al caminar */
+.lp-cerca{z-index:2}
+.lp-cerca i{position:absolute;bottom:-4%;left:var(--x);display:block;scale:var(--s);transform:translateX(calc((var(--cam,.5) - .5) * -60cqw));transition:transform 1.8s cubic-bezier(.45,.05,.55,.95)}
+.cerca-jardin i{width:46px;height:34px;background:radial-gradient(circle at 30% 70%,#7fcf8a 0 40%,transparent 41%),radial-gradient(circle at 70% 60%,#9be0a0 0 38%,transparent 39%),radial-gradient(circle at 50% 30%,#ffc1dc 0 20%,transparent 21%);filter:blur(1.5px)}
+.cerca-nubes i{width:110px;height:44px;border-radius:50%;background:#fff;filter:blur(5px);opacity:.92;bottom:-9%}
+.cerca-cristal i{width:26px;height:52px;background:linear-gradient(160deg,#e7dcff,#a98bf0);clip-path:polygon(50% 0,100% 35%,80% 100%,20% 100%,0 35%);opacity:.85;filter:blur(1px)}
+.cerca-cuarto i{display:none}
+/* la luz de la hora */
+.lp-luz{z-index:3;mix-blend-mode:soft-light}
+.hora-manana .lp-luz{background:radial-gradient(circle at 15% 0,rgba(255,236,180,.55),transparent 60%)}
+.hora-tarde .lp-luz{background:linear-gradient(180deg,rgba(255,150,110,.45),rgba(255,120,170,.25));mix-blend-mode:multiply;opacity:.55}
+.hora-noche .lp-luz{background:linear-gradient(180deg,rgba(40,50,120,.6),rgba(60,60,130,.4));mix-blend-mode:multiply}
+.lugar-cristal .lp-pet{filter:drop-shadow(0 0 14px rgba(190,160,255,.55)) brightness(.97)}
+.lugar-nubes .lp-pet{filter:brightness(1.04)}
+.lp-escena .lp-pet-btn{z-index:1}
+/* elegir el lugar */
+.lp-lug-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.lp-lug-grid button{display:flex;flex-direction:column;gap:6px;align-items:center;padding:8px;border-radius:18px;background:var(--ig-card);border:3px solid var(--ig-borde);color:var(--ink);text-align:center}
+.lp-lug-grid button.on{border-color:#a68ad9;box-shadow:0 0 0 3px rgba(166,138,217,.3)}
+.lp-lug-grid img{width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:12px}
+.lp-lug-grid small{color:var(--ink-2);font-size:12.5px}
+.lp-lug-auto{font-size:44px;line-height:1;display:grid;place-items:center;width:100%;aspect-ratio:2/1;border-radius:12px;background:linear-gradient(135deg,#efe4ff,#ffe1ef)}
+@media (prefers-reduced-motion:reduce){.lp-pan,.lp-cerca i{transition:none}.lp-ambiente{display:none}}
