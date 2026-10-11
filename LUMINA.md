@@ -25,10 +25,16 @@ pastel y almohadillas rosadas).
   (sin tocar ojos ni nariz), se pintan en bruto las orejas de cada especie y el rasgo mágico, y un
   modelo de difusión (LCM Dreamshaper v7, licencia MIT) las vuelve realistas con poca fuerza. Luego
   se recortan (IS-Net, con la cola recuperada por GrabCut) y se miden sus ojos y orejas.
+  Todas **sonríen como Lila**: una pasada de detalle facial (se amplía la cara y el modelo la
+  regenera con más detalle) y luego se les transfiere la boquita de Lila (solo la línea de la «w»
+  con las comisuras hacia arriba, sin su color), alineada con la nariz de cada una.
 - **Animación avanzada (WebGL)**: cada criatura grande se monta sobre una malla deformable con
   huesos, como Live2D (`lumina-vivo.js`): la cabeza se inclina y mira, las orejas se sacuden, la
   cola ondula desde la base hasta la punta, el cuerpo respira desde el piso, la nariz y los bigotes
-  tiemblan y la boca mastica. Los ojos se resuelven en la GPU: el párpado es el propio pelaje de la
+  tiemblan y la boca mastica. La **cola** es la de cada criatura: se mide su línea central con el
+  grosor de cada tramo y su movimiento empieza en cero en la unión, así el cuerpo no se deforma
+  (si no tiene cola visible, no se mueve). Al **caminar**, las patas delanteras se levantan por
+  turno y el cuerpo sube y baja con cada paso. Las mejillas y las comisuras suben cuando está feliz. Los ojos se resuelven en la GPU: el párpado es el propio pelaje de la
   frente que baja (parpadeo natural, a veces doble), el iris se corre para mirar el dedo o el ratón,
   y el párpado de abajo sube cuando sonríe. Las alas de hada y de dragón son capas propias que
   aletean desde los hombros. Los accesorios de la cabeza la siguen.
