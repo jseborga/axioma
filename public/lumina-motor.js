@@ -328,7 +328,35 @@ function terminaRonda(g,mod,its,primeras,modo){
   return {ok:ok,premio:M.premio,cant:n,polvo:polvo,huevos:vinculo(g,12+ok*2),nivel:g.niveles[mod]};
 }
 
-G.AxLumina={LUGARES:LUGARES,LUGAR:LUGAR,lugarDe:lugarDe,franja:franja,COLORES:COLORES,ESPECIES:ESPECIES,RASGOS:RASGOS,BIOMAS:BIOMAS,RAREZA:RAREZA,CRIATURAS:CRIATURAS,POR_ID:POR_ID,ACCES:ACCES,ACC:ACC,HABITOS:HABITOS,MODULOS:MODULOS,TRAZOS:TRAZOS,PALABRAS:PALABRAS,
+/* ===================== el camino infinito =====================
+   La mascota camina hacia adelante por un camino sin fin. Cada TRAMO metros hay una prueba
+   (rotan los tres módulos) y cada 3 pruebas cambia el bioma. Al aprender, la mascota gana
+   experiencia: sube de nivel, cambia de título y camina más rápido y salta más alto. */
+var TRAMO=60, BIOMAS_CAMINO=["jardin","nubes","cristal"], ORDEN_RETOS=["cocina","arbol","jardin"];
+var TITULOS=["Pequeña","Curiosa","Exploradora","Valiente","Sabia","Brillante","Legendaria","Estelar"];
+function caminoDe(g){var c=g.camino; if(!c||typeof c!=="object")c=g.camino={}; c.dist=+c.dist||0; c.record=+c.record||0; c.est=+c.est||0; c.semilla=c.semilla||((Date.now()%100000)+1);
+  c.bien=c.bien||{}; c.mal=c.mal||{}; return c;}
+function nivelMascota(xp){xp=Math.max(0,+xp||0); var n=1, need=30; while(xp>=need&&n<99){xp-=need; n++; need=Math.round(need*1.25);} return {n:n,actual:xp,need:need,pct:xp/need,titulo:TITULOS[Math.min(n-1,TITULOS.length-1)]};}
+/* lo que gana con cada nivel: más velocidad y saltos más altos (con tope) */
+function habilidad(n){return {vel:Math.min(1,0.55+(n-1)*0.06),salto:Math.min(0.32,0.2+(n-1)*0.015),aura:n>=3,estela:n>=5,halo:n>=7};}
+function biomaCamino(est){return BIOMAS_CAMINO[Math.floor(est/3)%BIOMAS_CAMINO.length];}
+function retoCamino(g,modo,seed){var c=caminoDe(g), mod=ORDEN_RETOS[c.est%3], nv=nivelDe(g,mod,modo); return {mod:mod,it:ronda(mod,nv,seed>>>0)[0],nivel:nv};}
+/* después de la prueba: premio, experiencia y la dificultad que se adapta (3 bien seguidas sube, 2 mal baja) */
+function resultadoCamino(g,mod,it,ok,modo){
+  var c=caminoDe(g), m=mascota(g), M=MODULOS[mod], antes=nivelMascota(m.xp).n, r=rango(modo), lv=nivelDe(g,mod,modo);
+  if(ok){c.bien[mod]=(c.bien[mod]||0)+1; c.mal[mod]=0; if(c.bien[mod]>=3){c.bien[mod]=0; lv++;}}
+  else{c.mal[mod]=(c.mal[mod]||0)+1; c.bien[mod]=0; if(c.mal[mod]>=2){c.mal[mod]=0; lv--;}}
+  g.niveles[mod]=Math.max(r[0],Math.min(r[1],lv));
+  var s=g.stats[mod]; s.n++; if(ok)s.ok++; var t=g.stats.temas[it.tema]||(g.stats.temas[it.tema]={ok:0,n:0}); t.n++; if(ok)t.ok++;
+  var xp=ok?12:4; m.xp=(m.xp||0)+xp; if(ok)g.inv[M.premio]+=1; g.inv.polvo+=ok?3:1; suma(g,"fel",ok?6:3);
+  c.est++; var d=hoy(); g.dias[d]=(g.dias[d]||0)+1;
+  var ahora=nivelMascota(m.xp);
+  return {ok:ok,xp:xp,premio:ok?M.premio:null,polvo:ok?3:1,huevos:vinculo(g,ok?5:2),subio:ahora.n>antes,nivel:ahora};
+}
+function avanzaCamino(g,metros){var c=caminoDe(g); c.dist+=metros; if(c.dist>c.record)c.record=c.dist; return c;}
+
+G.AxLumina={TRAMO:TRAMO,TITULOS:TITULOS,caminoDe:caminoDe,nivelMascota:nivelMascota,habilidad:habilidad,biomaCamino:biomaCamino,retoCamino:retoCamino,resultadoCamino:resultadoCamino,avanzaCamino:avanzaCamino,
+  LUGARES:LUGARES,LUGAR:LUGAR,lugarDe:lugarDe,franja:franja,COLORES:COLORES,ESPECIES:ESPECIES,RASGOS:RASGOS,BIOMAS:BIOMAS,RAREZA:RAREZA,CRIATURAS:CRIATURAS,POR_ID:POR_ID,ACCES:ACCES,ACC:ACC,HABITOS:HABITOS,MODULOS:MODULOS,TRAZOS:TRAZOS,PALABRAS:PALABRAS,
   titulo:titulo,nuevo:nuevo,modoDe:modoDe,nivelDe:nivelDe,actualiza:actualiza,despierta:despierta,necesidad:necesidad,comer:comer,bano:bano,mimo:mimo,dormir:dormir,compra:compra,viste:viste,mascota:mascota,
   calienta:calienta,nace:nace,hoy:hoy,hashPin:hashPin,pinOk:pinOk,habitosHoy:habitosHoy,validaHabito:validaHabito,enNoche:enNoche,enPalabras:enPalabras,puerta:puerta,
   ronda:ronda,corrige:corrige,terminaRonda:terminaRonda,vinculo:vinculo,sonido:sonido,letra:letra,rng:rng,NOMBRE_LETRA:NOMBRE_LETRA};

@@ -239,9 +239,10 @@ function monta(host,c,op){
   /* ---------- el estado: resortes que siguen a sus objetivos ---------- */
   var S={cabA:new Resorte(40,10),cabX:new Resorte(40,10),cabY:new Resorte(40,10),mirX:new Resorte(160,22),mirY:new Resorte(160,22),
     ore0:new Resorte(260,14),ore1:new Resorte(260,14),parp:new Resorte(900,60),feliz:new Resorte(60,14),nariz:new Resorte(500,25),
-    mej:new Resorte(380,18),boca:new Resorte(200,18),anda:new Resorte(30,11),paso:new Resorte(1,1),sonr:new Resorte(40,12),colaA:new Resorte(30,6),alas:new Resorte(90,8)};
+    mej:new Resorte(380,18),boca:new Resorte(200,18),anda:new Resorte(30,11),paso:new Resorte(1,1),sonr:new Resorte(40,12),vel:new Resorte(12,7),
+    agacha:new Resorte(260,26),estira:new Resorte(260,22),recoge:new Resorte(160,18),colaA:new Resorte(30,6),alas:new Resorte(90,8)};
   var gesto=op.gesto||"feliz", t0=performance.now(), prev=t0, sig={parp:t0+1500,ore:t0+3000,nariz:t0+2200,mira:t0+1200,bigote:t0+4000}, ext={mira:null,colaRapida:0,mastica:0,feliz:0};
-  var caricias=[], ronr=new Ronroneo(), acariciando=0, finParp=0, doble=0, andando=false;
+  var caricias=[], ronr=new Ronroneo(), acariciando=0, finParp=0, doble=0, andando=false, vel=0, salto=null, pisada=[0,0];
   var seg=[]; if(op.acc)Array.prototype.forEach.call(op.acc,function(el){seg.push(el);});
   function azar(a,b){return a+Math.random()*(b-a);}
   function cuadro(ahora){
@@ -275,9 +276,28 @@ function monta(host,c,op){
     var rap=ahora<ext.colaRapida; S.colaA.t=duerme?0.05*Math.sin(t*0.6):(rap?0.35*Math.sin(t*14):0.16*Math.sin(t*1.7)+0.06*Math.sin(t*0.6));
     if(rap){S.colaA.k=400; S.colaA.d=18;} else {S.colaA.k=30; S.colaA.d=6;}
     S.alas.t=R.alas?(duerme?0.02:0.12*Math.sin(t*(c.rasgo==="hada"?7:3.2))):0;
-    S.anda.t=andando?1:0; S.sonr.t=duerme?0:(feliz?1:(come?0.3:0.35));
+    S.vel.t=vel; S.anda.t=(andando||vel>0.02)?1:0; S.sonr.t=duerme?0:(feliz?1:(come?0.3:0.35));
+    /* el salto: agacharse, despegar estirándose, recoger las patas en el aire y amortiguar al caer */
+    var vuelo=0;
+    if(salto){var ts=(ahora-salto.t0)/1000, A=0.17, T=salto.T;
+      if(ts<A){S.agacha.t=1; S.estira.t=0; S.recoge.t=0;}
+      else if(ts<A+T){var u=(ts-A)/T; vuelo=4*u*(1-u); S.agacha.t=0; S.estira.t=u<0.35?1:0; S.recoge.t=1; S.ore0.v-=dt*30; S.ore1.v+=dt*30;}
+      else if(ts<A+T+0.22){S.agacha.t=0.7; S.estira.t=0; S.recoge.t=0; if(!salto.cayo){salto.cayo=1; S.ore0.v+=6; S.ore1.v-=6; S.colaA.v+=3;}}
+      else{S.agacha.t=0; salto=null;}
+      cv.style.translate="0 "+(-vuelo*(salto?salto.h:0)*100).toFixed(2)+"%";
+      /* la sombra se queda en el piso y se achica con la altura */
+      var so=host.querySelector(".lp-sombra"); if(so){so.style.scale=String(1-vuelo*0.45); so.style.opacity=String(1-vuelo*0.5);}
+      if(!salto){cv.style.translate=""; if(so){so.style.scale=""; so.style.opacity="";}}}
+    /* la cola equilibra el balanceo al caminar */
+    if(S.anda.x>0.05)S.colaA.t+=-0.12*Math.sin(S.paso.x)*S.anda.x;
     for(var kk in S)if(kk!=="paso")S[kk].paso(dt);
-    S.paso.x+=dt*9.5*S.anda.x;
+    /* la marcha: la frecuencia del paso crece con la velocidad (sin patinar en el suelo) */
+    var frec=andando&&vel<0.02?1.5:1.25+S.vel.x*1.6, f0=S.paso.x;
+    S.paso.x+=dt*2*Math.PI*frec*S.anda.x;
+    /* cada vez que una pata se apoya, las orejas y la cola reciben el golpecito */
+    for(var pi=0;pi<2;pi++){var antes=Math.sin(f0+pi*Math.PI), ahora2=Math.sin(S.paso.x+pi*Math.PI);
+      if(antes>0&&ahora2<=0&&S.anda.x>0.3){S.ore0.v+=(pi?2.2:-1.6)*S.anda.x; S.ore1.v+=(pi?1.6:-2.2)*S.anda.x; pisada[pi]=1;}}
+    pisada[0]*=Math.pow(0.02,dt); pisada[1]*=Math.pow(0.02,dt);
     /* caricias que se van soltando */
     for(var ci=caricias.length-1;ci>=0;ci--){caricias[ci].f*=Math.pow(0.12,dt); if(caricias[ci].f<0.01)caricias.splice(ci,1);}
     acariciando=Math.max(0,acariciando-dt*0.8);
@@ -296,24 +316,33 @@ function monta(host,c,op){
     gl.drawElements(gl.TRIANGLES,idx.length,gl.UNSIGNED_SHORT,0);
   }
   function deforma(t,duerme){
-    var h=R.cabeza, cu=h.cuello, ang=S.cabA.x, tx=S.cabX.x, ty=S.cabY.x, resp=(duerme?0.022:0.014)*Math.sin(t*(duerme?1.4:2.1));
-    var bx=R.cuerpo.c[0], by=R.cuerpo.abajo, cola=R.cola?R.cola[0]:null, fase=S.paso.x, pie=[Math.max(0,Math.sin(fase))*S.anda.x,Math.max(0,Math.sin(fase+Math.PI))*S.anda.x], bote=Math.abs(Math.sin(fase))*S.anda.x, son=S.sonr.x, ore=[S.ore0.x,S.ore1.x], na=S.nariz.x, mj=S.mej.x, bo=S.boca.x, ca=S.colaA.x, al=S.alas.x;
+    var h=R.cabeza, cu=h.cuello, ang=S.cabA.x, tx=S.cabX.x, ty=S.cabY.x, resp=(duerme?0.022:0.014+0.006*S.anda.x)*Math.sin(t*(duerme?1.4:2.1+S.anda.x*1.6));
+    var bx=R.cuerpo.c[0], by=R.cuerpo.abajo, cola=R.cola?R.cola[0]:null, fase=S.paso.x, an=S.anda.x, rec=Math.max(0,Math.min(1,S.recoge.x)),
+      pie=[Math.max(rec*0.7,Math.pow(Math.max(0,Math.sin(fase)),1.3)*an),Math.max(rec*0.7,Math.pow(Math.max(0,Math.sin(fase+Math.PI)),1.3)*an)],
+      bote=Math.abs(Math.sin(fase))*an, vaiven=Math.sin(fase)*an, son=S.sonr.x,
+      agacha=Math.max(0,Math.min(1,S.agacha.x)), estira=Math.max(0,Math.min(1,S.estira.x)), sqx=1+agacha*0.06-estira*0.04, sqy=1-agacha*0.07+estira*0.06, ore=[S.ore0.x,S.ore1.x], na=S.nariz.x, mj=S.mej.x, bo=S.boca.x, ca=S.colaA.x, al=S.alas.x;
     for(var k=0;k<n;k++){
       var x=rep[2*k], y=rep[2*k+1], q, w;
       /* orejas */
       for(var o=0;o<2;o++){w=W["ore"+o][k]; if(w>0.001){var b=R.orejas[o].b; q=rot(x,y,b[0],b[1],ore[o]*w); x=q[0]; y=q[1];}}
       /* hocico: la nariz sube un poquito, los bigotes tiemblan, la boca mastica */
       y-=W.nariz[k]*na*0.004; y-=(W.mej0[k]+W.mej1[k])*mj*0.003; x+=(W.mej1[k]-W.mej0[k])*mj*0.002; y+=W.boca[k]*bo*0.006;
-      /* cabeza */
-      w=W.cab[k]; if(w>0.001){q=rot(x,y,cu[0],cu[1],ang*w); x=q[0]+tx*w; y=q[1]+ty*w;}
+      /* cabeza (al caminar compensa el balanceo del cuerpo, como un gato) */
+      w=W.cab[k]; if(w>0.001){q=rot(x,y,cu[0],cu[1],(ang+vaiven*0.035)*w); x=q[0]+(tx-vaiven*0.006)*w; y=q[1]+ty*w;}
       /* cola: una onda que crece hacia la punta */
       /* sonrisa: las mejillas y las comisuras suben */
       y-=(W.mej0[k]+W.mej1[k])*son*0.007;
       w=cola?W.cola[k]:0; if(w>0.001){var s=colaS[k]; q=rot(x,y,cola[0],cola[1],ca*w*(0.35+s)+0.05*Math.sin(t*3.1-s*4)*w*s); x=q[0]; y=q[1];}
-      /* caminar: cada pata se levanta por turno y el cuerpo sube un poquito */
+      /* caminar hacia la cámara: la pata en el aire sube y se acerca (crece); el peso pasa a la pata
+         apoyada (el cuerpo se corre y gira un poquito) y sube y baja dos veces por ciclo */
       var wp0=W.pata0[k], wp1=W.pata1[k], wb=1-Math.max(wp0,wp1);
-      if(S.anda.x>0.01){y-=(wp0*pie[0]+wp1*pie[1])*0.04; x+=(wp0*pie[0]-wp1*pie[1])*0.006; y-=wb*bote*0.014;}
-      /* respirar */
+      if(an>0.01||rec>0.01){
+        for(var pp=0;pp<2;pp++){var wq=pp?wp1:wp0; if(wq>0.001){var pc=R.patas[pp].c, l=pie[pp], esc=1+0.1*l;
+          x=pc[0]+(x-pc[0])*(1+(esc-1)*wq); y=pc[1]+(y-pc[1])*(1+(esc-1)*wq)-wq*l*0.045+wq*pisada[pp]*0.004;}}
+        var wcu=wb; x+=wcu*vaiven*0.012; q=rot(x,y,bx,by,-vaiven*0.03*wcu); x=q[0]; y=q[1]-wcu*bote*0.016;}
+      /* agacharse y estirarse (salto) desde el piso */
+      if(agacha>0.001||estira>0.001){x=bx+(x-bx)*sqx; y=by-(by-y)*sqy;}
+      /* respirar (más rápido al caminar) */
       w=W.cuerpo[k]; x+=(x-bx)*resp*0.45*w; y-=(by-y)*resp*w;
       /* caricias: el pelo se va con el dedo */
       for(var ci=0;ci<caricias.length;ci++){var cc=caricias[ci], ex=x-cc.x, ey=y-cc.y, g=Math.exp(-(ex*ex+ey*ey)/(2*0.085*0.085))*cc.f; x+=cc.vx*g; y+=cc.vy*g;}
@@ -338,6 +367,11 @@ function monta(host,c,op){
       else if(a==="parpadea")finParp=tt+120;},
     gesto:function(g){gesto=g||"feliz";},
     camina:function(v){andando=!!v;},
+    /* velocidad de marcha continua (0–1) para el camino infinito: 0 se detiene */
+    marcha:function(v){vel=Math.max(0,Math.min(1,v||0));},
+    /* salto con fases; h: altura en fracción del tamaño (por defecto 0.22). Devuelve cuánto dura (ms) */
+    salta:function(h){if(salto)return 0; var T=0.42+(h||0.22)*0.6; salto={t0:performance.now(),T:T,h:h||0.22}; return Math.round((0.17+T+0.22)*1000);},
+    saltando:function(){return !!salto;},
     mira:function(dx,dy){ext.mira=dx==null?null:[Math.max(-1,Math.min(1,dx)),Math.max(-1,Math.min(1,dy||0))];},
     /* x, y: punto en la foto (0–1); vx, vy: cuánto se movió el dedo */
     caricia:function(x,y,vx,vy){var m=Math.sqrt(vx*vx+vy*vy); if(m>0.06){vx*=0.06/m; vy*=0.06/m;}

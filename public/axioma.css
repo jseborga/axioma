@@ -3001,3 +3001,32 @@ body.ap-full .ig-pie{margin:8px -14px -24px;border-radius:0}
 .lp-lug-grid small{color:var(--ink-2);font-size:12.5px}
 .lp-lug-auto{font-size:44px;line-height:1;display:grid;place-items:center;width:100%;aspect-ratio:2/1;border-radius:12px;background:linear-gradient(135deg,#efe4ff,#ffe1ef)}
 @media (prefers-reduced-motion:reduce){.lp-pan,.lp-cerca i{transition:none}.lp-ambiente{display:none}}
+/* ---------- LuminaPets: el camino infinito ---------- */
+.lc-entrada{display:flex;align-items:center;gap:12px;width:100%;max-width:620px;margin:6px auto 0;padding:14px 16px;border-radius:22px;border:0;text-align:left;color:#3b2f55;
+  background:linear-gradient(120deg,#ffe1ef,#e9e0ff 45%,#d9f4ff);box-shadow:0 5px 0 rgba(120,90,170,.25)}
+.lc-entrada>span{font-size:42px;line-height:1}
+.lc-entrada>div{flex:1;display:flex;flex-direction:column}
+.lc-entrada b{font-size:18px;font-weight:900}.lc-entrada small{font-size:13.5px;opacity:.85}
+.lc-entrada i{font-style:normal;font-size:12.5px;font-weight:800;text-align:right;background:rgba(255,255,255,.7);border-radius:12px;padding:5px 9px}
+.lc-hud{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-weight:800;font-size:14px;margin:0 0 8px}
+.lc-hud>span{background:var(--ig-card);border:2px solid var(--ig-borde);border-radius:999px;padding:4px 10px}
+.lc-niv{flex:1 1 180px;display:flex;flex-direction:column;gap:3px}
+.lc-niv i{display:block;height:7px;border-radius:9px;background:var(--inset);overflow:hidden;position:relative}
+.lc-niv i::after{content:"";position:absolute;inset:0;width:var(--p);background:linear-gradient(90deg,#ffd166,#ff9ec7)}
+.lc-mundo{position:relative;width:100%;max-width:560px;margin:0 auto;aspect-ratio:3/4;max-height:68vh;border-radius:26px;overflow:hidden;background:#dfeefc;touch-action:manipulation;user-select:none;box-shadow:0 6px 0 #e3d6f3}
+@media (min-width:700px){.lc-mundo{aspect-ratio:4/3.4}}
+.lc-mundo canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.lc-pet{position:absolute;left:50%;bottom:0;width:min(58%,340px);aspect-ratio:1;transform:translateX(-50%);z-index:2;pointer-events:none}
+.lc-pet .lp-pet{position:absolute;inset:0;width:100%;height:100%}
+.lc-pet.aura .lp-pet{filter:drop-shadow(0 0 10px rgba(255,214,102,.75)) drop-shadow(0 0 22px rgba(255,170,220,.5))}
+.lc-pet.halo::before{content:"✦ ✧ ✦";position:absolute;left:50%;top:-4%;transform:translateX(-50%);color:#ffe066;font-size:22px;letter-spacing:8px;text-shadow:0 0 8px #ffd166;animation:lpZz 2.2s ease-in-out infinite}
+.lc-mundo .lp-luz{z-index:1}
+.lc-globo{position:absolute;left:50%;top:12%;transform:translateX(-50%);z-index:4;display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 18px;border-radius:20px;border:0;
+  background:rgba(255,255,255,.95);color:#3b2f55;box-shadow:0 6px 0 rgba(120,90,170,.25);animation:lpSalta 1.4s ease-in-out infinite;font-size:17px}
+.lc-globo b{font-size:19px;font-weight:900}.lc-globo span{font-size:14px;font-weight:700;color:#8e5cf7}
+.lc-bioma{position:absolute;left:8%;right:8%;top:4%;z-index:4;text-align:center;background:rgba(59,47,85,.82);color:#fff;font-weight:800;font-size:16px;line-height:1.3;border-radius:18px;padding:10px 14px;opacity:0}
+.lc-bioma.on{animation:lcBioma 3.6s ease forwards}
+@keyframes lcBioma{0%{opacity:0;transform:translateY(-10px)}10%,80%{opacity:1;transform:none}100%{opacity:0}}
+.lc-ctrl{display:flex;gap:10px;justify-content:center;margin:10px 0 0}
+.lc-ctrl button{flex:1 1 140px;max-width:260px}
+.lc-mundo .lp-chispas{z-index:5}

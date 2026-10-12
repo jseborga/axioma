@@ -112,7 +112,7 @@ function lumina(g){
   var vistos={};
   (Array.isArray(g.mascotas)?g.mascotas:[]).forEach(function(m){if(!m||!LU.POR_ID[m.id]||vistos[m.id])return; vistos[m.id]=1;
     var acc=[]; (Array.isArray(m.acc)?m.acc:[]).forEach(function(a){if(LU.ACC[a]&&acc.indexOf(a)<0)acc.push(a);});
-    o.mascotas.push({id:m.id,nom:LU.POR_ID[m.id].nom,acc:acc.slice(0,4),nacio:e(m.nacio,0,9e15)});});
+    o.mascotas.push({id:m.id,nom:LU.POR_ID[m.id].nom,acc:acc.slice(0,4),nacio:e(m.nacio,0,9e15),xp:e(m.xp,0,1e7)});});
   if(!o.mascotas.length)o.mascotas=n.mascotas;
   o.activa=vistos[g.activa]?g.activa:o.mascotas[0].id;
   var b=ob(g.barras); ["fel","pan","bri","des"].forEach(function(k){o.barras[k]=b[k]==null?n.barras[k]:Math.max(0,Math.min(100,+b[k]||0));}); o.barras.t=e(b.t,0,9e15)||Date.now();
@@ -132,6 +132,9 @@ function lumina(g){
   var ds=ob(g.dias); Object.keys(ds).filter(fecha).sort().slice(-120).forEach(function(k){o.dias[k]=e(ds[k],0,1e5);});
   var mi=ob(g.mimos); if(fecha(String(mi.d||"")))o.mimos={d:mi.d,n:e(mi.n,0,1e5)};
   o.lugar=g.lugar==="auto"||LU.LUGAR[g.lugar]?g.lugar:"auto";
+  /* el camino infinito: distancia, récord, pruebas pasadas, su semilla y las rachas por módulo */
+  var cm=ob(g.camino), rach=function(x){var y=ob(x), r={}; ["cocina","arbol","jardin"].forEach(function(k){if(y[k])r[k]=e(y[k],0,10);}); return r;};
+  o.camino={dist:Math.max(0,Math.min(1e9,+cm.dist||0)),record:Math.max(0,Math.min(1e9,+cm.record||0)),est:e(cm.est,0,1e6),semilla:e(cm.semilla,1,1e9)||1,bien:rach(cm.bien),mal:rach(cm.mal)};
   return o;
 }
 async function borra(env,user,id,j){

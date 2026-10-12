@@ -74,6 +74,31 @@ Todas dan ✨ polvo estelar. **Modo**: Preescolar 4–6 (niveles 1–3) o Primar
 (niveles 2–5); automático según el curso del perfil o elegido por un adulto. Dentro del modo,
 el nivel sube con tres aciertos y baja si cuesta.
 
+## El camino de las pruebas (mundo infinito)
+
+Desde la casa, **🌈 Camino de las pruebas** lleva a un camino que no se acaba nunca. La vista
+mira hacia adelante y el camino viene hacia la cámara, así la mascota (que en las fotos está de
+frente) camina hacia nosotros y su marcha es creíble:
+
+- **Marcha sin patinar**: el suelo avanza exactamente lo que dan sus pasos. La pata en el aire
+  sube y se acerca; el peso pasa a la pata apoyada (el cuerpo se corre y gira un poquito), el
+  cuerpo sube y baja dos veces por ciclo y la cabeza compensa el balanceo, como un gato. Con cada
+  pisada las orejas rebotan y la cola equilibra; respira más rápido al andar.
+- **Saltos con física**: se agacha, despega estirándose, recoge las patas y las orejas en el aire
+  y amortigua al caer; su sombra se queda en el piso y se achica. Salta sola los tronquitos y, si
+  se toca la pantalla, salta para atrapar estrellas (✨ polvo estelar).
+- **Biomas**: Jardín Hada, Cielo de Nubes y Cueva de Cristal, que cambian cada 3 pruebas, con el
+  panorama de cada lugar en el horizonte y objetos realistas a los lados (flores, hongos, nubes,
+  globos, cristales, rocas), generados con el mismo modelo que las criaturas.
+- **Piedras mágicas**: cada 60 m hay una; la mascota se detiene y abre una prueba (rotan
+  matemática y lógica, letras y lectura, ciencias e inglés). La dificultad se adapta: sube con 3
+  aciertos seguidos y baja si cuesta 2 veces.
+- **La mascota mejora**: cada prueba le da experiencia (+12 si sale a la primera, +4 si costó) y
+  sube de nivel con título (Pequeña, Curiosa, Exploradora, Valiente, Sabia, Brillante, Legendaria,
+  Estelar). Con los niveles camina más rápido y salta más alto; desde el nivel 3 tiene un aura,
+  y desde el 7 un halo de estrellas. También gana el premio del módulo y llena el vínculo.
+- Se guarda la distancia, el récord y las pruebas pasadas, y cada mascota tiene su nivel.
+
 ## Huevos y la Aldea del Gran Árbol
 
 Aprender y cuidar llena el **💖 Vínculo Mágico**; al llenarse llega un **huevo sorpresa** (hasta
@@ -112,6 +137,7 @@ Nubes** o la **Cueva de Cristal**. Tocando una en la aldea pasa a ser la compañ
 | `public/lumina/lila-sola.webp`, `public/lumina/cuarto.jpg` | Lila recortada con fondo transparente (segmentación IS-Net, la cola recuperada con GrabCut) y su habitación sin ella (rellenada con LaMa), para que pueda pasear |
 | `public/lumina/criaturas/*.webp` | Las 16 criaturas realistas, recortadas |
 | `public/lumina/lugares/*.webp` | Los cuatro lugares panorámicos (2:1), generados con el mismo modelo |
+| `public/lumina/objetos/*.webp` | Los objetos realistas del camino (recortados) |
 | `public/lumina/alas-hada.webp`, `public/lumina/alas-dragon.webp` | Las alas que aletean |
 | `public/lumina-vivo.js` | `AxLuminaVivo`: la malla con huesos en WebGL, los ojos en la GPU, las caricias y el ronroneo |
 | `src/mate.js` | Guarda `perfil.lumi` en la nube limpiando cada campo (criaturas y accesorios del catálogo, topes, horas válidas, el PIN solo como hash) |

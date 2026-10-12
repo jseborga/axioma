@@ -112,6 +112,7 @@ function mapa(){
       '<div class="lp-dock">'+[["comer","🧁","Comer",g.inv.bocadillo],["bano","🛁","Baño",g.inv.espuma],["dormir","☁️","Dormir",""],["vestir","🎀","Vestir",""],
         ["huevos","🥚","Huevos",g.huevos.length||""],["aldea","🌳","Aldea",g.mascotas.length],["misiones","🦸","Misiones",pend||""],["lugar",lugar.ico,"Lugar",""]].map(function(x){
         return '<button type="button" data-acc="'+x[0]+'" class="'+(marca===x[0]?'pide':'')+'"><span>'+x[1]+'</span>'+x[2]+(x[3]!==""?'<i>'+x[3]+'</i>':'')+'</button>';}).join("")+'</div>'+
+      (function(){var cm=L.caminoDe(g), nvm=L.nivelMascota(m.xp); return '<button type="button" class="lc-entrada" id="lc-ir"><span>🌈</span><div><b>Camino de las pruebas</b><small>Camina con '+esc(m.nom)+', supera pruebas y sube de nivel</small></div><i>⭐ '+nvm.n+' · '+esc(nvm.titulo)+'<br>🐾 '+Math.floor(cm.dist)+' m</i></button>';})()+
       '<h4 class="lp-h">✨ Aprende y consigue cosas para '+esc(m.nom)+'</h4><div class="lp-modulos">'+["cocina","arbol","jardin"].map(function(k){var M=L.MODULOS[k];
         return '<button type="button" class="lp-mod m-'+k+(modPide===k?' pide':'')+'" data-mod="'+k+'">'+(modPide===k?'<em>¡'+esc(m.nom)+' lo necesita!</em>':'')+'<span class="lp-mod-ico">'+M.ico+'</span><b>'+esc(M.nom)+'</b><small>'+esc(M.desc)+'</small>'+
           '<span class="lp-mod-pie"><i>Nivel '+L.nivelDe(g,k,md)+'</i><i>Ganas '+M.premioIco+'</i></span></button>';}).join("")+'</div>')+
@@ -121,6 +122,7 @@ function mapa(){
   activaMundo(el);
   on(el,"[data-voz]",function(b){decir(b.getAttribute("data-voz"));});
   on(el,"[data-mod]",function(b){ronda(b.getAttribute("data-mod"));});
+  if($("lc-ir"))$("lc-ir").onclick=function(){camino();};
   on(el,"[data-acc]",function(b){accion(b.getAttribute("data-acc"));});
   $("lp-familia").onclick=function(e){e.preventDefault(); C.puerta(function(){ajustes();});};
   if(g.capullo){$("lp-abrazo").onclick=function(){abrazo(pf,g,m);}; $("lp-pet").onclick=function(){abrazo(pf,g,m);};}
@@ -212,6 +214,135 @@ function lugares(){
   if(!el)return;
   $("lp-volver").onclick=function(){mapa();};
   on(el,"[data-lug]",function(b){g.lugar=b.getAttribute("data-lug"); C.cambia(pf); C.SON.toca(); var l=L.lugarDe(g,c); AVISO="¡Vamos a "+(l.id==="cuarto"?"mi habitación":l.nom)+"! "+l.ico; mapa();});
+}
+
+/* ===================== el camino infinito =====================
+   Vista hacia adelante: el camino viene hacia la cámara y la mascota (de frente) camina hacia
+   nosotros, así su marcha es creíble. El suelo avanza al mismo ritmo que sus pasos. Adornos del
+   bioma a los lados, tronquitos que salta sola, estrellas que atrapa si se toca la pantalla, y
+   cada tramo una piedra de prueba. Todo sale de una semilla: el camino no se acaba nunca. */
+/* objetos realistas del camino (generados con el mismo modelo que las criaturas); el emoji es el respaldo */
+var SPR={flor:"🌸",tulipan:"🌷",hongo:"🍄",girasol:"🌻",arbusto:"🌳",nube:"☁️",cristal:"💎",cristal2:"🔮",roca:"🪨",tronco:"🪵",piedra:"🪨",estrella:"⭐"}, SPR_IMG={};
+function sprite(k){if(!SPR_IMG[k]){SPR_IMG[k]=new Image(); SPR_IMG[k].src="lumina/objetos/"+k+".webp";} var im=SPR_IMG[k]; return im.complete&&im.naturalWidth?im:null;}
+var LC={jardin:{decor:["flor","tulipan","hongo","girasol","arbusto","flor"],suelo:["#a7df8f","#8fd17c"],sendero:["#f7ead0","#efdcb9"],img:"lumina/lugares/jardin.webp",nom:"Jardín Hada",ico:"🌸"},
+  nubes:{decor:["nube","nube","estrella","nube","nube"],suelo:["#ffffff","#eef1ff"],sendero:["#ffe9f4","#fbd9ec"],img:"lumina/lugares/nubes.webp",nom:"Cielo de Nubes",ico:"☁️"},
+  cristal:{decor:["cristal","cristal2","roca","cristal","hongo"],suelo:["#8a76c6","#7765b4"],sendero:["#c9b8f5","#b9a6ef"],img:"lumina/lugares/cristal.webp",nom:"Cueva de Cristal",ico:"💎"}};
+var ICO_RETO={cocina:"🧪",arbol:"🌳",jardin:"🌼"}, PASO_M=1.15, RES_CAMINO=null;
+function azarK(semilla,k){var x=Math.sin((k+1)*12.9898+semilla*78.233)*43758.5453; return x-Math.floor(x);}
+function camino(){
+  var pf=C.actual(); if(!pf)return C.portada(); var g=lumi(pf), md=modo(pf,g); if(L.enNoche(g))return mapa();
+  var cm=L.caminoDe(g), m=L.mascota(g), c=L.POR_ID[m.id], nv=L.nivelMascota(m.xp), hab=L.habilidad(nv.n);
+  var el=pinta(top("🌈 Camino de las pruebas","Casa")+
+    '<div class="lc-hud"><span>🐾 <b id="lc-dist">'+Math.floor(cm.dist)+'</b> m</span><span class="lc-niv"><b>⭐ Nivel '+nv.n+' · '+esc(nv.titulo)+'</b><i style="--p:'+Math.round(nv.pct*100)+'%"></i></span><span>🏆 '+Math.floor(cm.record)+' m</span></div>'+
+    '<div class="lc-mundo hora-'+L.franja()+'" id="lc-mundo"><canvas id="lc-cv" aria-label="Camino"></canvas><div class="lp-luz" aria-hidden="true"></div>'+
+      '<div class="lc-pet'+(hab.aura?' aura':'')+(hab.halo?' halo':'')+'" id="lc-pet">'+petHTML(g,m,"feliz")+'</div>'+
+      '<div class="lc-bioma" id="lc-bioma" hidden></div><button type="button" class="lc-globo" id="lc-globo" hidden></button></div>'+
+    '<div class="lc-ctrl"><button type="button" class="ghost" id="lc-anda">⏸ Descansar</button><button type="button" class="primary" id="lc-salto">⬆️ Saltar</button></div>'+
+    '<p class="fine">La mascota camina sola. Toca la pantalla o «Saltar» para atrapar estrellas ⭐. En cada piedra mágica hay una prueba: ¡al aprender sube de nivel, camina más rápido y salta más alto!</p>',"camino");
+  if(!el)return;
+  $("lp-volver").onclick=function(){guardar(); mapa();};
+  var cv=$("lc-cv"), cx=cv.getContext("2d"), mundo=$("lc-mundo"), petEl=$("lc-pet"), host=petEl.querySelector(".lp-vivo");
+  var z=cm.dist, vel=0, andando=true, quieto=false, estZ=(cm.est+1)*L.TRAMO, imgs={}, atrapadas={}, ultGuardado=Date.now(), tPrev=performance.now(), polvoGanado=0;
+  if(estZ<z+12)estZ=Math.ceil((z+12)/L.TRAMO)*L.TRAMO;
+  function img(b){if(!imgs[b]){imgs[b]=new Image(); imgs[b].src=LC[b].img;} return imgs[b];}
+  var bioma=L.biomaCamino(cm.est), biomaAnt=bioma, mezcla=1;
+  /* guarda solo lo caminado desde el último guardado (así nunca pisa la distancia guardada) */
+  var zGuardado=z;
+  function guardar(){if(z>zGuardado){L.avanzaCamino(g,z-zGuardado); zGuardado=z; C.cambia(pf);}}
+  function ctlPet(){return host&&host._vivo;}
+  function anuncia(t){var b=$("lc-bioma"); if(!b)return; b.textContent=t; b.hidden=false; b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); setTimeout(function(){if(b)b.hidden=true;},2600);}
+  anuncia(LC[bioma].ico+" "+LC[bioma].nom);
+  function salta(){var k=ctlPet(); if(k&&!k.saltando()){k.salta(hab.salto); nota(660,0.12,0.03); return true;} return false;}
+  $("lc-anda").onclick=function(){andando=!andando; this.textContent=andando?"⏸ Descansar":"▶ Caminar"; C.SON.toca();};
+  $("lc-salto").onclick=function(){salta();};
+  /* tocar el mundo: salta; frente a la piedra, abre la prueba */
+  mundo.addEventListener("pointerdown",function(ev){if(ev.target.closest("button"))return; if(quieto)abreReto(); else salta();});
+  /* proyección: z' metros por delante → altura en pantalla y escala */
+  function proy(W,H,dz){var hy=H*0.4, z0=1.4, k=z0/Math.max(0.35,dz); return {y:hy+(H*0.98-hy)*k,s:k};}
+  function cuadro(ahora){
+    if(!cv.isConnected){guardar(); return;}
+    requestAnimationFrame(cuadro);
+    var dt=Math.min(0.05,(ahora-tPrev)/1000); tPrev=ahora;
+    var r=mundo.getBoundingClientRect(), dpr=Math.min(2,window.devicePixelRatio||1), W=Math.round(r.width*dpr), H=Math.round(r.height*dpr);
+    if(cv.width!==W||cv.height!==H){cv.width=W; cv.height=H;}
+    /* la marcha: el suelo avanza exactamente lo que dan los pasos */
+    var cerca=estZ-z; quieto=cerca<2.2;
+    var vObj=andando&&!quieto?hab.vel:0; vel+=(vObj-vel)*Math.min(1,dt*2.5);
+    var k=ctlPet(); if(k)k.marcha(vel);
+    var vSuelo=vel>0.02?(1.25+vel*1.6)*PASO_M:0; z+=vSuelo*dt;
+    if(quieto&&$("lc-globo").hidden){var gl2=$("lc-globo"); gl2.innerHTML='<b>¡Una piedra mágica '+ICO_RETO[["cocina","arbol","jardin"][cm.est%3]]+'!</b><span>Toca para resolver la prueba</span>'; gl2.hidden=false; nota(880,0.2,0.04); luego(function(){nota(1175,0.25,0.04);},180); decir("¡Una piedra mágica! Toca para resolver la prueba."); if(k)k.accion("feliz");}
+    if($("lc-dist"))$("lc-dist").textContent=Math.floor(z);
+    if(Date.now()-ultGuardado>3000){ultGuardado=Date.now(); guardar();}
+    /* el bioma cambia con suavidad */
+    var bNuevo=L.biomaCamino(cm.est); if(bNuevo!==bioma){biomaAnt=bioma; bioma=bNuevo; mezcla=0; anuncia(LC[bioma].ico+" "+LC[bioma].nom);} mezcla=Math.min(1,mezcla+dt*0.6);
+    dibuja(W,H,ahora/1000);
+  }
+  function dibuja(W,H,t){
+    var hy=H*0.4, B=LC[bioma], A=LC[biomaAnt];
+    cx.clearRect(0,0,W,H);
+    /* el cielo: el panorama del bioma, con un leve vaivén del camino */
+    var curva=Math.sin(z/45)*0.08;
+    [[A,1-mezcla],[B,mezcla]].forEach(function(par){if(par[1]<=0.01)return; var im=img(par[0]===B?bioma:biomaAnt); if(!im.complete||!im.naturalWidth)return;
+      cx.globalAlpha=par[1]; var ih=hy*1.55, iw=ih*im.naturalWidth/im.naturalHeight, x0=-(iw-W)*(0.5+curva); cx.drawImage(im,x0,hy-ih*0.9,iw,ih);});
+    cx.globalAlpha=1;
+    /* el suelo a los lados: empieza con el color real del pie del panorama (sin corte en el horizonte) y
+       se vuelve el pasto, las nubes o el piso de cristal del bioma; el sendero tiene baldosas que vienen hacia nosotros */
+    var hc=colorHorizonte(bioma)||B.suelo[1];
+    var g1=cx.createLinearGradient(0,hy,0,H); g1.addColorStop(0,hc); g1.addColorStop(0.35,B.suelo[1]); g1.addColorStop(1,B.suelo[0]); cx.fillStyle=g1; cx.fillRect(0,hy,W,H-hy);
+    var anchoAbajo=W*0.62, cxm=W/2+curva*W*0.6;
+    for(var i=0;i<46;i++){var z1=Math.floor(z)+i-(z%1), za=Math.max(0.35,z1-z+0.35), zb=Math.max(0.35,z1+1-z+0.35);
+      var pa=proy(W,H,za), pb=proy(W,H,zb), wa=anchoAbajo*pa.s/1, wb=anchoAbajo*pb.s;
+      var xa=W/2+(cxm-W/2)*(1-pa.s), xb=W/2+(cxm-W/2)*(1-pb.s);
+      cx.fillStyle=B.sendero[(Math.floor(z)+i)%2]; cx.beginPath(); cx.moveTo(xa-wa/2,pa.y); cx.lineTo(xa+wa/2,pa.y); cx.lineTo(xb+wb/2,pb.y); cx.lineTo(xb-wb/2,pb.y); cx.closePath(); cx.fill();}
+    /* niebla en el horizonte */
+    var g2=cx.createLinearGradient(0,hy-6,0,hy+H*0.12); g2.addColorStop(0,"rgba(255,255,255,.55)"); g2.addColorStop(1,"rgba(255,255,255,0)"); cx.fillStyle=g2; cx.fillRect(0,hy-6,W,H*0.12+6);
+    /* objetos: de lejos a cerca */
+    var objs=[];
+    for(var q=Math.floor(z)+40;q>=Math.floor(z)-1;q--){var dz=q-z+0.35; if(dz<0.3)continue; var p=proy(W,H,dz), xs=function(lado){return W/2+(cxm-W/2)*(1-p.s)+lado*anchoAbajo*p.s*0.5;};
+      var a1=azarK(cm.semilla,q), a2=azarK(cm.semilla+7,q);
+      if(a1<0.55){var lado=a2<0.5?-1:1, d=B.decor[Math.floor(azarK(cm.semilla+3,q)*B.decor.length)]; objs.push({y:p.y,s:p.s,x:xs(lado)+lado*(0.25+a2*0.6)*W*0.25*p.s*2,e:d,tam:0.42+a1*0.3});}
+      if(q%23===7&&q<estZ-4){objs.push({y:p.y,s:p.s,x:xs(0),e:"tronco",tam:0.2,tronco:q});}
+      if(q%11===4&&q<estZ-4&&!atrapadas[q]){objs.push({y:p.y-H*0.17*p.s*2.2,s:p.s,x:xs(0)+(azarK(cm.semilla+11,q)-0.5)*W*0.2*p.s,e:"estrella",tam:0.16,estrella:q,brilla:1});}
+      if(q===estZ){objs.push({y:p.y,s:p.s,x:xs(0),e:"piedra",tam:0.55,piedra:1});}}
+    objs.sort(function(a,b){return a.y-b.y;});
+    var k=ctlPet(), enAire=k&&k.saltando();
+    objs.forEach(function(o){
+      /* tamaño con tope; lo que pasa muy cerca de la cámara se desvanece para no tapar la vista */
+      var fs=Math.min(H*0.42,Math.max(4,H*o.tam*o.s)), alfa=1-ss01(1.05,1.55,o.s); if(alfa<=0.02)return;
+      cx.save(); cx.globalAlpha=alfa;
+      /* sombra de contacto en el piso */
+      if(!o.estrella){cx.fillStyle="rgba(60,40,90,.18)"; cx.beginPath(); cx.ellipse(o.x,o.y-fs*0.02,fs*0.38,fs*0.07,0,0,Math.PI*2); cx.fill();}
+      if(o.piedra||o.brilla){cx.shadowColor=o.piedra?"rgba(255,230,120,.95)":"rgba(255,220,90,1)"; cx.shadowBlur=(o.piedra?34:18)*dpr2()*(o.piedra?o.s+0.3:1);}
+      var im=sprite(o.e);
+      if(im){var hh=fs, ww=hh*im.naturalWidth/im.naturalHeight; if(o.estrella){var gi=1+0.08*Math.sin(t*6+o.estrella); hh*=gi; ww*=gi;} cx.drawImage(im,o.x-ww/2,o.y-hh,ww,hh);}
+      else{cx.font=fs+"px serif"; cx.textAlign="center"; cx.textBaseline="bottom"; cx.fillText(SPR[o.e]||o.e,o.x,o.y);}
+      if(o.piedra){cx.shadowBlur=0; cx.font=(fs*0.42)+"px serif"; cx.textAlign="center"; cx.textBaseline="bottom"; cx.fillText(ICO_RETO[["cocina","arbol","jardin"][cm.est%3]],o.x,o.y-fs*0.55);
+        cx.font=(fs*0.22)+"px serif"; for(var j=0;j<6;j++){var an=t*1.4+j*1.047; cx.fillText("✨",o.x+Math.cos(an)*fs*0.62,o.y-fs*0.5+Math.sin(an)*fs*0.32);}}
+      cx.restore();
+      /* tronquitos: los salta sola; estrellas: se atrapan saltando */
+      if(o.tronco!=null&&o.s>0.75&&o.s<1.15&&k&&!k.saltando())k.salta(hab.salto*0.8);
+      if(o.estrella!=null&&o.s>0.9&&enAire&&!atrapadas[o.estrella]){atrapadas[o.estrella]=1; polvoGanado++; g.inv.polvo++; nota(1320,0.12,0.04); chispas(petEl,8,"⭐");}});
+  }
+  function dpr2(){return Math.min(2,window.devicePixelRatio||1);}
+  /* el color promedio del borde de abajo del panorama, para fundir el suelo */
+  var HC={};
+  function colorHorizonte(b){if(HC[b])return HC[b]; var im=img(b); if(!im.complete||!im.naturalWidth)return null;
+    try{var c2=document.createElement("canvas"); c2.width=64; c2.height=32; var x2=c2.getContext("2d"); x2.drawImage(im,0,0,64,32); var d=x2.getImageData(0,28,64,4).data, r=0,gg=0,bb=0,n=0;
+      for(var i=0;i<d.length;i+=4){r+=d[i]; gg+=d[i+1]; bb+=d[i+2]; n++;} HC[b]="rgb("+Math.round(r/n)+","+Math.round(gg/n)+","+Math.round(bb/n)+")";}catch(e){HC[b]=B0(b);} return HC[b];}
+  function B0(b){return LC[b].suelo[1];}
+  function ss01(a,b,x){var u=Math.max(0,Math.min(1,(x-a)/(b-a))); return u*u*(3-2*u);}
+  /* la piedra: tocarla abre la prueba */
+  $("lc-globo").onclick=function(){abreReto();};
+  var abriendo=false;
+  function abreReto(){if(!quieto||abriendo)return; abriendo=true; guardar(); var rr=L.retoCamino(g,md,C.semilla());
+    reto(rr.mod,rr.it,function(ok){var res=L.resultadoCamino(g,rr.mod,rr.it,ok,md); C.cambia(pf); RES_CAMINO=res; camino();});}
+  requestAnimationFrame(cuadro);
+  /* al volver de una prueba: el premio */
+  if(RES_CAMINO){var res=RES_CAMINO; RES_CAMINO=null;
+    luego(function(){var M2=L.MODULOS[["cocina","arbol","jardin"][(cm.est+2)%3]];
+      var t=res.subio?"¡"+m.nom+" subió al nivel "+res.nivel.n+"! Ahora es "+res.nivel.titulo+": camina más rápido y salta más alto.":(res.ok?"¡Muy bien! +"+res.xp+" de experiencia":"¡Buen intento! +"+res.xp+" de experiencia. ¡Sigamos!");
+      var b=$("lc-bioma"); if(b){b.innerHTML=(res.subio?"🎉 ":"⭐ ")+esc(t)+(res.premio?" · "+L.MODULOS[res.premio==="bocadillo"?"cocina":res.premio==="espuma"?"arbol":"jardin"].premioIco+" +1":"")+(res.huevos?" · 🥚 ¡huevo sorpresa!":""); b.hidden=false; b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); setTimeout(function(){if(b)b.hidden=true;},3800);}
+      var k=ctlPet(); if(k){k.accion("feliz"); if(res.subio)k.salta(hab.salto);} chispas(petEl,res.subio?24:12,res.subio?"🌟":"✨"); if(res.subio)C.SON.domina(); else C.SON.bien(); decir(t);},500);}
 }
 
 /* ===================== cuidados ===================== */
@@ -416,12 +547,14 @@ function ronda(mod){
   muestra();
 }
 function para(){limpia(); S=null; C.callaVoz();}
+/* una sola prueba (la del camino): usa la misma pantalla de juego y al terminar llama a fin(ok) */
+function reto(mod,it,fin){var pf=C.actual(), g=lumi(pf); S={mod:mod,its:[it],i:0,primeras:[],nivel:0,md:modo(pf,g),fin:fin,titulo:"🌈 Prueba del camino"}; muestra();}
 function puntos(){return '<span class="lp-prog">'+S.its.map(function(x,i){return '<i class="'+(i<S.i?(S.primeras[i]?'bien':'hecho'):i===S.i?'ahora':'')+'"></i>';}).join("")+'</span>';}
 function opHTML(h){return h&&typeof h==="object"&&h.tarta?DW.tarta(h.tarta[0],h.tarta[1],82):h;}
 var EXTRA=["🍄","💧","🍓","⭐","🌸","🫐"];
 function muestra(){
   if(!S)return mapa();
-  if(S.i>=S.its.length)return premio();
+  if(S.i>=S.its.length){if(S.fin){var fin=S.fin, ok=!!S.primeras[0]; S=null; return fin(ok);} return premio();}
   var pf=C.actual(), g=lumi(pf), m=L.mascota(g), M=L.MODULOS[S.mod], it=S.its[S.i], cuerpo="";
   S.fallos=0; S.listo=false; C.estado({lumi:true});
   var vis=it.vis?(typeof it.vis==="string"?it.vis:'<div class="lp-vis-tarta">'+opHTML(it.vis)+'</div>'):"";
@@ -432,12 +565,12 @@ function muestra(){
       '<div class="lp-ctrl"><button type="button" class="ghost" id="lp-quita">↩ Sacar uno</button><button type="button" class="ig-check" id="lp-listo">¡Listo! 🧪</button></div>';}
   if(it.t==="multi")cuerpo='<div class="lp-multi">'+it.celdas.map(function(c,k){return '<button type="button" data-c="'+k+'">'+c.h+'</button>';}).join("")+'</div><div class="lp-ctrl"><button type="button" class="ig-check" id="lp-listo">¡Listo! ✔</button></div>';
   if(it.t==="trazo")cuerpo='<div class="lp-trazo">'+trazoSVG(it.letra)+'</div>';
-  var el=pinta('<div class="mt-top lp-top"><button type="button" class="ig-x" id="lp-salir" aria-label="Salir">✕</button><b>'+M.ico+' '+esc(M.nom)+'</b>'+puntos()+'</div>'+
+  var el=pinta('<div class="mt-top lp-top"><button type="button" class="ig-x" id="lp-salir" aria-label="Salir">✕</button><b>'+(S.titulo?esc(S.titulo):M.ico+' '+esc(M.nom))+'</b>'+puntos()+'</div>'+
     '<div class="lp-juego t-'+it.t+'"><div class="lp-pide"><span class="lp-pide-pet">'+petHTML(g,m,"feliz")+'</span><div class="lp-q"><b>'+esc(it.q)+'</b>'+
       '<button type="button" class="lp-son" id="lp-oir" aria-label="Escuchar">🔊</button>'+(it.en?'<button type="button" class="lp-son en" id="lp-en" aria-label="Escuchar en inglés">🇬🇧 '+esc(it.en)+'</button>':'')+'</div></div>'+cuerpo+'</div>',"juego m-"+S.mod);
   if(!el)return;
   vida(el.querySelector(".lp-pide-pet .lp-pet"),null,true);
-  $("lp-salir").onclick=function(){para(); mapa();};
+  $("lp-salir").onclick=function(){var vuelve=S&&S.fin; para(); if(vuelve)camino(); else mapa();};
   $("lp-oir").onclick=function(){decir(it.q); if(it.en)luego(function(){hablaEn(it.en);},1600);};
   if($("lp-en"))$("lp-en").onclick=function(){hablaEn(it.en);};
   if(autoVoz(pf,g)){decir(it.q); if(it.en)luego(function(){hablaEn(it.en);},1900);} else if(it.en)luego(function(){hablaEn(it.en);},300);
