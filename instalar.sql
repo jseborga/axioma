@@ -96,6 +96,10 @@ CREATE TABLE IF NOT EXISTS grupo_miembros (grupo TEXT NOT NULL, user_id TEXT NOT
 CREATE INDEX IF NOT EXISTS grupo_miembros_user ON grupo_miembros(user_id);
 CREATE TABLE IF NOT EXISTS granja_dia (user_id TEXT NOT NULL, day INTEGER NOT NULL, best INTEGER, seconds INTEGER NOT NULL DEFAULT 0, entregas INTEGER NOT NULL DEFAULT 0, nivel INTEGER NOT NULL DEFAULT 0, intentos INTEGER NOT NULL DEFAULT 0, started_at INTEGER, updated_at INTEGER NOT NULL, PRIMARY KEY (user_id, day));
 CREATE INDEX IF NOT EXISTS granja_dia_rank ON granja_dia(day, best, updated_at);
+CREATE TABLE IF NOT EXISTS bloques_nivel (day INTEGER PRIMARY KEY, data TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS bloques_dia (user_id TEXT NOT NULL, day INTEGER NOT NULL, best INTEGER, seconds INTEGER NOT NULL DEFAULT 0, intentos INTEGER NOT NULL DEFAULT 0, started_at INTEGER, updated_at INTEGER NOT NULL, PRIMARY KEY (user_id, day));
+CREATE INDEX IF NOT EXISTS bloques_dia_rank ON bloques_dia(day, best, seconds, updated_at);
+CREATE TABLE IF NOT EXISTS bloques_prog (user_id TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS ciudad_mundos (code TEXT PRIMARY KEY, nombre TEXT NOT NULL, tipo TEXT NOT NULL, ref TEXT, seed INTEGER NOT NULL, owner_id TEXT, meta TEXT, starts_at INTEGER, ends_at INTEGER, created_at INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS ciudad_mundos_ref ON ciudad_mundos(ref);
 CREATE TABLE IF NOT EXISTS ciudad_ciudades (mundo TEXT NOT NULL, user_id TEXT NOT NULL, slot INTEGER NOT NULL, nombre TEXT, estado TEXT, puntaje INTEGER NOT NULL DEFAULT 0, poblacion INTEGER NOT NULL DEFAULT 0, felicidad INTEGER NOT NULL DEFAULT 0, conocimiento INTEGER NOT NULL DEFAULT 0, temas TEXT, segundos INTEGER NOT NULL DEFAULT 0, seg_seed INTEGER, seg_at INTEGER, updated_at INTEGER NOT NULL, PRIMARY KEY (mundo, user_id));

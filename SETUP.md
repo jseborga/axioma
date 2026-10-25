@@ -666,6 +666,22 @@ CREATE INDEX IF NOT EXISTS granja_dia_rank ON granja_dia(day, best, updated_at);
 Sin ella, la práctica, los retos y las competencias de la granja funcionan igual; solo
 la granja del día avisa de que falta la tabla. Ver [GRANJA.md](GRANJA.md).
 
+### Añadir las tablas de Puertas de Color
+
+El puzle **Puertas de Color** guarda el tablero del día (se genera una vez), la mejor
+solución de cada persona para el ranking y el progreso de cada cuenta. Pega esto en la
+consola de D1 (también está al final de `instalar.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS bloques_nivel (day INTEGER PRIMARY KEY, data TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS bloques_dia (user_id TEXT NOT NULL, day INTEGER NOT NULL, best INTEGER, seconds INTEGER NOT NULL DEFAULT 0, intentos INTEGER NOT NULL DEFAULT 0, started_at INTEGER, updated_at INTEGER NOT NULL, PRIMARY KEY (user_id, day));
+CREATE INDEX IF NOT EXISTS bloques_dia_rank ON bloques_dia(day, best, seconds, updated_at);
+CREATE TABLE IF NOT EXISTS bloques_prog (user_id TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at INTEGER NOT NULL);
+```
+
+Sin ellas el juego funciona entero en el teléfono; solo el ranking del día y el
+guardado en la cuenta avisan de que faltan. Ver [BLOQUES.md](BLOQUES.md).
+
 ### Añadir las tablas de Ciudad Saber
 
 El constructor de ciudades **Ciudad Saber** guarda los mundos (el abierto y los desafíos de

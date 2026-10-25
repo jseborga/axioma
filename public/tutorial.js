@@ -585,6 +585,27 @@ host.addEventListener("click",function(e){ if(e.target===host)cerrar(); });
 /* "Cómo se juega" abre la guía sencilla; el interrogante, la detallada.
    En cada sección, las dos abren la guía de esa sección. */
 function enSudoku(){return document.body.getAttribute("data-game")==="sudoku"&&document.body.getAttribute("data-mode")==="sud";}
+GUIAS.bloques=[
+{t:"Puertas de Color",d:"Un puzle de bloques en 3D: arrastra cada bloque hasta la puerta de su color y sale del tablero. Inspirado en los «block jam», pero sin vidas, sin anuncios ni compras, con deshacer y pistas gratis y sin reloj obligatorio.",
+ a:function(){return ico("🚪");}},
+{t:"Cómo se juega",d:"",
+ a:function(){return pasos([["Arrastra","Mueve un bloque con el dedo: se desliza por las casillas libres y gira en las esquinas. Al llegar a su puerta con el camino libre, sale solo."],
+   ["Toca para enviar","Un toque sobre un bloque lo manda solo a su puerta si tiene el camino libre (se puede apagar en Ajustes)."],
+   ["Cabe o no cabe","El bloque tiene que caber entero por la puerta: uno de tres casillas no pasa por una puerta de dos."],
+   ["Estrellas","Con el par de jugadas o menos, tres estrellas. El par es la solución más corta que encontró el juego."],
+   ["Ayudas","Deshacer sin límite, 3 pistas gratis por nivel y martillos (rompen un bloque) que se ganan cada 10 estrellas y con el reto del día."]]);}},
+{t:"Mundos y mecánicas",d:"",
+ a:function(){return tarjetas([["🌼 Pradera","Lo básico: colores y puertas."],["🌲 Bosque","Rocas que no se mueven."],["🌊 Río","Bloques en raíl: solo de lado a lado o de arriba abajo."],
+   ["🧊 Glaciar","Hielo: el número dice cuántos bloques deben salir antes de que se derrita."],["💎 Cristal","Capas: la de fuera sale por su puerta y queda un bloque de otro color."],
+   ["🌈 Arcoíris","Puertas que cambian de color con cada jugada (el puntito ↻ avisa)."],["🪐 Cosmos","Todo mezclado y sin final."]]);}},
+{t:"Sin frustración",d:"",
+ a:function(){return pasos([["Sin picos","Cada 5 niveles hay un respiro y cada 10 un desafío anunciado antes de empezar."],
+   ["Se adapta","Si vas sobrado, los niveles suben un poco; si te cuesta (pistas, reinicios), bajan. Tras dos reinicios aparece «Prueba una versión más suave»."],
+   ["Zen o contrarreloj","Por defecto no hay reloj. En contrarreloj, si se acaba el tiempo pides 30 segundos gratis o sigues sin reloj."],
+   ["Accesible","Símbolos para daltónicos en bloques y puertas, y modo números: cada puerta es un resultado y cada bloque una cuenta (sumas, restas o tablas)."]]);}},
+{t:"Reto del día",d:"El mismo tablero para todo el mundo, con todas las mecánicas mezcladas. Gana quien lo resuelve con menos jugadas (y, si empatan, en menos tiempo). Se juega sin pistas para que sea justo; el servidor repite tus jugadas para comprobarlas. Suma racha de días seguidos y comparte tu resultado.",
+ a:function(){return ico("🌅");}}
+];
 function seccion(){var m=document.body.getAttribute("data-mode")||"";return GUIAS[m]?m:null;}
 function guia(detallada){var g=seccion(); if(g)return GUIAS[g]; return enSudoku()?SUDOKU:(detallada?TECNICA:SIMPLE);}
 function liga(sel,cual){

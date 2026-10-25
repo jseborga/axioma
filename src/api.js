@@ -17,6 +17,7 @@
      /api/admin/(summary|users…)  → administración de la plataforma, en plataforma.js
      /api/salas/*                 → salas de juego en vivo (Durable Object), en sala.js
      /api/granja/*               → Granja Express: la granja del día y su ranking, en granja.js
+     /api/bloques/*              → Puertas de Color: reto del día, ranking y progreso, en bloques.js
      /api/ciudad/*               → Ciudad Saber: mundos, vecinos, guardado comprobado y desafíos de curso, en ciudad.js
      /api/acceso, /api/grupos/*, /api/actividad, /api/admin/perfiles → perfiles, grupos de amigos y partidas, en perfiles.js
    Variables de entorno: GOOGLE_CLIENT_ID, SESSION_SECRET y las de ajustes.js. Binding D1: DB.
@@ -36,6 +37,7 @@ import { handlePlataforma } from "./plataforma.js";
 import { handleSalas } from "./sala.js";
 import { handlePerfiles } from "./perfiles.js";
 import { handleGranja } from "./granja.js";
+import { handleBloques } from "./bloques.js";
 import { handleCiudad } from "./ciudad.js";
 import { handleMate } from "./mate.js";
 
@@ -82,6 +84,8 @@ export async function handleApi(req,env,url){
       return await handleCiudad(req,env,url,path,{json:json,user:await currentUser(req,env)});
     if(/^\/mate\//.test(path))
       return await handleMate(req,env,url,path,{json:json,user:await currentUser(req,env)});
+    if(/^\/bloques\//.test(path))
+      return await handleBloques(req,env,url,path,{json:json,dayNumber:dayNumber,user:await currentUser(req,env)});
     if(/^\/granja\//.test(path))
       return await handleGranja(req,env,url,path,{json:json,dayNumber:dayNumber,user:await currentUser(req,env)});
     if(/^\/(acceso|grupos|actividad)(\/|$)/.test(path)||path==="/admin/perfiles")

@@ -749,6 +749,32 @@ CREATE TABLE IF NOT EXISTS granja_dia (
 CREATE INDEX IF NOT EXISTS granja_dia_rank ON granja_dia(day, best, updated_at);
 
 -- ============================================================
+-- The Final Test · Puertas de Color: reto del día y progreso
+-- ============================================================
+-- El tablero del día se genera una vez (public/bloques-motor.js) y queda aquí.
+CREATE TABLE IF NOT EXISTS bloques_nivel (
+  day        INTEGER PRIMARY KEY,
+  data       TEXT NOT NULL              -- el tablero en JSON (con su solución)
+);
+CREATE TABLE IF NOT EXISTS bloques_dia (
+  user_id    TEXT NOT NULL,
+  day        INTEGER NOT NULL,
+  best       INTEGER,                   -- menos jugadas (NULL hasta resolverlo)
+  seconds    INTEGER NOT NULL DEFAULT 0,
+  intentos   INTEGER NOT NULL DEFAULT 0,
+  started_at INTEGER,                   -- intento en curso (ms)
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, day)
+);
+CREATE INDEX IF NOT EXISTS bloques_dia_rank ON bloques_dia(day, best, seconds, updated_at);
+-- niveles, estrellas y ajustes de cada cuenta (para no perder el progreso)
+CREATE TABLE IF NOT EXISTS bloques_prog (
+  user_id    TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- ============================================================
 -- The Final Test · Ciudad Saber: ciudades en mundos infinitos
 -- ============================================================
 -- Un mundo es una semilla de terreno donde cada persona tiene su ciudad en una
